@@ -6,11 +6,12 @@ const Banner = () => {
   return (
     <Box
       sx={{
-        height: { md: "700px", sm: "", xs: "100vh" },
+        height: { md: "500px", sm: "", xs: "100vh" },
         width: "100%",
         position: "relative", // Needed for overlay positioning
         overflow: "hidden",
         mt: 10,
+        borderRadius:3
       }}
     >
       {/* Video */}
@@ -44,7 +45,7 @@ const Banner = () => {
       <Box
         sx={{
           position: "absolute",
-          bottom: { md: "30%", sm: "", xs: 10 },
+          bottom: { md: "18%", sm: "", xs: 10 },
           color: COLORS.white,
           p: 2,
           left: { md: "2%", sm: "", xs: 0 },
@@ -66,7 +67,7 @@ const Banner = () => {
         <Typography
           sx={{
             fontSize: {
-              md: "40px",
+              md: "20px",
               sm: "",
               xs: "18px",
               width: "auto",
@@ -85,10 +86,10 @@ const Banner = () => {
             mt: 5,
           }}
         >
-          <LandingButton title="For Her" width="400px" personal />
-          <LandingButton title="For Him" width="400px" personal />
-          <LandingButton title="Kids Birthday" width="400px" personal />
-          <LandingButton title="All Birthday" width="400px" personal />
+          <LandingButton title="For Her" width="250px" personal />
+          <LandingButton title="For Him" width="250px" personal />
+          <LandingButton title="Kids Birthday" width="250px" personal />
+          <LandingButton title="All Birthday" width="250px" personal />
         </Box>
       </Box>
     </Box>

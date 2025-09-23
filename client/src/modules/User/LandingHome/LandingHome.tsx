@@ -9,7 +9,6 @@ import GiveFunk from "../../../components/GiveFunk/GiveFunk";
 import Banner from "../../../components/Banner/Banner";
 import BirthdaySlider from "../../../components/BirthdaySlider/BirthdaySlider";
 import VIPFunky from "../../../components/VIP-Funky/VIP-Funky";
-import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
 import BasketSlider from "../../../components/BasketSlider/BasketSlider";
 import FunkyApp from "../../../components/FunkyApp/FunkyApp";
 import Description from "../../../components/Description/Description";
@@ -21,14 +20,13 @@ const LandingHome = () => {
       <Box
         sx={{
           display: "flex",
-          gap: { md: "25px", sm: "20px", xs: "10px" },
+          gap: { md: "20px", sm: "20px", xs: "10px" },
           alignItems: "center",
-          overflowX: "auto",
-          width: { lg: "90%" },
+          overflowX: "scroll",
+          width: { lg: "100%" },
           p: 3,
           justifyContent: "center",
           m: "auto",
-
           "&::-webkit-scrollbar": {
             height: "10px",
             width:'100px'
@@ -38,7 +36,7 @@ const LandingHome = () => {
             borderRadius: "20px",
           },
           "&::-webkit-scrollbar-thumb": {
-            backgroundColor: COLORS.primary, // <-- scrollbar thumb
+            backgroundColor: COLORS.primary,
             borderRadius: "20px",
           },
         }}
@@ -53,12 +51,13 @@ const LandingHome = () => {
       <Box
         sx={{
           display: "flex",
-          gap: "15px",
+          gap: "13px",
           alignItems: "center",
           overflowX: "auto",
-          width: { lg: "100%" },
-          p: 2,
-          mt: { md: "-100px", sm: "", xs: 0 },
+          width: { lg: "99.5%" },
+          m:1,
+          pb:5,
+          mt: { md: "-50px", sm: "", xs: 0 },
           zIndex: 100,
           position: "relative",
           "&::-webkit-scrollbar": {
@@ -80,11 +79,12 @@ const LandingHome = () => {
       </Box>
       <br />
       <br />
-      <Box sx={{ p: 2, width: "100%", justifyContent: "center", m: "auto" }}>
+      <Box sx={{width: "100%", justifyContent: "center", m: "auto" }}>
         <Box
           sx={{
             display: { md: "flex", sm: "flex", xs: "block" },
             justifyContent: "space-between",
+            gap:'20px'
           }}
         >
           {[1, 2, 3].map((_) => (
@@ -103,39 +103,28 @@ const LandingHome = () => {
       <VIPFunky />
       <br />
       <br />
-      <CommingSoonOffers />
-      <BirthdaySlider
-        title={"Christmas is Coming..."}
-        description="Avoid the festive fluster and get Christmas sorted for your flock early with Christmas cards and gift ideas they'll love!"
-      />
-
-      <Box sx={{ p: { md: 4, sm: 3, p: 1 } }}>
-        <PersonalGift />
-      </Box>
-
-      <BirthdaySlider
-        title={"Brands You'll Love"}
-        description="Dive into a selection of gift ideas from all their favourite brands, from sweet treats to self care, LEGO®, and more!"
-        brandSlider={true}
-      />
-      <br />
-      <br />
       <BasketSlider
         title="Brighten Their Day"
         description="Get into the summer mood with a selection of our favourite seasonal flowers and top picks."
       />
       <br />
       <br />
+      {/* <CommingSoonOffers /> */}
+
+      <Box sx={{ p: { md: 4, sm: 3, p: 1 } }}>
+        <PersonalGift />
+      </Box>
+      
+      <br />
+      <br />
       <BasketSlider title="Sale!" saleSlide={true} />
-      <Box sx={{ p: { md: 3, sm: 3, xs: 1 } }}>
         <GiveFunk />
-      </Box>
-      <Box sx={{ p: { md: 3, sm: 3, xs: 1 } }}>
+      <br />
+      <br />
         <FunkyApp />
-      </Box>
-      <Box sx={{ p: { md: 3, sm: 3, xs: 1 } }}>
+      <br />
+      <br />
         <Description />
-      </Box>
       <br />
       <br />
       <br />

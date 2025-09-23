@@ -52,10 +52,10 @@ const CommingSoonOffers = () => {
         <br />
         <LandingButton
           title="Shop Christmas Card & Gift"
-          width="550px"
+          width="300px"
           personal
-        />
-      </Box>
+          />
+          </Box>
 
       <Box sx={{ width: { md: "60%", sm: "60%", xs: "100%" } }}>
         <Box

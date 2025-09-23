@@ -33,7 +33,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 6.5,
+    slidesToShow: 6,
     slidesToScroll: 2,
     arrows: false,
        initialSlide: 0,
@@ -141,7 +141,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            left: -25,
+            left: -30,
             display: "flex",
             justifyContent: "center",
             m: "auto",

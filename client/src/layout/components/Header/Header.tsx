@@ -1,163 +1,292 @@
-import {
-  AppBar,
-  Box,
-  Button,
-  Container,
-  IconButton,
-  TextField,
-  Typography,
-} from "@mui/material";
+import * as React from "react";
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
-import {
-  Close,
-  DateRange,
-  Person,
-  Search,
-  ShoppingBag,
-} from "@mui/icons-material";
-import { useState } from "react";
+import { DateRange, Person, Search, ShoppingBag } from "@mui/icons-material";
+import { megaMenuData, navLinks } from "../../../constant/data";
 
-const Header = () => {
-  const [isSearch, setIsSearch] = useState(false);
+interface Props {
+  window?: () => Window;
+}
+
+const drawerWidth = 240;
+const navItems = ["Home", "About", "Contact"];
+
+// Define the type for a single category
+interface Category {
+  name: string;
+  links: string[];
+}
+
+// Define the type for a single mega menu item
+interface MegaMenuItem {
+  title: string;
+  categories: Category[];
+}
+
+// Define the type for the entire mega menu data object
+interface MegaMenuData {
+  Beauty: MegaMenuItem;
+  Cards: MegaMenuItem;
+  Gifts: MegaMenuItem;
+  "Flowers/Plants": MegaMenuItem;
+  "Alcohol Gifts": MegaMenuItem;
+  "Gift Vouchers": MegaMenuItem;
+  "For Business": MegaMenuItem;
+  "For Kids": MegaMenuItem;
+}
+
+// Create a union type of all the keys from the megaMenuData object
+type MegaMenuKeys = keyof MegaMenuData;
+
+const MegaMenu = ({ data }: { data: MegaMenuItem }) => (
+  <Box
+    sx={{
+      position: "absolute",
+      top: "100%",
+      left: 0,
+      width: "100%",
+      bgcolor: "white",
+      boxShadow: 3,
+      zIndex: 10,
+      p: 4,
+      display: "flex",
+      gap: 5,
+      borderTop: "1px solid #ddd",
+    }}
+  >
+    {data.categories.map((category, index: number) => (
+      <Box key={index}>
+        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
+          {category.name}
+        </Typography>
+        <List sx={{ p: 0 }}>
+          {category.links.map((link, linkIndex: number) => (
+            <ListItemButton key={linkIndex} sx={{ py: 0.5, px: 0 }}>
+              <ListItemText primary={link} />
+            </ListItemButton>
+          ))}
+        </List>
+      </Box>
+    ))}
+  </Box>
+);
+
+export default function Header(props: Props) {
+  const { window } = props;
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [hoveredMenuItem, setHoveredMenuItem] =
+    React.useState<MegaMenuKeys | null>(null);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen((prevState) => !prevState);
+  };
+
+  const handleMouseEnter = (item: MegaMenuKeys) => {
+    setHoveredMenuItem(item);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredMenuItem(null);
+  };
+
+  const drawer = (
+    <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
+      <Typography variant="h6" sx={{ my: 2 }}>
+        MUI
+      </Typography>
+      <Divider />
+      <List>
+        {navItems.map((item) => (
+          <ListItem key={item} disablePadding>
+            <ListItemButton sx={{ textAlign: "center" }}>
+              <ListItemText primary={item} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
+  const container =
+    window !== undefined ? () => window().document.body : undefined;
 
   return (
-    <Box>
-      <Box sx={{ bgcolor: COLORS.primary, p: 1 }}>
-        <Container maxWidth="xl">
-          <AppBar
-            position="static"
-            sx={{ bgcolor: "transparent", color: COLORS.white }}
-            elevation={0}
-          >
-            <Toolbar
+    <Box
+      sx={{
+        display: "flex",
+        bgcolor: COLORS.primary,
+        flexDirection: "column",
+        position: "relative",
+      }}
+    >
+      <Box
+        sx={{
+          width: "1360px",
+          display: "flex",
+          justifyContent: "center",
+          m: "auto",
+        }}
+        maxWidth="xl"
+      >
+        <AppBar
+          position="sticky"
+          elevation={0}
+          sx={{ background: "transparent", position: "sticky", top: 20 }}
+        >
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: "none" } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Box
               sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                bgcolor: COLORS.primary,
-                color: COLORS.white,
+                flexGrow: 1,
+                display: {
+                  md: "flex",
+                  xs: "none",
+                  sm: "block",
+                  alignItems: "center",
+                  gap: "20px",
+                  height: "40px",
+                },
               }}
             >
-              {/* Logo */}
-              <Typography variant="h4">Logo</Typography>
-              {/* Search Bar */}
+              <Typography variant="h4" component="div" width={100}>
+                MUI
+              </Typography>
               <Box
                 sx={{
-                  width: "650px",
-                  display: {md:"flex",sm:'',xs:'none'},
+                  border: "2px solid pink",
+                  borderRadius: 8,
+                  flexGrow: 1.8 / 2,
+                  height: "45px",
+                  display: "flex",
+                  bgcolor: "lightGray",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  bgcolor: COLORS.white,
-                  borderRadius: 2,
-                  p: "3px",
                 }}
               >
                 <Box
-                  component={"div"}
-                  onClick={() => setIsSearch(!isSearch)}
+                  component={"input"}
                   sx={{
-                    border: "1px solid #666",
-                    display: "flex",
-                    justifyContent: "space-between",
                     width: "100%",
-                    borderRadius: 2,
+                    height: "42px",
+                    borderRadius: 8,
+                    bgcolor: "transparent",
+                    border: "none",
+                    "&::placeholder": {
+                      color: "#212121",
+                      fontWeight: 700,
+                      fontSize: "17px",
+                    },
                   }}
-                >
-                  <TextField
-                    placeholder="I'm looking for..."
-                    variant="outlined"
-                    fullWidth
-                    sx={serachStyle}
-                  />
-                  <Button
-                    sx={{
-                      bgcolor: isSearch ? COLORS.white : "#75d27d",
-                      height: "60px",
-                      borderRadius: 0,
-                    }}
-                  >
-                    {isSearch ? (
-                      <Close
-                        onClick={() => setIsSearch(false)}
-                        fontSize="large"
-                        sx={{ color: COLORS.primary }}
-                      />
-                    ) : (
-                      <Search fontSize="large" sx={{ color: COLORS.white }} />
-                    )}
-                  </Button>
-                </Box>
+                  placeholder="  Search for cards,gift and flowers...."
+                />
+                <Search
+                  fontSize="large"
+                  sx={{ color: COLORS.primary, mr: 2 }}
+                />
               </Box>
-              {/* Icon */}
-              <Box sx={{ display: {md:"flex",sm:'',xs:'none'}, gap: 1, alignItems: "center" }}>
-                <IconButton sx={iconStyle}>
-                  <DateRange fontSize="large" />
-                  Reminder
-                </IconButton>
-                <IconButton sx={iconStyle}>
-                  <Person fontSize="large" />
-                  Account
-                </IconButton>
-                <IconButton sx={iconStyle}>
-                  <ShoppingBag fontSize="large" />
-                  Basket
-                </IconButton>
-              </Box>
-            </Toolbar>
-          </AppBar>
-        </Container>
+            </Box>
+            <Box
+              sx={{
+                display: { md: "flex", xs: "none", sm: "block", gap: "12px" },
+              }}
+            >
+              <IconButton sx={iconStyle}>
+                <DateRange fontSize="large" />
+                <Typography fontSize={"12px"}>Reminders</Typography>
+              </IconButton>
+              <IconButton sx={iconStyle}>
+                <Person fontSize="large" />
+                <Typography fontSize={"12px"}>Accounts</Typography>
+              </IconButton>
+              <IconButton sx={iconStyle}>
+                <ShoppingBag fontSize="large" />
+                <Typography fontSize={"12px"}>Basket</Typography>
+              </IconButton>
+            </Box>
+          </Toolbar>
+        </AppBar>
+        <nav>
+          <Drawer
+            container={container}
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true,
+            }}
+            sx={{
+              display: { xs: "block", sm: "none" },
+              "& .MuiDrawer-paper": {
+                boxSizing: "border-box",
+                width: drawerWidth,
+              },
+            }}
+          >
+            {drawer}
+          </Drawer>
+        </nav>
       </Box>
-
-      {/* Toggle Menue */}
-      {isSearch && (
-        <Box
+      <Box
+        sx={{
+          width: "1360px",
+          display: {md:"flex",sm:"flex",xs:'none'},
+          m: "auto",
+          flexDirection: "column",
+          position: "relative",
+        }}
+      >
+        <List
           sx={{
+            justifyContent: "space-around",
+            display: "flex",
+            m: "auto",
+            color: "white",
+            pt: 3,
             width: "100%",
-            height: "90vh",
-            position: "absolute",
-            top: 85,
-            bgcolor:'cyan',
-            display:'flex',
-            justifyContent:'center',
-            alignItems:'center',
-            m:'auto'
           }}
+          onMouseLeave={handleMouseLeave}
         >
-          <Typography variant="h1">Menu List</Typography>
-        </Box>
-      )}
+          {navLinks.map((item) => (
+            <ListItem
+              key={item.name}
+              onMouseEnter={() => handleMouseEnter(item.name as MegaMenuKeys)}
+              sx={{ cursor: "pointer", "&:hover": { color: "orange" } }}
+            >
+              {item.name}
+            </ListItem>
+          ))}
+        </List>
+        {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
+          <MegaMenu data={megaMenuData[hoveredMenuItem]} />
+        )}
+      </Box>
     </Box>
   );
-};
-
-export default Header;
+}
 
 const iconStyle = {
   color: COLORS.white,
-  display: "flex",
   flexDirection: "column",
-  fontSize: "13px",
   "&:hover": {
     color: "orange",
-  },
-};
-
-const serachStyle = {
-  borderRadius: 2,
-  "& .MuiOutlinedInput-root": {
-    "& fieldset": {
-      border: "none", // remove border
-    },
-    "&:hover fieldset": {
-      border: "none", // remove on hover
-    },
-    "&.Mui-focused fieldset": {
-      border: "none", // remove on focus
-    },
-    "& input::placeholder": {
-      color: COLORS.primary,
-      fontSize: "20px", // placeholder color
-      opacity: 1, // ensure it's not faded
-    },
   },
 };
