@@ -31,11 +31,11 @@ interface DraggableItem {
 }
 
 interface SlideSpreadProps {
-  textAlign: "start" | "center" | "end";
-  rotation: number;
+  textAlign?: "start" | "center" | "end";
+  rotation?: number;
   togglePopup: (name: string | null) => void;
-  activePopup: string | null;
-  activeIndex:number
+  activePopup?: string | null;
+  activeIndex?:number
 }
 
 const SlideSpread = ({
@@ -60,8 +60,8 @@ const SlideSpread = ({
     tips,
     setTips,
     setTexts,
-    setImageSizes,
-    setImagePositions,
+    // setImageSizes,
+    // setImagePositions,
     setImages,
   } = useWishCard();
 
@@ -90,6 +90,8 @@ const SlideSpread = ({
     height: 150,
     rotation: 0,
   });
+
+  console.log(setAudioQrPosition)
 
   // Just Video fetching
   useEffect(() => {
@@ -159,17 +161,20 @@ const SlideSpread = ({
           <Rnd
             size={{ width: qrPosition.width, height: qrPosition.height }}
             position={{ x: qrPosition.x, y: qrPosition.y }}
-            onDragStop={(e, d) =>
+            onDragStop={(_, d) =>
               setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
             }
-            onResizeStop={(e, direction, ref, delta, position) => {
+            onResizeStop={(e, _, ref, position) => {
               setQrPosition({
                 width: parseInt(ref.style.width),
                 height: parseInt(ref.style.height),
-                x: position.x,
-                y: position.y,
+                x: position.width,
+                y: position.height,
+                // x: position.x,
+                // y: position.y,
                 rotation: qrPosition.rotation,
               });
+              console.log(e)
             }}
           >
             <QrGenerator url={mediaUrl} />
@@ -183,17 +188,18 @@ const SlideSpread = ({
               height: audioQrPosition.height,
             }}
             position={{ x: audioQrPosition.x, y: audioQrPosition.y }}
-            onDragStop={(e, d) =>
+            onDragStop={(_, d) =>
               setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
             }
-            onResizeStop={(e, direction, ref, delta, position) => {
+            onResizeStop={(e, _, ref, position) => {
               setQrPosition({
                 width: parseInt(ref.style.width),
                 height: parseInt(ref.style.height),
-                x: position.x,
-                y: position.y,
+                x: position.height,
+                y: position.height,
                 rotation: qrPosition.rotation,
               });
+             console.log(e)
             }}
           >
             <QrGenerator url={audioUrl} />
@@ -229,7 +235,7 @@ const SlideSpread = ({
               //   );
               // }}
 
-              onDragStop={(e, d) => {
+              onDragStop={(_, d) => {
                 setDraggableImages((prev) =>
                   prev.map((img) =>
                     img.id === id ? { ...img, x: d.x, y: d.y } : img
@@ -242,10 +248,10 @@ const SlideSpread = ({
                   )
                 );
               }}
-              onResizeStop={(e, direction, ref, delta, position) => {
+              onResizeStop={(e, _, ref) => {
                 const newWidth = parseInt(ref.style.width);
                 const newHeight = parseInt(ref.style.height);
-
+             console.log(e)
                 setDraggableImages((prev) =>
                   prev.map((img) =>
                     img.id === id
@@ -253,8 +259,8 @@ const SlideSpread = ({
                           ...img,
                           width: newWidth,
                           height: newHeight,
-                          x: position.x,
-                          y: position.y,
+                          // x: position.x,
+                          // y: position.y,
                         }
                       : img
                   )
@@ -267,8 +273,8 @@ const SlideSpread = ({
                           ...img,
                           width: newWidth,
                           height: newHeight,
-                          x: position.x,
-                          y: position.y,
+                          // x: position.x,
+                          // y: position.y,
                         }
                       : img
                   )

@@ -1,5 +1,5 @@
 // VideoPopup.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { Box, Typography, IconButton, List, ListItem } from "@mui/material";
 import {
   ControlPoint,
@@ -270,12 +270,14 @@ const VideoPopup = ({
                       cacheControl: "3600",
                       upsert: true,
                     });
+                    console.log(data)
 
                   if (error) {
                     console.error("Upload error:", error);
                     return;
                   }
-                  const { data: urlData } = supabase.storage
+                  // const { data: urlData } = supabase.storage
+                  const {} = supabase.storage
                     .from("media")
                     .getPublicUrl(fileName);
                   setLoading(loading);

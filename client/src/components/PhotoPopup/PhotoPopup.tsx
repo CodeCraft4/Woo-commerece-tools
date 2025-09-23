@@ -4,10 +4,10 @@ import { ControlPoint, Delete, Check } from "@mui/icons-material";
 import PopupWrapper from "../PopupWrapper/PopupWrapper";
 import { useWishCard } from "../../context/WishCardContext";
 
-interface ImageType {
-  id: number | string;
-  src: string;
-}
+// interface ImageType {
+//   id: number | string;
+//   src: string;
+// }
 
 interface PhotoPopupProps {
   onClose: () => void;

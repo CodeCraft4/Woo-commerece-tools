@@ -34,7 +34,7 @@ const MediaPopup = ({
   upload,
   setUpload,
   mediaFile,
-  setMediaFile,
+  // setMediaFile,
   duration,
   setDuration,
   handleFileChange,
@@ -281,7 +281,7 @@ const MediaPopup = ({
                   }
                   setLoading(!loading);
                   const fileName = `${Date.now()}-${mediaFile.name}`;
-                  const { data, error } = await supabase.storage
+                  const {error } = await supabase.storage
                     .from("media")
                     .upload("audio/" + fileName, mediaFile, {
                       cacheControl: "3600",
@@ -292,12 +292,12 @@ const MediaPopup = ({
                     console.error("Upload error:", error);
                     return;
                   }
-                  const { data: urlData } = supabase.storage
-                    .from("media")
-                    .getPublicUrl(fileName);
-                  setLoading(loading);
-                  onClose();
-                  setMediaFile(null);
+                  // const { data: urlData } = supabase.storage
+                  //   .from("media")
+                  //   .getPublicUrl(fileName);
+                  // setLoading(loading);
+                  // onClose();
+                  // setMediaFile(null);
                 }}
               />
             </Box>
