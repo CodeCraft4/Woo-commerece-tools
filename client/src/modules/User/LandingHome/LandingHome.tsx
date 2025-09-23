@@ -1,4 +1,4 @@
-import { Box, Container } from "@mui/material";
+import { Box } from "@mui/material";
 import CategoryCard from "../../../components/CategoryCard/CategoryCard";
 import MainLayout from "../../../layout/MainLayout";
 import { CATEGORIES_DATA } from "../../../constant/data";
@@ -13,25 +13,40 @@ import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
 import BasketSlider from "../../../components/BasketSlider/BasketSlider";
 import FunkyApp from "../../../components/FunkyApp/FunkyApp";
 import Description from "../../../components/Description/Description";
+import { COLORS } from "../../../constant/color";
 
 const LandingHome = () => {
   return (
     <MainLayout>
-      <Container
-        maxWidth="xl"
+      <Box
         sx={{
           display: "flex",
-          gap:{md:'25px',sm:'20px',xs:'10px'},
+          gap: { md: "25px", sm: "20px", xs: "10px" },
           alignItems: "center",
           overflowX: "auto",
-          width: { lg: "95%" },
+          width: { lg: "90%" },
           p: 3,
+          justifyContent: "center",
+          m: "auto",
+
+          "&::-webkit-scrollbar": {
+            height: "10px",
+            width:'100px'
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "#f1f1f1",
+            borderRadius: "20px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: COLORS.primary, // <-- scrollbar thumb
+            borderRadius: "20px",
+          },
         }}
       >
         {CATEGORIES_DATA.map((cate) => (
           <CategoryCard id={cate.id} poster={cate.poster} title={cate.title} />
         ))}
-      </Container>
+      </Box>
 
       <Banner />
 
@@ -43,25 +58,35 @@ const LandingHome = () => {
           overflowX: "auto",
           width: { lg: "100%" },
           p: 2,
-          mt: {md:"-70px",sm:"",xs:0},
+          mt: { md: "-100px", sm: "", xs: 0 },
           zIndex: 100,
           position: "relative",
-          // "&::-webkit-scrollbar": {
-          //   display: "flex",
-          //   bgcolor: "gray",
-          //   borderRadius: "100px",
-          // },
+          "&::-webkit-scrollbar": {
+            height: "13px",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "#f1f1f1",
+            borderRadius: "20px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: COLORS.primary,
+            borderRadius: "20px",
+          },
         }}
       >
         {CATEGORIES_DATA.map((cate) => (
           <ProductCard poster={cate.poster} />
-          // <CategoryCard id={cate.id} poster={cate.poster} title={cate.title} />
         ))}
       </Box>
       <br />
       <br />
       <Box sx={{ p: 2, width: "100%", justifyContent: "center", m: "auto" }}>
-        <Box sx={{ display: {md:'flex',sm:'flex',xs:'block'}, justifyContent: "space-between" }}>
+        <Box
+          sx={{
+            display: { md: "flex", sm: "flex", xs: "block" },
+            justifyContent: "space-between",
+          }}
+        >
           {[1, 2, 3].map((_) => (
             <AdvertisementCard />
           ))}
@@ -84,7 +109,7 @@ const LandingHome = () => {
         description="Avoid the festive fluster and get Christmas sorted for your flock early with Christmas cards and gift ideas they'll love!"
       />
 
-      <Box sx={{p:{md:4,sm:3,p:1}}}>
+      <Box sx={{ p: { md: 4, sm: 3, p: 1 } }}>
         <PersonalGift />
       </Box>
 
@@ -101,17 +126,14 @@ const LandingHome = () => {
       />
       <br />
       <br />
-      <BasketSlider
-        title="Sale!"
-        saleSlide={true}
-      />
-      <Box sx={{p:{md:3,sm:3,xs:1}}}>
+      <BasketSlider title="Sale!" saleSlide={true} />
+      <Box sx={{ p: { md: 3, sm: 3, xs: 1 } }}>
         <GiveFunk />
       </Box>
-      <Box sx={{p:{md:3,sm:3,xs:1}}}>
+      <Box sx={{ p: { md: 3, sm: 3, xs: 1 } }}>
         <FunkyApp />
       </Box>
-      <Box  sx={{p:{md:3,sm:3,xs:1}}}>
+      <Box sx={{ p: { md: 3, sm: 3, xs: 1 } }}>
         <Description />
       </Box>
       <br />

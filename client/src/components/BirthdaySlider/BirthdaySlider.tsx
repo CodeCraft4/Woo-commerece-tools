@@ -33,7 +33,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 6,
+    slidesToShow: 6.5,
     slidesToScroll: 2,
     arrows: false,
        initialSlide: 0,

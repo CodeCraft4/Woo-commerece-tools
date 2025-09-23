@@ -13,11 +13,11 @@ const ProductCard = (props: ProductTypes) => {
       sx={{
         width:{md:'250px',sm:'',xs:'180px'},
         height:{md:"400px",sm:'',xs:'250px'},
-        borderRadius: tabsSlider ? 2 : 4,
+        borderRadius: tabsSlider ? 3 : 4,
         bgcolor: COLORS.white,
         border: "1px solid lightGray",
-        py: tabsSlider ? 0 : 1,
-        px: tabsSlider ? 0 : 1,
+        py: tabsSlider ? 0 : '5px',
+        px: tabsSlider ? 0 : '5px',
       }}
     >
       <Box
@@ -28,7 +28,7 @@ const ProductCard = (props: ProductTypes) => {
           width:{md: tabsSlider ? "247px" : "230px",sm:'',xs:'165px'},
           height: "100%",
           objectFit: "cover",
-          borderRadius: tabsSlider ? 2 : 4,
+          borderRadius: tabsSlider ? 3 : 4,
         }}
       />
     </Box>
