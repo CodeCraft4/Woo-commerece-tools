@@ -6,5 +6,24 @@
 }
 
 body {
-  background-color: #e6e9ed;
+  background-color: white;
+  overflow-x: hidden;
+}
+
+.horizontal-scroll {
+  display: flex;
+  gap: 16px;
+  padding: 1rem;
+  overflow-x: auto;       /* horizontal scrolling */
+  overflow-y: hidden;
+  scroll-behavior: smooth; /* smooth scroll */
+}
+
+.horizontal-scroll::-webkit-scrollbar {
+  height: 8px;            /* scrollbar thickness */
+}
+
+.horizontal-scroll::-webkit-scrollbar-thumb {
+  background: #aaa;
+  border-radius: 4px;
 }
