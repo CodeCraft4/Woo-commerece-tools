@@ -39,7 +39,7 @@ const CardModal = (props: ModalType) => {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmitForm = (data: any) => {
+  const handleSubmitForm = () => {
     setLoading(true);
     setTimeout(() => {
       reset();

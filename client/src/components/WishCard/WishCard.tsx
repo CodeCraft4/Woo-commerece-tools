@@ -18,23 +18,6 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from './../../../node_modules/react-dnd-html5-backend/dist/index';
 
 const slides = ["Slide1", "Slide2", "Slide3"];
-// Array of 10 font colors
-const fontColors = [
-  "#000000", // Black
-  "#FF0000", // Red
-  "#008000", // Green
-  "#0000FF", // Blue
-  "#FFA500", // Orange
-  "#800080", // Purple
-  "#00FFFF", // Cyan
-  "#FFC0CB", // Pink
-  "#808080", // Gray
-  "#FFD700", // Gold
-];
-
-const fontSizeArray = [
-  25, 30, 35, 40, 45, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 75, 80,
-];
 
 const WishCard = () => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -98,13 +81,13 @@ const WishCard = () => {
   const onMainMouseUp = () => {
     isMainDragging.current = false;
   };
-  const onMainMouseMove = (e: any) => {
-    if (!isMainDragging.current) return;
-    e.preventDefault();
-    const x = e.pageX - mainRef.current.offsetLeft;
-    const walk = (x - mainStartX.current) * 2;
-    mainRef.current.scrollLeft = mainScrollLeft.current - walk;
-  };
+  // const onMainMouseMove = (e: any) => {
+  //   if (!isMainDragging.current) return;
+  //   e.preventDefault();
+  //   const x = e.pageX - mainRef.current.offsetLeft;
+  //   const walk = (x - mainStartX.current) * 2;
+  //   mainRef.current.scrollLeft = mainScrollLeft.current - walk;
+  // };
 
   // Thumbnail drag handlers
   const onThumbMouseDown = (e: any) => {
@@ -169,7 +152,7 @@ const WishCard = () => {
         onMouseUp={onMainMouseUp}
         // onMouseMove={onMainMouseMove}
       >
-        {slides.map((label, index) => {
+        {slides.map((_, index) => {
           return (
             <Box
               key={index}

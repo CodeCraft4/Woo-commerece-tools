@@ -14,8 +14,8 @@ interface GeneAIType {
   onClose: () => void;
 }
 
-const OPEN_AI_KEY =
-  "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";
+// const OPEN_AI_KEY =
+//   "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";
 
 const GeneAIPopup = (props: GeneAIType) => {
   const { onClose } = props;
