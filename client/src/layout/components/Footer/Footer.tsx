@@ -6,9 +6,6 @@ import { FooterLinks } from "../../../constant/data";
 const Footer = () => {
   return (
     <Box
-      sx={{
-        p: { md: 8, sm: 6, xs: 2 },
-      }}
     >
       <Box
         sx={{
@@ -46,7 +43,7 @@ const Footer = () => {
         sx={{
           display: { md: "flex", sm: "flex", xs: "block" },
           width: "100%",
-          mt: 8,
+          mt: 5,
         }}
       >
         <Box sx={{ width: { md: "50%", sm: "", xs: "100%" } }}>
@@ -67,22 +64,27 @@ const Footer = () => {
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Ffacebook.jpg&w=96&q=75"
+              sx={{width:'50px',height:'50px'}}
             />
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Ftiktok.jpg&w=96&q=75"
+              sx={{width:'50px',height:'50px'}}
             />
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Finstagram.jpg&w=96&q=75"
+              sx={{width:'50px',height:'50px'}}
             />
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fyoutube.jpg&w=96&q=75"
+              sx={{width:'50px',height:'50px'}}
             />
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fblog-disc.jpg&w=96&q=75"
+              sx={{width:'50px',height:'50px'}}
             />
           </Box>
         </Box>
@@ -95,7 +97,7 @@ const Footer = () => {
             sx={{
               display: { md: "flex", sm: "", xs: "block" },
               mt: 5,
-              width: { md: "55%", sm: "", xs: "100%" },
+              width: { md: "65%", sm: "", xs: "100%" },
             }}
           >
             <Box
@@ -147,7 +149,7 @@ const Footer = () => {
         sx={{
           display: { md: "flex", sm: "", xs: "block" },
           width: "100%",
-          mt: 8,
+          mt: 5,
         }}
       >
         <Box
@@ -193,65 +195,66 @@ const Footer = () => {
             src={
               "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fmastercard.jpg&w=48&q=75"
             }
-            sx={{ cursor: "pointer", width: "70px", height: "50px" }}
+            sx={{ cursor: "pointer", width: "60px", height: "50px" }}
           />
           <Box
             component={"img"}
             src={
               "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fmaestro.jpg&w=48&q=75"
             }
-            sx={{ cursor: "pointer", width: "70px", height: "50px" }}
+            sx={{ cursor: "pointer", width: "60px", height: "50px" }}
           />
           <Box
             component={"img"}
             src={
               "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fvisa.jpg&w=48&q=75"
             }
-            sx={{ cursor: "pointer", width: "70px", height: "50px" }}
+            sx={{ cursor: "pointer", width: "60px", height: "50px" }}
           />
           <Box
             component={"img"}
             src={
               "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Famerican-express.jpg&w=48&q=75"
             }
-            sx={{ cursor: "pointer", width: "70px", height: "50px" }}
+            sx={{ cursor: "pointer", width: "60px", height: "50px" }}
           />
           <Box
             component={"img"}
             src={
               "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fapple-pay.jpg&w=48&q=75"
             }
-            sx={{ cursor: "pointer", width: "70px", height: "50px" }}
+            sx={{ cursor: "pointer", width: "60px", height: "50px" }}
           />
           <Box
             component={"img"}
             src={
               "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fpaypal.jpg&w=48&q=75"
             }
-            sx={{ cursor: "pointer", width: "70px", height: "50px" }}
+            sx={{ cursor: "pointer", width: "60px", height: "50px" }}
           />
           <Box
             component={"img"}
             src={
               "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fclearpay.png&w=96&q=75"
             }
-            sx={{ cursor: "pointer", width: "70px", height: "50px" }}
+            sx={{ cursor: "pointer", width: "60px", height: "50px" }}
           />
           <Box
             component={"img"}
             src={
               "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fklarna.png&w=96&q=75"
             }
-            sx={{ cursor: "pointer", width: "70px", height: "50px" }}
+            sx={{ cursor: "pointer", width: "60px", height: "50px" }}
           />
         </Box>
       </Box>
+
+
       <Typography
         sx={{
           fontSize: { md: "20px", sm: "", xs: "14px" },
           width: { md: "600px", sm: "", xs: "100%" },
         }}
-        mt={6}
       >
         © 2025 funkypigeon.com Limited, County Gates, Ashton Road, Bristol, BS3
         2JH, UK Registered Office: Century House, Wakefield 41 Industrial

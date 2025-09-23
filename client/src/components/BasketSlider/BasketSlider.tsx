@@ -34,7 +34,7 @@ const BasketSlider = (props: BirthdayTypes) => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 5,
+    slidesToShow: 4,
     slidesToScroll: 2,
     arrows: false,
     responsive: [

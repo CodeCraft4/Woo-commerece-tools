@@ -7,7 +7,7 @@ const GiveFunk = () => {
     <Box
       sx={{
         width: "100%",
-        height: { md: "700px", sm: "", xs: "auto" },
+        height: { md: "600px", sm: "", xs: "auto" },
         borderRadius: 4,
         p: 4,
         bgcolor: COLORS.primary,
@@ -19,7 +19,7 @@ const GiveFunk = () => {
         src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2FfunkyVIPs%2Fvip-offer-text.png&w=640&q=75"
         sx={{
           width: { md: 1000, sm: 400, xs: "100%" },
-          height: { md: 500, sm: "", xs: "auto" },
+          height: { md: 400, sm: "", xs: "auto" },
         }}
       />
       <Box
@@ -31,7 +31,7 @@ const GiveFunk = () => {
         }}
       >
         {[1, 2, 3, 4, 5, 6, 7, 8].map((_) => (
-          <LandingButton title="Shop App" width="400px" />
+          <LandingButton title="Shop App" width="300px" />
         ))}
       </Box>
     </Box>

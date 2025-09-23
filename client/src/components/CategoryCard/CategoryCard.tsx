@@ -20,7 +20,7 @@ const CategoryCard = (props: CategoryType) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        width: {md:"350px",sm:'',xs:'130px'},
+        width: {md:"300px",sm:'',xs:'130px'},
         height: "200px",
         alignItems: "center",
         textAlign: "center",

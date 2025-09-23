@@ -85,57 +85,57 @@ export const BASKET_CARDS = [
   {
     id: 1,
     poster: "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
-    price: "$120",
+    price: "£120",
   },
   {
     id: 2,
     poster: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f",
-    price: "$80",
+    price: "£80",
   },
   {
     id: 3,
     poster: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
-    price: "$150",
+    price: "£150",
   },
   {
     id: 4,
     poster: "https://images.unsplash.com/photo-1503602642458-232111445657",
-    price: "$95",
+    price: "£95",
   },
   {
     id: 5,
     poster: "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-    price: "$60",
+    price: "£60",
   },
   {
     id: 6,
     poster: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
-    price: "$950",
+    price: "£950",
   },
   {
     id: 7,
     poster: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9",
-    price: "$110",
+    price: "£110",
   },
   {
     id: 8,
     poster: "https://images.unsplash.com/photo-1504198453319-5ce911bafcde",
-    price: "$400",
+    price: "£400",
   },
   {
     id: 9,
     poster: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-    price: "$45",
+    price: "£45",
   },
   {
     id: 10,
     poster: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f",
-    price: "$35",
+    price: "£35",
   },
   {
     id: 11,
     poster: "https://images.unsplash.com/photo-1556228720-195a672e8a03",
-    price: "$75",
+    price: "£75",
   },
 ];
 
@@ -161,23 +161,11 @@ export const FooterLinks = [
         path: "#",
       },
       {
-        name: "Klarna",
-        path: "#",
-      },
-      {
-        name: "Prepay",
-        path: "#",
-      },
-      {
         name: "Creators",
         path: "#",
       },
       {
         name: "Coockies Settings",
-        path: "#",
-      },
-      {
-        name: "Student and Key worker discount",
         path: "#",
       },
     ],
@@ -195,22 +183,6 @@ export const FooterLinks = [
       },
       {
         name: "Coockies",
-        path: "#",
-      },
-      {
-        name: "Press",
-        path: "#",
-      },
-      {
-        name: "Privacy Notice",
-        path: "#",
-      },
-      {
-        name: "Promo C&T's",
-        path: "#",
-      },
-      {
-        name: "Modern Slavery",
         path: "#",
       },
     ],
@@ -240,17 +212,97 @@ export const FooterLinks = [
         path: "#",
       },
       {
-        name: "Add Gift and Gited",
-        path: "#",
-      },
-      {
         name: "Offers",
-        path: "#",
-      },
-      {
-        name: "Product Recall",
         path: "#",
       },
     ],
   },
 ];
+
+export const navLinks = [
+  { name: "Beauty", hasMegaMenu: true },
+  { name: "Cards", hasMegaMenu: true },
+  { name: "Gifts", hasMegaMenu: true },
+  { name: "Flowers/Plants", hasMegaMenu: true },
+  { name: "Alcohol Gifts", hasMegaMenu: true },
+  { name: "Gift Vouchers", hasMegaMenu: true },
+  { name: "For Business", hasMegaMenu: true },
+  { name: "For Kids", hasMegaMenu: true },
+];
+
+export const megaMenuData = {
+  Beauty: {
+    title: "Beauty",
+    categories: [
+      { name: "Skincare", links: ["Moisturizers", "Cleansers", "Serums"] },
+      { name: "Makeup", links: ["Foundation", "Lipstick", "Eyeshadow"] },
+    ],
+  },
+  Cards: {
+    title: "Cards",
+    categories: [
+      { name: "Birthday Cards", links: ["For Him", "For Her", "Kids"] },
+      { name: "Anniversary Cards", links: ["Romantic", "Funny", "Milestone"] },
+    ],
+  },
+  Gifts: {
+    title: "Gifts",
+    categories: [
+      { name: "Tech Gifts", links: ["Headphones", "Smartwatches", "Drones"] },
+      { name: "Home Gifts", links: ["Candles", "Blankets", "Decor"] },
+    ],
+  },
+  "Flowers/Plants": {
+    title: "Flowers & Plants",
+    categories: [
+      { name: "Bouquets", links: ["Roses", "Lilies", "Sunflowers"] },
+      {
+        name: "House Plants",
+        links: ["Succulents", "Fiddle Leaf Fig", "Monstera"],
+      },
+    ],
+  },
+  "Alcohol Gifts": {
+    title: "Alcohol Gifts",
+    categories: [
+      { name: "Wine", links: ["Red Wine", "White Wine", "Sparkling Wine"] },
+      { name: "Spirits", links: ["Whiskey", "Gin", "Vodka"] },
+    ],
+  },
+  "Gift Vouchers": {
+    title: "Gift Vouchers",
+    categories: [
+      { name: "Retail Vouchers", links: ["Amazon", "Target", "Starbucks"] },
+      {
+        name: "Experience Vouchers",
+        links: ["Spa Day", "Hot Air Balloon Ride", "Cooking Class"],
+      },
+    ],
+  },
+  "For Business": {
+    title: "For Business",
+    categories: [
+      {
+        name: "Corporate Gifts",
+        links: ["Branded Items", "Bulk Orders", "Custom Packages"],
+      },
+      {
+        name: "Event Planning",
+        links: ["Party Supplies", "Floral Arrangements", "Catering"],
+      },
+    ],
+  },
+  "For Kids": {
+    title: "For Kids",
+    categories: [
+      {
+        name: "Corporate Gifts",
+        links: ["Branded Items", "Bulk Orders", "Custom Packages"],
+      },
+      {
+        name: "Event Planning",
+        links: ["Party Supplies", "Floral Arrangements", "Catering"],
+      },
+    ],
+  },
+};

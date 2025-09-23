@@ -12,12 +12,19 @@ const MainLayout = ({ children }: Props) => {
   return (
     <Box>
       <Header />
-      {/* <Box sx={{display:{md:'none',sm:'',xs:'none'}}}>
-      <MegaMenu/>
-      </Box> */}
-      <StickerLine/>
-      {children}
-      <Footer/>
+      <StickerLine />
+      <Box
+        sx={{
+          width:{md: "1360px",sm:'',xs:'100%'},
+          display: "flex",
+          flexDirection:'column',
+          justifyContent: "center",
+          m: "auto",
+        }}
+      >
+        {children}
+        <Footer />
+      </Box>
     </Box>
   );
 };
