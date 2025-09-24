@@ -12,6 +12,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
+import LOGO from '../../../assets/LOGO.png'
 import {
   DateRange,
   Flag,
@@ -64,7 +65,7 @@ const MegaMenu = ({ data }: { data: MegaMenuItem }) => (
       left: 0,
       width: "100%",
       bgcolor: "white",
-      height:600,
+      height: 600,
       boxShadow: 3,
       zIndex: 10,
       p: 4,
@@ -95,8 +96,8 @@ export default function Header(props: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [hoveredMenuItem, setHoveredMenuItem] =
     React.useState<MegaMenuKeys | null>(null);
-    
-    const navigate= useNavigate()
+
+  const navigate = useNavigate();
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
@@ -112,9 +113,7 @@ export default function Header(props: Props) {
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
-      <Typography variant="h6" sx={{ my: 2 }}>
-        MUI
-      </Typography>
+      <Box component={"img"} src={LOGO} alt="LOGO" />
       <Divider />
       <List>
         {navItems.map((item) => (
@@ -138,6 +137,7 @@ export default function Header(props: Props) {
         bgcolor: COLORS.primary,
         flexDirection: "column",
         position: "relative",
+        py:1
       }}
     >
       <Box
@@ -177,9 +177,7 @@ export default function Header(props: Props) {
                 },
               }}
             >
-              <Typography variant="h4" component="div" width={100}>
-                MUI
-              </Typography>
+              <Box component={"img"} src={LOGO} alt="LOGO" width={'300px'} height={50} />
               <Box
                 sx={{
                   border: "2px solid pink",
@@ -204,7 +202,7 @@ export default function Header(props: Props) {
                       color: "#212121",
                       fontWeight: 700,
                       fontSize: "14px",
-                      px:3,
+                      px: 3,
                     },
                   }}
                   placeholder="Search for cards,gift and flowers...."
@@ -224,11 +222,17 @@ export default function Header(props: Props) {
                 <DateRange fontSize="large" />
                 <Typography fontSize={"12px"}>Reminders</Typography>
               </IconButton>
-              <IconButton sx={iconStyle} onClick={()=>navigate(USER_ROUTES.HOME)}>
+              <IconButton
+                sx={iconStyle}
+                onClick={() => navigate(USER_ROUTES.HOME)}
+              >
                 <Person fontSize="large" />
                 <Typography fontSize={"12px"}>Accounts</Typography>
               </IconButton>
-              <IconButton sx={iconStyle} onClick={()=>navigate(USER_ROUTES.HOME)}>
+              <IconButton
+                sx={iconStyle}
+                onClick={() => navigate(USER_ROUTES.HOME)}
+              >
                 <ShoppingBag fontSize="large" />
                 <Typography fontSize={"12px"}>Basket</Typography>
               </IconButton>
@@ -272,7 +276,7 @@ export default function Header(props: Props) {
             color: "white",
             pt: 3,
             width: "100%",
-            gap:'10px'
+            gap: "8px",
           }}
           onMouseLeave={handleMouseLeave}
         >
@@ -280,13 +284,22 @@ export default function Header(props: Props) {
             <ListItem
               key={item.name}
               onMouseEnter={() => handleMouseEnter(item.name as MegaMenuKeys)}
-              sx={{ cursor: "pointer", "&:hover": { color: "orange" },flexGrow:1 }}
+              sx={{
+                cursor: "pointer",
+                "&:hover": { color: "orange" },
+                flexGrow: 1,
+              }}
             >
               {item.name}
             </ListItem>
           ))}
           <Typography
-            sx={{ display: "flex", gap: "5px", alignItems: "center",color:'orange' }}
+            sx={{
+              display: "flex",
+              gap: "5px",
+              alignItems: "center",
+              color: "orange",
+            }}
           >
             Deliver&nbsp;to
             <Flag />
