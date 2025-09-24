@@ -5,25 +5,74 @@ import {
   Typography,
   Card,
   CardContent,
+  Button
 } from "@mui/material";
 import PopupWrapper from "../PopupWrapper/PopupWrapper";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Send } from "@mui/icons-material";
+import axios from "axios";
 
 interface GeneAIType {
   onClose: () => void;
 }
-
-// const OPEN_AI_KEY =
-//   "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";
 
 const GeneAIPopup = (props: GeneAIType) => {
   const { onClose } = props;
   const [prompt, setPrompt] = useState("");
   const [generatedText, setGeneratedText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [canvaAccessToken, setCanvaAccessToken] = useState("");
+  const [designUrl, setDesignUrl] = useState("");
 
-  // fake "typing effect"
+  useEffect(() => {
+    // Check for access token in the URL after OAuth redirect
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('access_token');
+    if (accessToken) {
+      setCanvaAccessToken(accessToken);
+      // Clean the URL to hide the token
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const handleCanvaLogin = () => {
+  // const params = new URLSearchParams({
+  //   client_id: import.meta.env.VITE_CANVA_CLIENT_ID, 
+  //   response_type: 'code',
+  //   redirect_uri: import.meta.env.VITE_CANVA_REDIRECT_URI, 
+  //   scope: 'design:content:read design:content:write', 
+  //   state: 'random_string_for_security',
+  // });
+  // window.location.href = `https://www.canva.com/api/oauth/authorize?${params.toString()}`;
+  window.location.href = `https://www.canva.com/api/oauth/authorize?code_challenge_method=s256&response_type=code&client_id=OC-AZlxEPWNVvd4&redirect_uri=https%3A%2F%2Fecomm-editor-shahimad499-2660-imads-projects-8cd60545.vercel.app%2Fhome&scope=design:permission:read%20folder:permission:write%20design:permission:write%20app:write%20comment:read%20profile:read%20app:read%20brandtemplate:meta:read%20design:content:write%20folder:write%20asset:read%20design:content:read%20design:meta:read%20folder:read%20asset:write%20brandtemplate:content:read%20folder:permission:read%20comment:write&code_challenge=`;
+};
+
+  const handleGenerateDesign = async () => {
+    if (!prompt.trim() || !canvaAccessToken) return;
+    setLoading(true);
+    setGeneratedText("");
+    setDesignUrl("");
+
+    try {
+      const res = await axios.post("http://localhost:5000/create-canva-design", {
+        accessToken: canvaAccessToken,
+        prompt: prompt,
+      });
+
+      const designId = res.data.id;
+      const url = `https://www.canva.com/design/${designId}/edit`;
+      
+      setDesignUrl(url);
+      animateText(`✅ Your card design has been created! Click the button below to edit it in Canva.`);
+    } catch (err) {
+      console.error("Error generating Canva design:", err);
+      setGeneratedText("❌ Failed to generate card design.");
+    } finally {
+      setLoading(false);
+      setPrompt("");
+    }
+  };
+
   const animateText = (text: string) => {
     let i = 0;
     setGeneratedText("");
@@ -31,58 +80,7 @@ const GeneAIPopup = (props: GeneAIType) => {
       setGeneratedText((prev) => prev + text.charAt(i));
       i++;
       if (i >= text.length) clearInterval(interval);
-    }, 40); // speed (ms per char)
-  };
-
-  //  const handleSubmit = async () => {
-  //   if (!prompt.trim()) return;
-  //   setLoading(true);
-  //   setGeneratedText("");
-
-  //   try {
-  //     const res = await fetch("https://api.openai.com/v1/chat/completions", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${OPEN_AI_KEY}`,
-  //       },
-  //       body: JSON.stringify({
-  //         model: "gpt-4o-mini",
-  //         messages: [{ role: "user", content: `Write a greeting card: ${prompt}` }],
-  //       }),
-  //     });
-
-  //     const data = await res.json();
-  //     console.log("OpenAI response:", data);
-
-  //     if (data.error) {
-  //       setGeneratedText("❌ " + data.error.message);
-  //       return;
-  //     }
-
-  //     const text = data.choices[0].message.content;
-  //     animateText(text);
-  //   } catch (err) {
-  //     console.error("Error:", err);
-  //     setGeneratedText("❌ Failed to generate card.");
-  //   } finally {
-  //     setLoading(false);
-  //     setPrompt("");
-  //   }
-  // };
-
-  const handleSubmit = async () => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setGeneratedText("");
-
-    // Fake AI response for demo
-    setTimeout(() => {
-      const text = `🎉 Greeting Card\n\n"${prompt}" sounds amazing! Wishing you happiness and success.Do you also want me to update it so that it can switch between fake/demo mode and real API call (DeepSeek or OpenAI) with a toggle`;
-      animateText(text);
-      setLoading(false);
-      setPrompt("");
-    }, 1500);
+    }, 40);
   };
 
   return (
@@ -91,6 +89,16 @@ const GeneAIPopup = (props: GeneAIType) => {
       onClose={onClose}
       sx={{ width: 280, height: 600, left: "3%" }}
     >
+      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {!canvaAccessToken ? (
+          <Button variant="contained" onClick={handleCanvaLogin}>
+            Login to Canva
+          </Button>
+        ) : (
+          <Typography>✨ You are connected to Canva!</Typography>
+        )}
+      </Box>
+
       <Box
         sx={{
           height: 430,
@@ -112,6 +120,14 @@ const GeneAIPopup = (props: GeneAIType) => {
           </Card>
         )}
 
+        {designUrl && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+            <Button variant="contained" href={designUrl} target="_blank">
+              Edit in Canva
+            </Button>
+          </Box>
+        )}
+
         {loading && <Typography>✍️ Writing your card...</Typography>}
       </Box>
 
@@ -131,8 +147,9 @@ const GeneAIPopup = (props: GeneAIType) => {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           sx={{ p: 1, width: "90%" }}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          onKeyDown={(e) => e.key === "Enter" && handleGenerateDesign()}
           multiline
+          disabled={!canvaAccessToken || loading}
         />
         <IconButton
           sx={{
@@ -142,7 +159,8 @@ const GeneAIPopup = (props: GeneAIType) => {
             bgcolor: "#212121",
             color: "white",
           }}
-          onClick={handleSubmit}
+          onClick={handleGenerateDesign}
+          disabled={!canvaAccessToken || loading}
         >
           <Send />
         </IconButton>

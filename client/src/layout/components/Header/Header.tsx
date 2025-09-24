@@ -12,7 +12,13 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
-import { DateRange, Person, Search, ShoppingBag } from "@mui/icons-material";
+import {
+  DateRange,
+  Flag,
+  Person,
+  Search,
+  ShoppingBag,
+} from "@mui/icons-material";
 import { megaMenuData, navLinks } from "../../../constant/data";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
@@ -48,7 +54,6 @@ interface MegaMenuData {
   "For Kids": MegaMenuItem;
 }
 
-// Create a union type of all the keys from the megaMenuData object
 type MegaMenuKeys = keyof MegaMenuData;
 
 const MegaMenu = ({ data }: { data: MegaMenuItem }) => (
@@ -59,6 +64,7 @@ const MegaMenu = ({ data }: { data: MegaMenuItem }) => (
       left: 0,
       width: "100%",
       bgcolor: "white",
+      height:600,
       boxShadow: 3,
       zIndex: 10,
       p: 4,
@@ -197,10 +203,11 @@ export default function Header(props: Props) {
                     "&::placeholder": {
                       color: "#212121",
                       fontWeight: 700,
-                      fontSize: "17px",
+                      fontSize: "14px",
+                      px:3,
                     },
                   }}
-                  placeholder="  Search for cards,gift and flowers...."
+                  placeholder="Search for cards,gift and flowers...."
                 />
                 <Search
                   fontSize="large"
@@ -252,7 +259,7 @@ export default function Header(props: Props) {
       <Box
         sx={{
           width: "1360px",
-          display: {md:"flex",sm:"flex",xs:'none'},
+          display: { md: "flex", sm: "flex", xs: "none" },
           m: "auto",
           flexDirection: "column",
           position: "relative",
@@ -260,12 +267,12 @@ export default function Header(props: Props) {
       >
         <List
           sx={{
-            justifyContent: "space-around",
             display: "flex",
             m: "auto",
             color: "white",
             pt: 3,
             width: "100%",
+            gap:'10px'
           }}
           onMouseLeave={handleMouseLeave}
         >
@@ -273,11 +280,17 @@ export default function Header(props: Props) {
             <ListItem
               key={item.name}
               onMouseEnter={() => handleMouseEnter(item.name as MegaMenuKeys)}
-              sx={{ cursor: "pointer", "&:hover": { color: "orange" } }}
+              sx={{ cursor: "pointer", "&:hover": { color: "orange" },flexGrow:1 }}
             >
               {item.name}
             </ListItem>
           ))}
+          <Typography
+            sx={{ display: "flex", gap: "5px", alignItems: "center",color:'orange' }}
+          >
+            Deliver&nbsp;to
+            <Flag />
+          </Typography>
         </List>
         {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
           <MegaMenu data={megaMenuData[hoveredMenuItem]} />
