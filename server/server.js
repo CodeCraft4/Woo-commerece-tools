@@ -86,7 +86,7 @@ app.get("/oauth/redirect", async (req, res) => {
         const { access_token, refresh_token } = tokenResponse.data;
         // In a real app, you would securely store these tokens in a database
         // and link them to the user session. For this example, we'll send them to the client.
-        res.redirect(`http://localhost:5173/canva-auth?access_token=${access_token}&refresh_token=${refresh_token}`);
+       res.redirect(`https://ecomm-editor-shahimad499-2660-imads-projects-8cd60545.vercel.app/home?access_token=${access_token}`);
     } catch (error) {
         console.error("Error exchanging code for token:", error.response ? error.response.data : error.message);
         res.status(500).send("Authentication failed.");
