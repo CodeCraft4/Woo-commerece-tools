@@ -14,6 +14,8 @@ import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
 import { DateRange, Person, Search, ShoppingBag } from "@mui/icons-material";
 import { megaMenuData, navLinks } from "../../../constant/data";
+import { useNavigate } from "react-router-dom";
+import { USER_ROUTES } from "../../../constant/route";
 
 interface Props {
   window?: () => Window;
@@ -87,6 +89,8 @@ export default function Header(props: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [hoveredMenuItem, setHoveredMenuItem] =
     React.useState<MegaMenuKeys | null>(null);
+    
+    const navigate= useNavigate()
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
@@ -213,11 +217,11 @@ export default function Header(props: Props) {
                 <DateRange fontSize="large" />
                 <Typography fontSize={"12px"}>Reminders</Typography>
               </IconButton>
-              <IconButton sx={iconStyle}>
+              <IconButton sx={iconStyle} onClick={()=>navigate(USER_ROUTES.HOME)}>
                 <Person fontSize="large" />
                 <Typography fontSize={"12px"}>Accounts</Typography>
               </IconButton>
-              <IconButton sx={iconStyle}>
+              <IconButton sx={iconStyle} onClick={()=>navigate(USER_ROUTES.HOME)}>
                 <ShoppingBag fontSize="large" />
                 <Typography fontSize={"12px"}>Basket</Typography>
               </IconButton>
