@@ -37,14 +37,14 @@ const GeneAIPopup = (props: GeneAIType) => {
 
   const handleCanvaLogin = () => {
   const params = new URLSearchParams({
-    client_id: 'OC-AZlxEPWNVvd4', 
+    client_id: import.meta.env.VITE_CANVA_CLIENT_ID, 
     response_type: 'code',
-    redirect_uri:"http://localhost:5000/oauth/redirect", 
-    scope: 'design:content:read design:content:write',
+    redirect_uri: import.meta.env.VITE_CANVA_REDIRECT_URI, 
+    scope: 'design:content:read design:content:write', 
     state: 'random_string_for_security',
   });
-  console.log(params,'--')
-  window.location.href = `https://www.canva.com/api/oauth/authorize?${params.toString()}`;
+  // window.location.href = `https://www.canva.com/api/oauth/authorize?${params.toString()}`;
+  window.location.href = `https://www.canva.com/api/oauth/authorize?code_challenge_method=s256&response_type=code&client_id=OC-AZlxEPWNVvd4&redirect_uri=https%3A%2F%2Fecomm-editor-shahimad499-2660-imads-projects-8cd60545.vercel.app%2Fhome&scope=design:permission:read%20folder:permission:write%20design:permission:write%20app:write%20comment:read%20profile:read%20app:read%20brandtemplate:meta:read%20design:content:write%20folder:write%20asset:read%20design:content:read%20design:meta:read%20folder:read%20asset:write%20brandtemplate:content:read%20folder:permission:read%20comment:write&code_challenge=`;
 };
 
   const handleGenerateDesign = async () => {
