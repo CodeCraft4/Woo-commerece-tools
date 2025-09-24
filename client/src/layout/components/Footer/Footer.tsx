@@ -97,7 +97,7 @@ const Footer = () => {
             sx={{
               display: { md: "flex", sm: "", xs: "block" },
               mt: 5,
-              width: { md: "65%", sm: "", xs: "100%" },
+              width: { md: "70%", sm: "", xs: "100%" },
             }}
           >
             <Box

@@ -8,7 +8,7 @@ const FunkyApp = () => {
       sx={{
         display: {md:"flex",sm:'flex',xs:'block'},
         width: "100%",
-        height: {md:600,sm:650,xs:'auto'},
+        height: {md:550,sm:650,xs:'auto'},
         bgcolor: "#f4e8fe",
         // color: COLORS.white,
         borderRadius: 4,
@@ -29,7 +29,7 @@ const FunkyApp = () => {
         <Typography sx={{fontSize:{md:'40px',sm:'',xs:'25px'},fontWeight:800,textAlign:'start'}}>
           The Funky Pigeon App
         </Typography>
-        <Typography sx={{fontSize:{md:'18px',sm:'',xs:'auto'},width:{md:'60%',sm:'',xs:'100%'}}}>
+        <Typography sx={{fontSize:{md:'18px',sm:'',xs:'auto'},width:{md:'70%',sm:'',xs:'100%'}}}>
           Now, it's easier than ever to give a funk with the Funky Pigeon app!
           Send personalised cards, gifts and more for every occasion.
         </Typography>
@@ -41,7 +41,7 @@ const FunkyApp = () => {
               borderRadius: 4,
               bgcolor: COLORS.primary,
               color: COLORS.white,
-              px: 5,
+              px: 3,
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
@@ -62,7 +62,7 @@ const FunkyApp = () => {
               borderRadius: 4,
               bgcolor: COLORS.primary,
               color: COLORS.white,
-              px: 5,
+              px: 3,
               display: "flex",
               justifyContent: "center",
               alignItems: "center",

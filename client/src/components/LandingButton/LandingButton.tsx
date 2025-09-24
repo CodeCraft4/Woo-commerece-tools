@@ -37,7 +37,7 @@ const LandingButton = (props: ButtonTypes) => {
         {loading ? (
           <CircularProgress
             size={20}
-            sx={{ color: variant ? "#004099" : "#212121" }}
+            sx={{ color: variant ? COLORS.primary : "#212121" }}
           />
         ) : (
           title
