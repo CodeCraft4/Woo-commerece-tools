@@ -8,13 +8,9 @@ import LandingButton from "../LandingButton/LandingButton";
 import { BASKET_CARDS } from "../../constant/data";
 import { COLORS } from "../../constant/color";
 import BasketCard from "../BasketCard/BasketCard";
+import { useQuery } from "@tanstack/react-query";
 
-const TABS = [
-  "Birthday Cards",
-  "Birthday Gift",
-  "Kids Birthday Cards",
-  "Kids Birthday Gift",
-];
+const TABS = ["Birthday Flowers", "Latter box", "Under £30","Under £60"]
 
 type BirthdayTypes = {
   title?: string;
@@ -23,12 +19,34 @@ type BirthdayTypes = {
   saleSlide?: boolean;
 };
 
+const fetchAllBasketData = () => {
+  return new Promise<typeof BASKET_CARDS>((resolve) => {
+    resolve(BASKET_CARDS);
+  });
+};
+
 const BasketSlider = (props: BirthdayTypes) => {
   const { title, description, brandSlider, saleSlide } = props;
 
   const sliderRef = React.useRef<Slider | null>(null);
 
   const [activeTab, setActiveTab] = useState(0);
+
+   const {
+      data: basketCards,
+    } = useQuery({
+      queryKey: ["basketCards"],
+      queryFn: fetchAllBasketData,
+    });
+
+  const filteredCards = basketCards
+    ? basketCards.filter((card) => {
+        const selectedCategory = TABS[activeTab];
+        return card.category === selectedCategory;
+      })
+    : [];
+  
+
 
   const settings = {
     dots: false,
@@ -80,8 +98,8 @@ const BasketSlider = (props: BirthdayTypes) => {
               component={"div"}
               onClick={() => setActiveTab(index)}
               sx={{
-                px: 4,
-                py: 2,
+                px: 3,
+                py: 1.5,
                 border: "2px solid black",
                 borderRadius: "15px",
                 cursor: "pointer",
@@ -94,7 +112,8 @@ const BasketSlider = (props: BirthdayTypes) => {
             >
               <Typography
                 sx={{
-                  fontWeight: 700,
+                  fontSize:"14px",
+                  fontWeight: 600,
                   color: activeTab === index ? COLORS.white : COLORS.primary,
                 }}
               >
@@ -108,8 +127,8 @@ const BasketSlider = (props: BirthdayTypes) => {
       <Box sx={{ mt: 3, position: "relative" }}>
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
-          {BASKET_CARDS.map((cate) => (
-            <BasketCard poster={cate.poster} price={cate.price} />
+          {filteredCards.map((cate, index) => (
+            <BasketCard key={index} poster={cate.poster} price={cate.price} />
           ))}
         </Slider>
 
@@ -162,8 +181,8 @@ const BasketSlider = (props: BirthdayTypes) => {
       <Typography
         sx={{
           mt: 5,
-          fontSize: "20px",
-          fontWeight: 400,
+          fontSize: "17px",
+          fontWeight: 500,
         }}
       >
         {description}
