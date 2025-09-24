@@ -14,9 +14,6 @@ import FunkyApp from "../../../components/FunkyApp/FunkyApp";
 import Description from "../../../components/Description/Description";
 import { COLORS } from "../../../constant/color";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import useModal from "../../../hooks/useModal";
-import OfferModal from "../../../components/OfferModal/OfferModal";
 
 const AdverstisementCard = [
   "Birthday Gifts",
@@ -36,17 +33,17 @@ const LandingHome = () => {
     queryFn: fetchMockCategories,
   });
 
-  const {
-    open: isOpenOfferModal,
-    openModal: openOfferModal,
-    closeModal: closeOfferModal,
-  } = useModal();
+  // const {
+  //   open: isOpenOfferModal,
+  //   openModal: openOfferModal,
+  //   closeModal: closeOfferModal,
+  // } = useModal();
 
-  useEffect(() => {
-    setTimeout(() => {
-      openOfferModal();
-    }, 400);
-  }, []);
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     openOfferModal();
+  //   }, 400);
+  // }, []);
 
   return (
     <MainLayout>
@@ -180,9 +177,9 @@ const LandingHome = () => {
       </Box>
 
       {/* OfferModal */}
-      {isOpenOfferModal && (
+      {/* {isOpenOfferModal && (
         <OfferModal open={isOpenOfferModal} onClose={closeOfferModal} />
-      )}
+      )} */}
     </MainLayout>
   );
 };
