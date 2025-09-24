@@ -8,6 +8,7 @@ import LandingButton from "../LandingButton/LandingButton";
 import { CATEGORIES_DATA } from "../../constant/data";
 import ProductCard from "../ProductCard/ProductCard";
 import { COLORS } from "../../constant/color";
+import { useQuery } from "@tanstack/react-query";
 
 const TABS = [
   "Birthday Cards",
@@ -22,12 +23,31 @@ type BirthdayTypes = {
   brandSlider?: boolean;
 };
 
+const fetchCategoriesData = async () => {
+  return new Promise<typeof CATEGORIES_DATA>((resolve) => {
+    resolve(CATEGORIES_DATA);
+  });
+};
+
 const BirthdaySlider = (props: BirthdayTypes) => {
   const { title, description, brandSlider } = props;
 
   const sliderRef = React.useRef<Slider | null>(null);
 
   const [activeTab, setActiveTab] = useState(0);
+
+  const { data: birthdayCards } = useQuery({
+    queryKey: ["birthdayCards"],
+    queryFn: fetchCategoriesData,
+  });
+
+    const filteredCards = birthdayCards
+    ? birthdayCards.filter((card) => {
+        const selectedCategory = TABS[activeTab];
+        return card.category === selectedCategory;
+      })
+    : [];
+  
 
   const settings = {
     dots: false,
@@ -36,32 +56,32 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     slidesToShow: 6,
     slidesToScroll: 2,
     arrows: false,
-       initialSlide: 0,
-  responsive: [
+    initialSlide: 0,
+    responsive: [
       {
         breakpoint: 1024,
         settings: {
           slidesToShow: 3,
           slidesToScroll: 3,
           infinite: true,
-          dots: true
-        }
+          dots: true,
+        },
       },
       {
         breakpoint: 600,
         settings: {
           slidesToShow: 2,
           slidesToScroll: 2,
-          initialSlide: 2
-        }
+          initialSlide: 2,
+        },
       },
       {
         breakpoint: 480,
         settings: {
           slidesToShow: 1,
-          slidesToScroll: 1
-        }
-      }
+          slidesToScroll: 1,
+        },
+      },
     ],
   };
 
@@ -82,7 +102,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         }}
       >
         <Typography
-          sx={{ fontSize: { md: "40px", sm: "", xs: "16px" }, fontWeight: 800 }}
+          sx={{ fontSize: { md: "35px", sm: "", xs: "16px" }, fontWeight: 800 }}
         >
           {title}
         </Typography>
@@ -103,8 +123,8 @@ const BirthdaySlider = (props: BirthdayTypes) => {
             component={"div"}
             onClick={() => setActiveTab(index)}
             sx={{
-              px: 4,
-              py: { md: 2, sm: "", xs: 1 },
+              px: 3,
+              py: { md: 1.5, sm: "", xs: 1 },
               border: "2px solid black",
               borderRadius: "15px",
               cursor: "pointer",
@@ -117,7 +137,8 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           >
             <Typography
               sx={{
-                fontWeight: 700,
+                fontSize:'14px',
+                fontWeight: 600,
                 color: activeTab === index ? COLORS.white : COLORS.primary,
               }}
             >
@@ -130,7 +151,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
       <Box sx={{ mt: 3, position: "relative" }}>
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
-          {CATEGORIES_DATA.map((cate) => (
+          {filteredCards?.map((cate) => (
             <ProductCard poster={cate.poster} tabsSlider={true} />
           ))}
         </Slider>
@@ -163,7 +184,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            right: 0,
+            right: -20,
             display: "flex",
             justifyContent: "center",
             m: "auto",
@@ -183,14 +204,12 @@ const BirthdaySlider = (props: BirthdayTypes) => {
 
       <Typography
         sx={{
-          mt: {md:5,sm:3,xs:2},
-          fontSize: {md:"20px",sm:'',xs:'14px'},
-          fontWeight: 400,
+          mt: { md: 5, sm: 3, xs: 2 },
+          fontSize: "17px",
+          fontWeight: 500,
         }}
       >
         {description}
-        {/* Show you give a funk and celebrate their birthday with a personalised
-        card <a href="#" style={{textDecoration:"none",fontWeight:'bolder',color:COLORS.primary}}>for him</a>, <a href="#" style={{textDecoration:"none",fontWeight:'bolder',color:COLORS.primary}}>for her</a>  or <a href="#" style={{textDecoration:"none",fontWeight:'bolder',color:COLORS.primary}}>for kids</a>! */}
       </Typography>
     </Box>
   );

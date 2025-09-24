@@ -11,13 +11,15 @@ const ProductCard = (props: ProductTypes) => {
   return (
     <Box
       sx={{
-        width:{md:'200px',sm:'',xs:'180px'},
-        height:{md:"270px",sm:'',xs:'200px'},
+        width: { md: "200px", sm: "", xs: "180px" },
+        height: tabsSlider
+          ? { md: "280px", sm: "", xs: "200px" }
+          : { md: "270px", sm: "", xs: "200px" },
         borderRadius: tabsSlider ? 3 : 3,
         bgcolor: COLORS.white,
-        border: tabsSlider ?"1px solid lightGray" : 0,
-        py: tabsSlider ? 0 : '8px',
-        px: tabsSlider ? 0 : '8px',
+        border: tabsSlider ? "1px solid lightGray" : 0,
+        py: tabsSlider ? 0 : "8px",
+        px: tabsSlider ? 0 : "8px",
       }}
     >
       <Box
@@ -25,7 +27,7 @@ const ProductCard = (props: ProductTypes) => {
         src={poster}
         alt="productImg"
         sx={{
-          width:{md: tabsSlider ? "197px" : "180px",sm:'',xs:'165px'},
+          width: { md: tabsSlider ? "197px" : "180px", sm: "", xs: "165px" },
           height: "100%",
           objectFit: "cover",
           borderRadius: tabsSlider ? 3 : 2,

@@ -10,7 +10,7 @@ const Description = () => {
   };
 
   return (
-    <Box mt={5} sx={{ color: "black" }}>
+    <Box mt={2} sx={{ color: "black" }}>
       <Typography
         sx={{
           fontSize: "25px",
@@ -124,7 +124,7 @@ const Description = () => {
           cursor: "pointer",
         }}
       >
-        <Typography sx={{ color: "black" }}>
+        <Typography sx={{ color: "rgba(105, 53, 105, 1)",fontWeight:700 }}>
           {showFullText ? "Read Less" : "Read More"}
         </Typography>
         <KeyboardArrowDown
@@ -132,7 +132,7 @@ const Description = () => {
           sx={{
             transform: showFullText ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 0.3s ease-in-out",
-            color: "black",
+            color: "rgba(105, 53, 105, 1)",
           }}
         />
       </Box>
