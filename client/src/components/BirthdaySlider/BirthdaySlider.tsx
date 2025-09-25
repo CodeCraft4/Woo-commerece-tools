@@ -9,6 +9,10 @@ import { CATEGORIES_DATA } from "../../constant/data";
 import ProductCard from "../ProductCard/ProductCard";
 import { COLORS } from "../../constant/color";
 import { useQuery } from "@tanstack/react-query";
+import useModal from "../../hooks/useModal";
+import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
+import { useNavigate } from "react-router-dom";
+import { USER_ROUTES } from "../../constant/route";
 
 const TABS = [
   "Birthday Cards",
@@ -31,23 +35,24 @@ const fetchCategoriesData = async () => {
 
 const BirthdaySlider = (props: BirthdayTypes) => {
   const { title, description, brandSlider } = props;
+  const navigate = useNavigate()
 
   const sliderRef = React.useRef<Slider | null>(null);
 
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(undefined);
 
   const { data: birthdayCards } = useQuery({
     queryKey: ["birthdayCards"],
     queryFn: fetchCategoriesData,
   });
 
-    const filteredCards = birthdayCards
+  const filteredCards = birthdayCards
     ? birthdayCards.filter((card) => {
         const selectedCategory = TABS[activeTab];
         return card.category === selectedCategory;
       })
     : [];
-  
 
   const settings = {
     dots: false,
@@ -84,11 +89,21 @@ const BirthdaySlider = (props: BirthdayTypes) => {
       },
     ],
   };
+  const {
+    open: isOpenDetailModal,
+    openModal,
+    closeModal: closeDetailModal,
+  } = useModal();
+
+  const openDetailModal = (cate:CategoryType) => {
+    setSelectedCate(cate); 
+    openModal(); 
+  };
 
   return (
     <Box
       sx={{
-        width: { md: "95%", sm: "", xs: "100%" },
+        width: { md: "100%", sm: "", xs: "100%" },
         m: "auto",
         position: "relative",
         mt: 8,
@@ -106,7 +121,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         >
           {title}
         </Typography>
-        {brandSlider ? null : <LandingButton title="Shop All" width="120px" />}
+        {brandSlider ? null : <LandingButton title="Shop All" width="150px" onClick={()=>navigate(USER_ROUTES.VIEW_ALL)} />}
       </Box>
 
       <Box
@@ -137,7 +152,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           >
             <Typography
               sx={{
-                fontSize:'14px',
+                fontSize: "14px",
                 fontWeight: 600,
                 color: activeTab === index ? COLORS.white : COLORS.primary,
               }}
@@ -152,7 +167,20 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
           {filteredCards?.map((cate) => (
-            <ProductCard poster={cate.poster} tabsSlider={true} />
+            <Box>
+              <ProductCard
+                poster={cate.poster}
+                tabsSlider={true}
+                openModal={() => openDetailModal(cate)}
+              />
+              {isOpenDetailModal && (
+                <ProductPopup
+                  open={isOpenDetailModal}
+                  onClose={closeDetailModal}
+                  cate={selectedCate}
+                />
+              )}
+            </Box>
           ))}
         </Slider>
 
@@ -162,14 +190,14 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            left: -30,
+            left: -25,
             display: "flex",
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: "60px",
-            width: "60px",
-            border: "2px solid black",
+            height: "50px",
+            width: "50px",
+            border: "1px solid black",
             zIndex: 10,
             bgcolor: COLORS.white,
             color: COLORS.primary,
@@ -184,14 +212,14 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            right: -20,
+            right: 0,
             display: "flex",
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: "60px",
-            width: "60px",
-            border: "2px solid black",
+            height: "50px",
+            width: "50px",
+            border: "1px solid black",
             zIndex: 10,
             bgcolor: COLORS.white,
             color: COLORS.primary,

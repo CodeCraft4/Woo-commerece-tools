@@ -8,7 +8,7 @@ const Banner = () => {
       sx={{
         height: { md: "500px", sm: "", xs: "100vh" },
         width: "100%",
-        position: "relative", // Needed for overlay positioning
+        position: "relative",
         overflow: "hidden",
         mt: 10,
         borderRadius:3
