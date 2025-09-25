@@ -1,9 +1,20 @@
-import { Box, Typography, TextField } from "@mui/material";
+import { Box, TextField } from "@mui/material";
 import PNGImg from "../../assets/bear.png";
 import { useWishCard } from "../../context/WishCardContext";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 const SlideCover = () => {
   const { title, setTitle } = useWishCard();
+  const location = useLocation();
+  const { poster } = location.state || {};
+  const { setPoster } = useWishCard();
+
+  useEffect(() => {
+    if (poster) {
+      setPoster(poster);
+    }
+  }, [poster, setPoster]);
 
   return (
     <Box
@@ -17,16 +28,22 @@ const SlideCover = () => {
         flexDirection: "column",
         justifyContent: "flex-end",
         alignItems: "center",
-        p: 4,
+        position: "relative",
+        // p: 4,
       }}
     >
-      <Box component="img" src={PNGImg} alt="Cover Image" />
-      <Typography
+      <Box
+        component="img"
+        src={poster ? poster : PNGImg}
+        alt="Cover Image"
+        sx={{ width: "100%", objectFit: "cover", height: "100%" }}
+      />
+      {/* <Typography
         variant="h4"
         sx={{ fontSize: "35px", fontFamily: "cursive", p: 1 }}
       >
         HAPPY BIRTHDAY
-      </Typography>
+      </Typography> */}
 
       <TextField
         value={title}
@@ -38,8 +55,7 @@ const SlideCover = () => {
           style: {
             fontSize: "30px",
             textAlign: "center",
-            color: "#e17f95",
-            fontFamily: "sans-serif",
+            color: "White",
             fontWeight: "bold",
           },
           inputProps: {
@@ -50,6 +66,8 @@ const SlideCover = () => {
           backgroundColor: "transparent",
           border: "3px dashed #3e7dd4",
           p: 1.5,
+          position: "absolute",
+          bottom: 0,
         }}
       />
     </Box>

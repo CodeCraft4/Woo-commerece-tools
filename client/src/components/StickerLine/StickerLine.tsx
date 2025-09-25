@@ -12,7 +12,7 @@ const StickerLine = () => {
         m:'auto'
     }}
     >
-        <Typography sx={{fontSize:{md:'22px',sm:'20px',xs:'14px'},fontWeight:700}}>Make it personal! <span style={{fontWeight:400}}>Add stickers, photos & more</span></Typography>
+        <Typography sx={{fontSize:{md:'20px',sm:'20px',xs:'14px'},fontWeight:700}}>Make it personal! <span style={{fontWeight:400}}>Add stickers, photos & more</span></Typography>
     </Box>
   )
 }

@@ -2,13 +2,11 @@ import { AppBar, Box, IconButton, Toolbar, Typography } from "@mui/material";
 import CustomButton from "../../../components/CustomButton/CustomButton";
 import { Redo, Undo } from "@mui/icons-material";
 import { USER_ROUTES } from "../../../constant/route";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const pathname = location.pathname === USER_ROUTES.HOME;
+  const pathname = location.pathname.startsWith(`${USER_ROUTES.HOME}/`)
 
   return (
     <Box>

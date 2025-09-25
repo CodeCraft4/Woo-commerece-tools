@@ -2,9 +2,9 @@ import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../constant/color";
 
 type CategoryType = {
-  id: number;
-  poster: string;
-  title: string;
+  id?: number;
+  poster?: string;
+  title?: string;
 };
 
 const CategoryCard = (props: CategoryType) => {
