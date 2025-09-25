@@ -2,15 +2,17 @@ import { Box, IconButton, Typography } from "@mui/material";
 import React, { useState } from "react";
 import Slider from "react-slick";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 import LandingButton from "../LandingButton/LandingButton";
 import { BASKET_CARDS } from "../../constant/data";
 import { COLORS } from "../../constant/color";
 import BasketCard from "../BasketCard/BasketCard";
 import { useQuery } from "@tanstack/react-query";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import { USER_ROUTES } from "../../constant/route";
+import { useNavigate } from "react-router-dom";
 
-const TABS = ["Birthday Flowers", "Latter box", "Under £30","Under £60"]
+const TABS = ["Birthday Flowers", "Latter box", "Under £30", "Under £60"];
 
 type BirthdayTypes = {
   title?: string;
@@ -28,16 +30,16 @@ const fetchAllBasketData = () => {
 const BasketSlider = (props: BirthdayTypes) => {
   const { title, description, brandSlider, saleSlide } = props;
 
+  const navigate = useNavigate()
+
   const sliderRef = React.useRef<Slider | null>(null);
 
   const [activeTab, setActiveTab] = useState(0);
 
-   const {
-      data: basketCards,
-    } = useQuery({
-      queryKey: ["basketCards"],
-      queryFn: fetchAllBasketData,
-    });
+  const { data: basketCards } = useQuery({
+    queryKey: ["basketCards"],
+    queryFn: fetchAllBasketData,
+  });
 
   const filteredCards = basketCards
     ? basketCards.filter((card) => {
@@ -45,8 +47,21 @@ const BasketSlider = (props: BirthdayTypes) => {
         return card.category === selectedCategory;
       })
     : [];
-  
 
+  // const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(
+  //   undefined
+  // );
+
+  // const {
+  //   open: isOpenDetailModal,
+  //   openModal,
+  //   closeModal: closeDetailModal,
+  // } = useModal();
+
+  // const openDetailModal = (cate: CategoryType) => {
+  //   setSelectedCate(cate);
+  //   openModal();
+  // };
 
   const settings = {
     dots: false,
@@ -80,7 +95,7 @@ const BasketSlider = (props: BirthdayTypes) => {
         <Typography variant="h4" fontWeight={800}>
           {title}
         </Typography>
-        {brandSlider ? null : <LandingButton title="Shop All" width="120px" />}
+        {brandSlider ? null : <LandingButton title="Shop All" width="150px" onClick={()=>navigate(USER_ROUTES.VIEW_ALL)} />}
       </Box>
 
       {saleSlide ? null : (
@@ -112,7 +127,7 @@ const BasketSlider = (props: BirthdayTypes) => {
             >
               <Typography
                 sx={{
-                  fontSize:"14px",
+                  fontSize: "14px",
                   fontWeight: 600,
                   color: activeTab === index ? COLORS.white : COLORS.primary,
                 }}
@@ -128,7 +143,21 @@ const BasketSlider = (props: BirthdayTypes) => {
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
           {filteredCards.map((cate, index) => (
-            <BasketCard key={index} poster={cate.poster} price={cate.price} />
+            <Box>
+              <BasketCard
+                key={index}
+                poster={cate.poster}
+                price={cate.price}
+                // openModal={openDetailModal}
+              />
+              {/* {isOpenDetailModal && (
+                <ProductPopup
+                  open={isOpenDetailModal}
+                  onClose={closeDetailModal}
+                  cate={selectedCate}
+                />
+              )} */}
+            </Box>
           ))}
         </Slider>
 
@@ -143,9 +172,9 @@ const BasketSlider = (props: BirthdayTypes) => {
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: "60px",
-            width: "60px",
-            border: "2px solid black",
+            height: "50px",
+            width: "50px",
+            border: "1px solid black",
             zIndex: 10,
             bgcolor: COLORS.white,
             color: COLORS.primary,
@@ -165,9 +194,9 @@ const BasketSlider = (props: BirthdayTypes) => {
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: "60px",
-            width: "60px",
-            border: "2px solid black",
+            height: "50px",
+            width: "50px",
+            border: "1px solid black",
             zIndex: 10,
             bgcolor: COLORS.white,
             color: COLORS.primary,

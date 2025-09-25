@@ -1,3 +1,4 @@
+
 import WishCard from "../../../components/WishCard/WishCard";
 import Applayout from "../../../layout/Applayout";
 import { Box } from "@mui/material";
@@ -13,12 +14,11 @@ const Home = () => {
           height: "90vh",
           alignItems: "center",
           m: "auto",
-          gap:'10px',
-          flexWrap:'wrap',
+          gap: "10px",
+          flexWrap: "wrap",
         }}
       >
-       <WishCard/>
-        
+        <WishCard />
       </Box>
     </Applayout>
   );

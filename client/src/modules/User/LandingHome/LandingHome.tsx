@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import CategoryCard from "../../../components/CategoryCard/CategoryCard";
 import MainLayout from "../../../layout/MainLayout";
 import { CATEGORIES_DATA } from "../../../constant/data";
@@ -14,6 +14,9 @@ import FunkyApp from "../../../components/FunkyApp/FunkyApp";
 import Description from "../../../components/Description/Description";
 import { COLORS } from "../../../constant/color";
 import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
+import { ChevronRight } from "@mui/icons-material";
+import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
 
 const AdverstisementCard = [
   "Birthday Gifts",
@@ -22,6 +25,17 @@ const AdverstisementCard = [
 ];
 
 const LandingHome = () => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+   const handleNext = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({
+        left: 170, 
+        behavior: "smooth",
+      });
+    }
+  };
+
   const fetchMockCategories = async () => {
     return new Promise<typeof CATEGORIES_DATA>((resolve) => {
       resolve(CATEGORIES_DATA);
@@ -56,39 +70,59 @@ const LandingHome = () => {
         }}
       >
         {/* Categories */}
-
-        <Box
-          sx={{
-            display: "flex",
-            gap: { md: "20px", sm: "20px", xs: "10px" },
-            alignItems: "center",
-            overflowX: "scroll",
-            width: { lg: "100%" },
-            p: 3,
-            justifyContent: "center",
-            m: "auto",
-            "&::-webkit-scrollbar": {
-              height: "10px",
-              width: "100px",
-            },
-            "&::-webkit-scrollbar-track": {
-              backgroundColor: "#f1f1f1",
-              borderRadius: "20px",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: COLORS.primary,
-              borderRadius: "20px",
-            },
-          }}
-        >
-          {categories?.map((cate) => (
-            <CategoryCard
-              key={cate.id}
-              id={cate.id}
-              poster={cate.poster}
-              title={cate.title}
-            />
-          ))}
+        <Box position={"relative"} >
+          <Box
+            ref={scrollRef}
+            sx={{
+              display: "flex",
+              gap: { md: "20px", sm: "20px", xs: "10px" },
+              alignItems: "center",
+              overflowX: "scroll",
+              width: { lg: "100%" },
+              position: "relative",
+              p: 3,
+              justifyContent: "center",
+              m: "auto",
+              "&::-webkit-scrollbar": {
+                height: "10px",
+                width: "100px",
+                cursor: "pointer",
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: "#f1f1f1",
+                borderRadius: "20px",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: COLORS.primary,
+                borderRadius: "20px",
+              },
+            }}
+          >
+            {categories?.map((cate) => (
+              <CategoryCard
+                key={cate.id}
+                id={cate.id}
+                poster={cate.poster}
+                title={cate.title}
+              />
+            ))}
+          </Box>
+          <IconButton
+            onClick={handleNext}
+            sx={{
+              position: "absolute",
+              top: "50%",
+              right: -20,
+              transform: "translateY(-50%)",
+              backgroundColor: COLORS.white,
+              boxShadow: 2,
+              color: COLORS.primary,
+              border: "1px solid black",
+              "&:hover": { backgroundColor: COLORS.primary, color: "white" },
+            }}
+          >
+            <ChevronRight />
+          </IconButton>
         </Box>
 
         {/* Banner Area */}
@@ -163,7 +197,7 @@ const LandingHome = () => {
         <BasketSlider title="Sale!" saleSlide={true} />
 
         {/* Comming Offers */}
-        {/* <CommingSoonOffers /> */}
+        <CommingSoonOffers />
 
         {/* Just advertisemtn */}
         <GiveFunk />

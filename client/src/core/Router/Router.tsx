@@ -6,14 +6,16 @@ import DashboardHome from "../../modules/Admin/Home/Home";
 import Subscription from "../../modules/User/Subscription/Subscription";
 import SuccessPayment from "../../modules/User/SuccessPayment/SuccessPayment";
 import LandingHome from "../../modules/User/LandingHome/LandingHome";
+import ViewAll from "../../modules/User/ViewAll/ViewAll";
 
 const Router = () => {
   return (
     <ReactRoutes>
       {/* Just For User preview */}
       <Route path={"/"} element={<LandingHome />} />
-      <Route path={USER_ROUTES.HOME} element={<Home />} />
+      <Route path={`${USER_ROUTES.HOME}/:id`} element={<Home />} />
       <Route path={USER_ROUTES.PREVIEW} element={<Preview />} />
+      <Route path={USER_ROUTES.VIEW_ALL} element={<ViewAll />} />
       <Route path={USER_ROUTES.SUBSCRIPTION} element={<Subscription />} />
       <Route path={USER_ROUTES.SUCCESS_PAY} element={<SuccessPayment />} />
       {/* Just Admin dashboard Preview  */}

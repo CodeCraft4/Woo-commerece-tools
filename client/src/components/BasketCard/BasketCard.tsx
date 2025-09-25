@@ -1,15 +1,22 @@
 import { Box, Typography } from "@mui/material";
 import LandingButton from "../LandingButton/LandingButton";
+import type { CategoryType } from "../ProductPopup/ProductPopup";
 
 type BasketType = {
   poster: string;
   price: string;
+  openModal?: (user: CategoryType) => void;
 };
 
 const BasketCard = (props: BasketType) => {
   const { poster, price } = props;
+
   return (
-    <Box sx={{ borderRadius: 2, width: "300px", height: "500px" }}>
+    <Box
+      component={"div"}
+      // onClick={openModal}
+      sx={{ borderRadius: 2, width: "300px", height: "500px" }}
+    >
       <Box
         component={"img"}
         src={poster}

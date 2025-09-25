@@ -135,7 +135,11 @@ const Footer = () => {
                 gap: 2,
               }}
             >
-              <Apple fontSize="large" />
+              <Box
+               component={'img'}
+               src="/assets/icons/playstore.png"
+               sx={{width:40,}}
+              />
               <Box>
                 <Typography fontSize={"12px"}>ANDRIOD APP ON</Typography>
                 <Typography variant="h5">Google Play</Typography>
