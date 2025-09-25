@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, IconButton, Typography } from "@mui/material";
-import {
-  KeyboardArrowLeft,
-  KeyboardArrowRight,
-} from "@mui/icons-material";
+import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import "./card.css";
 import BearPNG from "../../assets/bear.png";
 import { useWishCard } from "../../context/WishCardContext";
@@ -17,7 +14,8 @@ const PreviewBookCard = () => {
   const [currentLocation, setCurrentLocation] = useState(1);
 
   const {
-    title,
+    poster,
+    // title,
     images,
     texts,
     fontSize,
@@ -55,9 +53,7 @@ const PreviewBookCard = () => {
   useEffect(() => {
     fetchVideoLatestMedia(setMediaUrl);
     fetchAudioLatestMedia(setAudioUrl);
-
   }, []);
-
 
   return (
     <Box
@@ -94,13 +90,13 @@ const PreviewBookCard = () => {
                   <Box
                     component="img"
                     className="cover-img"
-                    src={BearPNG}
+                    src={poster ? poster : BearPNG}
                     alt="dog"
-                    //  sx={{width:'60%',height:'auto',objectFit:'cover'}}
+                     sx={{width:'100%',height:'100%',objectFit:'cover'}}
                   />
 
                   {/* Title */}
-                  <Typography
+                  {/* <Typography
                     variant="h4"
                     sx={{ fontSize: "35px", fontFamily: "cursive", p: 1 }}
                   >
@@ -117,7 +113,7 @@ const PreviewBookCard = () => {
                     }}
                   >
                     {title}
-                  </Typography>
+                  </Typography> */}
                 </Box>
               </div>
             </div>
@@ -128,7 +124,7 @@ const PreviewBookCard = () => {
                   {mediaUrl && <QrGenerator url={mediaUrl} />}
                   {audioUrl && <QrGenerator url={audioUrl} />}
 
-                  {images.map((img:any) => {
+                  {images.map((img: any) => {
                     return (
                       <Box
                         key={img.id}
@@ -252,30 +248,26 @@ const PreviewBookCard = () => {
                     justifyContent: "center",
                     fontSize: 32,
                     fontWeight: "bold",
-                    color: "black",
                     flexDirection: "column",
                     p: 2,
                     height: "100%",
                     borderRadius: "10px",
-                    bgcolor: "#c2f0cfff",
+                    bgcolor: "#212121",
+                    color:'white'
                   }}
                 >
-                  <Typography variant="h3">LOGO</Typography>
-                  <Typography>
+                  <Box
+                   component={'img'}
+                   src="/assets/images/LOGO.png"
+                   sx={{
+                    width:'300px'
+                   }}
+                  />
+                  <Typography fontSize={'12px'} pt={3}>
                     Lorem ipsum dolor sit amet consectetur adipisicing elit.
                     Doloremque recusandae alias dignissimos sunt ab! Pariatur
                     minima placeat hic enim quis facilis ducimus neque culpa
-                    sequi delectus atque praesentium in laboriosam tempora
-                    aspernatur deleniti molestias rerum, quo consequatur ipsa
-                    repudiandae. Maiores dignissimos odit error est quisquam
-                    ratione hic nostrum sunt assumenda eaque totam ea libero,
-                    aliquid omnis molestiae magnam iure ducimus saepe minima
-                    minus ipsa! Vel, laborum reprehenderit nisi in, corrupti
-                    omnis modi illo cum adipisci magni voluptate magnam
-                    voluptates deserunt commodi cumque incidunt recusandae aut
-                    inventore ex suscipit nam, voluptatum sunt praesentium a?
-                    Debitis excepturi temporibus itaque consequuntur nulla
-                    option?
+                    sequi delectus.
                   </Typography>
                 </Box>
               </div>

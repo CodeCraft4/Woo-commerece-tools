@@ -37,7 +37,7 @@ const FunkyApp = () => {
         <Box sx={{display:{md:'flex',sm:'flex',xs:'block'},gap:'15px',mt:5}}>
           <Box
             sx={{
-              height: "70px",
+              height: "60px",
               borderRadius: 4,
               bgcolor: COLORS.primary,
               color: COLORS.white,
@@ -58,7 +58,7 @@ const FunkyApp = () => {
           </Box>
        <Box
             sx={{
-              height: "70px",
+              height: "60px",
               borderRadius: 4,
               bgcolor: COLORS.primary,
               color: COLORS.white,
@@ -70,7 +70,11 @@ const FunkyApp = () => {
               gap:2
             }}
           >
-            <Apple fontSize="large"/>
+              <Box
+               component={'img'}
+               src="/assets/icons/playstore.png"
+               sx={{width:35}}
+              />
             <Box>
               <Typography fontSize={'12px'}>ANDRIOD APP ON</Typography>
               <Typography variant="h5">Google Play</Typography>

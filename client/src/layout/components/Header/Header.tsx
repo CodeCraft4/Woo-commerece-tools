@@ -12,7 +12,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
-import LOGO from '../../../assets/LOGO.png'
+import LOGO from "../../../assets/LOGO.png";
 import {
   DateRange,
   Flag,
@@ -137,7 +137,7 @@ export default function Header(props: Props) {
         bgcolor: COLORS.primary,
         flexDirection: "column",
         position: "relative",
-        py:1
+        py: 1,
       }}
     >
       <Box
@@ -177,7 +177,13 @@ export default function Header(props: Props) {
                 },
               }}
             >
-              <Box component={"img"} src={LOGO} alt="LOGO" width={'300px'} height={50} />
+              <Box
+                component={"img"}
+                src={LOGO}
+                alt="LOGO"
+                width={"300px"}
+                height={50}
+              />
               <Box
                 sx={{
                   border: "2px solid pink",
@@ -191,22 +197,36 @@ export default function Header(props: Props) {
                 }}
               >
                 <Box
-                  component={"input"}
+                  component="input"
                   sx={{
                     width: "100%",
                     height: "42px",
                     borderRadius: 8,
                     bgcolor: "transparent",
                     border: "none",
+                    outline: "none",
+                    ml: 1,
+                    "&:hover": {
+                      border: "none",
+                      outline: "none",
+                    },
+                    "&:focus": {
+                      border: "none",
+                      outline: "none",
+                    },
+                    "&:active": {
+                      border: "none",
+                      outline: "none",
+                    },
                     "&::placeholder": {
                       color: "#212121",
                       fontWeight: 700,
                       fontSize: "14px",
-                      px: 3,
                     },
                   }}
-                  placeholder="Search for cards,gift and flowers...."
+                  placeholder="Search for cards, gift and flowers...."
                 />
+
                 <Search
                   fontSize="large"
                   sx={{ color: COLORS.primary, mr: 2 }}
