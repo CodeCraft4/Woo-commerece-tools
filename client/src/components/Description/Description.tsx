@@ -13,50 +13,74 @@ const Description = () => {
     <Box mt={2} sx={{ color: "black" }}>
       <Typography
         sx={{
-          fontSize: "25px",
-          fontWeight: 700,
-          lineHeight: { md: "100px", sm: "", xs: "auto" },
+          fontSize: "20px",
+          fontWeight: 800,
+          lineHeight: { md: "50px", sm: "", xs: "auto" },
         }}
       >
-        Make It Special with Personalised Cards and Gifts at Funky Pigeon
+        Make It Special with Personalised Cards and Gifts at DIY Personlization
       </Typography>
       <Typography
         sx={{
-          fontSize: { md: "20px", sm: "", xs: "15px" },
+          fontSize: { md: "16px", sm: "", xs: "15px" },
           fontWeight: 700,
-          lineHeight: "50px",
+          lineHeight: "40px",
         }}
       >
         Unique Ideas for Every Occasion
       </Typography>
-      <Typography sx={{ fontSize: { md: "18px", sm: "", xs: "14px" }, mb: 4 }}>
+      <Typography
+        sx={{
+          fontSize: { md: "16px", sm: "", xs: "14px" },
+          fontWeight: 300,
+          mb: 2,
+        }}
+      >
         Here at Funky Pigeon, you'll find 1,000's of brilliantly unique greeting
         cards and gifts at your fingertips, ready to personalise with your
         inside jokes, photos and heartfelt messages using our helpful online
         editor. Perfect for creating a memorable keepsake that they can treasure
         for years to come!
       </Typography>
-      <Typography sx={{ fontSize: { md: "18px", sm: "", xs: "14px" }, mb: 3 }}>
+      <Typography
+        sx={{
+          fontSize: { md: "16px", sm: "", xs: "14px" },
+          fontWeight: 300,
+          mb: 2,
+        }}
+      >
         We specialise in helping you make every occasion special, from that
         upcoming birthday or anniversary to engagements, housewarming, weddings,
         congratulations, or any of life's other memorable moments!
       </Typography>
       <Typography
         sx={{
-          fontSize: { md: "20px", sm: "", xs: "15px" },
+          fontSize: { md: "16px", sm: "", xs: "15px" },
           fontWeight: 700,
-          lineHeight: "50px",
+          lineHeight: "40px",
         }}
       >
         Greeting Cards that Stand Out
       </Typography>
-      <Typography sx={{ fontSize: { md: "18px", sm: "", xs: "14px" }, mb: 3 }}>
+      <Typography
+        sx={{
+          fontSize: { md: "16px", sm: "", xs: "14px" },
+          fontWeight: 300,
+          mb: 2,
+        }}
+      >
         Our cards are crafted with love and care, featuring a wide variety of
         designs from classic and elegant to quirky and humorous. You'll find
         something for everyone, whether you're looking for a simple birthday
         card or a unique, personalised masterpiece.
       </Typography>
-      <Typography sx={{ fontSize: { md: "18px", sm: "", xs: "14px" }, mb: 3 }}>
+      <Typography
+        sx={{
+          fontSize: { md: "16px", sm: "", xs: "14px" },
+          fontWeight: 300,
+          mb: 2,
+        }}
+      >
         Don't forget our range of gifts! From personalised mugs and cushions to
         photo albums and calendars, we have the perfect present to complement
         your card and make any occasion truly special.
@@ -66,7 +90,11 @@ const Description = () => {
       {showFullText && (
         <>
           <Typography
-            sx={{ fontSize: { md: "18px", sm: "", xs: "14px" }, mb: 3 }}
+            sx={{
+              fontSize: { md: "16px", sm: "", xs: "14px" },
+              fontWeight: 300,
+              mb: 2,
+            }}
           >
             Make sure your greeting card stands out with exceptional cards in a
             variety of personalised, funny and traditional designs. So, whether
@@ -79,7 +107,7 @@ const Description = () => {
           </Typography>
           <Typography
             sx={{
-              fontSize: { md: "20px", sm: "", xs: "15px" },
+              fontSize: { md: "16px", sm: "", xs: "15px" },
               fontWeight: 700,
               lineHeight: "50px",
             }}
@@ -87,7 +115,11 @@ const Description = () => {
             Gifts and Flowers to Make Their Day
           </Typography>
           <Typography
-            sx={{ fontSize: { md: "18px", sm: "", xs: "14px" }, mb: 3 }}
+            sx={{
+              fontSize: { md: "15px", sm: "", xs: "14px" },
+              fontWeight: 300,
+              mb: 2,
+            }}
           >
             Our gifts start from just £3.99, including loads of personalised
             gift ideas where you add your photos, special messages or names.
@@ -98,7 +130,11 @@ const Description = () => {
             engraved-gifts, from jewellery to glasses.
           </Typography>
           <Typography
-            sx={{ fontSize: { md: "18px", sm: "", xs: "14px" }, mb: 3 }}
+            sx={{
+              fontSize: { md: "16px", sm: "", xs: "14px" },
+              fontWeight: 300,
+              mb: 2,
+            }}
           >
             We've also got an ever-growing range of trending gifts and novelty
             ideas, including anything from drinking themed games and gifts to
@@ -124,7 +160,7 @@ const Description = () => {
           cursor: "pointer",
         }}
       >
-        <Typography sx={{ color: "rgba(105, 53, 105, 1)",fontWeight:700 }}>
+        <Typography sx={{ color: "rgba(105, 53, 105, 1)", fontWeight: 700 }}>
           {showFullText ? "Read Less" : "Read More"}
         </Typography>
         <KeyboardArrowDown
@@ -139,8 +175,9 @@ const Description = () => {
       <hr />
       <Typography
         sx={{
-          fontSize: { md: "20px", sm: "", xs: "15px" },
-          mt: 8,
+          fontSize: { md: "17px", sm: "", xs: "15px" },
+          fontWeight:300,
+          mt: 4,
         }}
       >
         © Disney. © Disney/Pixar. © Disney. Winnie the Pooh elements are based

@@ -12,7 +12,7 @@ import "slick-carousel/slick/slick-theme.css";
 import { USER_ROUTES } from "../../constant/route";
 import { useNavigate } from "react-router-dom";
 
-const TABS = ["Birthday Flowers", "Latter box", "Under £30", "Under £60"];
+const TABS = ["Birthday Flowers", "Letter box", "Under £30", "Under £60"];
 
 type BirthdayTypes = {
   title?: string;
@@ -67,7 +67,7 @@ const BasketSlider = (props: BirthdayTypes) => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 4,
+    slidesToShow: 5,
     slidesToScroll: 2,
     arrows: false,
     responsive: [
@@ -79,7 +79,7 @@ const BasketSlider = (props: BirthdayTypes) => {
   return (
     <Box
       sx={{
-        width: "95%",
+        width: "100%",
         m: "auto",
         position: "relative",
         mt: 8,
@@ -92,7 +92,7 @@ const BasketSlider = (props: BirthdayTypes) => {
           alignItems: "center",
         }}
       >
-        <Typography variant="h4" fontWeight={800}>
+        <Typography fontWeight={700} fontSize={{md:'26px'}}>
           {title}
         </Typography>
         {brandSlider ? null : <LandingButton title="Shop All" width="150px" onClick={()=>navigate(USER_ROUTES.VIEW_ALL)} />}
@@ -105,7 +105,7 @@ const BasketSlider = (props: BirthdayTypes) => {
             gap: "10px",
             alignItems: "center",
             flexWrap: "wrap",
-            mt: 3,
+            mt: 2,
           }}
         >
           {TABS.map((e, index) => (
@@ -114,7 +114,7 @@ const BasketSlider = (props: BirthdayTypes) => {
               onClick={() => setActiveTab(index)}
               sx={{
                 px: 3,
-                py: 1.5,
+                py: 1,
                 border: "2px solid black",
                 borderRadius: "15px",
                 cursor: "pointer",
@@ -148,6 +148,7 @@ const BasketSlider = (props: BirthdayTypes) => {
                 key={index}
                 poster={cate.poster}
                 price={cate.price}
+                sales={saleSlide}
                 // openModal={openDetailModal}
               />
               {/* {isOpenDetailModal && (
@@ -209,9 +210,9 @@ const BasketSlider = (props: BirthdayTypes) => {
 
       <Typography
         sx={{
-          mt: 5,
+          mt: 2,
           fontSize: "17px",
-          fontWeight: 500,
+          fontWeight: 300,
         }}
       >
         {description}

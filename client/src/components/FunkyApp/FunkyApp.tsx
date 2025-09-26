@@ -6,9 +6,9 @@ const FunkyApp = () => {
   return (
     <Box
       sx={{
-        display: {md:"flex",sm:'flex',xs:'block'},
+        display: { md: "flex", sm: "flex", xs: "block" },
         width: "100%",
-        height: {md:550,sm:650,xs:'auto'},
+        height: { md: 550, sm: 650, xs: "auto" },
         bgcolor: "#f4e8fe",
         // color: COLORS.white,
         borderRadius: 4,
@@ -16,80 +16,78 @@ const FunkyApp = () => {
     >
       <Box
         sx={{
-          width: {md:"50%",sm:'50%',xs:'100%'},
+          width: { md: "50%", sm: "50%", xs: "100%" },
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          alignItems: "center",
+          alignItems: "start",
           m: "auto",
           textAlign: "start",
           height: "100%",
+          px: 4,
         }}
       >
-        <Typography sx={{fontSize:{md:'40px',sm:'',xs:'25px'},fontWeight:800,textAlign:'start'}}>
+        <Typography
+          sx={{
+            fontSize: { md: "40px", sm: "", xs: "25px" },
+            fontWeight: 800,
+            textAlign: "start",
+          }}
+        >
           The Funky Pigeon App
         </Typography>
-        <Typography sx={{fontSize:{md:'18px',sm:'',xs:'auto'},width:{md:'70%',sm:'',xs:'100%'}}}>
+        <Typography
+          sx={{
+            fontSize: { md: "16px", sm: "", xs: "auto" },
+            width: { md: "80%", sm: "", xs: "100%" },
+            fontWeight: 300,
+          }}
+        >
           Now, it's easier than ever to give a funk with the Funky Pigeon app!
           Send personalised cards, gifts and more for every occasion.
         </Typography>
 
-        <Box sx={{display:{md:'flex',sm:'flex',xs:'block'},gap:'15px',mt:5}}>
+        <Box
+          sx={{
+            display: { md: "flex", sm: "flex", xs: "block" },
+            gap: "15px",
+            mt: 3,
+          }}
+        >
           <Box
-            sx={{
-              height: "60px",
-              borderRadius: 4,
-              bgcolor: COLORS.primary,
-              color: COLORS.white,
-              px: 3,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              m: "auto",
-              gap:2,
-              mb:{md:0,sm:0,xs:2}
-            }}
+          component={'button'}
+            sx={deployBtn}
           >
             <Apple fontSize="large" />
             <Box>
-              <Typography fontSize={'12px'}>Download on the</Typography>
-              <Typography variant="h5">App Store</Typography>
+              <Typography fontSize={"12px"}>Download on the</Typography>
+              <Typography variant="h6">App Store</Typography>
             </Box>
           </Box>
-       <Box
-            sx={{
-              height: "60px",
-              borderRadius: 4,
-              bgcolor: COLORS.primary,
-              color: COLORS.white,
-              px: 3,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              m: "auto",
-              gap:2
-            }}
+          <Box
+          component={'button'}
+            sx={deployBtn}
           >
-              <Box
-               component={'img'}
-               src="/assets/icons/playstore.png"
-               sx={{width:35}}
-              />
+            <Box
+              component={"img"}
+              src="/assets/icons/playstore.png"
+              sx={{ width: 35 }}
+            />
             <Box>
-              <Typography fontSize={'12px'}>ANDRIOD APP ON</Typography>
-              <Typography variant="h5">Google Play</Typography>
+              <Typography fontSize={"12px"}>ANDRIOD APP ON</Typography>
+              <Typography variant="h6">Google Play</Typography>
             </Box>
           </Box>
         </Box>
       </Box>
-      <Box sx={{ width: {md:"50%",sm:'50%',xs:'100%'} }}>
+      <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>
         <Box
-         component={'img'}
-         src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Fhomepage%2Fapp-image.jpg&w=1200&q=62"
-         alt="mobile app"
-         width={'100%'}
-         height={'100%'}
-        borderRadius={5}
+          component={"img"}
+          src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Fhomepage%2Fapp-image.jpg&w=1200&q=62"
+          alt="mobile app"
+          width={"100%"}
+          height={"100%"}
+          borderRadius={5}
         />
       </Box>
     </Box>
@@ -97,3 +95,18 @@ const FunkyApp = () => {
 };
 
 export default FunkyApp;
+
+
+const deployBtn={
+   height: "55px",
+              borderRadius: 4,
+              bgcolor: COLORS.primary,
+              color: COLORS.white,
+              px: 3,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              m: "auto",
+              gap: 2,
+              mb: { md: 0, sm: 0, xs: 2 },
+}

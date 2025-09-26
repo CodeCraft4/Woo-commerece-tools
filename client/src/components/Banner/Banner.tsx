@@ -11,21 +11,19 @@ const Banner = () => {
         position: "relative",
         overflow: "hidden",
         mt: 10,
-        borderRadius:3
+        borderRadius: 3,
       }}
     >
-      {/* Video */}
+      {/* Animated Image up and down*/}
       <Box
-        component="video"
-        src="https://www.pexels.com/download/video/3626148/"
-        autoPlay
-        loop
-        muted
+        component="img"
+        src="/assets/images/animated-banner.jpg"
+        className="panning-img"
         sx={{
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          filter: "brightness(60%)",
+          filter: "brightness(80%)",
         }}
       />
 
@@ -38,7 +36,7 @@ const Banner = () => {
           width: "100%",
           height: "50%", // Adjust how much gradient covers
           background:
-            "linear-gradient(to top, rgba(0, 0, 0, 0.82), rgba(0,0,0,0))",
+            "linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0,0,0,0))",
         }}
       />
 
@@ -79,10 +77,10 @@ const Banner = () => {
 
         <Box
           sx={{
-            display: {md:"flex",sm:'flex',xs:'block'},
+            display: { md: "flex", sm: "flex", xs: "block" },
             gap: "10px",
             flexWrap: "wrap",
-            width: {md:"50%",sm:'',xs:'100%'},
+            width: { md: "50%", sm: "", xs: "100%" },
             mt: 5,
           }}
         >

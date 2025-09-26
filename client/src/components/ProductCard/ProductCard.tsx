@@ -15,11 +15,11 @@ const ProductCard = (props: ProductTypes) => {
       component={"div"}
       onClick={openModal}
       sx={{
-        width: { md: "200px", sm: "", xs: "180px" },
+        width: { md: "182px", sm: "", xs: "180px" },
         height: tabsSlider
           ? { md: "280px", sm: "", xs: "200px" }
           : { md: "270px", sm: "", xs: "200px" },
-        borderRadius: tabsSlider ? 3.5 : 3,
+        borderRadius: tabsSlider ? 2 : 3,
         bgcolor: COLORS.white,
         border: tabsSlider ? "1px solid lightGray" : 0,
         py: tabsSlider ? 0 : "8px",
@@ -32,10 +32,10 @@ const ProductCard = (props: ProductTypes) => {
         src={poster}
         alt="productImg"
         sx={{
-          width: { md: tabsSlider ? "198px" : "180px", sm: "", xs: "165px" },
+          width: { md: tabsSlider ? "180px" : "168px", sm: "", xs: "165px" },
           height: "100%",
           objectFit: "cover",
-          borderRadius: tabsSlider ? 3 : 2,
+          borderRadius: tabsSlider ? 2 : 2,
         }}
       />
     </Box>

@@ -35,12 +35,14 @@ const fetchCategoriesData = async () => {
 
 const BirthdaySlider = (props: BirthdayTypes) => {
   const { title, description, brandSlider } = props;
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const sliderRef = React.useRef<Slider | null>(null);
 
   const [activeTab, setActiveTab] = useState(0);
-  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(undefined);
+  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(
+    undefined
+  );
 
   const { data: birthdayCards } = useQuery({
     queryKey: ["birthdayCards"],
@@ -58,8 +60,8 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 6,
-    slidesToScroll: 2,
+    slidesToShow: 6.9,
+    slidesToScroll: 3,
     arrows: false,
     initialSlide: 0,
     responsive: [
@@ -89,15 +91,16 @@ const BirthdaySlider = (props: BirthdayTypes) => {
       },
     ],
   };
+
   const {
     open: isOpenDetailModal,
     openModal,
     closeModal: closeDetailModal,
   } = useModal();
 
-  const openDetailModal = (cate:CategoryType) => {
-    setSelectedCate(cate); 
-    openModal(); 
+  const openDetailModal = (cate: CategoryType) => {
+    setSelectedCate(cate);
+    openModal();
   };
 
   return (
@@ -117,11 +120,17 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         }}
       >
         <Typography
-          sx={{ fontSize: { md: "35px", sm: "", xs: "16px" }, fontWeight: 800 }}
+          sx={{ fontSize: { md: "25px", sm: "", xs: "16px" }, fontWeight: 800 }}
         >
           {title}
         </Typography>
-        {brandSlider ? null : <LandingButton title="Shop All" width="150px" onClick={()=>navigate(USER_ROUTES.VIEW_ALL)} />}
+        {brandSlider ? null : (
+          <LandingButton
+            title="Shop All"
+            width="150px"
+            onClick={() => navigate(USER_ROUTES.VIEW_ALL)}
+          />
+        )}
       </Box>
 
       <Box
@@ -130,7 +139,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           gap: "10px",
           alignItems: "center",
           flexWrap: "wrap",
-          mt: 3,
+          mt: 2,
         }}
       >
         {TABS.map((e, index) => (
@@ -139,7 +148,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
             onClick={() => setActiveTab(index)}
             sx={{
               px: 3,
-              py: { md: 1.5, sm: "", xs: 1 },
+              py: { md: 1, sm: "", xs: 1 },
               border: "2px solid black",
               borderRadius: "15px",
               cursor: "pointer",
@@ -163,7 +172,12 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         ))}
       </Box>
 
-      <Box sx={{ mt: 3, position: "relative" }}>
+      <Box
+        sx={{
+          mt: 3,
+          position: "relative",
+        }}
+      >
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
           {filteredCards?.map((cate) => (
@@ -212,7 +226,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            right: 0,
+            right:-20,
             display: "flex",
             justifyContent: "center",
             m: "auto",
@@ -232,9 +246,9 @@ const BirthdaySlider = (props: BirthdayTypes) => {
 
       <Typography
         sx={{
-          mt: { md: 5, sm: 3, xs: 2 },
-          fontSize: "17px",
-          fontWeight: 500,
+          mt: { md: 3, sm: 3, xs: 2 },
+          fontSize: "16px",
+          fontWeight: 300,
         }}
       >
         {description}

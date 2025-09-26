@@ -20,19 +20,20 @@ const CategoryCard = (props: CategoryType) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        width: {md:"300px",sm:'',xs:'130px'},
-        height: "200px",
+        width: { md: "175px", sm: "", xs: "130px" },
+        height: "175px",
         alignItems: "center",
         textAlign: "center",
         bgcolor: COLORS.white,
-        cursor:'pointer',
+        ml: id === 1 ? "165px" : 0,
+        cursor: "pointer",
         transition: "border-color 0.3s ease",
         "&:hover": {
           borderColor: "black",
-          borderWidth:2
+          borderWidth: 2,
         },
         "&:hover img": {
-          transform: "scale(1.2)", 
+          transform: "scale(1.2)",
         },
       }}
     >
@@ -41,14 +42,23 @@ const CategoryCard = (props: CategoryType) => {
         src={poster}
         alt="categoryImg"
         sx={{
-          width: {md:'100px',sm:'',xs:'70px'},
-          height: {md:'100px',sm:'',xs:'70px'},
+          width: { md: "100px", sm: "", xs: "70px" },
+          height: { md: "100px", sm: "", xs: "70px" },
           borderRadius: "50%",
           objectFit: "cover",
           transition: "transform 0.3s ease",
         }}
       />
-      <Typography sx={{ mt: 2, fontWeight: 600, fontSize: {md:"18px",sm:'',xs:'14px'},color:'#212121' }}>
+      <Typography
+        sx={{
+          mt: 2,
+          fontWeight: 600,
+          fontSize: { md: "15px", sm: "", xs: "14px" },
+          color: "#212121",
+          display: "flex",
+          flexWrap: "wrap",
+        }}
+      >
         {title}
       </Typography>
     </Box>

@@ -13,20 +13,51 @@ body {
   overflow-x: hidden;
 }
 
-.horizontal-scroll {
-  display: flex;
-  gap: 16px;
-  padding: 1rem;
-  overflow-x: auto;       /* horizontal scrolling */
-  overflow-y: hidden;
-  scroll-behavior: smooth; /* smooth scroll */
+
+.panning-img {
+  animation: panLeftRight 10s infinite linear;
 }
 
-.horizontal-scroll::-webkit-scrollbar {
-  height: 8px;            /* scrollbar thickness */
+@media (min-width: 768px) {
+  .panning-img {
+    animation: panUpDown 10s infinite linear;
+  }
 }
 
-.horizontal-scroll::-webkit-scrollbar-thumb {
-  background: #aaa;
-  border-radius: 4px;
+
+/* index.css */
+@keyframes panUpDown {
+  0% {
+    transform: translateY(0); /* Start at bottom */
+  }
+  20% {
+    transform: translateY(0); /* Hold 3s */
+  }
+  50% {
+    transform: translateY(-10%); /* Move up */
+  }
+  70% {
+    transform: translateY(-10%); /* Hold 3s */
+  }
+  100% {
+    transform: translateY(0); /* Back down */
+  }
+}
+
+@keyframes panLeftRight {
+  0% {
+    transform: translateX(0); /* Start at left */
+  }
+  20% {
+    transform: translateX(0); /* Hold 3s */
+  }
+  50% {
+    transform: translateX(-10%); /* Move right */
+  }
+  70% {
+    transform: translateX(-10%); /* Hold 3s */
+  }
+  100% {
+    transform: translateX(0); /* Back left */
+  }
 }

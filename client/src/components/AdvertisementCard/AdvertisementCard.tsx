@@ -4,26 +4,27 @@ import LandingButton from "../LandingButton/LandingButton";
 
 type AdvertiseTypes = {
   title: string;
+  price?: string;
 };
 const AdvertisementCard = (props: AdvertiseTypes) => {
-  const { title } = props;
+  const { title, price } = props;
 
   return (
     <Box
       sx={{
         borderRadius: 4,
         width: { md: "560px", sm: "", xs: "100%" },
-        height: { md: "190px", sm: "", xs: "auto" },
+        height: { md: "160px", sm: "", xs: "auto" },
         display: { md: "flex", sm: "flex", xs: "block" },
       }}
     >
       <Box
         sx={{
-          width: { md: "40%", sm: "", xs: "100%" },
+          width: { md: "45%", sm: "", xs: "100%" },
           display: "flex",
           justifyContent: "center",
           flexDirection: "column",
-          alignItems: "center",
+          alignItems: "start",
           color: COLORS.white,
           bgcolor: COLORS.primary,
           borderRadius: {
@@ -34,15 +35,16 @@ const AdvertisementCard = (props: AdvertiseTypes) => {
           p: 3,
         }}
       >
-        <Typography sx={{ fontSize: { md: "20px", sm: "", xs: "20px" } }}>
+        <Typography sx={{ fontSize: { md: "19px", sm: "", xs: "20px" } }}>
           {title}
         </Typography>
+        {price && <Typography sx={{fontSize:'14px',fontWeight:200}}>{price}</Typography>}
         <br />
-        <LandingButton title="Shop Now" />
+        <LandingButton title="Shop Now" width="120px" />
       </Box>
       <Box
         sx={{
-          width: { md: "60%", sm: "", xs: "100%" },
+          width: { md: "55%", sm: "", xs: "100%" },
           borderRadius: "0px 20px 20px 0px",
         }}
       >
