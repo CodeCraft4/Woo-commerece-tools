@@ -148,10 +148,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
                       <Box>
                         <Typography fontWeight={600}>{plan.title}</Typography>
                         <Typography fontSize={"13px"}>{plan.desc}</Typography>
-                        <Typography variant="h6">${plan.price}</Typography>
+                        <Typography variant="h6">£{plan.price}</Typography>
                       </Box>
                     </Box>
-                    <Typography variant="h5">${plan.price}</Typography>
+                    <Typography variant="h5">£{plan.price}</Typography>
                   </Box>
                 ))}
 

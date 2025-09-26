@@ -20,7 +20,7 @@ const PersonalGift = () => {
       >
         <Box
           component={"img"}
-          src="https://plus.unsplash.com/premium_photo-1701984401514-a32a73eac549?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fGtpZHN8ZW58MHx8MHx8fDA%3D"
+          src="/assets/images/personlised.jpg"
           sx={{
             width: "100%",
             height: "100%",
@@ -59,10 +59,10 @@ const PersonalGift = () => {
             mt:2
           }}
         >
-          <LandingButton title="For Her" width="225px" personal />
-          <LandingButton title="For Him" width="225px" personal />
-          <LandingButton title="Birthday" width="225px" personal />
-          <LandingButton title="Shop All Gift" width="225px" personal />
+          <LandingButton title="For Her" width="225px" personal bgblack/>
+          <LandingButton title="For Him" width="225px" personal bgblack/>
+          <LandingButton title="Birthday" width="225px" personal bgblack/>
+          <LandingButton title="Shop All Gift" width="225px" personal bgblack/>
         </Box>
       </Box>
     </Box>

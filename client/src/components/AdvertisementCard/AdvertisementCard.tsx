@@ -5,9 +5,10 @@ import LandingButton from "../LandingButton/LandingButton";
 type AdvertiseTypes = {
   title: string;
   price?: string;
+  poster?:string;
 };
 const AdvertisementCard = (props: AdvertiseTypes) => {
-  const { title, price } = props;
+  const { title, price,poster } = props;
 
   return (
     <Box
@@ -40,7 +41,7 @@ const AdvertisementCard = (props: AdvertiseTypes) => {
         </Typography>
         {price && <Typography sx={{fontSize:'14px',fontWeight:200}}>{price}</Typography>}
         <br />
-        <LandingButton title="Shop Now" width="120px" />
+        <LandingButton title="Shop Now" width="120px" bgblack />
       </Box>
       <Box
         sx={{
@@ -50,7 +51,7 @@ const AdvertisementCard = (props: AdvertiseTypes) => {
       >
         <Box
           component={"img"}
-          src="https://plus.unsplash.com/premium_photo-1701984401514-a32a73eac549?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fGtpZHN8ZW58MHx8MHx8fDA%3D"
+          src={poster}
           sx={{
             width: "100%",
             height: "100%",

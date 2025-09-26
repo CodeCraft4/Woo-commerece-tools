@@ -72,7 +72,7 @@ const Banner = () => {
             },
           }}
         >
-          Make it personal and show you give a funk!
+          Make it personal and show you give a DIY!
         </Typography>
 
         <Box
