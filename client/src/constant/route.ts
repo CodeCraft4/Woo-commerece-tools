@@ -7,6 +7,9 @@ export const USER_ROUTES = {
 };
 
 export const ADMINS_DASHBOARD = {
+  SIGNIN: "/signin",
   HOME: "/dashboard",
-  PRODUCTS: "/products",
+  PRODUCTS_LIST: "/products",
+  ADD_NEW_CARDS: "add-new-cards",
+  SETTINGS: "/setting",
 };
