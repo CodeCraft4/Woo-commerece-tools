@@ -219,7 +219,7 @@ export const FooterLinks = [
         path: "#",
       },
       {
-        name: "Funky VIP FAQs",
+        name: "DIY VIP FAQs",
         path: "#",
       },
       {

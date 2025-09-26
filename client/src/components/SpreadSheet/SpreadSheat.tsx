@@ -19,7 +19,6 @@ import {
 import { Rnd } from "react-rnd";
 import { useWishCard } from "../../context/WishCardContext";
 
-
 interface DraggableItem {
   id: number | string;
   src: string;
@@ -35,13 +34,10 @@ interface SlideSpreadProps {
   rotation?: number;
   togglePopup: (name: string | null) => void;
   activePopup?: string | null;
-  activeIndex?:number
+  activeIndex?: number;
 }
 
-const SlideSpread = ({
-  togglePopup,
-  activeIndex,
-}: SlideSpreadProps) => {
+const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
   const {
     images,
     selectedImg,
@@ -91,7 +87,7 @@ const SlideSpread = ({
     rotation: 0,
   });
 
-  console.log(setAudioQrPosition)
+  console.log(setAudioQrPosition);
 
   // Just Video fetching
   useEffect(() => {
@@ -174,7 +170,7 @@ const SlideSpread = ({
                 // y: position.y,
                 rotation: qrPosition.rotation,
               });
-              console.log(e)
+              console.log(e);
             }}
           >
             <QrGenerator url={mediaUrl} />
@@ -199,7 +195,7 @@ const SlideSpread = ({
                 y: position.height,
                 rotation: qrPosition.rotation,
               });
-             console.log(e)
+              console.log(e);
             }}
           >
             <QrGenerator url={audioUrl} />
@@ -251,7 +247,7 @@ const SlideSpread = ({
               onResizeStop={(e, _, ref) => {
                 const newWidth = parseInt(ref.style.width);
                 const newHeight = parseInt(ref.style.height);
-             console.log(e)
+                console.log(e);
                 setDraggableImages((prev) =>
                   prev.map((img) =>
                     img.id === id
@@ -308,6 +304,170 @@ const SlideSpread = ({
               />
             </Rnd>
           ))}
+
+        {showOneTextRightSideBox && (
+          <Rnd
+            size={{ width: "90%", height: '90%' }}
+            position={{ x: qrPosition.x, y: qrPosition.y }}
+            onDragStop={(_, d) =>
+              setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
+            }
+            onResizeStop={(e, _, ref, position) => {
+              setQrPosition({
+                width: parseInt(ref.style.width),
+                height: parseInt(ref.style.height),
+                x: position.width,
+                y: position.height,
+                // x: position.x,
+                // y: position.y,
+                rotation: qrPosition.rotation,
+              });
+              console.log(e);
+            }}
+          >
+            <Box
+              sx={{
+                flex: 1,
+                bgcolor: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                border: "3px dashed #3a7bd5",
+              }}
+            >
+              <TextField
+                variant="standard"
+                value={oneTextValue}
+                onChange={(e) => setOneTextValue(e.target.value)}
+                InputProps={{
+                  disableUnderline: true,
+                  style: {
+                    fontSize: fontSize,
+                    fontWeight: fontWeight,
+                    color: fontColor,
+                    transform: `rotate(${rotation}deg)`,
+                  },
+                }}
+                autoFocus
+                multiline
+                rows={20}
+                fullWidth
+                sx={{
+                  height: "100%",
+                  px: 6,
+                  textAlign: textAlign
+                }}
+              />
+            </Box>
+          </Rnd>
+        )}
+
+        {multipleTextValue && (
+          <Rnd
+            size={{ width: "100%", height: qrPosition.height }}
+            position={{ x: qrPosition.x, y: qrPosition.y }}
+            onDragStop={(_, d) =>
+              setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
+            }
+            onResizeStop={(e, _, ref, position) => {
+              setQrPosition({
+                width: parseInt(ref.style.width),
+                height: parseInt(ref.style.height),
+                x: position.width,
+                y: position.height,
+                // x: position.x,
+                // y: position.y,
+                rotation: qrPosition.rotation,
+              });
+              console.log(e);
+            }}
+          >
+            <Box
+              sx={{
+                height: "100%",
+                width: "100%",
+                borderRadius: "6px",
+                p: 1,
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {[0, 1, 2].map((index) => (
+                <Box
+                  sx={{
+                    height: "100%",
+                    width: "100%",
+                    p: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                  key={index}
+                >
+                  {editingIndex === index ? (
+                    <TextField
+                      autoFocus
+                      multiline
+                      fullWidth
+                      rows={4}
+                      variant="standard"
+                      InputProps={{
+                        disableUnderline: true,
+                        style: {
+                          fontSize: fontSize,
+                          fontWeight: fontWeight,
+                          color: fontColor,
+                          transform: `rotate(${rotation}deg)`,
+                          border: "3px dashed #3a7bd5",
+                          padding: "10px",
+                        },
+                      }}
+                      value={texts[index]}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setTexts((prev) => {
+                          const updated = [...prev]; // copy old array
+                          updated[index] = newValue; // update only this index
+                          return updated; // save back
+                        });
+                      }}
+                      onBlur={handleFinishEditing}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleFinishEditing();
+                        }
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      onClick={() => handleAddTextClick(index)}
+                      sx={{
+                        width: "100%",
+                        height: "150px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        m: "auto",
+                        color: "gray",
+                        border: "3px dashed #3a7bd5",
+                        cursor: "pointer",
+                        userSelect: "none",
+                        flexDirection: "row",
+                        gap: 1,
+                      }}
+                    >
+                      <TitleOutlined />
+                      <Typography component="span" sx={{ userSelect: "none" }}>
+                        {texts[index] ? texts[index] : "Add Text"}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              ))}
+            </Box>
+          </Rnd>
+        )}
       </Box>
 
       {/* Right Side */}
@@ -324,7 +484,7 @@ const SlideSpread = ({
           p: 2,
         }}
       >
-        {showOneTextRightSideBox && (
+        {/* {showOneTextRightSideBox && (
           <Box
             sx={{
               flex: 1,
@@ -360,9 +520,9 @@ const SlideSpread = ({
               }}
             />
           </Box>
-        )}
+        )} */}
 
-        {multipleTextValue && (
+        {/* {multipleTextValue && (
           <Box
             sx={{
               height: "100%",
@@ -446,7 +606,7 @@ const SlideSpread = ({
               </Box>
             ))}
           </Box>
-        )}
+        )} */}
       </Box>
 
       {/* Editing Toolbar */}

@@ -40,33 +40,43 @@ const CommingSoonOffers = () => {
             },
           }}
         >
-          Show You Give a Funk <br />  This Christmas!
+          Show You Give a DIY <br /> This Christmas!
         </Typography>
         <Typography
-          sx={{ py: 1, fontSize: { md: "auto", sm: "auto", xs: "14px" },width:{md:'90%',sm:'',xs:"100%"} ,fontWeight:300}}
+          sx={{
+            py: 1,
+            fontSize: { md: "auto", sm: "auto", xs: "14px" },
+            width: { md: "90%", sm: "", xs: "100%" },
+            fontWeight: 300,
+          }}
         >
           The festive countdown is on! From Christmas classics to new
           personalised stockings and more coming soon, get Christmas sorted now
           and avoid the stress.
         </Typography>
-        <Box sx={{mt:1}}>
-        <LandingButton
-          title="Shop Christmas Card & Gift"
-          width="25vw"
-          personal
+        <Box sx={{ mt: 1 }}>
+          <LandingButton
+            title="Shop Christmas Card & Gift"
+            width="25vw"
+            personal
+            bgblack
           />
-          </Box>
-          </Box>
+        </Box>
+      </Box>
 
       <Box sx={{ width: { md: "60%", sm: "60%", xs: "100%" } }}>
         <Box
           component={"img"}
-          src="https://plus.unsplash.com/premium_photo-1701984401514-a32a73eac549?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fGtpZHN8ZW58MHx8MHx8fDA%3D"
+          src="/assets/images/DIYChristmas.jpg"
           sx={{
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            borderRadius:{md: "0px 15px 15px 0px",sm: "0px 15px 15px 0px",xs:'15px'},
+            borderRadius: {
+              md: "0px 15px 15px 0px",
+              sm: "0px 15px 15px 0px",
+              xs: "15px",
+            },
           }}
         />
       </Box>

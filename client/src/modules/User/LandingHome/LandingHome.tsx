@@ -18,15 +18,18 @@ import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
 const AdverstisementCard = [
   {
     title:'Calendars',
-    price:'price £10'
+    price:'price £10',
+    poster:'/assets/images/Calendar.jpg'
   },
   {
     title:'Personlised Gifts',
-    price:'price £20'
+    price:'price £20',
+    poster:'/assets/images/PersonlisedImg.jpg'
   },
   {
     title:'Anniversary Gift',
-    price:''
+    price:'',
+    poster:'assets/images/Anniversary.jpg'
   },
  
 ];
@@ -147,7 +150,7 @@ const LandingHome = () => {
             }}
           >
             {AdverstisementCard.map((e) => (
-              <AdvertisementCard title={e.title} price={e.price} />
+              <AdvertisementCard title={e.title} price={e.price} poster={e.poster} />
             ))}
           </Box>
         </Box>
@@ -155,7 +158,7 @@ const LandingHome = () => {
         {/* Birthday Slider CArd */}
         <BirthdaySlider
           title="Make it a Birthday to Remember!..."
-          description="Show you give a funk and celebrate their birthday with a personalised card for him, for her or for kids!"
+          description="Show you give a DIY and celebrate their birthday with a personalised card for him, for her or for kids!"
         />
 
         {/* VIP Funkey just for offer */}

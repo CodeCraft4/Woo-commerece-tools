@@ -269,7 +269,7 @@ const Footer = () => {
             fontWeight: 300,
           }}
         >
-          © 2025 funkypigeon.com Limited, County Gates, Ashton Road, Bristol,
+          © 2025 DIYPersonalizatoin.com Limited, County Gates, Ashton Road, Bristol,
           BS3 2JH, UK Registered Office: Century House, Wakefield 41 Industrial
           Estate, Wakefield WF2 0XG, UK
             <a href="#" style={{ textDecoration: "none", marginLeft: "5px" }}>

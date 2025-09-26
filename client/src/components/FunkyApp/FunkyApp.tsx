@@ -34,7 +34,7 @@ const FunkyApp = () => {
             textAlign: "start",
           }}
         >
-          The Funky Pigeon App
+          The DIY Personalization App
         </Typography>
         <Typography
           sx={{
@@ -43,7 +43,7 @@ const FunkyApp = () => {
             fontWeight: 300,
           }}
         >
-          Now, it's easier than ever to give a funk with the Funky Pigeon app!
+          Now, it's easier than ever to give a DIY with the DIY Personalization app!
           Send personalised cards, gifts and more for every occasion.
         </Typography>
 
@@ -83,7 +83,7 @@ const FunkyApp = () => {
       <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>
         <Box
           component={"img"}
-          src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Fhomepage%2Fapp-image.jpg&w=1200&q=62"
+          src='/assets/images/AppBanner.png'
           alt="mobile app"
           width={"100%"}
           height={"100%"}

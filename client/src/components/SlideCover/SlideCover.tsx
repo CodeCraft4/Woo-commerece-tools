@@ -1,11 +1,11 @@
-import { Box, TextField } from "@mui/material";
+import { Box } from "@mui/material";
 import PNGImg from "../../assets/bear.png";
 import { useWishCard } from "../../context/WishCardContext";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 const SlideCover = () => {
-  const { title, setTitle } = useWishCard();
+  // const { title, setTitle } = useWishCard();
   const location = useLocation();
   const { poster } = location.state || {};
   const { setPoster } = useWishCard();
@@ -45,7 +45,7 @@ const SlideCover = () => {
         HAPPY BIRTHDAY
       </Typography> */}
 
-      <TextField
+      {/* <TextField
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         variant="standard"
@@ -69,7 +69,7 @@ const SlideCover = () => {
           position: "absolute",
           bottom: 0,
         }}
-      />
+      /> */}
     </Box>
   );
 };
