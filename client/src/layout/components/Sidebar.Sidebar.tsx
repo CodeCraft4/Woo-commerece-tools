@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../constant/route";
@@ -7,20 +6,6 @@ import { ArrowForwardIos } from "@mui/icons-material";
 const Sidebar = () => {
   const location = useLocation();
   const pathname = location.pathname;
-
-  const [user, setUser] = useState<{
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  } | null>(null);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
 
   const links = [
     {
