@@ -10,6 +10,6 @@ export const ADMINS_DASHBOARD = {
   SIGNIN: "/signin",
   HOME: "/dashboard",
   PRODUCTS_LIST: "/products",
-  ADD_NEW_CARDS: "add-new-cards",
+  ADD_NEW_CARDS: "/add-new-cards",
   SETTINGS: "/setting",
 };

@@ -103,8 +103,7 @@ export const CATEGORIES_DATA = [
   },
   {
     id: 19,
-    poster:
-      "/assets/images/Valentine.jpg",
+    poster: "/assets/images/Valentine.jpg",
     category: "Birthday Cards",
     title: "Baloons",
   },
@@ -283,7 +282,7 @@ export const FooterLinks = [
 ];
 
 export const navLinks = [
-  { name: "Beauty", hasMegaMenu: true },
+  { name: "Birthday", hasMegaMenu: true },
   { name: "Cards", hasMegaMenu: true },
   { name: "Gifts", hasMegaMenu: true },
   { name: "Flowers/Plants", hasMegaMenu: true },
@@ -294,11 +293,11 @@ export const navLinks = [
 ];
 
 export const megaMenuData = {
-  Beauty: {
-    title: "Beauty",
+  Birthday: {
+    title: "Birthday",
     categories: [
-      { name: "Skincare", links: ["Moisturizers", "Cleansers", "Serums"] },
-      { name: "Makeup", links: ["Foundation", "Lipstick", "Eyeshadow"] },
+      { name: "Birthday", links: ["For Him", "For Her", "Kids"] },
+      // { name: "", links: ["Whiskey", "Gin", "Vodka"] },
     ],
   },
   Cards: {
