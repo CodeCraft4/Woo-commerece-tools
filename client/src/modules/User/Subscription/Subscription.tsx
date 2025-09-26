@@ -158,10 +158,10 @@ const Subscription = () => {
                     <Box>
                       <Typography fontWeight={900}>{plan.title}</Typography>
                       <Typography fontSize={"13px"}>{plan.desc}</Typography>
-                      <Typography variant="h5">${plan.price}</Typography>
+                      <Typography variant="h5">£{plan.price}</Typography>
                     </Box>
                   </Box>
-                  <Typography variant="h5">${plan.price}</Typography>
+                  <Typography variant="h5">£{plan.price}</Typography>
                 </Box>
               ))}
 
@@ -169,12 +169,10 @@ const Subscription = () => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <input
                   type="checkbox"
-                  style={{ width: "40px", height: "40px" }}
+                  style={{ width: "20px", height: "20px" }}
                 />
                 <Typography sx={{ fontSize: "14px", color: "gray" }}>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Optio
-                  id deserunt, voluptates totam distinctio numquam tempora?
-                  Veniam eum molestias enim?
+                  I accept the Terms & Conditions and give my consent to proceed with the order.
                 </Typography>
               </Box>
 

@@ -23,7 +23,7 @@ const SlideLogo = () => {
        sx={{width:300}}
       />
       <Typography sx={{ maxWidth: 400, textAlign: "center" }}>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloremque recusandae alias dignissimos sunt ab! Pariatur minima placeat hic enim quis facilis ducimus neque culpa sequi delectus atque praesentium in laboriosam tempora aspernatur deleniti molestias rerum,
+        I accept the Terms & Conditions and give my consent to proceed with the order.
       </Typography>
     </Box>
   );
