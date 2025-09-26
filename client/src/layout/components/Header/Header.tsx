@@ -13,14 +13,10 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
 import LOGO from "../../../assets/LOGO.png";
-import {
-  DateRange,
-  Flag,
-  Person,
-  Search,
-  ShoppingBag,
-} from "@mui/icons-material";
+import { DateRange, Person, Search, ShoppingBag } from "@mui/icons-material";
 import { megaMenuData, navLinks } from "../../../constant/data";
+import { useNavigate } from "react-router-dom";
+import { ADMINS_DASHBOARD } from "../../../constant/route";
 
 interface Props {
   window?: () => Window;
@@ -43,7 +39,7 @@ interface MegaMenuItem {
 
 // Define the type for the entire mega menu data object
 interface MegaMenuData {
-  Beauty: MegaMenuItem;
+  Birthday: MegaMenuItem;
   Cards: MegaMenuItem;
   Gifts: MegaMenuItem;
   "Flowers/Plants": MegaMenuItem;
@@ -91,6 +87,7 @@ const MegaMenu = ({ data }: { data: MegaMenuItem }) => (
 
 export default function Header(props: Props) {
   const { window } = props;
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [hoveredMenuItem, setHoveredMenuItem] =
     React.useState<MegaMenuKeys | null>(null);
@@ -215,7 +212,7 @@ export default function Header(props: Props) {
               </IconButton>
               <IconButton
                 sx={iconStyle}
-                // onClick={() => navigate(USER_ROUTES.HOME)}
+                onClick={() => navigate(ADMINS_DASHBOARD.SIGNIN)}
               >
                 <Person fontSize="large" />
                 <Typography fontSize={"12px"}>Accounts</Typography>
@@ -266,8 +263,7 @@ export default function Header(props: Props) {
             m: "auto",
             color: "white",
             pt: 3,
-            width: "80%",
-            gap: "8px",
+            width: "70%",
           }}
           onMouseLeave={handleMouseLeave}
         >
@@ -276,16 +272,25 @@ export default function Header(props: Props) {
               key={item.name}
               onMouseEnter={() => handleMouseEnter(item.name as MegaMenuKeys)}
               sx={{
+                m: 0,
+                p: 0,
                 cursor: "pointer",
                 "&:hover": { color: "orange" },
                 flexGrow: 1,
-                fontSize:'13px',
+                fontSize: "14px",
+                display: "flex",
+                width: "100%",
+                justifyContent: "space-around",
               }}
             >
               {item.name}
             </ListItem>
           ))}
-          <Typography
+        </List>
+        {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
+          <MegaMenu data={megaMenuData[hoveredMenuItem]} />
+        )}
+        {/* <Typography
             sx={{
               display: "flex",
               gap: "5px",
@@ -295,11 +300,7 @@ export default function Header(props: Props) {
           >
             Deliver&nbsp;to
             <Flag />
-          </Typography>
-        </List>
-        {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
-          <MegaMenu data={megaMenuData[hoveredMenuItem]} />
-        )}
+          </Typography> */}
       </Box>
     </Box>
   );

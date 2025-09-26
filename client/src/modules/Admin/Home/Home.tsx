@@ -1,10 +1,10 @@
 import { Box, Button } from "@mui/material";
-import Applayout from "../../../layout/Applayout";
+import DashboardLayout from "../../../layout/DashboardLayout";
 
 const DashboardHome = () => {
 
   return (
-    <Applayout>
+    <DashboardLayout>
       <Box
         sx={{
           p: 2,
@@ -13,7 +13,7 @@ const DashboardHome = () => {
       >
         <Button variant="contained" color="success" sx={{p:2,width:'200px'}}>Add Cards</Button>
       </Box>
-    </Applayout>
+    </DashboardLayout>
   );
 };
 
