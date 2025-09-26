@@ -1,11 +1,10 @@
-import { Box, IconButton } from "@mui/material";
+import { Box } from "@mui/material";
 import CategoryCard from "../../../components/CategoryCard/CategoryCard";
 import MainLayout from "../../../layout/MainLayout";
 import { CATEGORIES_DATA } from "../../../constant/data";
 import ProductCard from "../../../components/ProductCard/ProductCard";
 import AdvertisementCard from "../../../components/AdvertisementCard/AdvertisementCard";
 import PersonalGift from "../../../components/PersonalGift/PersonalGift";
-import GiveFunk from "../../../components/GiveFunk/GiveFunk";
 import Banner from "../../../components/Banner/Banner";
 import BirthdaySlider from "../../../components/BirthdaySlider/BirthdaySlider";
 import VIPFunky from "../../../components/VIP-Funky/VIP-Funky";
@@ -14,28 +13,25 @@ import FunkyApp from "../../../components/FunkyApp/FunkyApp";
 import Description from "../../../components/Description/Description";
 import { COLORS } from "../../../constant/color";
 import { useQuery } from "@tanstack/react-query";
-import { useRef } from "react";
-import { ChevronRight } from "@mui/icons-material";
 import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
 
 const AdverstisementCard = [
-  "Birthday Gifts",
-  "Personlised Gifts",
-  "Anniversary Gift",
+  {
+    title:'Calendars',
+    price:'price £10'
+  },
+  {
+    title:'Personlised Gifts',
+    price:'price £20'
+  },
+  {
+    title:'Anniversary Gift',
+    price:''
+  },
+ 
 ];
 
 const LandingHome = () => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-   const handleNext = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({
-        left: 170, 
-        behavior: "smooth",
-      });
-    }
-  };
-
   const fetchMockCategories = async () => {
     return new Promise<typeof CATEGORIES_DATA>((resolve) => {
       resolve(CATEGORIES_DATA);
@@ -70,9 +66,7 @@ const LandingHome = () => {
         }}
       >
         {/* Categories */}
-        <Box position={"relative"} >
           <Box
-            ref={scrollRef}
             sx={{
               display: "flex",
               gap: { md: "20px", sm: "20px", xs: "10px" },
@@ -84,7 +78,7 @@ const LandingHome = () => {
               justifyContent: "center",
               m: "auto",
               "&::-webkit-scrollbar": {
-                height: "10px",
+                height: "6px",
                 width: "100px",
                 cursor: "pointer",
               },
@@ -107,23 +101,6 @@ const LandingHome = () => {
               />
             ))}
           </Box>
-          <IconButton
-            onClick={handleNext}
-            sx={{
-              position: "absolute",
-              top: "50%",
-              right: -20,
-              transform: "translateY(-50%)",
-              backgroundColor: COLORS.white,
-              boxShadow: 2,
-              color: COLORS.primary,
-              border: "1px solid black",
-              "&:hover": { backgroundColor: COLORS.primary, color: "white" },
-            }}
-          >
-            <ChevronRight />
-          </IconButton>
-        </Box>
 
         {/* Banner Area */}
         <Banner />
@@ -135,15 +112,15 @@ const LandingHome = () => {
             gap: "13px",
             alignItems: "center",
             overflowX: "auto",
-            width: { lg: "99%" },
+            width: { lg: "99.4%" },
             mr: "5px",
             ml: "5px",
             pb: 5,
-            mt: { md: "-80px", sm: "", xs: 0 },
+            mt: { md: "-90px", sm: "", xs: 0 },
             zIndex: 100,
             position: "relative",
             "&::-webkit-scrollbar": {
-              height: "13px",
+              height: "8px",
             },
             "&::-webkit-scrollbar-track": {
               backgroundColor: "#f1f1f1",
@@ -170,7 +147,7 @@ const LandingHome = () => {
             }}
           >
             {AdverstisementCard.map((e) => (
-              <AdvertisementCard title={e} />
+              <AdvertisementCard title={e.title} price={e.price} />
             ))}
           </Box>
         </Box>
@@ -200,7 +177,7 @@ const LandingHome = () => {
         <CommingSoonOffers />
 
         {/* Just advertisemtn */}
-        <GiveFunk />
+        {/* <GiveFunk /> */}
 
         {/* For App monatization */}
         <FunkyApp />

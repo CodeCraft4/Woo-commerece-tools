@@ -4,7 +4,7 @@ const StickerLine = () => {
   return (
     <Box 
     sx={{
-        p:{md:3,sm:3,xs:1},
+        p:{md:1.5,sm:3,xs:1},
         bgcolor:"#ff825e",
         textAlign:'center',
         display:'flex',
@@ -12,7 +12,7 @@ const StickerLine = () => {
         m:'auto'
     }}
     >
-        <Typography sx={{fontSize:{md:'20px',sm:'20px',xs:'14px'},fontWeight:700}}>Make it personal! <span style={{fontWeight:400}}>Add stickers, photos & more</span></Typography>
+        <Typography sx={{fontSize:{md:'16px',sm:'20px',xs:'14px'},fontWeight:700}}>Make it personal! <span style={{fontWeight:400}}>🥳 Add stickers, photos & more</span></Typography>
     </Box>
   )
 }

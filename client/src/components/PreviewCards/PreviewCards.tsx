@@ -252,13 +252,13 @@ const PreviewBookCard = () => {
                     p: 2,
                     height: "100%",
                     borderRadius: "10px",
-                    bgcolor: "#212121",
-                    color:'white'
+                    bgcolor: "white",
+                    color:'black'
                   }}
                 >
                   <Box
                    component={'img'}
-                   src="/assets/images/LOGO.png"
+                   src="/assets/images/blackLOGO.png"
                    sx={{
                     width:'300px'
                    }}

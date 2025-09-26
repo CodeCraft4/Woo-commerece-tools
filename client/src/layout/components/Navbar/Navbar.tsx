@@ -1,4 +1,4 @@
-import { AppBar, Box, IconButton, Toolbar, Typography } from "@mui/material";
+import { AppBar, Box, IconButton, Toolbar } from "@mui/material";
 import CustomButton from "../../../components/CustomButton/CustomButton";
 import { Redo, Undo } from "@mui/icons-material";
 import { USER_ROUTES } from "../../../constant/route";
@@ -20,9 +20,11 @@ const Navbar = () => {
         elevation={0}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="h6" component="div">
-            LOGO
-          </Typography>
+          <Box
+           component={'img'}
+           src="/assets/images/blackLOGO.png"
+           sx={{width:300,height:50}}
+          />
 
           <Box>
             <IconButton>
@@ -42,12 +44,10 @@ const Navbar = () => {
             <Box sx={{display:'flex',gap:3,alignItems:'center'}}>
               <CustomButton
                 title="Edit Design"
-                onClick={() => navigate(USER_ROUTES.HOME)}
                 variant="outlined"
               />
               <CustomButton
                 title="Add to Basket"
-                onClick={() => navigate(USER_ROUTES.SUBSCRIPTION)}
               />
             </Box>
           )}

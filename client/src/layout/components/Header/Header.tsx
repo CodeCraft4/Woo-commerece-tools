@@ -21,8 +21,6 @@ import {
   ShoppingBag,
 } from "@mui/icons-material";
 import { megaMenuData, navLinks } from "../../../constant/data";
-import { useNavigate } from "react-router-dom";
-import { USER_ROUTES } from "../../../constant/route";
 
 interface Props {
   window?: () => Window;
@@ -96,8 +94,6 @@ export default function Header(props: Props) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [hoveredMenuItem, setHoveredMenuItem] =
     React.useState<MegaMenuKeys | null>(null);
-
-  const navigate = useNavigate();
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
@@ -198,32 +194,7 @@ export default function Header(props: Props) {
               >
                 <Box
                   component="input"
-                  sx={{
-                    width: "100%",
-                    height: "42px",
-                    borderRadius: 8,
-                    bgcolor: "transparent",
-                    border: "none",
-                    outline: "none",
-                    ml: 1,
-                    "&:hover": {
-                      border: "none",
-                      outline: "none",
-                    },
-                    "&:focus": {
-                      border: "none",
-                      outline: "none",
-                    },
-                    "&:active": {
-                      border: "none",
-                      outline: "none",
-                    },
-                    "&::placeholder": {
-                      color: "#212121",
-                      fontWeight: 700,
-                      fontSize: "14px",
-                    },
-                  }}
+                  sx={searchInputStyle}
                   placeholder="Search for cards, gift and flowers...."
                 />
 
@@ -244,14 +215,14 @@ export default function Header(props: Props) {
               </IconButton>
               <IconButton
                 sx={iconStyle}
-                onClick={() => navigate(USER_ROUTES.HOME)}
+                // onClick={() => navigate(USER_ROUTES.HOME)}
               >
                 <Person fontSize="large" />
                 <Typography fontSize={"12px"}>Accounts</Typography>
               </IconButton>
               <IconButton
                 sx={iconStyle}
-                onClick={() => navigate(USER_ROUTES.HOME)}
+                // onClick={() => navigate(USER_ROUTES.HOME)}
               >
                 <ShoppingBag fontSize="large" />
                 <Typography fontSize={"12px"}>Basket</Typography>
@@ -295,7 +266,7 @@ export default function Header(props: Props) {
             m: "auto",
             color: "white",
             pt: 3,
-            width: "100%",
+            width: "80%",
             gap: "8px",
           }}
           onMouseLeave={handleMouseLeave}
@@ -308,6 +279,7 @@ export default function Header(props: Props) {
                 cursor: "pointer",
                 "&:hover": { color: "orange" },
                 flexGrow: 1,
+                fontSize:'13px',
               }}
             >
               {item.name}
@@ -338,5 +310,32 @@ const iconStyle = {
   flexDirection: "column",
   "&:hover": {
     color: "orange",
+  },
+};
+
+const searchInputStyle = {
+  width: "100%",
+  height: "42px",
+  borderRadius: 8,
+  bgcolor: "transparent",
+  border: "none",
+  outline: "none",
+  ml: 1,
+  "&:hover": {
+    border: "none",
+    outline: "none",
+  },
+  "&:focus": {
+    border: "none",
+    outline: "none",
+  },
+  "&:active": {
+    border: "none",
+    outline: "none",
+  },
+  "&::placeholder": {
+    color: "#212121",
+    fontWeight: 700,
+    fontSize: "14px",
   },
 };

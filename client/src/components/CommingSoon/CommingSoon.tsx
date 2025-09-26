@@ -7,7 +7,7 @@ const CommingSoonOffers = () => {
     <Box
       sx={{
         borderRadius: 4,
-        width: "95%",
+        width: "100%",
         height: { md: "450px", sm: "", xs: "auto" },
         display: { md: "flex", sm: "", xs: "block" },
         // mt: 8,
@@ -23,9 +23,9 @@ const CommingSoonOffers = () => {
           display: "flex",
           justifyContent: "center",
           flexDirection: "column",
-          alignItems: "center",
+          alignItems: "start",
           borderRadius: "20px 0px 0px 20px",
-          textAlign: "center",
+          textAlign: "start",
           p: { md: 3, sm: 2, xs: 1 },
         }}
       >
@@ -40,21 +40,22 @@ const CommingSoonOffers = () => {
             },
           }}
         >
-          Show You Give a <br /> Funk This Christmas!
+          Show You Give a Funk <br />  This Christmas!
         </Typography>
         <Typography
-          sx={{ py: 2, fontSize: { md: "auto", sm: "auto", xs: "14px" } }}
+          sx={{ py: 1, fontSize: { md: "auto", sm: "auto", xs: "14px" },width:{md:'90%',sm:'',xs:"100%"} ,fontWeight:300}}
         >
           The festive countdown is on! From Christmas classics to new
           personalised stockings and more coming soon, get Christmas sorted now
           and avoid the stress.
         </Typography>
-        <br />
+        <Box sx={{mt:1}}>
         <LandingButton
           title="Shop Christmas Card & Gift"
-          width="300px"
+          width="25vw"
           personal
           />
+          </Box>
           </Box>
 
       <Box sx={{ width: { md: "60%", sm: "60%", xs: "100%" } }}>
