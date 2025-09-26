@@ -7,6 +7,10 @@ import Subscription from "../../modules/User/Subscription/Subscription";
 import SuccessPayment from "../../modules/User/SuccessPayment/SuccessPayment";
 import LandingHome from "../../modules/User/LandingHome/LandingHome";
 import ViewAll from "../../modules/User/ViewAll/ViewAll";
+import SignIn from "../../modules/Admin/Auth/SignIn";
+import Products from "../../modules/Admin/Products/Products";
+import AddNewProducts from "../../modules/Admin/AddNewProducts/AddNewProducts";
+import Setting from "../../modules/Admin/Setting/Setting";
 
 const Router = () => {
   return (
@@ -19,7 +23,16 @@ const Router = () => {
       <Route path={USER_ROUTES.SUBSCRIPTION} element={<Subscription />} />
       <Route path={USER_ROUTES.SUCCESS_PAY} element={<SuccessPayment />} />
       {/* Just Admin dashboard Preview  */}
+
+      
+      <Route path={ADMINS_DASHBOARD.SIGNIN} element={<SignIn />} />
       <Route path={ADMINS_DASHBOARD.HOME} element={<DashboardHome />} />
+      <Route path={ADMINS_DASHBOARD.PRODUCTS_LIST} element={<Products />} />
+      <Route
+        path={ADMINS_DASHBOARD.ADD_NEW_CARDS}
+        element={<AddNewProducts />}
+      />
+      <Route path={ADMINS_DASHBOARD.SETTINGS} element={<Setting />} />
     </ReactRoutes>
   );
 };

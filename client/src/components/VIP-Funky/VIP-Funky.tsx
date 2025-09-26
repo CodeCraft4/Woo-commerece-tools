@@ -1,14 +1,13 @@
 import { Box } from "@mui/material";
 import { COLORS } from "../../constant/color";
-import LandingButton from "../LandingButton/LandingButton";
 
 const VIPFunky = () => {
   return (
     <Box
       sx={{
-        mt: 6,
+        mt: 8,
         width: "100%",
-        height: { md: "250px", sm: "", xs: "auto" },
+        height: { md: "400px", sm: "", xs: "auto" },
         borderRadius: 4,
         bgcolor: COLORS.primary,
         color: COLORS.white,
@@ -18,21 +17,17 @@ const VIPFunky = () => {
         m: "auto",
       }}
     >
-      {/* <Box
-        component={"img"}
-        src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2FfunkyVIPs%2Ffunky.png&w=256&q=75"
-        width={300}
-        height={300}
-      /> */}
       <Box
         component={"img"}
-        src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2FfunkyVIPs%2Ffunky.png&w=256&q=75"
+        src="/assets/images/banner2.jpg"
         sx={{
-          width: { md: 300, sm: 300, xs: "100%" },
-          height: { md: 250, sm: 300, xs: "100%" },
+          width: { md: "100%", sm: 300, xs: "100%" },
+          height: { md: 400, sm: 300, xs: "100%" },
+          borderRadius: 3,
+          objectFit: "cover",
         }}
       />
-      <Box
+      {/* <Box
         component={"img"}
         src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2FfunkyVIPs%2Fvip-offer-text.png&w=640&q=75"
         sx={{
@@ -47,9 +42,9 @@ const VIPFunky = () => {
           width: { md: 150, sm: 300, xs: "100%" },
           height: { md: 250, sm: 300, xs: "100%" },
         }}
-      />
+      /> */}
 
-      <LandingButton title="Tell Me More!" personal width="300px" />
+      {/* <LandingButton title="Tell Me More!" personal width="300px" /> */}
     </Box>
   );
 };
