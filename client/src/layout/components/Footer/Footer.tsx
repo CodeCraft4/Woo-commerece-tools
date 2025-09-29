@@ -23,6 +23,7 @@ const Footer = () => {
             <List>
               {e.links.map((link) => (
                 <ListItem
+                  key={link.name}
                   sx={{
                     fontSize: "18px",
                     mb: 1.5,
@@ -261,7 +262,7 @@ const Footer = () => {
         </Box>
       </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "center", m: "auto" ,mb:3}}>
+      <Box sx={{ display: "flex", justifyContent: "center", m: "auto", mb: 3 }}>
         <Typography
           sx={{
             fontSize: { md: "14px", sm: "", xs: "14px" },
@@ -269,12 +270,12 @@ const Footer = () => {
             fontWeight: 300,
           }}
         >
-          © 2025 DIYPersonalizatoin.com Limited, County Gates, Ashton Road, Bristol,
-          BS3 2JH, UK Registered Office: Century House, Wakefield 41 Industrial
-          Estate, Wakefield WF2 0XG, UK
-            <a href="#" style={{ textDecoration: "none", marginLeft: "5px" }}>
-              Term and Condition
-            </a>
+          © 2025 DIYPersonalizatoin.com Limited, County Gates, Ashton Road,
+          Bristol, BS3 2JH, UK Registered Office: Century House, Wakefield 41
+          Industrial Estate, Wakefield WF2 0XG, UK
+          <a href="#" style={{ textDecoration: "none", marginLeft: "5px" }}>
+            Term and Condition
+          </a>
         </Typography>
       </Box>
     </Box>

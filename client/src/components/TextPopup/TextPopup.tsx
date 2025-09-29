@@ -85,7 +85,7 @@ const TextPopup = ({
 
 
   return (
-    <PopupWrapper title="" sx={{ width: 80, height: 600, left: "17%",overflowY:'auto' }}>
+    <PopupWrapper title="" sx={{ width: 80, height: 600, left: "24%",overflowY:'auto' }}>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center",p:1 }}>
         <IconButton onClick={onShowFontSizePopup} sx={{ ...editingButtonStyle, color: "#212121" }}>
           <TextIncreaseOutlined fontSize="large" />

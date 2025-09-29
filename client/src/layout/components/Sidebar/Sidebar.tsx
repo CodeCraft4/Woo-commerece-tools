@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
-import { ADMINS_DASHBOARD } from "../../constant/route";
+import { ADMINS_DASHBOARD } from "../../../constant/route";
 import { ArrowForwardIos } from "@mui/icons-material";
 
 const Sidebar = () => {

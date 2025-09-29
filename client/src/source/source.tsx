@@ -26,33 +26,27 @@ export const uploadVideoToSupabase = async (file: File): Promise<string | null> 
 };
 
 // For Video
-export const fetchVideoLatestMedia = async (setMediaUrl:any) => {
-      const { data, error } = await supabase.storage
-        .from("media")
-        .list("video", {
-          limit: 1,
-          sortBy: { column: "created_at", order: "desc" },
-        });
+export const fetchVideoLatestMedia = async (userId: string, setMediaUrl: (url: string|null) => void) => {
+  const { data, error } = await supabase
+    .from("user_media")
+    .select("file_path")
+    .eq("user_id", userId)
+    .eq("type", "video")
+    .order("created_at", { ascending: false }) // latest first
+    .limit(1);
 
-      if (error) {
-        console.error("Error fetching media:", error.message);
-        return;
-      }
+  if (error || !data?.length) {
+    setMediaUrl(null);
+    return;
+  }
 
-      if (data && data.length > 0) {
-        const latestFile = data[0].name;
+  const { data: publicUrl } = supabase.storage
+    .from("media")
+    .getPublicUrl(data[0].file_path);
 
-        // ✅ match upload path "video/filename"
-        const { data: urlData } = supabase.storage
-          .from("media")
-          .getPublicUrl(`video/${latestFile}`);
+  setMediaUrl(publicUrl.publicUrl);
+};
 
-        console.log("Latest video public URL:", urlData.publicUrl);
-        setMediaUrl(urlData.publicUrl);
-      } else {
-        console.warn("No video files found in bucket");
-      }
-    };
 
     // For Audio
 export const fetchAudioLatestMedia = async (setAudioUrl:any) => {

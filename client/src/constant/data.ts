@@ -285,7 +285,7 @@ export const navLinks = [
   { name: "Birthday", hasMegaMenu: true },
   { name: "Cards", hasMegaMenu: true },
   { name: "Gifts", hasMegaMenu: true },
-  { name: "Flowers/Plants", hasMegaMenu: true },
+  { name: "Flowers & Plants", hasMegaMenu: true },
   { name: "Alcohol Gifts", hasMegaMenu: true },
   { name: "Gift Vouchers", hasMegaMenu: true },
   { name: "For Business", hasMegaMenu: true },
@@ -296,8 +296,12 @@ export const megaMenuData = {
   Birthday: {
     title: "Birthday",
     categories: [
-      { name: "Birthday", links: ["For Him", "For Her", "Kids"] },
-      // { name: "", links: ["Whiskey", "Gin", "Vodka"] },
+      { name: "Birthday Cards", links: ["For Him", "For Her", "Kids"] },
+      { name: "Anniversary Cards", links: ["Romantic", "Funny", "Milestone"] },
+      { name: "Invite Cards", links: ["Romantic", "Funny", "Milestone"] },
+      { name: "Sticker Cards", links: ["Romantic", "Funny", "Milestone"] },
+      { name: "Bussiness Cards", links: ["Romantic", "Funny", "Milestone"] },
+      // { name: "Coasters Cards", links: ["Romantic", "Funny", "Milestone"] },
     ],
   },
   Cards: {
@@ -305,6 +309,10 @@ export const megaMenuData = {
     categories: [
       { name: "Birthday Cards", links: ["For Him", "For Her", "Kids"] },
       { name: "Anniversary Cards", links: ["Romantic", "Funny", "Milestone"] },
+      { name: "Invite Cards", links: ["Romantic", "Funny", "Milestone"] },
+      { name: "Sticker Cards", links: ["Romantic", "Funny", "Milestone"] },
+      { name: "Bussiness Cards", links: ["Romantic", "Funny", "Milestone"] },
+      { name: "Coasters Cards", links: ["Romantic", "Funny", "Milestone"] },
     ],
   },
   Gifts: {
@@ -312,14 +320,22 @@ export const megaMenuData = {
     categories: [
       { name: "Tech Gifts", links: ["Headphones", "Smartwatches", "Drones"] },
       { name: "Home Gifts", links: ["Candles", "Blankets", "Decor"] },
+      { name: "Mugs", links: ["Candles", "Blankets", "Decor"] },
+      { name: "Stationary", links: ["Candles", "Blankets", "Decor"] },
+      { name: "Well Art", links: ["Candles", "Blankets", "Decor"] },
+      { name: "Phot Art", links: ["Candles", "Blankets", "Decor"] },
     ],
   },
-  "Flowers/Plants": {
+  "Flowers & Plants": {
     title: "Flowers & Plants",
     categories: [
       { name: "Bouquets", links: ["Roses", "Lilies", "Sunflowers"] },
       {
         name: "House Plants",
+        links: ["Succulents", "Fiddle Leaf Fig", "Monstera"],
+      },
+      {
+        name: "Leaflets & Flyer",
         links: ["Succulents", "Fiddle Leaf Fig", "Monstera"],
       },
     ],
@@ -329,6 +345,7 @@ export const megaMenuData = {
     categories: [
       { name: "Wine", links: ["Red Wine", "White Wine", "Sparkling Wine"] },
       { name: "Spirits", links: ["Whiskey", "Gin", "Vodka"] },
+      { name: "Wall Art", links: ["Whiskey", "Gin", "Vodka"] },
     ],
   },
   "Gift Vouchers": {
@@ -337,6 +354,10 @@ export const megaMenuData = {
       { name: "Retail Vouchers", links: ["Amazon", "Target", "Starbucks"] },
       {
         name: "Experience Vouchers",
+        links: ["Spa Day", "Hot Air Balloon Ride", "Cooking Class"],
+      },
+      {
+        name: "Business Cards",
         links: ["Spa Day", "Hot Air Balloon Ride", "Cooking Class"],
       },
     ],
@@ -363,6 +384,10 @@ export const megaMenuData = {
       },
       {
         name: "Event Planning",
+        links: ["Party Supplies", "Floral Arrangements", "Catering"],
+      },
+      {
+        name: "Tote Bags",
         links: ["Party Supplies", "Floral Arrangements", "Catering"],
       },
     ],

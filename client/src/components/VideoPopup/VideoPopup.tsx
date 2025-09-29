@@ -13,6 +13,8 @@ import PopupWrapper from "../PopupWrapper/PopupWrapper";
 import { supabase } from "../../supabase/supabase";
 import { useWishCard } from "../../context/WishCardContext";
 
+
+
 interface VideoPopupProps {
   onClose: () => void;
 }
@@ -34,22 +36,28 @@ const VideoPopup = ({
 
   const [loading, setLoading] = useState(false);
 
-  const handleVideoFileChange = (e: any) => {
-    const file = e.target.files[0];
-    if (file) {
-      setVideo(file);
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > 50) {
+      alert("❌ File size must be less than 50MB");
+      return;
     }
-  };
+    setVideo(file);
+  }
+};
 
   const handleVideoDelete = () => {
     setVideo(null);
   };
 
+
   return (
     <PopupWrapper
       title="Video"
       onClose={onClose}
-      sx={{ width: 300, height: 600, left: "2%", overflow: "hidden" }}
+      sx={{ width: 300, height: 600, left: "12%", overflow: "hidden" }}
     >
       {tips && (
         <Box sx={{ height: "100%", overflow: "hidden" }}>
@@ -72,7 +80,7 @@ const VideoPopup = ({
           <Box p={2}>
             <Typography
               sx={{
-                fontSize: "28px",
+                fontSize: "23px",
                 fontWeight: "bold",
                 color: "#363636ff",
                 textAlign: "center",

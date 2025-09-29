@@ -48,7 +48,7 @@ const MediaPopup = ({
     <PopupWrapper
       title={isVideo ? "Video" : "Audio"}
       onClose={onClose}
-      sx={{ width: 300, height: 600, left: "2%", overflow: "hidden" }}
+      sx={{ width: 300, height: 600, left: "12%", overflow: "hidden" }}
     >
       {tips && (
         <>

@@ -13,10 +13,22 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
 import LOGO from "../../../assets/LOGO.png";
-import { DateRange, Person, Search, ShoppingBag } from "@mui/icons-material";
+import {
+  DateRange,
+  Logout,
+  Person,
+  Search,
+  Settings,
+  ShoppingBag,
+} from "@mui/icons-material";
 import { megaMenuData, navLinks } from "../../../constant/data";
 import { useNavigate } from "react-router-dom";
-import { ADMINS_DASHBOARD } from "../../../constant/route";
+import { USER_ROUTES } from "../../../constant/route";
+import MegaMenu from "../../../components/MegaMenu/MegaMenu";
+import { useAuth } from "../../../context/AuthContext";
+import { Avatar, ListItemIcon, Menu, MenuItem } from "@mui/material";
+import useModal from "../../../hooks/useModal";
+import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 
 interface Props {
   window?: () => Window;
@@ -42,7 +54,7 @@ interface MegaMenuData {
   Birthday: MegaMenuItem;
   Cards: MegaMenuItem;
   Gifts: MegaMenuItem;
-  "Flowers/Plants": MegaMenuItem;
+  "Flowers & Plants": MegaMenuItem;
   "Alcohol Gifts": MegaMenuItem;
   "Gift Vouchers": MegaMenuItem;
   "For Business": MegaMenuItem;
@@ -51,43 +63,11 @@ interface MegaMenuData {
 
 type MegaMenuKeys = keyof MegaMenuData;
 
-const MegaMenu = ({ data }: { data: MegaMenuItem }) => (
-  <Box
-    sx={{
-      position: "absolute",
-      top: "100%",
-      left: 0,
-      width: "100%",
-      bgcolor: "white",
-      height: 600,
-      boxShadow: 3,
-      zIndex: 10,
-      p: 4,
-      display: "flex",
-      gap: 5,
-      borderTop: "1px solid #ddd",
-    }}
-  >
-    {data.categories.map((category, index: number) => (
-      <Box key={index}>
-        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-          {category.name}
-        </Typography>
-        <List sx={{ p: 0 }}>
-          {category.links.map((link, linkIndex: number) => (
-            <ListItemButton key={linkIndex} sx={{ py: 0.5, px: 0 }}>
-              <ListItemText primary={link} />
-            </ListItemButton>
-          ))}
-        </List>
-      </Box>
-    ))}
-  </Box>
-);
-
 export default function Header(props: Props) {
   const { window } = props;
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [hoveredMenuItem, setHoveredMenuItem] =
     React.useState<MegaMenuKeys | null>(null);
@@ -103,6 +83,31 @@ export default function Header(props: Props) {
   const handleMouseLeave = () => {
     setHoveredMenuItem(null);
   };
+
+  const handleSelect = () => {
+    setHoveredMenuItem(null); // close mega menu
+  };
+
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    openLogout();
+  };
+
+  // For Logout Modal
+  const {
+    open: isOpenLogout,
+    openModal: openLogout,
+    closeModal: closeLogout,
+  } = useModal();
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
@@ -174,8 +179,8 @@ export default function Header(props: Props) {
                 component={"img"}
                 src={LOGO}
                 alt="LOGO"
-                width={"300px"}
-                height={50}
+                width={"450px"}
+                height={70}
               />
               <Box
                 sx={{
@@ -210,13 +215,62 @@ export default function Header(props: Props) {
                 <DateRange fontSize="large" />
                 <Typography fontSize={"12px"}>Reminders</Typography>
               </IconButton>
-              <IconButton
-                sx={iconStyle}
-                onClick={() => navigate(ADMINS_DASHBOARD.SIGNIN)}
-              >
-                <Person fontSize="large" />
-                <Typography fontSize={"12px"}>Accounts</Typography>
-              </IconButton>
+              {user ? (
+                <>
+                  <IconButton onClick={handleOpenMenu}>
+                    <Avatar sx={{ bgcolor: "orange" }}>
+                      {user.email?.charAt(0).toUpperCase()}
+                    </Avatar>
+                  </IconButton>
+
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleCloseMenu}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        // navigate(USER_ROUTES.ACCOUNT_SETTINGS);
+                        handleCloseMenu();
+                      }}
+                      sx={{ width: 150 }}
+                    >
+                      <ListItemIcon>
+                        <Person fontSize="small" />
+                      </ListItemIcon>
+                      <Typography>Profile</Typography>
+                    </MenuItem>
+
+                    <MenuItem
+                      onClick={() => {
+                        // navigate(USER_ROUTES.SETTINGS);
+                        handleCloseMenu();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <Settings fontSize="small" />
+                      </ListItemIcon>
+                      <Typography>Settings</Typography>
+                    </MenuItem>
+
+                    <MenuItem onClick={handleLogout}>
+                      <ListItemIcon>
+                        <Logout fontSize="small" sx={{ color: "red" }} />
+                      </ListItemIcon>
+                      <Typography>Logout</Typography>
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <IconButton
+                  sx={iconStyle}
+                  onClick={() => navigate(USER_ROUTES.SIGNIN)}
+                >
+                  <Person fontSize="large" />
+                  <Typography fontSize="12px">Accounts</Typography>
+                </IconButton>
+              )}
+
               <IconButton
                 sx={iconStyle}
                 // onClick={() => navigate(USER_ROUTES.HOME)}
@@ -256,6 +310,7 @@ export default function Header(props: Props) {
           flexDirection: "column",
           position: "relative",
         }}
+        onMouseLeave={handleMouseLeave}
       >
         <List
           sx={{
@@ -265,7 +320,7 @@ export default function Header(props: Props) {
             pt: 3,
             width: "70%",
           }}
-          onMouseLeave={handleMouseLeave}
+          // onMouseLeave={handleMouseLeave}
         >
           {navLinks.map((item) => (
             <ListItem
@@ -288,8 +343,12 @@ export default function Header(props: Props) {
           ))}
         </List>
         {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
-          <MegaMenu data={megaMenuData[hoveredMenuItem]} />
+          <MegaMenu
+            data={megaMenuData[hoveredMenuItem]}
+            onSelect={handleSelect}
+          />
         )}
+
         {/* <Typography
             sx={{
               display: "flex",
@@ -302,6 +361,10 @@ export default function Header(props: Props) {
             <Flag />
           </Typography> */}
       </Box>
+
+      {isOpenLogout && (
+        <ConfirmModal open={isOpenLogout} onCloseModal={closeLogout} />
+      )}
     </Box>
   );
 }

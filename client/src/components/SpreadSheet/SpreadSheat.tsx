@@ -1,4 +1,3 @@
-// SlideSpread.tsx
 "use client";
 import { Box, IconButton, TextField, Typography } from "@mui/material";
 import {
@@ -18,6 +17,7 @@ import {
 } from "../../source/source";
 import { Rnd } from "react-rnd";
 import { useWishCard } from "../../context/WishCardContext";
+import { useAuth } from "../../context/AuthContext";
 
 interface DraggableItem {
   id: number | string;
@@ -61,6 +61,8 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
     setImages,
   } = useWishCard();
 
+  const {user} = useAuth()
+
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const leftBoxRef = useRef<HTMLDivElement>(null);
@@ -87,12 +89,22 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
     rotation: 0,
   });
 
+  const [layoutPosition, setLayoutPosition] = useState({
+    x: 100,
+    y: 100,
+    width: 330,
+    height: 550,
+    rotation: 0,
+  });
+
   console.log(setAudioQrPosition);
 
   // Just Video fetching
   useEffect(() => {
-    fetchVideoLatestMedia(setMediaUrl);
-  }, []);
+  if (user) {
+    fetchVideoLatestMedia(user.id, setMediaUrl);
+  }
+}, [user]);
 
   // Just Audio fetching
   useEffect(() => {
@@ -160,17 +172,14 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
             onDragStop={(_, d) =>
               setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
             }
-            onResizeStop={(e, _, ref, position) => {
+            onResizeStop={(_, ___, ref,__,position) => {
               setQrPosition({
                 width: parseInt(ref.style.width),
                 height: parseInt(ref.style.height),
-                x: position.width,
-                y: position.height,
-                // x: position.x,
-                // y: position.y,
+                x: position.x,
+                y: position.y,
                 rotation: qrPosition.rotation,
               });
-              console.log(e);
             }}
           >
             <QrGenerator url={mediaUrl} />
@@ -244,7 +253,7 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                   )
                 );
               }}
-              onResizeStop={(e, _, ref) => {
+              onResizeStop={(e, _, ref,__,position) => {
                 const newWidth = parseInt(ref.style.width);
                 const newHeight = parseInt(ref.style.height);
                 console.log(e);
@@ -255,8 +264,8 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                           ...img,
                           width: newWidth,
                           height: newHeight,
-                          // x: position.x,
-                          // y: position.y,
+                          x: position.x,
+                          y: position.y,
                         }
                       : img
                   )
@@ -275,6 +284,24 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                       : img
                   )
                 );
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "12px",
+                  height: "12px",
+                  background: "#3a7bd5",
+                  borderRadius: "50%",
+                  right: "-6px",
+                  bottom: "-6px",
+                },
+                topLeft: {
+                  width: "12px",
+                  height: "12px",
+                  background: "#3a7bd5",
+                  borderRadius: "50%",
+                  left: "-6px",
+                  top: "-6px",
+                },
               }}
               style={{
                 border:
@@ -307,22 +334,22 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
 
         {showOneTextRightSideBox && (
           <Rnd
-            size={{ width: "90%", height: '90%' }}
-            position={{ x: qrPosition.x, y: qrPosition.y }}
+            size={{
+              width: layoutPosition.width,
+              height: layoutPosition.height,
+            }}
+            position={{ x: layoutPosition.x, y: layoutPosition.y }}
             onDragStop={(_, d) =>
-              setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
+              setLayoutPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
             }
-            onResizeStop={(e, _, ref, position) => {
-              setQrPosition({
+            onResizeStop={(_, __, ref,_delta, position) => {
+              setLayoutPosition({
                 width: parseInt(ref.style.width),
                 height: parseInt(ref.style.height),
-                x: position.width,
-                y: position.height,
-                // x: position.x,
-                // y: position.y,
-                rotation: qrPosition.rotation,
+                x: position.x,
+                y: position.y,
+                rotation: layoutPosition.rotation,
               });
-              console.log(e);
             }}
           >
             <Box
@@ -355,8 +382,8 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                 fullWidth
                 sx={{
                   height: "100%",
-                  px: 6,
-                  textAlign: textAlign
+                  px: 2,
+                  textAlign: textAlign,
                 }}
               />
             </Box>
@@ -370,14 +397,12 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
             onDragStop={(_, d) =>
               setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
             }
-            onResizeStop={(e, _, ref, position) => {
+            onResizeStop={(e, _, ref,__, position) => {
               setQrPosition({
                 width: parseInt(ref.style.width),
                 height: parseInt(ref.style.height),
-                x: position.width,
-                y: position.height,
-                // x: position.x,
-                // y: position.y,
+                x: position.x,
+                y: position.y,
                 rotation: qrPosition.rotation,
               });
               console.log(e);
@@ -395,12 +420,14 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
             >
               {[0, 1, 2].map((index) => (
                 <Box
+                  onClick={() => handleAddTextClick(index)}
                   sx={{
                     height: "100%",
                     width: "100%",
                     p: 1,
                     display: "flex",
                     flexDirection: "column",
+                    mb: 2,
                   }}
                   key={index}
                 >
@@ -426,9 +453,9 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setTexts((prev) => {
-                          const updated = [...prev]; // copy old array
-                          updated[index] = newValue; // update only this index
-                          return updated; // save back
+                          const updated = [...prev]; 
+                          updated[index] = newValue; 
+                          return updated;
                         });
                       }}
                       onBlur={handleFinishEditing}
@@ -449,7 +476,7 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                         justifyContent: "center",
                         alignItems: "center",
                         m: "auto",
-                        color: "gray",
+                        color: "#212121",
                         border: "3px dashed #3a7bd5",
                         cursor: "pointer",
                         userSelect: "none",

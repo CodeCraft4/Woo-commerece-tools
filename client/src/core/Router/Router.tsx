@@ -7,10 +7,12 @@ import Subscription from "../../modules/User/Subscription/Subscription";
 import SuccessPayment from "../../modules/User/SuccessPayment/SuccessPayment";
 import LandingHome from "../../modules/User/LandingHome/LandingHome";
 import ViewAll from "../../modules/User/ViewAll/ViewAll";
-import SignIn from "../../modules/Admin/Auth/SignIn";
+import SignIn from "../../modules/User/Auth/SignIn";
 import Products from "../../modules/Admin/Products/Products";
 import AddNewProducts from "../../modules/Admin/AddNewProducts/AddNewProducts";
 import Setting from "../../modules/Admin/Setting/Setting";
+import SignUp from "../../modules/User/Auth/SignUp";
+import AdminSignIn from "../../modules/Admin/Auth/SignIn";
 
 const Router = () => {
   return (
@@ -22,10 +24,11 @@ const Router = () => {
       <Route path={USER_ROUTES.VIEW_ALL} element={<ViewAll />} />
       <Route path={USER_ROUTES.SUBSCRIPTION} element={<Subscription />} />
       <Route path={USER_ROUTES.SUCCESS_PAY} element={<SuccessPayment />} />
-      {/* Just Admin dashboard Preview  */}
+      <Route path={USER_ROUTES.SIGNIN} element={<SignIn />} />
+      <Route path={USER_ROUTES.SIGNUP} element={<SignUp />} />
 
-      
-      <Route path={ADMINS_DASHBOARD.SIGNIN} element={<SignIn />} />
+      {/* Just Admin dashboard Preview  */}
+      <Route path={ADMINS_DASHBOARD.SIGNIN} element={<AdminSignIn />} />
       <Route path={ADMINS_DASHBOARD.HOME} element={<DashboardHome />} />
       <Route path={ADMINS_DASHBOARD.PRODUCTS_LIST} element={<Products />} />
       <Route
