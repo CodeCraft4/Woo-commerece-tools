@@ -9,9 +9,11 @@ import {
   fetchVideoLatestMedia,
 } from "../../source/source";
 import QrGenerator from "../QR-code/Qrcode";
+import { useAuth } from "../../context/AuthContext";
 
 const PreviewBookCard = () => {
   const [currentLocation, setCurrentLocation] = useState(1);
+  const {user} = useAuth()
 
   const {
     poster,
@@ -51,7 +53,9 @@ const PreviewBookCard = () => {
   };
 
   useEffect(() => {
-    fetchVideoLatestMedia(setMediaUrl);
+     if (user) {
+    fetchVideoLatestMedia(user.id, setMediaUrl);
+  }
     fetchAudioLatestMedia(setAudioUrl);
   }, []);
 
