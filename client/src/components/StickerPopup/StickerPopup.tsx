@@ -8,7 +8,7 @@ interface StickerPopupProps {
 
 const StickerPopup = ({ onClose }: StickerPopupProps) => {
   return (
-    <PopupWrapper title="Sticker" onClose={onClose} sx={{ width: 300, height: 600, left: "2%" }}>
+    <PopupWrapper title="Sticker" onClose={onClose} sx={{ width: 300, height: 600, left: "12%" }}>
       <Box
         sx={{
           mt: 2,

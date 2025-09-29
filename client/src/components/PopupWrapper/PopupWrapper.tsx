@@ -24,7 +24,7 @@ const PopupWrapper = ({
         height: "600px",
         position: "absolute",
         top: 105,
-        left: "2%",
+        left: "12%",
         p: 2,
         width: "300px",
         boxShadow: "3px 4px 12px #d6d6d6ff",

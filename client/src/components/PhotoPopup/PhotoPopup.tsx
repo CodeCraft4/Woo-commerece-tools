@@ -45,7 +45,7 @@ const PhotoPopup = ({
   };
 
   return (
-    <PopupWrapper title="Photos" onClose={onClose} sx={{ width: 300, height: 600, left: "2%", zIndex: 99 }}>
+    <PopupWrapper title="Photos" onClose={onClose} sx={{ width: 300, height: 600, left: "12%", zIndex: 99 }}>
       <Typography
         sx={{
           color: "#414141ff",

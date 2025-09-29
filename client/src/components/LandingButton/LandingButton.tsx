@@ -9,10 +9,11 @@ type ButtonTypes = {
   loading?: boolean;
   personal?: boolean;
   bgblack?: boolean;
+  type?:'button' | 'submit' | 'reset'
 };
 
 const LandingButton = (props: ButtonTypes) => {
-  const { title, personal, onClick, width, variant, loading, bgblack } =
+  const { title, personal, onClick, width, variant, loading, bgblack,type } =
     props || {};
 
   return (
@@ -21,6 +22,7 @@ const LandingButton = (props: ButtonTypes) => {
         variant={variant ? variant : "contained"}
         onClick={onClick}
         disabled={loading}
+        type={type}
         sx={{
           p: 1.3,
           bgcolor: variant
@@ -39,7 +41,7 @@ const LandingButton = (props: ButtonTypes) => {
           width: { md: width ? width : "auto", sm: "", xs: "100%" },
           border: variant ? `1px solid ${COLORS.primary}` : 0,
           "&:hover": {
-            bgcolor: variant ? "transparent" : "#7e7e7eff",
+            bgcolor: variant ? "transparent" : "#555454ff",
           },
         }}
       >

@@ -43,6 +43,7 @@ const Navbar = () => {
           ) : (
             <Box sx={{display:'flex',gap:3,alignItems:'center'}}>
               <CustomButton
+              onClick={() => navigate(`${USER_ROUTES.HOME}/*path`)}
                 title="Edit Design"
                 variant="outlined"
               />

@@ -87,7 +87,7 @@ const GeneAIPopup = (props: GeneAIType) => {
     <PopupWrapper
       title="Generate AI"
       onClose={onClose}
-      sx={{ width: 280, height: 600, left: "3%" }}
+      sx={{ width: 300, height: 600, left: "12%" }}
     >
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {!canvaAccessToken ? (

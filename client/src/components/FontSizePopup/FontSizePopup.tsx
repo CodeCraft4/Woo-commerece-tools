@@ -20,7 +20,7 @@ const FontSizePopup = ({ onClose }: FontSizePopupProps) => {
     <PopupWrapper
       title="Text Size"
       onClose={onClose}
-      sx={{ width: 250, height: 600, left: "6%" }}
+      sx={{ width: 250, height: 600, left: "15%" }}
     >
       <Box
         sx={{

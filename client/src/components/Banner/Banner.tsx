@@ -34,7 +34,7 @@ const Banner = () => {
           bottom: 0,
           left: 0,
           width: "100%",
-          height: "50%", // Adjust how much gradient covers
+          height: "50%",
           background:
             "linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0,0,0,0))",
         }}

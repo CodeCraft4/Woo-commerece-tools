@@ -4,10 +4,12 @@ export const USER_ROUTES = {
   VIEW_ALL: "/view-all",
   SUBSCRIPTION: "/subscription",
   SUCCESS_PAY: "/success-payment",
+  SIGNIN:'/signin',
+  SIGNUP:'/signup'
 };
 
 export const ADMINS_DASHBOARD = {
-  SIGNIN: "/signin",
+  SIGNIN: "/admin-signin",
   HOME: "/dashboard",
   PRODUCTS_LIST: "/products",
   ADD_NEW_CARDS: "/add-new-cards",

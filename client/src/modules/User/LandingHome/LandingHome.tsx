@@ -150,7 +150,7 @@ const LandingHome = () => {
             }}
           >
             {AdverstisementCard.map((e) => (
-              <AdvertisementCard title={e.title} price={e.price} poster={e.poster} />
+              <AdvertisementCard title={e.title} price={e.price} poster={e.poster} key={e.title} />
             ))}
           </Box>
         </Box>

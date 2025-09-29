@@ -181,7 +181,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
           {filteredCards?.map((cate) => (
-            <Box>
+            <Box key={cate.id}>
               <ProductCard
                 poster={cate.poster}
                 tabsSlider={true}
