@@ -145,19 +145,15 @@ const BasketSlider = (props: BirthdayTypes) => {
           {filteredCards.map((cate, index) => (
             <Box>
               <BasketCard
+                id={cate.id}
                 key={index}
+                title={cate.title}
                 poster={cate.poster}
                 price={cate.price}
                 sales={saleSlide}
-                // openModal={openDetailModal}
+                category={cate.category}
               />
-              {/* {isOpenDetailModal && (
-                <ProductPopup
-                  open={isOpenDetailModal}
-                  onClose={closeDetailModal}
-                  cate={selectedCate}
-                />
-              )} */}
+             
             </Box>
           ))}
         </Slider>

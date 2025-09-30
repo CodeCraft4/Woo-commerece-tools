@@ -8,6 +8,8 @@ import { Close } from "@mui/icons-material";
 import { COLORS } from "../../constant/color";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../constant/route";
+import { useCart } from "../../context/AddToCart";
+import toast from "react-hot-toast";
 
 const style = {
   position: "absolute",
@@ -25,7 +27,8 @@ export type CategoryType = {
   title?: string;
   poster?: string;
   description?: string;
-  price?: number;
+  category?:string;
+  price?: number | string;
   openModal?: (cate: CategoryType) => void;
 };
 
@@ -52,6 +55,8 @@ const plans = [
 const ProductPopup = (props: ProductsPopTypes) => {
   const { open, onClose, cate } = props;
 
+  const {addToCart} = useCart()
+
 
   const [selectedPlan, setSelectedPlan] = useState<string>("square-card");
   const [isZoomed, setIsZoomed] = useState(false);
@@ -72,6 +77,19 @@ const ProductPopup = (props: ProductsPopTypes) => {
   const handleToggleZoom = () => {
     setIsZoomed((prev) => !prev);
   };
+
+  const handleAddToCard=()=>{
+   
+     addToCart({
+          id:cate?.id,
+          img:cate?.poster,
+          category:cate?.category,
+          price:cate?.price,
+          title:cate?.title
+     })
+     toast.success('Product add to Cart')
+
+  }
 
   return (
     <div>
@@ -184,6 +202,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
                   variant="outlined"
                   width="150px"
                   personal
+                  onClick={handleAddToCard}
                 />
                 <LandingButton
                   title="Personlize"
