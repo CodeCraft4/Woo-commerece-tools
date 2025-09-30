@@ -6,6 +6,7 @@ import { USER_ROUTES } from "../../../constant/route";
 import { COLORS } from "../../../constant/color";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../../context/AuthContext";
+import toast from "react-hot-toast";
 
 type SigninForm = {
   email: string;
@@ -14,7 +15,7 @@ type SigninForm = {
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const {signIn} = useAuth()
+  const { signIn } = useAuth();
 
   const {
     register,
@@ -22,9 +23,8 @@ const SignIn = () => {
     formState: { errors },
   } = useForm<SigninForm>();
 
- 
   const onSubmitForm = async (data: SigninForm) => {
-    console.log(data,'---')
+    console.log(data, "---");
     try {
       const res = await signIn({
         email: data.email,
@@ -33,11 +33,10 @@ const SignIn = () => {
 
       console.log("✅ Signed in:", res);
 
-      alert("✅ Login successful!");
-      navigate('/'); // change route as needed
+      toast.success("Login successful!");
+      navigate("/");
     } catch (err: any) {
-      console.error("❌ Signin error:", err.message);
-      alert(err.message);
+      toast.error(err.message);
     }
   };
   return (
@@ -111,7 +110,12 @@ const SignIn = () => {
               })}
               error={errors.password?.message}
             />
-            <LandingButton title="Sign in " width="450px" personal type={'submit'} />
+            <LandingButton
+              title="Sign in "
+              width="450px"
+              personal
+              type={"submit"}
+            />
 
             <Typography sx={{ fontSize: "13px", textAlign: "start", mt: 3 }}>
               I have no account{" "}

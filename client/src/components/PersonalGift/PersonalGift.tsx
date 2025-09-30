@@ -55,8 +55,8 @@ const PersonalGift = () => {
             display: "flex",
             gap: "10px",
             flexWrap: "wrap",
-            width: "500px",
-            mt:2
+            width: {md:"500px",sm:'500px',xs:'100%'},
+            mt:2,
           }}
         >
           <LandingButton title="For Her" width="225px" personal bgblack/>
