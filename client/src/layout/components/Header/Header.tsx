@@ -26,15 +26,16 @@ import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 import MegaMenu from "../../../components/MegaMenu/MegaMenu";
 import { useAuth } from "../../../context/AuthContext";
-import { Avatar, ListItemIcon, Menu, MenuItem } from "@mui/material";
+import { Avatar, Badge, ListItemIcon, Menu, MenuItem } from "@mui/material";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
+import { useCart } from "../../../context/AddToCart";
 
 interface Props {
   window?: () => Window;
 }
 
-const drawerWidth = 240;
+const drawerWidth = 250;
 const navItems = ["Home", "About", "Contact"];
 
 // Define the type for a single category
@@ -67,6 +68,7 @@ export default function Header(props: Props) {
   const { window } = props;
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { cart } = useCart();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [hoveredMenuItem, setHoveredMenuItem] =
@@ -136,6 +138,7 @@ export default function Header(props: Props) {
         flexDirection: "column",
         position: "relative",
         py: 1,
+        width:'100%',
       }}
     >
       <Box
@@ -175,13 +178,15 @@ export default function Header(props: Props) {
                 },
               }}
             >
-              <Box
-                component={"img"}
-                src={LOGO}
-                alt="LOGO"
-                width={"450px"}
-                height={70}
-              />
+              <a href="/">
+                <Box
+                  component={"img"}
+                  src={LOGO}
+                  alt="LOGO"
+                  width={"450px"}
+                  height={70}
+                />
+              </a>
               <Box
                 sx={{
                   border: "2px solid pink",
@@ -273,9 +278,17 @@ export default function Header(props: Props) {
 
               <IconButton
                 sx={iconStyle}
-                // onClick={() => navigate(USER_ROUTES.HOME)}
+                onClick={() => navigate(USER_ROUTES.ADD_TO_CART)}
               >
-                <ShoppingBag fontSize="large" />
+                {/* ✅ Add badge here */}
+                <Badge
+                  badgeContent={cart.length}
+                  color="error"
+                  overlap="circular"
+                  showZero
+                >
+                  <ShoppingBag fontSize="large" />
+                </Badge>
                 <Typography fontSize={"12px"}>Basket</Typography>
               </IconButton>
             </Box>

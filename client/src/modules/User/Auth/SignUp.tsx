@@ -5,6 +5,7 @@ import { USER_ROUTES } from "../../../constant/route";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../../context/AuthContext";
+import toast from "react-hot-toast";
 
 type SignUpForm = {
   fullName: string;
@@ -34,14 +35,13 @@ const SignUp = () => {
         phone: data.phoneNumber,
         email: data.email,
         password: data.password,
-        confirmPassword:data.confirmPassword
+        confirmPassword: data.confirmPassword,
       });
 
-      alert("✅ Account created successfully!");
+      toast.success("Account created successfully!");
       navigate(USER_ROUTES.SIGNIN);
     } catch (err: any) {
-      console.error("❌ Signup error:", err.message);
-      alert(err.message);
+      toast.error("❌ Signup error:", err.message);
     }
   };
 

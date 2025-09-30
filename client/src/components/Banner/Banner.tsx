@@ -10,7 +10,7 @@ const Banner = () => {
         width: "100%",
         position: "relative",
         overflow: "hidden",
-        mt: 10,
+        mt: {md:10,sm:10,xs:0},
         borderRadius: 3,
       }}
     >
@@ -18,8 +18,22 @@ const Banner = () => {
       <Box
         component="img"
         src="/assets/images/animated-banner.jpg"
+        sx={{
+          display:{md:'none',sm:'none',xs:'block'},
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          filter: "brightness(80%)",
+        }}
+      />
+      <Box
+        component="img"
+        src="/assets/images/animated-banner.jpg"
+        
         className="panning-img"
         sx={{
+          display:{md:'block',sm:'block',xs:'none'},
+
           width: "100%",
           height: "100%",
           objectFit: "cover",
@@ -43,7 +57,7 @@ const Banner = () => {
       <Box
         sx={{
           position: "absolute",
-          bottom: { md: "18%", sm: "", xs: 10 },
+          bottom: { md: "18%", sm: "", xs: 0 },
           color: COLORS.white,
           p: 2,
           left: { md: "2%", sm: "", xs: 0 },
@@ -54,7 +68,7 @@ const Banner = () => {
             fontSize: {
               md: "40px",
               sm: "",
-              xs: "25px",
+              xs: "23px",
               fontWeight: 800,
               width: "100%",
             },
@@ -67,7 +81,7 @@ const Banner = () => {
             fontSize: {
               md: "20px",
               sm: "",
-              xs: "18px",
+              xs: "15px",
               width: "auto",
             },
           }}
@@ -81,7 +95,7 @@ const Banner = () => {
             gap: "10px",
             flexWrap: "wrap",
             width: { md: "50%", sm: "", xs: "100%" },
-            mt: 5,
+            mt: {md:5,sm:3,xs:1},
           }}
         >
           <LandingButton title="For Her" width="250px" personal />

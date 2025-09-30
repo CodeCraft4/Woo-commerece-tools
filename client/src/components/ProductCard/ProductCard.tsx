@@ -15,10 +15,12 @@ const ProductCard = (props: ProductTypes) => {
       component={"div"}
       onClick={openModal}
       sx={{
-        width: { md: "182px", sm: "", xs: "180px" },
+        width: tabsSlider
+          ? { md: "182px", sm: "", xs: "220px" }
+          : { md: "182px", sm: "", xs: "180px" },
         height: tabsSlider
-          ? { md: "280px", sm: "", xs: "200px" }
-          : { md: "270px", sm: "", xs: "200px" },
+          ? { md: "280px", sm: "", xs: "220px" }
+          : { md: "270px", sm: "", xs: "220px" },
         borderRadius: tabsSlider ? 2 : 3,
         bgcolor: COLORS.white,
         border: tabsSlider ? "1px solid lightGray" : 0,
@@ -32,7 +34,9 @@ const ProductCard = (props: ProductTypes) => {
         src={poster}
         alt="productImg"
         sx={{
-          width: { md: tabsSlider ? "180px" : "168px", sm: "", xs: "165px" },
+          width: tabsSlider
+            ? { md: "180px", sm: "" }
+            : { md: "168px", sm: "", xs: "165px" },
           height: "100%",
           objectFit: "cover",
           borderRadius: tabsSlider ? 2 : 2,

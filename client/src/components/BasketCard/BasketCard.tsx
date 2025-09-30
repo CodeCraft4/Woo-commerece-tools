@@ -1,22 +1,46 @@
 import { Box, Typography } from "@mui/material";
 import LandingButton from "../LandingButton/LandingButton";
 import type { CategoryType } from "../ProductPopup/ProductPopup";
+import { useCart } from "../../context/AddToCart";
+import toast from "react-hot-toast";
 
 type BasketType = {
+  id?: string | number;
+  title?: string;
   poster: string;
-  price: string;
+  price?: string;
+  category?: string;
   sales?: boolean;
   openModal?: (user: CategoryType) => void;
 };
 
 const BasketCard = (props: BasketType) => {
-  const { poster, price, sales } = props;
+  const { poster, price, sales, id, title, category } = props;
+
+  const { addToCart } = useCart();
+
+  // Store Card in the context API.
+  const handleAddToCart = () => {
+    addToCart({
+      id: id,
+      img: poster,
+      title: title,
+      price: price,
+      category: category ? category : "default",
+    });
+    toast.success("Product add to Cart");
+  };
 
   return (
     <Box
       component={"div"}
       // onClick={openModal}
-      sx={{ borderRadius: 2, width: "250px", height: "450px",overflow:'hidden' }}
+      sx={{
+        borderRadius: 2,
+        width: "250px",
+        height: "450px",
+        overflow: "hidden",
+      }}
     >
       <Box
         component={"img"}
@@ -59,7 +83,12 @@ const BasketCard = (props: BasketType) => {
         )} */}
       </Box>
 
-      <LandingButton title="Add To Basket" width="100%" variant="outlined" />
+      <LandingButton
+        title="Add To Basket"
+        width="100%"
+        variant="outlined"
+        onClick={handleAddToCart}
+      />
     </Box>
   );
 };
