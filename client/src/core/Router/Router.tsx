@@ -13,6 +13,7 @@ import AddNewProducts from "../../modules/Admin/AddNewProducts/AddNewProducts";
 import Setting from "../../modules/Admin/Setting/Setting";
 import SignUp from "../../modules/User/Auth/SignUp";
 import AdminSignIn from "../../modules/Admin/Auth/SignIn";
+import AddToCart from "../../modules/User/AddToCart/AddToCart";
 
 const Router = () => {
   return (
@@ -22,6 +23,7 @@ const Router = () => {
       <Route path={`${USER_ROUTES.HOME}/:id`} element={<Home />} />
       <Route path={USER_ROUTES.PREVIEW} element={<Preview />} />
       <Route path={USER_ROUTES.VIEW_ALL} element={<ViewAll />} />
+      <Route path={USER_ROUTES.ADD_TO_CART} element={<AddToCart />} />
       <Route path={USER_ROUTES.SUBSCRIPTION} element={<Subscription />} />
       <Route path={USER_ROUTES.SUCCESS_PAY} element={<SuccessPayment />} />
       <Route path={USER_ROUTES.SIGNIN} element={<SignIn />} />

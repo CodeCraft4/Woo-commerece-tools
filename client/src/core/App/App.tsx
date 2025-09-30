@@ -5,6 +5,9 @@ import { ThemeProvider } from "@emotion/react";
 import theme from "../../style/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../../context/AuthContext";
+import { CartProvider } from "../../context/AddToCart";
+import { Toaster } from "react-hot-toast";
+import { COLORS } from "../../constant/color";
 
 const App = () => {
   // React Query Client
@@ -21,9 +24,42 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
           <AuthProvider>
-          <WishCardProvider>
-            <Router />
-          </WishCardProvider>
+            <CartProvider>
+              <WishCardProvider>
+                <Router />
+                <Toaster
+                  position="bottom-right"
+                  reverseOrder={false}
+                  toastOptions={{
+                    // global styles
+                    style: {
+                      borderRadius: "10px",
+                      background: "#333",
+                      color: "#fff",
+                      width: "300px",
+                      minHeight: "60px",
+                      padding: "12px",
+                      fontSize: "16px",
+                    },
+
+                    // success specific
+                    success: {
+                      style: {
+                        background: "#f3f3f3ff",
+                        color:COLORS.primary
+                      },
+                    },
+
+                    // error specific
+                    error: {
+                      style: {
+                        background: "#f44336",
+                      },
+                    },
+                  }}
+                />
+              </WishCardProvider>
+            </CartProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

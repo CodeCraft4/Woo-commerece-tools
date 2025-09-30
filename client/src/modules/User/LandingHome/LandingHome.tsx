@@ -17,21 +17,20 @@ import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
 
 const AdverstisementCard = [
   {
-    title:'Calendars',
-    price:'price £10',
-    poster:'/assets/images/Calendar.jpg'
+    title: "Calendars",
+    price: "price £10",
+    poster: "/assets/images/Calendar.jpg",
   },
   {
-    title:'Personlised Gifts',
-    price:'price £20',
-    poster:'/assets/images/PersonlisedImg.jpg'
+    title: "Personlised Gifts",
+    price: "price £20",
+    poster: "/assets/images/PersonlisedImg.jpg",
   },
   {
-    title:'Anniversary Gift',
-    price:'',
-    poster:'assets/images/Anniversary.jpg'
+    title: "Anniversary Gift",
+    price: "",
+    poster: "assets/images/Anniversary.jpg",
   },
- 
 ];
 
 const LandingHome = () => {
@@ -46,17 +45,6 @@ const LandingHome = () => {
     queryFn: fetchMockCategories,
   });
 
-  // const {
-  //   open: isOpenOfferModal,
-  //   openModal: openOfferModal,
-  //   closeModal: closeOfferModal,
-  // } = useModal();
-
-  // useEffect(() => {
-  //   setTimeout(() => {
-  //     openOfferModal();
-  //   }, 400);
-  // }, []);
 
   return (
     <MainLayout>
@@ -69,41 +57,38 @@ const LandingHome = () => {
         }}
       >
         {/* Categories */}
-          <Box
-            sx={{
-              display: "flex",
-              gap: { md: "20px", sm: "20px", xs: "10px" },
-              alignItems: "center",
-              overflowX: "scroll",
-              width: { lg: "100%" },
-              position: "relative",
-              p: 3,
-              justifyContent: "center",
-              m: "auto",
-              "&::-webkit-scrollbar": {
-                height: "6px",
-                width: "100px",
-                cursor: "pointer",
-              },
-              "&::-webkit-scrollbar-track": {
-                backgroundColor: "#f1f1f1",
-                borderRadius: "20px",
-              },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: COLORS.primary,
-                borderRadius: "20px",
-              },
-            }}
-          >
-            {categories?.map((cate) => (
-              <CategoryCard
-                key={cate.id}
-                id={cate.id}
-                poster={cate.poster}
-                title={cate.title}
-              />
-            ))}
-          </Box>
+        <Box
+          sx={{
+            display: "flex",
+            gap: { xs: 1, sm: 2, md: 3 },
+            alignItems: "center",
+            overflowX: "auto",
+            width: "100%",
+            p: { xs: 1, sm: 2, md: 3 },
+            justifyContent: { xs: "flex-start", md: "center" },
+            m: "auto",
+            "&::-webkit-scrollbar": {
+              height: "6px",
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "#f1f1f1",
+              borderRadius: "20px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: COLORS.primary,
+              borderRadius: "20px",
+            },
+          }}
+        >
+          {categories?.map((cate) => (
+            <CategoryCard
+              key={cate.id}
+              id={cate.id}
+              poster={cate.poster}
+              title={cate.title}
+            />
+          ))}
+        </Box>
 
         {/* Banner Area */}
         <Banner />
@@ -112,13 +97,13 @@ const LandingHome = () => {
         <Box
           sx={{
             display: "flex",
-            gap: "13px",
+            gap:{md: "13px",sm: "13px",xs:'5px'},
             alignItems: "center",
             overflowX: "auto",
             width: { lg: "99.4%" },
-            mr: "5px",
-            ml: "5px",
-            pb: 5,
+            mr: {md:"5px",sm:"5px",xs:0},
+            ml: {md:"5px",sm:"5px",xs:0},
+            pb: {md:5,sm:3,xs:2},
             mt: { md: "-90px", sm: "", xs: 0 },
             zIndex: 100,
             position: "relative",
@@ -150,7 +135,12 @@ const LandingHome = () => {
             }}
           >
             {AdverstisementCard.map((e) => (
-              <AdvertisementCard title={e.title} price={e.price} poster={e.poster} key={e.title} />
+              <AdvertisementCard
+                title={e.title}
+                price={e.price}
+                poster={e.poster}
+                key={e.title}
+              />
             ))}
           </Box>
         </Box>
