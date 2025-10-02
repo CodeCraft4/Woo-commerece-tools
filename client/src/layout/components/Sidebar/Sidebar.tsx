@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
-import { ArrowForwardIos } from "@mui/icons-material";
+import { AddShoppingCart, ArrowForwardIos, Dashboard, LocalMall, Settings } from "@mui/icons-material";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -9,22 +9,22 @@ const Sidebar = () => {
 
   const links = [
     {
-      icon: "/assets/icons/dashbord.svg",
+      icon: <Dashboard/>,
       title: "Dashboard",
       href: ADMINS_DASHBOARD.HOME,
     },
     {
-      icon: "/assets/icons/celebrity.svg",
+      icon: <LocalMall/>,
       title: "Products",
       href: ADMINS_DASHBOARD.PRODUCTS_LIST,
     },
     {
-      icon: "/assets/icons/request.svg",
+      icon: <AddShoppingCart/>,
       title: "Add Products",
       href: ADMINS_DASHBOARD.ADD_NEW_CARDS,
     },
     {
-      icon: "/assets/icons/setting.svg",
+      icon: <Settings/>,
       title: "Settings",
       href: ADMINS_DASHBOARD.SETTINGS,
     },
@@ -37,12 +37,11 @@ const Sidebar = () => {
       </Typography>
 
       <Box sx={{ pt: 2, display: "flex", flexDirection: "column", gap: "8px" }}>
-        {links.map((e, i) => {
-          const isActive = i === 0 && pathname === ADMINS_DASHBOARD.HOME;
+        {links.map((e) => {
+          const isActive = pathname === e.href;
 
           return (
             <Link
-              key={e.icon}
               to={e.href}
               style={{
                 display: "flex",
@@ -54,24 +53,15 @@ const Sidebar = () => {
                 fontWeight: 600,
                 fontSize: "14px",
                 textDecoration: "none",
-                color: "black",
-                backgroundColor: isActive ? "#6C63FF" : "#f5f5f5",
+                color:"black", // ✅ Orange text
+                backgroundColor: isActive ? "#eb5611ff" : "#f5f5f5", // light orange bg
                 transition: "background-color 0.3s",
               }}
             >
               <Box
                 sx={{ display: "flex", gap: 1, alignItems: "center", flex: 1 }}
               >
-                <Box
-                  component="img"
-                  src={e.icon}
-                  alt={`${e.title}-icon`}
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    filter: isActive ? "invert(1)" : "none",
-                  }}
-                />
+               {e.icon}
                 {e.title}
               </Box>
 
