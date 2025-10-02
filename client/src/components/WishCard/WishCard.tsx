@@ -25,22 +25,6 @@ const WishCard = () => {
 
   // ==============VIDEO UPLOADING=======================
   const [showFontSizePopup, setShowFontSizePopup] = useState(false);
-  const [tips, setTips] = useState(false);
-  const [upload, setUpload] = useState(false);
-  const [duration, setDuration] = useState<number | null>(null);
-  const [video, setVideo] = useState<File | null>(null);
-
-  const handleVideoFileChange = (e: any) => {
-    const file = e.target.files[0];
-    if (file) {
-      setVideo(file);
-    }
-  };
-
-  const handleVideoDelete = () => {
-    setVideo(null);
-  };
-
   // Toggle popup on icon click
   const togglePopup = (name: any) => {
     setActivePopup((prev) => (prev === name ? null : name));
@@ -224,16 +208,6 @@ const WishCard = () => {
         {activePopup === "audio" && (
           <MediaPopup
             onClose={() => setActivePopup(null)}
-            tips={tips}
-            setTips={setTips}
-            upload={upload}
-            setUpload={setUpload}
-            mediaFile={video}
-            setMediaFile={setVideo}
-            duration={duration}
-            setDuration={setDuration}
-            handleFileChange={handleVideoFileChange}
-            handleDelete={handleVideoDelete}
             mediaType="audio"
           />
         )}

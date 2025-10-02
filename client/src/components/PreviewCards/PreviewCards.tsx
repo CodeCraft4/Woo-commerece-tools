@@ -146,6 +146,7 @@ const PreviewBookCard = () => {
                       />
                     );
                   })}
+
                 </Box>
               </div>
             </div>
@@ -163,12 +164,13 @@ const PreviewBookCard = () => {
                   <Box
                     sx={{
                       flex: 1,
-                      bgcolor: "#fff",
+                      // bgcolor: "#fff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       height: "100%",
-                      p: 2,
+                      flexWrap:'wrap',
+                      p: 1,
                     }}
                   >
                     <Box
@@ -179,6 +181,9 @@ const PreviewBookCard = () => {
                         fontSize: fontSize,
                         fontWeight: fontWeight,
                         color: fontColor,
+                        display:'flex',
+                        flexWrap:'wrap',
+                        width:'100%',
                         // transform: `rotate(${rotation}deg)`,
                       }}
                     >
@@ -225,6 +230,7 @@ const PreviewBookCard = () => {
                     ))}
                   </Box>
                 )}
+                
                 {/* <Box
                   sx={{
                     display: "flex",

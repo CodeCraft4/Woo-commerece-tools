@@ -19,7 +19,7 @@ app.post("/create-checkout-session", async (req, res) => {
       line_items: [
         {
           price_data: {
-            currency: "usd", // or "gbp" if you want £
+            currency: "gbp", // or "usd" if you want £/$
             product_data: { name: title },
             unit_amount: price * 100, // Stripe expects cents
           },
