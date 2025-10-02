@@ -12,7 +12,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
-import LOGO from "../../../assets/LOGO.png";
+import LOGO from "/assets/images/LOGO.png";
 import {
   DateRange,
   Logout,

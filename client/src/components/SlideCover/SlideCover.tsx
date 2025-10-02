@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import PNGImg from "../../assets/bear.png";
+import PNGImg from "/assets/images/bear.png";
 import { useWishCard } from "../../context/WishCardContext";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";

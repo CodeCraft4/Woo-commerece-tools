@@ -8,7 +8,7 @@ import {
   PlayCircleOutline,
 } from "@mui/icons-material";
 import CustomButton from "../CustomButton/CustomButton";
-import TipsVideo from "../../assets/vedioTip.mp4";
+import TipsVideo from "/assets/images/vedioTip.mp4";
 import PopupWrapper from "../PopupWrapper/PopupWrapper";
 import { supabase } from "../../supabase/supabase";
 import { useWishCard } from "../../context/WishCardContext";
