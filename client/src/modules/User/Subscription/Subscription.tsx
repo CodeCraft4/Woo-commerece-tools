@@ -2,9 +2,9 @@ import { Box, Container, Grid, Typography } from "@mui/material";
 import Applayout from "../../../layout/Applayout";
 import { useState } from "react";
 import CustomButton from "../../../components/CustomButton/CustomButton";
-import A4Img from "../../../assets/A4.png";
-import PrevewCardImg from "../../../assets/preview-card.png";
-import TableBgImg from "../../../assets/table.png";
+import A4Img from "/assets/images/A4.png";
+import PrevewCardImg from "/assets/images/preview-card.png";
+import TableBgImg from "/assets/images/table.png";
 import { loadStripe } from "@stripe/stripe-js";
 
 const stripePromise = loadStripe(

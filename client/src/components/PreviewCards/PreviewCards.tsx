@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, IconButton, Typography } from "@mui/material";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import "./card.css";
-import BearPNG from "../../assets/bear.png";
+import BearPNG from "/assets/images/bear.png";
 import { useWishCard } from "../../context/WishCardContext";
 import {
   fetchAudioLatestMedia,
