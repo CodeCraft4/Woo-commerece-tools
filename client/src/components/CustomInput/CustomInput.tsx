@@ -20,6 +20,7 @@ type InputTypes = {
   options?: Option[];
   description?: boolean;
   defaultValue?: string;
+  multiline?: boolean;
 };
 
 const CustomInput = (props: InputTypes) => {
@@ -33,6 +34,7 @@ const CustomInput = (props: InputTypes) => {
     error,
     description,
     defaultValue,
+    multiline,
   } = props;
 
   const [showPassword, setShowPassword] = useState(false);
@@ -79,6 +81,8 @@ const CustomInput = (props: InputTypes) => {
           defaultValue={defaultValue}
           placeholder={placeholder}
           onChange={onChange}
+          rows={multiline ? 6 : 0}
+          multiline={multiline}
           {...register}
           sx={{
             py: "10px",
