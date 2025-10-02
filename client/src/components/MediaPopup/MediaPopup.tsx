@@ -11,38 +11,47 @@ import CustomButton from "../CustomButton/CustomButton";
 import TipsVideo from "../../assets/vedioTip.mp4";
 import PopupWrapper from "../PopupWrapper/PopupWrapper";
 import { supabase } from "../../supabase/supabase";
+import { useWishCard } from "../../context/WishCardContext";
 
 interface MediaPopupProps {
   onClose: () => void;
-  tips: boolean;
-  setTips: (value: boolean) => void;
-  upload: boolean;
-  setUpload: (value: boolean) => void;
-  mediaFile: File | null;
-  setMediaFile: (file: File | null) => void;
-  duration: number | null;
-  setDuration: (duration: number | null) => void;
-  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleDelete: () => void;
   mediaType: "video" | "audio";
 }
 
 const MediaPopup = ({
   onClose,
-  tips,
-  setTips,
-  upload,
-  setUpload,
-  mediaFile,
-  // setMediaFile,
-  duration,
-  setDuration,
-  handleFileChange,
-  handleDelete,
   mediaType,
 }: MediaPopupProps) => {
   const isVideo = mediaType === "video";
   const [loading, setLoading] = useState(false);
+
+   const {
+      tips,
+      setTips,
+      upload,
+      setUpload,
+      video,
+      setVideo,
+      duration,
+      setDuration,
+    } = useWishCard();
+  
+
+     const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > 50) {
+      alert("❌ File size must be less than 50MB");
+      return;
+    }
+    setVideo(file);
+  }
+};
+
+  const handleAudiooDelete = () => {
+    setVideo(null);
+  };
 
   return (
     <PopupWrapper
@@ -126,7 +135,7 @@ const MediaPopup = ({
 
       {upload && (
         <Box>
-          {!mediaFile && (
+          {!video && (
             <>
               <Box
                 component="input"
@@ -141,7 +150,7 @@ const MediaPopup = ({
                   left: 0,
                   zIndex: 10,
                 }}
-                onChange={handleFileChange}
+                onChange={handleAudioFileChange}
                 multiple
               />
               <Box
@@ -168,7 +177,7 @@ const MediaPopup = ({
             </>
           )}
 
-          {mediaFile && (
+          {video && (
             <Box
               sx={{
                 width: "100%",
@@ -178,7 +187,7 @@ const MediaPopup = ({
             >
               {isVideo ? (
                 <video
-                  src={URL.createObjectURL(mediaFile)}
+                  src={URL.createObjectURL(video)}
                   controls
                   autoPlay={false}
                   onLoadedMetadata={(e) =>
@@ -188,7 +197,7 @@ const MediaPopup = ({
                 />
               ) : (
                 <audio
-                  src={URL.createObjectURL(mediaFile)}
+                  src={URL.createObjectURL(video)}
                   controls
                   onLoadedMetadata={(e) =>
                     setDuration(e.currentTarget.duration)
@@ -198,7 +207,7 @@ const MediaPopup = ({
               )}
 
               <IconButton
-                onClick={handleDelete}
+                onClick={handleAudiooDelete}
                 sx={{
                   position: "absolute",
                   top: 4,
@@ -227,7 +236,7 @@ const MediaPopup = ({
                     sx={{ display: "flex", alignItems: "center", gap: "3px" }}
                   >
                     <InfoOutline />{" "}
-                    {(mediaFile.size / (1024 * 1024)).toFixed(0)} MB
+                    {(video.size / (1024 * 1024)).toFixed(0)} MB
                   </Typography>
                   <Typography
                     sx={{ display: "flex", alignItems: "center", gap: "3px" }}
@@ -275,15 +284,15 @@ const MediaPopup = ({
                 width="90%"
                 loading={loading}
                 onClick={async () => {
-                  if (!mediaFile) {
+                  if (!video) {
                     console.warn("No video selected");
                     return;
                   }
                   setLoading(!loading);
-                  const fileName = `${Date.now()}-${mediaFile.name}`;
+                  const fileName = `${Date.now()}-${video.name}`;
                   const {error } = await supabase.storage
                     .from("media")
-                    .upload("audio/" + fileName, mediaFile, {
+                    .upload("audio/" + fileName, video, {
                       cacheControl: "3600",
                       upsert: true,
                     });
@@ -297,7 +306,7 @@ const MediaPopup = ({
                   //   .getPublicUrl(fileName);
                   // setLoading(loading);
                   // onClose();
-                  // setMediaFile(null);
+                  // setvideo(null);
                 }}
               />
             </Box>
