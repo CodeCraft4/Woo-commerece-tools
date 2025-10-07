@@ -66,7 +66,9 @@ interface WishCardContextType {
   setUpload: React.Dispatch<React.SetStateAction<boolean>>;
   duration: number | null;
   setDuration: React.Dispatch<React.SetStateAction<number | null>>;
-
+  // Font Family
+  fontFamily: string;
+  setFontFamily: React.Dispatch<React.SetStateAction<string>>;
   // New properties for position and size
   textPositions: Position[];
   setTextPositions: React.Dispatch<React.SetStateAction<Position[]>>;
@@ -101,6 +103,7 @@ export const WishCardProvider: React.FC<{ children: React.ReactNode }> = ({
   const [textAlign, setTextAlign] = useState<"start" | "center" | "end">(
     "center"
   );
+  const [fontFamily, setFontFamily] = useState("Roboto");
   const [fontColor, setFontColor] = useState(fontColors[0]);
   const [texts, setTexts] = useState(["", "", ""]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -152,6 +155,9 @@ export const WishCardProvider: React.FC<{ children: React.ReactNode }> = ({
         setTextAlign,
         fontColor,
         setFontColor,
+        // ❗ NEW: Add font family to the context value
+        fontFamily,
+        setFontFamily,
         texts,
         setTexts,
         editingIndex,

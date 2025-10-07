@@ -22,29 +22,29 @@ const FunkyApp = () => {
           justifyContent: "center",
           alignItems: "start",
           m: "auto",
-          textAlign: "start",
+          textAlign: { md: "start", sm: "start", xs: "center" },
           height: "100%",
-          px: 4,
+          px: { md: 4, sm: 4, xs: 2 },
         }}
       >
         <Typography
           sx={{
             fontSize: { md: "40px", sm: "", xs: "25px" },
             fontWeight: 800,
-            textAlign: "start",
+            textAlign: { md: "start", sm: "start", xs: "center" },
           }}
         >
           The DIY Personalization App
         </Typography>
         <Typography
           sx={{
-            fontSize: { md: "16px", sm: "", xs: "auto" },
+            fontSize: { md: "16px", sm: "", xs: "12px" },
             width: { md: "80%", sm: "", xs: "100%" },
             fontWeight: 300,
           }}
         >
-          Now, it's easier than ever to give a DIY with the DIY Personalization app!
-          Send personalised cards, gifts and more for every occasion.
+          Now, it's easier than ever to give a DIY with the DIY Personalization
+          app! Send personalised cards, gifts and more for every occasion.
         </Typography>
 
         <Box
@@ -55,8 +55,11 @@ const FunkyApp = () => {
           }}
         >
           <Box
-          component={'button'}
-            sx={deployBtn}
+            component={"button"}
+            sx={{
+              ...deployBtn,
+              px: { md: 3, sm: 3, xs: 8 },
+            }}
           >
             <Apple fontSize="large" />
             <Box>
@@ -65,8 +68,11 @@ const FunkyApp = () => {
             </Box>
           </Box>
           <Box
-          component={'button'}
-            sx={deployBtn}
+            component={"button"}
+            sx={{
+              ...deployBtn,
+              px: { md: 3, sm: 3, xs: 8 },
+            }}
           >
             <Box
               component={"img"}
@@ -74,8 +80,8 @@ const FunkyApp = () => {
               sx={{ width: 35 }}
             />
             <Box>
-              <Typography fontSize={"12px"}>ANDRIOD APP ON</Typography>
-              <Typography variant="h6">Google Play</Typography>
+              <Typography fontSize={{md:"12px",sm:'12px',xs:'11px'}}>ANDRIOD APP ON</Typography>
+              <Typography fontSize={{md:'18px',sm:'18px',xs:'18px'}}>Google Play</Typography>
             </Box>
           </Box>
         </Box>
@@ -83,7 +89,7 @@ const FunkyApp = () => {
       <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>
         <Box
           component={"img"}
-          src='/assets/images/AppBanner.png'
+          src="/assets/images/AppBanner.png"
           alt="mobile app"
           width={"100%"}
           height={"100%"}
@@ -96,17 +102,15 @@ const FunkyApp = () => {
 
 export default FunkyApp;
 
-
-const deployBtn={
-   height: "55px",
-              borderRadius: 4,
-              bgcolor: COLORS.primary,
-              color: COLORS.white,
-              px: 3,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              m: "auto",
-              gap: 2,
-              mb: { md: 0, sm: 0, xs: 2 },
-}
+const deployBtn = {
+  height:'55px',
+  borderRadius: 4,
+  bgcolor: COLORS.primary,
+  color: COLORS.white,
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  m: "auto",
+  gap: 2,
+  mb: { md: 0, sm: 0, xs: 2 },
+};

@@ -15,19 +15,41 @@ import PhotoPopup from "../PhotoPopup/PhotoPopup";
 import TextPopup from "../TextPopup/TextPopup";
 import GeneAIPopup from "../GeneAIPopup/GeneAI";
 import { DndProvider } from "react-dnd";
-import { HTML5Backend } from './../../../node_modules/react-dnd-html5-backend/dist/index';
+import { HTML5Backend } from "./../../../node_modules/react-dnd-html5-backend/dist/index";
+import FontColorPopup from "../FontColorsPopup/FontColorsPopup";
+import FontFamilyPopup from "../FontFamilyPopup/FontFamilyPopup";
 
 const slides = ["Slide1", "Slide2", "Slide3"];
 
 const WishCard = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [activePopup, setActivePopup] = useState(null);
+  const [addText,setAddText] = useState(false);
+  const [activeTextChild, setActiveTextChild] = useState<
+    "size" | "color" | "family" | null
+  >(null);
 
   // ==============VIDEO UPLOADING=======================
-  const [showFontSizePopup, setShowFontSizePopup] = useState(false);
   // Toggle popup on icon click
   const togglePopup = (name: any) => {
     setActivePopup((prev) => (prev === name ? null : name));
+  };
+
+  // Function to render the currently active text-editing sub-popup
+  const renderActiveTextChild = () => {
+    switch (activeTextChild) {
+      case "size":
+        // FontSizePopup now receives the handleCloseChild function
+        return <FontSizePopup />;
+      case "color":
+        // FontColorPopup now receives the handleCloseChild function
+        return <FontColorPopup />;
+      case "family":
+        // FontFamilyPopup now receives the handleCloseChild function
+        return <FontFamilyPopup />;
+      default:
+        return null;
+    }
   };
 
   // Main box scroll refs and drag state
@@ -105,204 +127,192 @@ const WishCard = () => {
     }
   };
 
-
   return (
     <DndProvider backend={HTML5Backend}>
-    <Box
-      sx={{
-        maxWidth: "100%",
-        margin: "auto",
-        textAlign: "center",
-        userSelect: "none",
-      }}
-    >
-      {/* Main box */}
       <Box
         sx={{
-          display: "flex",
-          overflowX: "auto",
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
-          gap: 10,
-          px: 1,
-          py: 5,
-          cursor: isMainDragging.current ? "grabbing" : "grab",
-          scrollSnapType: "x mandatory",
-          scrollBehavior: "smooth",
-        }}
-        ref={mainRef}
-        onMouseDown={onMainMouseDown}
-        onMouseLeave={onMainMouseLeave}
-        onMouseUp={onMainMouseUp}
-        // onMouseMove={onMainMouseMove}
-      >
-        {slides.map((_, index) => {
-          return (
-            <Box
-              key={index}
-              sx={{
-                flex: "0 0 auto",
-                width: index === 1 ? 800 : 400,
-                height: 600,
-                ml: index === 0 ? 80 : 0,
-                borderRadius: 2,
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "row",
-                boxShadow: 1,
-                transition: "all 0.3s ease",
-                position: "relative",
-              }}
-              // onMouseEnter={() => scrollToSlide(index)}
-            >
-              {/* First slide (cover) with image + editable text */}
-              {index === 0 ? (
-                <SlideCover/>
-              ) : index === 1 ? (
-                <SlideSpread
-                  togglePopup={togglePopup}
-                  activeIndex={activeIndex}
-                />
-              ) : (
-                <SlideLogo />
-              )}
-            </Box>
-          );
-        })}
-
-        {activePopup === "layout" && (
-          <LayoutPopup
-            onClose={() => setActivePopup(null)}
-          />
-        )}
-
-        {activePopup === "text" && (
-          <TextPopup
-            onClose={() => setActivePopup(null)}
-            onShowFontSizePopup={() => setShowFontSizePopup(true)}
-          />
-        )}
-
-        {showFontSizePopup && (
-          <FontSizePopup
-            onClose={() => setShowFontSizePopup(false)}
-          />
-        )}
-
-        {activePopup === "photo" && (
-          <PhotoPopup
-            onClose={() => setActivePopup(null)}
-          />
-        )}
-
-        {activePopup === "sticker" && (
-          <StickerPopup onClose={() => setActivePopup(null)} />
-        )}
-
-        {activePopup === "video" && (
-          <VideoPopup
-            onClose={() => setActivePopup(null)}
-          />
-        )}
-
-        {activePopup === "audio" && (
-          <MediaPopup
-            onClose={() => setActivePopup(null)}
-            mediaType="audio"
-          />
-        )}
-
-        {activePopup === "geneAi" && (
-          <GeneAIPopup onClose={() => setActivePopup(null)} />
-        )}
-      </Box>
-
-      {/* Thumbnail gallery */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 1,
-          position: "relative",
+          maxWidth: "100%",
+          margin: "auto",
+          textAlign: "center",
           userSelect: "none",
-          background: "white",
-          height: 100,
         }}
       >
-        {/* Prev button */}
-        <IconButton
-          onClick={() => scrollThumbnails("left")}
-          sx={{
-            zIndex: 10,
-          }}
-          aria-label="scroll thumbnails left"
-        >
-          <ArrowBackIos sx={{ color: "#212121" }} />
-        </IconButton>
-
-        {/* Thumbnails container */}
+        {/* Main box */}
         <Box
-          ref={thumbRef}
           sx={{
             display: "flex",
             overflowX: "auto",
             scrollbarWidth: "none",
             "&::-webkit-scrollbar": { display: "none" },
-            gap: 1,
-            px: 0.5,
-            cursor: isThumbDragging.current ? "grabbing" : "grab",
-            userSelect: "none",
-            width: "auto",
+            gap: 10,
+            px: 1,
+            py: 5,
+            cursor: isMainDragging.current ? "grabbing" : "grab",
+            scrollSnapType: "x mandatory",
+            scrollBehavior: "smooth",
           }}
-          onMouseDown={onThumbMouseDown}
-          onMouseLeave={onThumbMouseLeave}
-          onMouseUp={onThumbMouseUp}
-          onMouseMove={onThumbMouseMove}
+          ref={mainRef}
+          onMouseDown={onMainMouseDown}
+          onMouseLeave={onMainMouseLeave}
+          onMouseUp={onMainMouseUp}
+          // onMouseMove={onMainMouseMove}
         >
-          {slides.map((label, index) => (
-            <Box
-              key={index}
-              onClick={() => scrollToSlide(index)}
-              sx={{
-                width: 80,
-                height: 60,
-                bgcolor: index === activeIndex ? "#1976d2" : "#ccc",
-                color: index === activeIndex ? "white" : "black",
-                borderRadius: 1,
-                cursor: "pointer",
-                border:
-                  index === activeIndex
-                    ? "3px solid #1976d2"
-                    : "2px solid transparent",
-                opacity: index === activeIndex ? 1 : 0.6,
-                transition: "all 0.3s ease",
-                flexShrink: 0,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontWeight: "bold",
-                userSelect: "none",
-              }}
-            >
-              {label}
-            </Box>
-          ))}
+          {slides.map((_, index) => {
+            return (
+              <Box
+                key={index}
+                sx={{
+                  flex: "0 0 auto",
+                  width: index === 1 ? 800 : 400,
+                  height: 600,
+                  ml: index === 0 ? 80 : 0,
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "row",
+                  boxShadow: 1,
+                  transition: "all 0.3s ease",
+                  position: "relative",
+                }}
+                // onMouseEnter={() => scrollToSlide(index)}
+              >
+                {/* First slide (cover) with image + editable text */}
+                {index === 0 ? (
+                  <SlideCover />
+                ) : index === 1 ? (
+                  <SlideSpread
+                    togglePopup={togglePopup}
+                    activeIndex={activeIndex}
+                    addText={addText}
+                  />
+                ) : (
+                  <SlideLogo />
+                )}
+              </Box>
+            );
+          })}
+          {activePopup === "layout" && (
+            <LayoutPopup onClose={() => setActivePopup(null)} />
+          )}
+          {activePopup === "text" && (
+            <TextPopup
+              onClose={() => setActivePopup(null)}
+              onShowFontSizePopup={() => setActiveTextChild("size")}
+              onShowFontColorPopup={() => setActiveTextChild("color")}
+              onShowFontFamilyPopup={() => setActiveTextChild("family")}
+              activeChildComponent={renderActiveTextChild()}
+              onAddTextToCanvas={()=>setAddText(!addText)}
+            />
+          )}
+          {activePopup === "photo" && (
+            <PhotoPopup onClose={() => setActivePopup(null)} />
+          )}
+
+          {activePopup === "sticker" && (
+            <StickerPopup onClose={() => setActivePopup(null)} />
+          )}
+
+          {activePopup === "video" && (
+            <VideoPopup onClose={() => setActivePopup(null)} />
+          )}
+
+          {activePopup === "audio" && (
+            <MediaPopup
+              onClose={() => setActivePopup(null)}
+              mediaType="audio"
+            />
+          )}
+
+          {activePopup === "geneAi" && (
+            <GeneAIPopup onClose={() => setActivePopup(null)} />
+          )}
         </Box>
 
-        {/* Next button */}
-        <IconButton
-          onClick={() => scrollThumbnails("right")}
+        {/* Thumbnail gallery */}
+        <Box
           sx={{
-            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1,
+            position: "relative",
+            userSelect: "none",
+            background: "white",
+            height: 100,
           }}
-          aria-label="scroll thumbnails right"
         >
-          <ArrowForwardIos sx={{ color: "#212121" }} />
-        </IconButton>
-      </Box>
+          {/* Prev button */}
+          <IconButton
+            onClick={() => scrollThumbnails("left")}
+            sx={{
+              zIndex: 10,
+            }}
+            aria-label="scroll thumbnails left"
+          >
+            <ArrowBackIos sx={{ color: "#212121" }} />
+          </IconButton>
 
-    </Box>
+          {/* Thumbnails container */}
+          <Box
+            ref={thumbRef}
+            sx={{
+              display: "flex",
+              overflowX: "auto",
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+              gap: 1,
+              px: 0.5,
+              cursor: isThumbDragging.current ? "grabbing" : "grab",
+              userSelect: "none",
+              width: "auto",
+            }}
+            onMouseDown={onThumbMouseDown}
+            onMouseLeave={onThumbMouseLeave}
+            onMouseUp={onThumbMouseUp}
+            onMouseMove={onThumbMouseMove}
+          >
+            {slides.map((label, index) => (
+              <Box
+                key={index}
+                onClick={() => scrollToSlide(index)}
+                sx={{
+                  width: 80,
+                  height: 60,
+                  bgcolor: index === activeIndex ? "#1976d2" : "#ccc",
+                  color: index === activeIndex ? "white" : "black",
+                  borderRadius: 1,
+                  cursor: "pointer",
+                  border:
+                    index === activeIndex
+                      ? "3px solid #1976d2"
+                      : "2px solid transparent",
+                  opacity: index === activeIndex ? 1 : 0.6,
+                  transition: "all 0.3s ease",
+                  flexShrink: 0,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  fontWeight: "bold",
+                  userSelect: "none",
+                }}
+              >
+                {label}
+              </Box>
+            ))}
+          </Box>
+
+          {/* Next button */}
+          <IconButton
+            onClick={() => scrollThumbnails("right")}
+            sx={{
+              zIndex: 10,
+            }}
+            aria-label="scroll thumbnails right"
+          >
+            <ArrowForwardIos sx={{ color: "#212121" }} />
+          </IconButton>
+        </Box>
+      </Box>
     </DndProvider>
   );
 };

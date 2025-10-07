@@ -25,7 +25,7 @@ const CategoryCard = (props: CategoryType) => {
         alignItems: "center",
         textAlign: "center",
         bgcolor: COLORS.white,
-        ml: id === 1 ? {md:"165px",sm:'',xs:0} : 0,
+        ml: id === 1 ? {md:"195px",sm:'',xs:0} : 0,
         cursor: "pointer",
         transition: "border-color 0.3s ease",
         "&:hover": {

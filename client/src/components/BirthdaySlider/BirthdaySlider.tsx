@@ -1,11 +1,10 @@
-import { Box, IconButton, Typography } from "@mui/material";
 import React, { useState } from "react";
+import { Box, IconButton, Typography } from "@mui/material";
 import Slider from "react-slick";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import LandingButton from "../LandingButton/LandingButton";
-import { CATEGORIES_DATA } from "../../constant/data";
 import ProductCard from "../ProductCard/ProductCard";
 import { COLORS } from "../../constant/color";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +12,7 @@ import useModal from "../../hooks/useModal";
 import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../constant/route";
+import { fetchAllCardsFromDB } from "../../source/source";
 
 const TABS = [
   "Birthday Cards",
@@ -25,12 +25,6 @@ type BirthdayTypes = {
   title?: string;
   description?: string;
   brandSlider?: boolean;
-};
-
-const fetchCategoriesData = async () => {
-  return new Promise<typeof CATEGORIES_DATA>((resolve) => {
-    resolve(CATEGORIES_DATA);
-  });
 };
 
 const BirthdaySlider = (props: BirthdayTypes) => {
@@ -46,13 +40,13 @@ const BirthdaySlider = (props: BirthdayTypes) => {
 
   const { data: birthdayCards } = useQuery({
     queryKey: ["birthdayCards"],
-    queryFn: fetchCategoriesData,
+    queryFn: fetchAllCardsFromDB,
   });
 
   const filteredCards = birthdayCards
     ? birthdayCards.filter((card) => {
         const selectedCategory = TABS[activeTab];
-        return card.category === selectedCategory;
+        return card.card_category === selectedCategory;
       })
     : [];
 
@@ -60,7 +54,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 6.9,
+    slidesToShow: 6.89,
     slidesToScroll: 3,
     arrows: false,
     initialSlide: 0,
@@ -109,7 +103,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         width: { md: "100%", sm: "", xs: "100%" },
         m: "auto",
         position: "relative",
-        mt: 8,
+        mt: { md: 8, sm: 8, xs: 0 },
       }}
     >
       <Box
@@ -124,12 +118,15 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         >
           {title}
         </Typography>
+
         {brandSlider ? null : (
-          <LandingButton
-            title="Shop All"
-            width="150px"
-            onClick={() => navigate(USER_ROUTES.VIEW_ALL)}
-          />
+          <Box sx={{ display: { md: "flex", sm: "flex", xs: "none" } }}>
+            <LandingButton
+              title="Shop All"
+              width="150px"
+              onClick={() => navigate(USER_ROUTES.VIEW_ALL)}
+            />
+          </Box>
         )}
       </Box>
 
@@ -144,10 +141,11 @@ const BirthdaySlider = (props: BirthdayTypes) => {
       >
         {TABS.map((e, index) => (
           <Box
+            key={index}
             component={"div"}
             onClick={() => setActiveTab(index)}
             sx={{
-              px: {md:3,sm:3,xs:1},
+              px: { md: 3, sm: 3, xs: 1 },
               py: { md: 1, sm: "", xs: 0.5 },
               border: "2px solid black",
               borderRadius: "15px",
@@ -183,7 +181,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           {filteredCards?.map((cate) => (
             <Box key={cate.id}>
               <ProductCard
-                poster={cate.poster}
+                poster={cate?.image_url}
                 tabsSlider={true}
                 openModal={() => openDetailModal(cate)}
               />
@@ -204,13 +202,13 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            left: {md:-25,sm:-25,xs:0},
+            left: { md: -25, sm: -25, xs: 0 },
             display: "flex",
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: {md:'50px',sm:'50px',xs:'30px'} ,
-            width: {md:'50px',sm:'50px',xs:'30px'},
+            height: { md: "50px", sm: "50px", xs: "40px" },
+            width: { md: "50px", sm: "50px", xs: "40px" },
             border: "1px solid black",
             zIndex: 10,
             bgcolor: COLORS.white,
@@ -226,13 +224,13 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            right:{md:-20,sm:-20,xs:0},
+            right: { md: -20, sm: -20, xs: 0 },
             display: "flex",
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: {md:'50px',sm:'50px',xs:'30px'} ,
-            width: {md:'50px',sm:'50px',xs:'30px'},
+            height: { md: "50px", sm: "50px", xs: "40px" },
+            width: { md: "50px", sm: "50px", xs: "40px" },
             border: "1px solid black",
             zIndex: 10,
             bgcolor: COLORS.white,

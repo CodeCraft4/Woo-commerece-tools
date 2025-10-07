@@ -1,58 +1,164 @@
-// FontSizePopup.tsx
-import { Box } from "@mui/material";
-import PopupWrapper from "../PopupWrapper/PopupWrapper";
+import { Box, IconButton, TextField } from "@mui/material";
+import { Add, Remove } from "@mui/icons-material";
+import React, { useEffect, useState } from "react";
 import { useWishCard } from "../../context/WishCardContext";
+import { COLORS } from "../../constant/color";
 
-interface FontSizePopupProps {
-  onClose: () => void;
-}
+const FontSizePopup = () => {
+  const { setFontSize, fontSize } = useWishCard();
 
-const fontSizeArray = [
-  25, 30, 35, 40, 45, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 75, 80,
-];
+  // 1. State for the validated font size (the number sent to context)
+  // Configuration for size control
+  const INITIAL_SIZE = fontSize || 16;
+  const MIN_SIZE = 16;
+  const MAX_SIZE = 100;
+  const STEP = 2;
+  const [fontLocalSize, setLocalFontSize] = useState(INITIAL_SIZE);
+  // 2. State for the raw input text (allows temporary non-numeric or out-of-bounds input)
+  const [inputString, setInputString] = useState(String(INITIAL_SIZE));
 
-const FontSizePopup = ({ onClose }: FontSizePopupProps) => {
-  const { setFontSize } = useWishCard();
-  const increaseFontSize = (size: number) => {
-    setFontSize(size);
+  // Helper function to validate and clamp the size
+  const validateAndClampSize = (newSize: number): number => {
+    let size = Math.round(newSize);
+
+    if (size < MIN_SIZE) {
+      size = MIN_SIZE;
+    } else if (size > MAX_SIZE) {
+      size = MAX_SIZE;
+    }
+    return size;
   };
+
+  // Function to safely update the validated size and notify the context
+  const updateValidatedSize = (newSize: number) => {
+    const clampedSize = validateAndClampSize(newSize);
+
+    // Update local validated state and the input field value
+    setLocalFontSize(clampedSize);
+    setInputString(String(clampedSize));
+
+    // Update global context
+    setFontSize(clampedSize);
+  };
+
+  // Handler for direct text input changes (updates the raw input string)
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // We update the raw input string immediately. No validation here.
+    setInputString(event.target.value);
+  };
+
+  // Handler for when the user clicks away from the input (applies validation/clamping)
+  const handleInputBlur = () => {
+    const value = parseInt(inputString);
+
+    if (isNaN(value)) {
+      // If input is empty or non-numeric (e.g., "abc"), revert to the last valid size
+      setInputString(String(fontLocalSize));
+    } else {
+      // If it's a number, validate, clamp, and update
+      updateValidatedSize(value);
+    }
+  };
+
+  // Handler for the decrease button (-)
+  const handleDecrease = () => {
+    updateValidatedSize(fontLocalSize - STEP);
+  };
+
+  // Handler for the increase button (+)
+  const handleIncrease = () => {
+    updateValidatedSize(fontLocalSize + STEP);
+  };
+
+  // Handler for mouse wheel (scroll) events over the input field
+  const handleWheel = (event: React.WheelEvent) => {
+    event.preventDefault(); // Prevent the main page from scrolling
+
+    if (event.deltaY < 0) {
+      // Scroll up (increase)
+      handleIncrease();
+    } else {
+      // Scroll down (decrease)
+      handleDecrease();
+    }
+  };
+
+  // Initial update to context when the popup mounts
+  useEffect(() => {
+    setFontSize(INITIAL_SIZE);
+  }, [setFontSize]);
+
   return (
-    <PopupWrapper
-      title="Text Size"
-      onClose={onClose}
-      sx={{ width: 250, height: 600, left: "15%" }}
+    <Box
+      mt={3}
+      sx={{
+        width: 300,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: 2,
+        height: 350,
+        m: "auto",
+      }}
     >
       <Box
         sx={{
           display: "flex",
-          flexDirection: "row",
-          flexWrap: "wrap",
-          gap: 1,
-          mt: 3,
+          alignItems: "center",
           justifyContent: "center",
+          gap: 1,
+          p: 1,
+          borderRadius: 2,
+          border: "1px solid #ccc",
         }}
       >
-        {fontSizeArray.map((size) => (
-          <Box
-            key={size}
-            onClick={() => increaseFontSize(size)}
-            sx={{
-              borderRadius: 2,
-              border: "2px solid #212121",
-              p: 2,
+        {/* Decrease Button */}
+        <IconButton
+          onClick={handleDecrease}
+          sx={{
+            color: "white",
+            bgcolor: COLORS.primary,
+            "&:hover": { bgcolor: "#192025ff" },
+          }}
+          aria-label="decrease font size"
+        >
+          <Remove />
+        </IconButton>
+
+        {/* Text Input Field */}
+        <TextField
+          value={inputString}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+          onWheel={handleWheel}
+          type="number"
+          variant="standard"
+          size="small"
+          sx={{
+            width: 200,
+            "& input": {
               textAlign: "center",
-              width: "48px",
-              cursor: "pointer",
-              "&:hover": {
-                bgcolor: "#a4ecf1ff",
-              },
-            }}
-          >
-            {size}
-          </Box>
-        ))}
+              fontWeight: "bold",
+              fontSize: "20px",
+            },
+          }}
+        />
+
+        {/* Increase Button */}
+        <IconButton
+          onClick={handleIncrease}
+          sx={{
+            color: "white",
+            bgcolor: COLORS.primary,
+            "&:hover": { bgcolor: "#192025ff" },
+          }}
+          aria-label="increase font size"
+        >
+          <Add />
+        </IconButton>
       </Box>
-    </PopupWrapper>
+    </Box>
   );
 };
 

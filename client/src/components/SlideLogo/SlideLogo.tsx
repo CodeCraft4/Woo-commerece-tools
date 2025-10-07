@@ -1,7 +1,31 @@
 // SlideLogo.tsx
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, TextField } from "@mui/material";
+import { useState, useRef } from "react";
 
 const SlideLogo = () => {
+  const [logoSrc, setLogoSrc] = useState("/assets/images/blackLOGO.png");
+  const [description, setDescription] = useState(
+    "I accept the Terms & Conditions and give my consent to proceed with the order."
+  );
+  const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // 4. Handler to update logoSrc when a file is selected
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoSrc(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -17,14 +41,74 @@ const SlideLogo = () => {
         p: 2,
       }}
     >
-      <Box
-       component={'img'}
-       src="/assets/images/blackLOGO.png"
-       sx={{width:300}}
+      {/* 5. Hidden File Input for Image Selection */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        style={{ display: "none" }}
       />
-      <Typography sx={{ maxWidth: 400, textAlign: "center" }}>
-        I accept the Terms & Conditions and give my consent to proceed with the order.
-      </Typography>
+      <Box
+        component={"img"}
+        src={logoSrc}
+        alt="User Logo"
+        sx={{
+          width: 300,
+          cursor: "pointer",
+          border: "2px dashed transparent",
+          transition: "border 0.2s",
+          "&:hover": {
+            border: "2px dashed #3a7bd5",
+          },
+        }}
+        onClick={handleImageClick}
+      />
+
+      {/* Editable Description Section */}
+      <Box
+        sx={{
+          maxWidth: 400,
+          textAlign: "center",
+          mt: 2,
+          width: "100%",
+        }}
+      >
+        {isEditing ? (
+          <TextField
+            variant="outlined"
+            fullWidth
+            multiline
+            // rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={() => setIsEditing(false)}
+            autoFocus
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                textAlign: "center",
+                "& textarea": {
+                  textAlign: "center",
+                },
+              },
+            }}
+          />
+        ) : (
+          <Typography
+            onClick={() => setIsEditing(true)}
+            sx={{
+              cursor: "text",
+              p: 1,
+              border: "1px solid transparent",
+              "&:hover": {
+                border: "1px dashed #ccc",
+              },
+            }}
+          >
+            {description}
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 };

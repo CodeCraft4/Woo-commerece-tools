@@ -1,4 +1,3 @@
-// PhotoPopup.tsx
 import { Box, Typography, IconButton } from "@mui/material";
 import { ControlPoint, Delete, Check } from "@mui/icons-material";
 import PopupWrapper from "../PopupWrapper/PopupWrapper";

@@ -8,11 +8,7 @@ interface LayoutPopupProps {
   onClose: () => void;
 }
 
-const LayoutPopup = ({
-  onClose,
-}: 
-LayoutPopupProps) => {
-  
+const LayoutPopup = ({ onClose }: LayoutPopupProps) => {
   const {
     oneTextValue,
     setShowOneTextRightSideBox,
@@ -20,12 +16,29 @@ LayoutPopupProps) => {
     setMultipleTextValue,
   } = useWishCard();
 
+  // Helper functions to ensure only one layout is active
+  const handleBlankLayout = () => {
+    setShowOneTextRightSideBox(false);
+    setMultipleTextValue(false);
+  };
+
+  const handleOneTextLayout = () => {
+    setShowOneTextRightSideBox(true);
+    setMultipleTextValue(false); // hide others
+  };
+
+  const handleMultipleTextLayout = () => {
+    setMultipleTextValue(true);
+    setShowOneTextRightSideBox(false); // hide others
+  };
+
   return (
     <PopupWrapper title="Layout" onClose={onClose} sx={{ width: 300 }}>
       {/* Layout Box */}
       <Box sx={{ mt: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
         {/* Blank layout */}
         <Box
+          onClick={handleBlankLayout}
           sx={{
             display: "flex",
             justifyContent: "center",
@@ -37,33 +50,34 @@ LayoutPopupProps) => {
             flexDirection: "column",
             gap: 1,
             color: "gray",
+            position: "relative",
           }}
         >
           <BorderColorOutlined />
           Blank
           {/* <IconButton
-                      onClick={() => (id)}
-                      sx={{
-                        position: "absolute",
-                        bottom: 3,
-                        right: 3,
-                        bgcolor: "#3a7bd5",
-                        zIndex: 99,
-                        border: "2px solid white",
-                        width: "20px",
-                        height: "20px",
-                      }}
-                      size="small"
-                      aria-label="Delete uploaded image"
-                    >
-                      <Check
-                        fontSize="small"
-                        sx={{
-                          color: "white",
-                          fontSize: "16px",
-                        }}
-                      />
-                    </IconButton> */}
+            // onClick={() => id}
+            sx={{
+              position: "absolute",
+              bottom: 3,
+              right: 3,
+              bgcolor: "#3a7bd5",
+              zIndex: 99,
+              border: "2px solid white",
+              width: "20px",
+              height: "20px",
+            }}
+            size="small"
+            aria-label="Delete uploaded image"
+          >
+            <Check
+              fontSize="small"
+              sx={{
+                color: "white",
+                fontSize: "16px",
+              }}
+            />
+          </IconButton> */}
         </Box>
 
         {/* OneText Layout */}
@@ -78,7 +92,7 @@ LayoutPopupProps) => {
             cursor: "pointer",
             position: "relative",
           }}
-          onClick={() => setShowOneTextRightSideBox((prev) => !prev)}
+          onClick={handleOneTextLayout}
         >
           <Typography
             sx={{
@@ -135,7 +149,7 @@ LayoutPopupProps) => {
             gap: 2,
             position: "relative",
           }}
-          onClick={() => setMultipleTextValue((prev) => !prev)}
+          onClick={handleMultipleTextLayout}
         >
           <Typography
             sx={{

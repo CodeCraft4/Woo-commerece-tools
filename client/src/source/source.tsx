@@ -1,6 +1,8 @@
 import { supabase } from "../supabase/supabase";
 
-export const uploadVideoToSupabase = async (file: File): Promise<string | null> => {
+export const uploadVideoToSupabase = async (
+  file: File
+): Promise<string | null> => {
   if (file.type !== "video/mp4") {
     alert("Only MP4 videos are allowed.");
     return null;
@@ -26,7 +28,10 @@ export const uploadVideoToSupabase = async (file: File): Promise<string | null> 
 };
 
 // For Video
-export const fetchVideoLatestMedia = async (userId: string, setMediaUrl: (url: string|null) => void) => {
+export const fetchVideoLatestMedia = async (
+  userId: string,
+  setMediaUrl: (url: string | null) => void
+) => {
   const { data, error } = await supabase
     .from("user_media")
     .select("file_path")
@@ -47,32 +52,38 @@ export const fetchVideoLatestMedia = async (userId: string, setMediaUrl: (url: s
   setMediaUrl(publicUrl.publicUrl);
 };
 
+// For Audio
+export const fetchAudioLatestMedia = async (setAudioUrl: any) => {
+  const { data, error } = await supabase.storage.from("media").list("audio", {
+    limit: 1,
+    sortBy: { column: "created_at", order: "desc" },
+  });
 
-    // For Audio
-export const fetchAudioLatestMedia = async (setAudioUrl:any) => {
-      const { data, error } = await supabase.storage
-        .from("media")
-        .list("audio", {
-          limit: 1,
-          sortBy: { column: "created_at", order: "desc" },
-        });
+  if (error) {
+    console.error("Error fetching media:", error.message);
+    return;
+  }
 
-      if (error) {
-        console.error("Error fetching media:", error.message);
-        return;
-      }
+  if (data && data.length > 0) {
+    const latestFile = data[0].name;
 
-      if (data && data.length > 0) {
-        const latestFile = data[0].name;
+    // ✅ match upload path "video/filename"
+    const { data: urlData } = supabase.storage
+      .from("media")
+      .getPublicUrl(`audio/${latestFile}`);
 
-        // ✅ match upload path "video/filename"
-        const { data: urlData } = supabase.storage
-          .from("media")
-          .getPublicUrl(`audio/${latestFile}`);
+    console.log("Latest video public URL:", urlData.publicUrl);
+    setAudioUrl(urlData.publicUrl);
+  } else {
+    console.warn("No video files found in bucket");
+  }
+};
 
-        console.log("Latest video public URL:", urlData.publicUrl);
-        setAudioUrl(urlData.publicUrl);
-      } else {
-        console.warn("No video files found in bucket");
-      }
-    };
+
+// Fetch all cards from the database
+export  const fetchAllCardsFromDB = async () => {
+  const { data, error } = await supabase.from("cards").select("*");
+  if (error) throw new Error(error.message);
+  return data;
+};
+

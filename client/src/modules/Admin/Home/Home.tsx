@@ -1,17 +1,18 @@
-import { Box, Button } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
+import TotalProductChart from "./components/TotalProductChart/TotalProductChart";
+import OrderChart from "./components/OrderChart/OrderChart";
 
 const DashboardHome = () => {
-
   return (
     <DashboardLayout>
-      <Box
-        sx={{
-          p: 2,
-          height: "90vh",
-        }}
-      >
-        <Button variant="contained" color="success" sx={{p:2,width:'200px'}}>Add Cards</Button>
+      <Typography sx={{ fontSize: "25px" }}>Analytics Overview</Typography>
+      <br />
+      <Box sx={{ display: "flex", gap: 3, mt: 3, width: "100%" }}>
+        <TotalProductChart />
+        <OrderChart />
+        <OrderChart />
+        {/* <TotalSalesChart /> */}
       </Box>
     </DashboardLayout>
   );

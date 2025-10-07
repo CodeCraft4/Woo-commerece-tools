@@ -15,10 +15,10 @@ const ViewAll = () => {
           m: "auto",
         }}
       >
-        <Typography sx={{ fontSize: "30px", fontWeight: "bold" }}>
-          Search Title <span style={{ fontSize: "15px" }}>1234 results</span>{" "}
+        <Typography sx={{ fontSize:{md: "30px",sm: "30px",xs:'24px'}, fontWeight: "bold" }}>
+          Search Title <span style={{ fontSize: "13px" }}>1234 results</span>{" "}
         </Typography>
-        <Typography sx={{ fontSize: "14px", fontWeight: 300 }}>
+        <Typography sx={{ fontSize: {md:"14px",sm:"14px",xs:'10px'}, fontWeight: 300 }}>
           Lorem ipsum dolor sit amet consectetur adipisicing elit. Molestiae
           ullam harum omnis quod molestias cum eaque nostrum cupiditate ipsam
           fugit officiis vero facere, minus tempore, corrupti incidunt, facilis

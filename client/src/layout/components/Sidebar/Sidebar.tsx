@@ -1,7 +1,13 @@
 import { Box, Typography } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
-import { AddShoppingCart, ArrowForwardIos, Dashboard, LocalMall, Settings } from "@mui/icons-material";
+import {
+  AddShoppingCart,
+  ArrowForwardIos,
+  Dashboard,
+  LocalMall,
+  Settings,
+} from "@mui/icons-material";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -9,22 +15,22 @@ const Sidebar = () => {
 
   const links = [
     {
-      icon: <Dashboard/>,
+      icon: <Dashboard />,
       title: "Dashboard",
       href: ADMINS_DASHBOARD.HOME,
     },
     {
-      icon: <LocalMall/>,
+      icon: <LocalMall />,
       title: "Products",
       href: ADMINS_DASHBOARD.PRODUCTS_LIST,
     },
     {
-      icon: <AddShoppingCart/>,
+      icon: <AddShoppingCart />,
       title: "Add Products",
       href: ADMINS_DASHBOARD.ADD_NEW_CARDS,
     },
     {
-      icon: <Settings/>,
+      icon: <Settings />,
       title: "Settings",
       href: ADMINS_DASHBOARD.SETTINGS,
     },
@@ -48,20 +54,24 @@ const Sidebar = () => {
                 gap: "25px",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "16px 12px",
-                borderRadius: "12px",
+                padding: "20px 14px",
+                borderLeft: `4px solid ${
+                  isActive ? "#eb5611ff" : "transparent"
+                }`,
+                // borderRadius: "14px 50px 50px 14px",
                 fontWeight: 600,
                 fontSize: "14px",
                 textDecoration: "none",
-                color:"black", // ✅ Orange text
-                backgroundColor: isActive ? "#eb5611ff" : "#f5f5f5", // light orange bg
+                color: "black",
+                backgroundColor: isActive ? "#f0f0f0ff" : "white",
                 transition: "background-color 0.3s",
+                marginBottom: 4,
               }}
             >
               <Box
                 sx={{ display: "flex", gap: 1, alignItems: "center", flex: 1 }}
               >
-               {e.icon}
+                {e.icon}
                 {e.title}
               </Box>
 

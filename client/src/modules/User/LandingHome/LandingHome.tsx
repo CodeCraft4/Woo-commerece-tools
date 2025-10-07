@@ -45,7 +45,6 @@ const LandingHome = () => {
     queryFn: fetchMockCategories,
   });
 
-
   return (
     <MainLayout>
       <Box
@@ -97,13 +96,13 @@ const LandingHome = () => {
         <Box
           sx={{
             display: "flex",
-            gap:{md: "13px",sm: "13px",xs:'5px'},
+            gap: { md: "13px", sm: "13px", xs: "5px" },
             alignItems: "center",
             overflowX: "auto",
             width: { lg: "99.4%" },
-            mr: {md:"5px",sm:"5px",xs:0},
-            ml: {md:"5px",sm:"5px",xs:0},
-            pb: {md:5,sm:3,xs:2},
+            mr: { md: "5px", sm: "5px", xs: 0 },
+            ml: { md: "5px", sm: "5px", xs: 0 },
+            pb: { md: 5, sm: 3, xs: 2 },
             mt: { md: "-90px", sm: "", xs: 0 },
             zIndex: 100,
             position: "relative",
@@ -121,7 +120,7 @@ const LandingHome = () => {
           }}
         >
           {categories?.map((cate) => (
-            <ProductCard poster={cate.poster} />
+            <ProductCard key={cate.id} poster={cate.poster} />
           ))}
         </Box>
 

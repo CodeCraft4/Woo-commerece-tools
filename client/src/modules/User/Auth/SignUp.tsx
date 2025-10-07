@@ -85,7 +85,9 @@ const SignUp = () => {
       >
         <Box
           sx={{
-            width: 500,
+            width: { md: 500, sm: 500, xs: "100%" },
+            height:{md:'auto',sm:'auto',xs:'90vh'},
+            overflow:{md:'hidden',sm:'hidden',xs:'scroll'},
             p: 3,
             borderRadius: 3,
             bgcolor: "rgba(255,255,255,0.9)",
@@ -93,11 +95,11 @@ const SignUp = () => {
             textAlign: "center",
           }}
         >
-          <Typography sx={{ fontSize: "35px", fontWeight: 700 }}>
+          <Typography sx={{ fontSize: {md:"35px",sm:"35px",xs:22}, fontWeight: 700 }}>
             Sign Up
           </Typography>
           {/* Your inputs & buttons go here */}
-          <Box mt={5}>
+          <Box mt={{md:5,sm:5,xs:2}}>
             <CustomInput
               label="Full Name"
               placeholder="Enter your Full Name"

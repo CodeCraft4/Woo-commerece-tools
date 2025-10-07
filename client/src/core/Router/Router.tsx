@@ -14,6 +14,7 @@ import Setting from "../../modules/Admin/Setting/Setting";
 import SignUp from "../../modules/User/Auth/SignUp";
 import AdminSignIn from "../../modules/Admin/Auth/SignIn";
 import AddToCart from "../../modules/User/AddToCart/AddToCart";
+import AdminRoute from "../../hoc/SecureRoute";
 
 const Router = () => {
   return (
@@ -31,13 +32,39 @@ const Router = () => {
 
       {/* Just Admin dashboard Preview  */}
       <Route path={ADMINS_DASHBOARD.SIGNIN} element={<AdminSignIn />} />
-      <Route path={ADMINS_DASHBOARD.HOME} element={<DashboardHome />} />
-      <Route path={ADMINS_DASHBOARD.PRODUCTS_LIST} element={<Products />} />
+      <Route
+        path={ADMINS_DASHBOARD.HOME}
+        element={
+          <AdminRoute>
+            <DashboardHome />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.PRODUCTS_LIST}
+        element={
+          <AdminRoute>
+            <Products />
+          </AdminRoute>
+        }
+      />
       <Route
         path={ADMINS_DASHBOARD.ADD_NEW_CARDS}
-        element={<AddNewProducts />}
+        element={
+          <AdminRoute>
+            <AddNewProducts />
+          </AdminRoute>
+        }
       />
-      <Route path={ADMINS_DASHBOARD.SETTINGS} element={<Setting />} />
+    <Route
+  path={ADMINS_DASHBOARD.SETTINGS}
+  element={
+    <AdminRoute>
+      <Setting />
+    </AdminRoute>
+  }
+/>
+
     </ReactRoutes>
   );
 };

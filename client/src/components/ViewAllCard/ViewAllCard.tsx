@@ -24,7 +24,13 @@ const ViewAllCard = () => {
           justifyContent: "space-between",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: "5px" }}>
+        <Box
+          sx={{
+            display: { md: "flex", sm: "flex", xs: "none" },
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
           {tabs.map((e) => (
             <Box
               component={"div"}
@@ -56,7 +62,7 @@ const ViewAllCard = () => {
 
         <Box
           sx={{
-            display: "flex",
+            display: { md: "flex", sm: "flex", xs: "none" },
             alignItems: "center",
             gap: "3px",
             border: "1px solid black",
@@ -74,8 +80,16 @@ const ViewAllCard = () => {
         </Box>
       </Box>
 
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: "21px", mt: 4 }}>
-        {filteredData.length > 0 ?(
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent:{md:'auto',sm:'auto',xs:'center'},
+          gap: "21px",
+          mt: { md: 4, sm: 4, xs: 0 },
+        }}
+      >
+        {filteredData.length > 0 ? (
           filteredData.map((e) => (
             <Box
               key={e.id}
@@ -92,19 +106,19 @@ const ViewAllCard = () => {
           ))
         ) : (
           <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        width: "100%",
-        height: 200,
-        fontSize: "20px",
-        fontWeight: 500,
-        color: "gray",
-      }}
-    >
-      Product not found
-    </Box>
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              width: "100%",
+              height: 200,
+              fontSize: "20px",
+              fontWeight: 500,
+              color: "gray",
+            }}
+          >
+            Product not found
+          </Box>
         )}
       </Box>
     </Box>

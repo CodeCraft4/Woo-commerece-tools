@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import Slider from "react-slick";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import LandingButton from "../LandingButton/LandingButton";
-import { BASKET_CARDS } from "../../constant/data";
 import { COLORS } from "../../constant/color";
 import BasketCard from "../BasketCard/BasketCard";
 import { useQuery } from "@tanstack/react-query";
@@ -11,8 +10,9 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { USER_ROUTES } from "../../constant/route";
 import { useNavigate } from "react-router-dom";
+import { fetchAllCardsFromDB } from "../../source/source";
 
-const TABS = ["Birthday Flowers", "Letter box", "Under £30", "Under £60"];
+const TABS = ["Birthday Cards", "Letter box", "Under £30", "Under £60"];
 
 type BirthdayTypes = {
   title?: string;
@@ -21,16 +21,10 @@ type BirthdayTypes = {
   saleSlide?: boolean;
 };
 
-const fetchAllBasketData = () => {
-  return new Promise<typeof BASKET_CARDS>((resolve) => {
-    resolve(BASKET_CARDS);
-  });
-};
-
 const BasketSlider = (props: BirthdayTypes) => {
   const { title, description, brandSlider, saleSlide } = props;
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const sliderRef = React.useRef<Slider | null>(null);
 
@@ -38,30 +32,15 @@ const BasketSlider = (props: BirthdayTypes) => {
 
   const { data: basketCards } = useQuery({
     queryKey: ["basketCards"],
-    queryFn: fetchAllBasketData,
+    queryFn: fetchAllCardsFromDB,
   });
 
   const filteredCards = basketCards
     ? basketCards.filter((card) => {
         const selectedCategory = TABS[activeTab];
-        return card.category === selectedCategory;
+        return card.card_category === selectedCategory;
       })
     : [];
-
-  // const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(
-  //   undefined
-  // );
-
-  // const {
-  //   open: isOpenDetailModal,
-  //   openModal,
-  //   closeModal: closeDetailModal,
-  // } = useModal();
-
-  // const openDetailModal = (cate: CategoryType) => {
-  //   setSelectedCate(cate);
-  //   openModal();
-  // };
 
   const settings = {
     dots: false,
@@ -71,7 +50,7 @@ const BasketSlider = (props: BirthdayTypes) => {
     slidesToScroll: 2,
     arrows: false,
     responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: 2 } },
+      { breakpoint: 1024, settings: { slidesToShow: 4 } },
       { breakpoint: 600, settings: { slidesToShow: 1 } },
     ],
   };
@@ -82,7 +61,7 @@ const BasketSlider = (props: BirthdayTypes) => {
         width: "100%",
         m: "auto",
         position: "relative",
-        mt: 8,
+        mt: { md: 8, sm: 8, xs: 0 },
       }}
     >
       <Box
@@ -92,10 +71,16 @@ const BasketSlider = (props: BirthdayTypes) => {
           alignItems: "center",
         }}
       >
-        <Typography fontWeight={700} fontSize={{md:'26px'}}>
+        <Typography fontWeight={700} fontSize={{ md: "26px" }}>
           {title}
         </Typography>
-        {brandSlider ? null : <LandingButton title="Shop All" width="150px" onClick={()=>navigate(USER_ROUTES.VIEW_ALL)} />}
+        {brandSlider ? null : (
+          <LandingButton
+            title="Shop All"
+            width="150px"
+            onClick={() => navigate(USER_ROUTES.VIEW_ALL)}
+          />
+        )}
       </Box>
 
       {saleSlide ? null : (
@@ -110,6 +95,7 @@ const BasketSlider = (props: BirthdayTypes) => {
         >
           {TABS.map((e, index) => (
             <Box
+              key={index}
               component={"div"}
               onClick={() => setActiveTab(index)}
               sx={{
@@ -143,18 +129,16 @@ const BasketSlider = (props: BirthdayTypes) => {
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
           {filteredCards.map((cate, index) => (
-            <Box>
               <BasketCard
                 id={cate.id}
                 key={index}
-                title={cate.title}
-                poster={cate.poster}
-                price={cate.price}
+                title={cate.card_name}
+                poster={cate.image_url}
+                price={cate.actual_price}
+                saleprice={cate.sale_price}
                 sales={saleSlide}
-                category={cate.category}
+                category={cate.card_category}
               />
-             
-            </Box>
           ))}
         </Slider>
 
@@ -163,14 +147,14 @@ const BasketSlider = (props: BirthdayTypes) => {
           onClick={() => sliderRef.current?.slickPrev()}
           sx={{
             position: "absolute",
-            top: "30%",
-            left: -25,
+            top: {md:"30%",sm:'30%',xs:'40%'},
+            left: {md:-25,sm:-25,xs:1},
             display: "flex",
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: "50px",
-            width: "50px",
+            height: {md:'50px',sm:'50px',xs:'40px'},
+            width: {md:'50px',sm:'50px',xs:'40px'},
             border: "1px solid black",
             zIndex: 10,
             bgcolor: COLORS.white,
@@ -185,14 +169,14 @@ const BasketSlider = (props: BirthdayTypes) => {
           onClick={() => sliderRef.current?.slickNext()}
           sx={{
             position: "absolute",
-            top: "30%",
+            top: {md:"30%",sm:'30%',xs:'40%'},
             right: 0,
             display: "flex",
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: "50px",
-            width: "50px",
+            height: {md:'50px',sm:'50px',xs:'40px'},
+            width: {md:'50px',sm:'50px',xs:'40px'},
             border: "1px solid black",
             zIndex: 10,
             bgcolor: COLORS.white,

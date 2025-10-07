@@ -31,7 +31,7 @@ const Description = () => {
       </Typography>
       <Typography
         sx={{
-          fontSize: { md: "16px", sm: "", xs: "14px" },
+          fontSize: { md: "16px", sm: "", xs: "12px" },
           fontWeight: 300,
           mb: 2,
         }}
@@ -44,7 +44,7 @@ const Description = () => {
       </Typography>
       <Typography
         sx={{
-          fontSize: { md: "16px", sm: "", xs: "14px" },
+          fontSize: { md: "16px", sm: "", xs: "12px" },
           fontWeight: 300,
           mb: 2,
         }}
@@ -64,7 +64,7 @@ const Description = () => {
       </Typography>
       <Typography
         sx={{
-          fontSize: { md: "16px", sm: "", xs: "14px" },
+          fontSize: { md: "16px", sm: "", xs: "12px" },
           fontWeight: 300,
           mb: 2,
         }}
@@ -76,7 +76,7 @@ const Description = () => {
       </Typography>
       <Typography
         sx={{
-          fontSize: { md: "16px", sm: "", xs: "14px" },
+          fontSize: { md: "16px", sm: "", xs: "12px" },
           fontWeight: 300,
           mb: 2,
         }}
@@ -91,7 +91,7 @@ const Description = () => {
         <>
           <Typography
             sx={{
-              fontSize: { md: "16px", sm: "", xs: "14px" },
+              fontSize: { md: "16px", sm: "", xs: "12px" },
               fontWeight: 300,
               mb: 2,
             }}
@@ -131,7 +131,7 @@ const Description = () => {
           </Typography>
           <Typography
             sx={{
-              fontSize: { md: "16px", sm: "", xs: "14px" },
+              fontSize: { md: "16px", sm: "", xs: "12px" },
               fontWeight: 300,
               mb: 2,
             }}
@@ -175,9 +175,9 @@ const Description = () => {
       <hr />
       <Typography
         sx={{
-          fontSize: { md: "17px", sm: "", xs: "15px" },
+          fontSize: { md: "17px", sm: "", xs: "12px" },
           fontWeight:300,
-          mt: 4,
+          mt: {md:4,sm:4,xs:1},
         }}
       >
         © Disney. © Disney/Pixar. © Disney. Winnie the Pooh elements are based
