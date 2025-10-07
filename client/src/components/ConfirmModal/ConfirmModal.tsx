@@ -27,10 +27,14 @@ const style = {
 type ModalType = {
   open: boolean;
   onCloseModal: () => void;
+  title?: string;
+  btnText?: string;
+  icon?: React.ReactNode;
+  onClick?: () => void;
 };
 
 const ConfirmModal = (props: ModalType) => {
-  const { open, onCloseModal } = props || {};
+  const { open, onCloseModal, title, btnText, icon, onClick } = props || {};
 
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -81,12 +85,13 @@ const ConfirmModal = (props: ModalType) => {
               justifyContent: "center",
               alignItems: "center",
               m: "auto",
+              color: "red",
             }}
           >
-            <LogoutOutlined sx={{ fontSize: 30, color: "red" }} />
+            {icon ? icon : <LogoutOutlined sx={{ fontSize: 30 }} />}
           </Box>
           <Typography variant="body1" mt={2} mb={2}>
-            Are you Sure to Logout on the app
+            {title || "Are you sure you want to logout?"}
           </Typography>
 
           <Box
@@ -106,10 +111,10 @@ const ConfirmModal = (props: ModalType) => {
               width="200px"
             />
             <LandingButton
-              title="Logout"
+              title={btnText || "Logout"}
               personal
               width="200px"
-              onClick={handleLogout}
+              onClick={onClick ? onClick : handleLogout}
             />
           </Box>
         </Box>

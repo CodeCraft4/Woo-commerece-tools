@@ -135,7 +135,7 @@ const AddToCart = () => {
                     />
                     <Typography>{item.title || "No title"}</Typography>
                   </Box>
-                  <Typography fontSize={"20px"}>{item.price}</Typography>
+                  <Typography fontSize={"20px"}> £{item.price}</Typography>
                   <Button
                     color="error"
                     onClick={() => item?.id && removeFromCart(item.id)}
@@ -192,7 +192,7 @@ const AddToCart = () => {
                   Total Price
                 </Typography>
                 <Typography fontSize={"15px"}>
-                  £ {totalPrice.toFixed(0)}
+                  £{totalPrice.toFixed(0)}
                 </Typography>
               </Box>
               <br />

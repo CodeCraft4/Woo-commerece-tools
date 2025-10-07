@@ -1,0 +1,62 @@
+/* Define the main purple color */
+:root {
+  --sidebar-purple: #5d00ff; /* The vibrant purple from the screenshot */
+  --sidebar-text-color: #fff;
+}
+
+/* 1. Main Container Styling (Purple background and curve) */
+.sidebar-main-container {
+  background-color: var(--sidebar-purple) !important;
+  color: var(--sidebar-text-color);
+  /* Apply the top-right curve */
+  border-top-right-radius: 50px;
+}
+
+/* Ensure all links and text within the purple container are white by default */
+.sidebar-main-container a,
+.sidebar-main-container .MuiSvgIcon-root {
+  color: var(--sidebar-text-color);
+  /* Ensure the icons and link text inherit the white color */
+}
+
+/* 2. Navigation Item Base Style */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px; /* Base padding */
+  margin-bottom: 5px; /* Spacing between items */
+  text-decoration: none; /* Remove underline from Link */
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 3. Active State Styling (The special rounded look) */
+.sidebar-nav-item.active {
+  background-color: white; /* White background for active item */
+  color: var(--sidebar-purple) !important; /* Purple text for active item */
+  /* This is the key to the rounded look: */
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 30px;
+  border-bottom-right-radius: 30px;
+  
+  /* Create the protruding effect by pulling it left and adding padding back */
+  margin-left: -20px; /* Pulls the item 20px to the left */
+  padding-left: 40px; /* Pushes content 40px to the right to visually align it */
+}
+
+/* Ensure the icons within the active state are purple */
+.sidebar-nav-item.active .MuiSvgIcon-root {
+  color: var(--sidebar-purple) !important;
+}
+
+/* 4. Notification Badge Styling */
+.notification-badge {
+  background-color: white;
+  color: var(--sidebar-purple);
+  padding: 3px 8px;
+  border-radius: 12px; /* Pill shape */
+  font-size: 0.75rem;
+  font-weight: bold;
+}

@@ -23,6 +23,7 @@ const style = {
 };
 
 export type CategoryType = {
+  image_url?:string;
   id?: string | number;
   title?: string;
   poster?: string;
@@ -68,7 +69,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
     navigate(`${USER_ROUTES.HOME}/${cate.id}`, {
       state: {
-        poster: cate.poster,
+        poster: cate.image_url,
         plan: selectedPlan,
       },
     });
@@ -82,7 +83,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
    
      addToCart({
           id:cate?.id,
-          img:cate?.poster,
+          img:cate?.image_url,
           category:cate?.category,
           price:cate?.price,
           title:cate?.title
@@ -117,7 +118,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
             >
               <Box
                 component="img"
-                src={cate?.poster}
+                src={cate?.image_url}
                 onClick={handleToggleZoom}
                 sx={{
                   width: "100%",
@@ -205,7 +206,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
                   onClick={handleAddToCard}
                 />
                 <LandingButton
-                  title="Personlize"
+                  title="Personalise"
                   width="150px"
                   personal
                   onClick={handlePersonalize}

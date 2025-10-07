@@ -15,7 +15,7 @@ const AdvertisementCard = (props: AdvertiseTypes) => {
       sx={{
         borderRadius: 4,
         width: { md: "560px", sm: "", xs: "100%" },
-        height: { md: "160px", sm: "", xs: "auto" },
+        height: { md: "170px", sm: "", xs: "auto" },
         display: { md: "flex", sm: "flex", xs: "block" },
       }}
     >

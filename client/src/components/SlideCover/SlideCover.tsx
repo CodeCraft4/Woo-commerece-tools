@@ -5,9 +5,8 @@ import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 const SlideCover = () => {
-  // const { title, setTitle } = useWishCard();
   const location = useLocation();
-  const { poster } = location.state || {};
+  const { poster } = (location.state as any) || {};
   const { setPoster } = useWishCard();
 
   useEffect(() => {
@@ -38,38 +37,6 @@ const SlideCover = () => {
         alt="Cover Image"
         sx={{ width: "100%", objectFit: "cover", height: "100%" }}
       />
-      {/* <Typography
-        variant="h4"
-        sx={{ fontSize: "35px", fontFamily: "cursive", p: 1 }}
-      >
-        HAPPY BIRTHDAY
-      </Typography> */}
-
-      {/* <TextField
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        variant="standard"
-        fullWidth
-        InputProps={{
-          disableUnderline: true,
-          style: {
-            fontSize: "30px",
-            textAlign: "center",
-            color: "White",
-            fontWeight: "bold",
-          },
-          inputProps: {
-            style: { textAlign: "center" },
-          },
-        }}
-        sx={{
-          backgroundColor: "transparent",
-          border: "3px dashed #3e7dd4",
-          p: 1.5,
-          position: "absolute",
-          bottom: 0,
-        }}
-      /> */}
     </Box>
   );
 };

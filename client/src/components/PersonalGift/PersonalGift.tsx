@@ -43,10 +43,10 @@ const PersonalGift = () => {
           p: 5,
         }}
       >
-        <Typography sx={{fontSize:'35px',fontWeight:700}}>
+        <Typography sx={{fontSize:{md:'35px',sm:'35px',xs:'25px'},fontWeight:700}}>
           Personlized Gifts <br /> Created by You
         </Typography>
-        <Typography sx={{fontSize:'14px',fontWeight:300}}>
+        <Typography sx={{fontSize:{md:'14px',sm:'14px',xs:12},fontWeight:300}}>
           Go above and beyond to show how well you know them with personalised gifts, created by you just for them to make their day!
         </Typography>
         <br />

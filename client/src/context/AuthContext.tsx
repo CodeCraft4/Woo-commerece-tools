@@ -8,13 +8,12 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../supabase/supabase";
 
-// 🔹 Types for SignUp and SignIn inputs
 interface SignUpInput {
   fullName: string;
   phone: string;
   email: string;
   password: string;
-  confirmPassword?:string
+  confirmPassword?: string;
 }
 
 interface SignInInput {
@@ -22,16 +21,15 @@ interface SignInInput {
   password: string;
 }
 
-// 🔹 AuthContext type
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signUp: (input: SignUpInput) => Promise<any>;
   signIn: (input: SignInInput) => Promise<any>;
+  signInWithGoogle: () => Promise<any>;
   signOut: () => Promise<void>;
 }
 
-// Default value (null until initialized)
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
@@ -56,8 +54,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      // ✅ After Google login or normal signup, ensure record exists in DB
+      if (currentUser) {
+        await upsertUser(currentUser);
+      }
     });
 
     return () => {
@@ -65,33 +69,74 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
   }, []);
 
-  // 🔹 Signup (with extra fields)
- const signUp = async ({ fullName, phone, email, password }: SignUpInput) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        phone: phone,
+  // ✅ Helper: Insert user into "Users" table if not already there
+  const upsertUser = async (authUser: User) => {
+    try {
+      const { data: existing } = await supabase
+        .from("Users")
+        .select("id")
+        .eq("auth_id", authUser.id)
+        .single();
+
+      if (!existing) {
+        await supabase.from("Users").insert([
+          {
+            auth_id: authUser.id,
+            full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || "",
+            email: authUser.email,
+            phone: authUser.user_metadata?.phone || null,
+            password: null, // optional — don’t store plain passwords!
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error("Error upserting user:", err);
+    }
+  };
+
+  // 🔹 Email + Password Signup
+  const signUp = async ({ fullName, phone, email, password }: SignUpInput) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName, phone },
       },
-       emailRedirectTo: undefined,
-    },
-  });
+    });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return data;
-};
+    const authUser = data.user;
+    if (authUser) {
+      await upsertUser(authUser);
+    }
 
+    return data;
+  };
 
-
-
-  // 🔹 Signin
+  // 🔹 Email + Password Signin
   const signIn = async ({ email, password }: SignInInput) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+    });
+    if (error) throw error;
+
+    const authUser = data.user;
+    if (authUser) {
+      await upsertUser(authUser);
+    }
+
+    return data;
+  };
+
+  // 🔹 Google Signin
+  const signInWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
     });
     if (error) throw error;
     return data;
@@ -108,6 +153,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
   };
 
@@ -118,7 +164,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 };
 
-// 🔹 Hook
+// ✅ Custom Hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

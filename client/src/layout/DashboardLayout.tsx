@@ -10,17 +10,18 @@ type LayoutType = {
 const DashboardLayout = ({ children }: LayoutType) => {
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f9f9f9" }}>
-      {/* Sidebar */}
+      {/* Sidebar Container */}
       <Box
         component="aside"
         sx={{
           width: 257,
-          p: 3,
+          pl: 3,
           display: "flex",
           flexDirection: "column",
-          borderRight: "1px solid #E6E8F0",
           bgcolor: COLORS.primary,
           color: COLORS.white,
+          height: "100vh",
+          overflowY: "hidden",
         }}
       >
         <Box
@@ -40,8 +41,15 @@ const DashboardLayout = ({ children }: LayoutType) => {
             Editor
           </Typography>
 
-          {/* Sidebar links */}
-          <Box sx={{ mt: 5, textAlign: "start" }}>
+          {/* Scrollable Sidebar Content */}
+          <Box
+            sx={{
+              mt: 5,
+              textAlign: "start",
+              height: "calc(100vh - 120px)",
+              overflowY: "auto",
+            }}
+          >
             <Sidebar />
           </Box>
         </Box>
@@ -55,14 +63,12 @@ const DashboardLayout = ({ children }: LayoutType) => {
           display: "flex",
           flexDirection: "column",
           p: "30px",
-          bgcolor: "#f9f9f9",
+          overflowY: "auto",
+          height: "100vh",
         }}
       >
-        {/* Header */}
-        {/* <Header /> */}
-
         {/* Page Content */}
-        <Box sx={{ flex: 1, overflowY: "auto" }}>{children}</Box>
+        <Box sx={{ flex: 1, p: 1, }}>{children}</Box>
       </Box>
     </Box>
   );

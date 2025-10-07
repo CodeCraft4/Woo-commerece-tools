@@ -9,13 +9,14 @@ type BasketType = {
   title?: string;
   poster: string;
   price?: string;
+  saleprice?: string;
   category?: string;
   sales?: boolean;
   openModal?: (user: CategoryType) => void;
 };
 
 const BasketCard = (props: BasketType) => {
-  const { poster, price, sales, id, title, category } = props;
+  const { poster, price, sales, id, title, category, saleprice } = props;
 
   const { addToCart } = useCart();
 
@@ -37,7 +38,7 @@ const BasketCard = (props: BasketType) => {
       // onClick={openModal}
       sx={{
         borderRadius: 2,
-        width: "250px",
+        width: { md: "250px", sm: " 250px", xs: "100%" },
         height: "450px",
         overflow: "hidden",
       }}
@@ -47,8 +48,8 @@ const BasketCard = (props: BasketType) => {
         src={poster}
         alt="backetImg"
         sx={{
-          width: "250px",
-          height: "300px",
+          width: { md: "250px", sm: " 250px", xs: "100%" },
+          height: {md:"300px",sm:"300px",xs:'400px'},
           objectFit: "cover",
           borderRadius: 2,
           "&:hover": { transform: "scale(1.03)" },
@@ -67,16 +68,16 @@ const BasketCard = (props: BasketType) => {
           {sales && (
             <span
               style={{
-                fontSize: "16px",
+                fontSize: "18px",
                 textDecoration: "line-through",
                 color: "Gray",
                 marginRight: 3,
               }}
             >
-              £6.99
+              £{price}
             </span>
           )}
-          {price}
+          £{sales ? saleprice : price}
         </Typography>
         {/* {sales && (
           <Rating name="half-rating" defaultValue={2.5} precision={0.5} />

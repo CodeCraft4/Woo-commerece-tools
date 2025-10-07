@@ -8,6 +8,7 @@ import {
   AudiotrackOutlined,
   TitleOutlined,
   BlurOn,
+  Close,
 } from "@mui/icons-material";
 import QrGenerator from "../QR-code/Qrcode";
 import { useEffect, useRef, useState } from "react";
@@ -18,6 +19,7 @@ import {
 import { Rnd } from "react-rnd";
 import { useWishCard } from "../../context/WishCardContext";
 import { useAuth } from "../../context/AuthContext";
+import { COLORS } from "../../constant/color";
 
 interface DraggableItem {
   id: number | string;
@@ -35,9 +37,14 @@ interface SlideSpreadProps {
   togglePopup: (name: string | null) => void;
   activePopup?: string | null;
   activeIndex?: number;
+  addText?: boolean;
 }
 
-const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
+const SlideSpread = ({
+  togglePopup,
+  activeIndex,
+  addText,
+}: SlideSpreadProps) => {
   const {
     images,
     selectedImg,
@@ -56,16 +63,25 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
     tips,
     setTips,
     setTexts,
-    // setImageSizes,
-    // setImagePositions,
+    setShowOneTextRightSideBox,
+    fontFamily,
     setImages,
   } = useWishCard();
 
-  const {user} = useAuth()
+  const { user } = useAuth();
 
+  
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const leftBoxRef = useRef<HTMLDivElement>(null);
+
+  const [draggableText, setDraggableText] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    value: string;
+  } | null>(null);
 
   const [draggableImages, setDraggableImages] = useState<DraggableItem[]>([]);
   const selectedImageObj = draggableImages.find(
@@ -88,28 +104,32 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
     height: 150,
     rotation: 0,
   });
-
-  const [layoutPosition, setLayoutPosition] = useState({
-    x: 100,
-    y: 100,
-    width: 330,
-    height: 550,
-    rotation: 0,
-  });
-
   console.log(setAudioQrPosition);
 
   // Just Video fetching
   useEffect(() => {
-  if (user) {
-    fetchVideoLatestMedia(user.id, setMediaUrl);
-  }
-}, [user]);
+    if (user) {
+      fetchVideoLatestMedia(user.id, setMediaUrl);
+    }
+  }, [user]);
 
   // Just Audio fetching
   useEffect(() => {
     fetchAudioLatestMedia(setAudioUrl);
   }, []);
+
+  // Inside SlideSpread component
+  useEffect(() => {
+    if (addText && !draggableText) {
+      setDraggableText({
+        x: 100,
+        y: 100,
+        width: 250,
+        height: 100,
+        value: "",
+      });
+    }
+  }, [addText, draggableText]);
 
   // Handlers for text editing moved here for clarity
   const handleAddTextClick = (index: number) => {
@@ -120,6 +140,35 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
     setEditingIndex(null);
   };
 
+  // Add this handler to initialize draggable state for images (omitted for brevity)
+  useEffect(() => {
+    if (images.length > 0) {
+      setDraggableImages((prev) => {
+        // 1. Add new ones
+        const existingIds = prev.map((img) => img.id);
+        const newOnes = images
+          .filter((img) => !existingIds.includes(img.id))
+          .map((img) => ({
+            ...img,
+            x: 50,
+            y: 50,
+            width: 150,
+            height: 150,
+            rotation: 0,
+          }));
+
+        // 2. Remove deleted ones
+        const stillValid = prev.filter((img) =>
+          images.some((incoming) => incoming.id === img.id)
+        );
+
+        return [...stillValid, ...newOnes];
+      });
+    } else {
+      // If images array is empty, clear draggableImages
+      setDraggableImages([]);
+    }
+  }, [images]);
   // Add this handler to initialize draggable state for images
   useEffect(() => {
     if (images.length > 0) {
@@ -165,14 +214,115 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
         ref={leftBoxRef}
         sx={{ flex: 1, zIndex: 10, p: 2, position: "relative" }}
       >
+        {draggableText && (
+          <Rnd
+            size={{ width: draggableText.width, height: draggableText.height }}
+            position={{ x: draggableText.x, y: draggableText.y }}
+            onDragStop={(_, d) => {
+              setDraggableText((prev) =>
+                prev ? { ...prev, x: d.x, y: d.y } : null
+              );
+            }}
+            onResizeStop={(_, __, ref, ___, position) => {
+              setDraggableText((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      width: parseInt(ref.style.width),
+                      height: parseInt(ref.style.height),
+                      x: position.x,
+                      y: position.y,
+                    }
+                  : null
+              );
+            }}
+            minWidth={100}
+            minHeight={30}
+            bounds="parent"
+            style={{
+              zIndex: 15,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {addText && (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  position: "relative",
+                  pointerEvents: "auto",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close Icon: Deletes the Text Box */}
+                <IconButton
+                  size="small"
+                  onClick={() => setDraggableText(null)}
+                  sx={{
+                    position: "absolute",
+                    top: -12,
+                    right: -12,
+                    bgcolor: COLORS.primary,
+                    color: "white",
+                    "&:hover": { bgcolor: "#f44336" },
+                    zIndex: 20,
+                  }}
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+
+                {/* Text Field for content */}
+                <TextField
+                  variant="standard"
+                  value={draggableText.value}
+                  onChange={(e) =>
+                    setDraggableText((prev) =>
+                      prev ? { ...prev, value: e.target.value } : null
+                    )
+                  }
+                  InputProps={{
+                    disableUnderline: true,
+                    style: {
+                      fontSize: fontSize,
+                      fontWeight: 600,
+                      textAlign: "center",
+                      border: "3px dashed #3639d3ff",
+                      padding: "10px",
+                    },
+                  }}
+                  autoFocus
+                  multiline
+                  fullWidth
+                  sx={{
+                    "& .MuiInputBase-root": {
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    },
+                    "& .MuiInputBase-input": {
+                      height: "100% !important",
+                      overflowY: "auto",
+                    },
+                  }}
+                />
+              </Box>
+            )}
+          </Rnd>
+        )}
+
+        {/* Existing Rnd components for QR codes and images... (omitted for brevity) */}
         {mediaUrl && (
           <Rnd
+            /* ... (props for video QR code) */
             size={{ width: qrPosition.width, height: qrPosition.height }}
             position={{ x: qrPosition.x, y: qrPosition.y }}
             onDragStop={(_, d) =>
               setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
             }
-            onResizeStop={(_, ___, ref,__,position) => {
+            onResizeStop={(_, ___, ref, __, position) => {
               setQrPosition({
                 width: parseInt(ref.style.width),
                 height: parseInt(ref.style.height),
@@ -215,31 +365,9 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
           draggableImages.map(({ id, src, x, y, width, height, rotation }) => (
             <Rnd
               key={id}
+              /* ... (props for draggable images) ... */
               size={{ width, height }}
               position={{ x, y }}
-              // onDragStop={(e, d) =>
-              //   setDraggableImages((prev) =>
-              //     prev.map((img) =>
-              //       img.id === id ? { ...img, x: d.x, y: d.y } : img
-              //     )
-              //   )
-              // }
-              // onResizeStop={(e, direction, ref, delta, position) => {
-              //   setDraggableImages((prev) =>
-              //     prev.map((img) =>
-              //       img.id === id
-              //         ? {
-              //             ...img,
-              //             width: parseInt(ref.style.width),
-              //             height: parseInt(ref.style.height),
-              //             x: position.x,
-              //             y: position.y,
-              //           }
-              //         : img
-              //     )
-              //   );
-              // }}
-
               onDragStop={(_, d) => {
                 setDraggableImages((prev) =>
                   prev.map((img) =>
@@ -253,7 +381,7 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                   )
                 );
               }}
-              onResizeStop={(e, _, ref,__,position) => {
+              onResizeStop={(e, _, ref, __, position) => {
                 const newWidth = parseInt(ref.style.width);
                 const newHeight = parseInt(ref.style.height);
                 console.log(e);
@@ -289,7 +417,7 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                 bottomRight: {
                   width: "12px",
                   height: "12px",
-                  background: "#3a7bd5",
+                  background: "#000000ff",
                   borderRadius: "50%",
                   right: "-6px",
                   bottom: "-6px",
@@ -331,170 +459,6 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
               />
             </Rnd>
           ))}
-
-        {showOneTextRightSideBox && (
-          <Rnd
-            size={{
-              width: layoutPosition.width,
-              height: layoutPosition.height,
-            }}
-            position={{ x: layoutPosition.x, y: layoutPosition.y }}
-            onDragStop={(_, d) =>
-              setLayoutPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
-            }
-            onResizeStop={(_, __, ref,_delta, position) => {
-              setLayoutPosition({
-                width: parseInt(ref.style.width),
-                height: parseInt(ref.style.height),
-                x: position.x,
-                y: position.y,
-                rotation: layoutPosition.rotation,
-              });
-            }}
-          >
-            <Box
-              sx={{
-                flex: 1,
-                bgcolor: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-                border: "3px dashed #3a7bd5",
-              }}
-            >
-              <TextField
-                variant="standard"
-                value={oneTextValue}
-                onChange={(e) => setOneTextValue(e.target.value)}
-                InputProps={{
-                  disableUnderline: true,
-                  style: {
-                    fontSize: fontSize,
-                    fontWeight: fontWeight,
-                    color: fontColor,
-                    transform: `rotate(${rotation}deg)`,
-                  },
-                }}
-                autoFocus
-                multiline
-                rows={20}
-                fullWidth
-                sx={{
-                  height: "100%",
-                  px: 2,
-                  textAlign: textAlign,
-                }}
-              />
-            </Box>
-          </Rnd>
-        )}
-
-        {multipleTextValue && (
-          <Rnd
-            size={{ width: "100%", height: qrPosition.height }}
-            position={{ x: qrPosition.x, y: qrPosition.y }}
-            onDragStop={(_, d) =>
-              setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y }))
-            }
-            onResizeStop={(e, _, ref,__, position) => {
-              setQrPosition({
-                width: parseInt(ref.style.width),
-                height: parseInt(ref.style.height),
-                x: position.x,
-                y: position.y,
-                rotation: qrPosition.rotation,
-              });
-              console.log(e);
-            }}
-          >
-            <Box
-              sx={{
-                height: "100%",
-                width: "100%",
-                borderRadius: "6px",
-                p: 1,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {[0, 1, 2].map((index) => (
-                <Box
-                  onClick={() => handleAddTextClick(index)}
-                  sx={{
-                    height: "100%",
-                    width: "100%",
-                    p: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    mb: 2,
-                  }}
-                  key={index}
-                >
-                  {editingIndex === index ? (
-                    <TextField
-                      autoFocus
-                      multiline
-                      fullWidth
-                      rows={4}
-                      variant="standard"
-                      InputProps={{
-                        disableUnderline: true,
-                        style: {
-                          fontSize: fontSize,
-                          fontWeight: fontWeight,
-                          color: fontColor,
-                          transform: `rotate(${rotation}deg)`,
-                          border: "3px dashed #3a7bd5",
-                          padding: "10px",
-                        },
-                      }}
-                      value={texts[index]}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setTexts((prev) => {
-                          const updated = [...prev]; 
-                          updated[index] = newValue; 
-                          return updated;
-                        });
-                      }}
-                      onBlur={handleFinishEditing}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleFinishEditing();
-                        }
-                      }}
-                    />
-                  ) : (
-                    <Box
-                      onClick={() => handleAddTextClick(index)}
-                      sx={{
-                        width: "100%",
-                        height: "150px",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        m: "auto",
-                        color: "#212121",
-                        border: "3px dashed #3a7bd5",
-                        cursor: "pointer",
-                        userSelect: "none",
-                        flexDirection: "row",
-                        gap: 1,
-                      }}
-                    >
-                      <TitleOutlined />
-                      <Typography component="span" sx={{ userSelect: "none" }}>
-                        {texts[index] ? texts[index] : "Add Text"}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              ))}
-            </Box>
-          </Rnd>
-        )}
       </Box>
 
       {/* Right Side */}
@@ -511,18 +475,44 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
           p: 2,
         }}
       >
-        {/* {showOneTextRightSideBox && (
+        {showOneTextRightSideBox && (
           <Box
             sx={{
               flex: 1,
-              bgcolor: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               height: "100%",
               border: "3px dashed #3a7bd5",
+              position: "relative",
             }}
           >
+            <IconButton
+              size="small"
+              sx={{
+                position: "absolute",
+                top: -8,
+                right: -8,
+                width: "35px",
+                height: "35px",
+                p: 1,
+                bgcolor: COLORS.primary,
+                color: "white",
+                border: "1px solid #ccc",
+                "&:hover": { bgcolor: "#f44336", color: "white" },
+                zIndex: 5,
+              }}
+              onClick={() => {
+                setOneTextValue(""); // clear text
+                // ✅ hide layout box too
+                if (typeof setShowOneTextRightSideBox === "function") {
+                  setShowOneTextRightSideBox(false);
+                }
+              }}
+            >
+              <Close />
+            </IconButton>
+
             <TextField
               variant="standard"
               value={oneTextValue}
@@ -533,6 +523,7 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                   fontSize: fontSize,
                   fontWeight: fontWeight,
                   color: fontColor,
+                  fontFamily: fontFamily,
                   transform: `rotate(${rotation}deg)`,
                 },
               }}
@@ -542,14 +533,14 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
               fullWidth
               sx={{
                 height: "100%",
-                p: 2,
+                px: 2,
                 textAlign: textAlign,
               }}
             />
           </Box>
-        )} */}
+        )}
 
-        {/* {multipleTextValue && (
+        {multipleTextValue && (
           <Box
             sx={{
               height: "100%",
@@ -560,17 +551,39 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
               flexDirection: "column",
             }}
           >
-            {[0, 1, 2].map((index) => (
+            {texts.map((text, index) => (
               <Box
-                sx={{
-                  height: "100%",
-                  width: "100%",
-                  p: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                }}
                 key={index}
+                sx={{
+                  position: "relative",
+                  height: "150px",
+                  width: "100%",
+                  mb: 2,
+                }}
               >
+                {/* Delete icon */}
+                <IconButton
+                  size="small"
+                  sx={{
+                    position: "absolute",
+                    top: -5,
+                    right: -5,
+                    width: "28px",
+                    height: "28px",
+                    bgcolor: COLORS.primary,
+                    color: "white",
+                    border: "1px solid #ccc",
+                    "&:hover": { bgcolor: "#f44336", color: "white" },
+                    zIndex: 5,
+                  }}
+                  onClick={() =>
+                    setTexts((prev) => prev.filter((_, i) => i !== index))
+                  }
+                >
+                  <Close />
+                </IconButton>
+
+                {/* Editable text box */}
                 {editingIndex === index ? (
                   <TextField
                     autoFocus
@@ -587,16 +600,15 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                         transform: `rotate(${rotation}deg)`,
                         border: "3px dashed #3a7bd5",
                         padding: "10px",
+                        fontFamily: fontFamily,
                       },
                     }}
-                    value={texts[index]}
+                    value={text}
                     onChange={(e) => {
                       const newValue = e.target.value;
-                      setTexts((prev) => {
-                        const updated = [...prev]; // copy old array
-                        updated[index] = newValue; // update only this index
-                        return updated; // save back
-                      });
+                      setTexts((prev) =>
+                        prev.map((t, i) => (i === index ? newValue : t))
+                      );
                     }}
                     onBlur={handleFinishEditing}
                     onKeyDown={(e) => {
@@ -611,29 +623,24 @@ const SlideSpread = ({ togglePopup, activeIndex }: SlideSpreadProps) => {
                     onClick={() => handleAddTextClick(index)}
                     sx={{
                       width: "100%",
-                      height: "150px",
+                      height: "100%",
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
-                      m: "auto",
-                      color: "gray",
                       border: "3px dashed #3a7bd5",
+                      color: "#212121",
                       cursor: "pointer",
-                      userSelect: "none",
-                      flexDirection: "row",
-                      gap: 1,
+                      borderRadius: "6px",
                     }}
                   >
                     <TitleOutlined />
-                    <Typography component="span" sx={{ userSelect: "none" }}>
-                      {texts[index] ? texts[index] : "Add Text"}
-                    </Typography>
+                    <Typography>{text || "Add Text"}</Typography>
                   </Box>
                 )}
               </Box>
             ))}
           </Box>
-        )} */}
+        )}
       </Box>
 
       {/* Editing Toolbar */}

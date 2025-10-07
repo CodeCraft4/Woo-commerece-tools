@@ -35,7 +35,7 @@ interface Props {
   window?: () => Window;
 }
 
-const drawerWidth = 250;
+const drawerWidth = 200;
 const navItems = ["Home", "About", "Contact"];
 
 // Define the type for a single category
@@ -112,8 +112,13 @@ export default function Header(props: Props) {
   } = useModal();
 
   const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
-      <Box component={"img"} src={LOGO} alt="LOGO" />
+    <Box onClick={handleDrawerToggle} sx={{ textAlign: "center", pt: 8 }}>
+      <Box
+        component={"img"}
+        src={LOGO}
+        alt="LOGO"
+        sx={{ width: 200, height: 50, mb: 8, borderBottom: "1px solid white" }}
+      />
       <Divider />
       <List>
         {navItems.map((item) => (
@@ -138,33 +143,120 @@ export default function Header(props: Props) {
         flexDirection: "column",
         position: "relative",
         py: 1,
-        width:'100%',
+        width: "100%",
       }}
     >
       <Box
         sx={{
-          width: "1360px",
+          width: { md: "1360px", sm: "1360px", xs: "100%" },
           display: "flex",
           justifyContent: "center",
           m: "auto",
         }}
-        maxWidth="xl"
       >
         <AppBar
           position="sticky"
           elevation={0}
-          sx={{ background: "transparent", position: "sticky", top: 20 }}
+          sx={{
+            background: "transparent",
+            position: "sticky",
+            top: 20,
+            width: "100%",
+          }}
         >
           <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2, display: { sm: "none" } }}
+            <Box
+              sx={{
+                display: { md: "none", sm: "none", xs: "flex" },
+                justifyContent: "space-between",
+                width: "100%",
+              }}
             >
-              <MenuIcon />
-            </IconButton>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{ mr: 2 }}
+              >
+                <MenuIcon />
+              </IconButton>
+
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                {user ? (
+                  <>
+                    <IconButton onClick={handleOpenMenu}>
+                      <Avatar sx={{ bgcolor: "orange" }}>
+                        {user.email?.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </IconButton>
+
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={Boolean(anchorEl)}
+                      onClose={handleCloseMenu}
+                    >
+                      <MenuItem
+                        onClick={() => {
+                          // navigate(USER_ROUTES.ACCOUNT_SETTINGS);
+                          handleCloseMenu();
+                        }}
+                        sx={{ width: 150 }}
+                      >
+                        <ListItemIcon>
+                          <Person fontSize="small" />
+                        </ListItemIcon>
+                        <Typography>Profile</Typography>
+                      </MenuItem>
+
+                      <MenuItem
+                        onClick={() => {
+                          // navigate(USER_ROUTES.SETTINGS);
+                          handleCloseMenu();
+                        }}
+                      >
+                        <ListItemIcon>
+                          <Settings fontSize="small" />
+                        </ListItemIcon>
+                        <Typography>Settings</Typography>
+                      </MenuItem>
+
+                      <MenuItem onClick={handleLogout}>
+                        <ListItemIcon>
+                          <Logout fontSize="small" sx={{ color: "red" }} />
+                        </ListItemIcon>
+                        <Typography>Logout</Typography>
+                      </MenuItem>
+                    </Menu>
+                  </>
+                ) : (
+                  <IconButton
+                    sx={iconStyle}
+                    onClick={() => navigate(USER_ROUTES.SIGNIN)}
+                  >
+                    <Person />
+                    <Typography fontSize={"10px"}>Accounts</Typography>
+                  </IconButton>
+                )}
+
+                <IconButton
+                  sx={iconStyle}
+                  onClick={() => navigate(USER_ROUTES.ADD_TO_CART)}
+                >
+                  {/* ✅ Add badge here */}
+                  <Badge
+                    badgeContent={cart.length}
+                    color="error"
+                    overlap="circular"
+                    showZero
+                  >
+                    <ShoppingBag />
+                  </Badge>
+                  <Typography fontSize={"10px"}>Basket</Typography>
+                </IconButton>
+              </Box>
+            </Box>
+
             <Box
               sx={{
                 flexGrow: 1,
@@ -223,8 +315,15 @@ export default function Header(props: Props) {
               {user ? (
                 <>
                   <IconButton onClick={handleOpenMenu}>
-                    <Avatar sx={{ bgcolor: "orange" }}>
-                      {user.email?.charAt(0).toUpperCase()}
+                    <Avatar
+                      sx={{ bgcolor: "orange", width: 40, height: 40,border:'2px solid orange' }}
+                      src={user.user_metadata?.avatar_url || undefined}
+                      alt={user.user_metadata?.name || user.email}
+                    >
+                      {/* Fallback letter if no image */}
+                      {!user.user_metadata?.avatar_url &&
+                        (user.user_metadata?.name?.charAt(0).toUpperCase() ||
+                          user.email?.charAt(0).toUpperCase())}
                     </Avatar>
                   </IconButton>
 
@@ -308,6 +407,8 @@ export default function Header(props: Props) {
               "& .MuiDrawer-paper": {
                 boxSizing: "border-box",
                 width: drawerWidth,
+                bgcolor: COLORS.primary,
+                color: COLORS.white,
               },
             }}
           >

@@ -8,6 +8,7 @@ import { AuthProvider } from "../../context/AuthContext";
 import { CartProvider } from "../../context/AddToCart";
 import { Toaster } from "react-hot-toast";
 import { COLORS } from "../../constant/color";
+import { AdminProvider } from "../../context/AdminContext";
 
 const App = () => {
   // React Query Client
@@ -26,7 +27,9 @@ const App = () => {
           <AuthProvider>
             <CartProvider>
               <WishCardProvider>
+                <AdminProvider>
                 <Router />
+                </AdminProvider>
                 <Toaster
                   position="bottom-right"
                   reverseOrder={false}

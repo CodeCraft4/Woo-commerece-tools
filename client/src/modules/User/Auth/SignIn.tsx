@@ -7,6 +7,8 @@ import { COLORS } from "../../../constant/color";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../../context/AuthContext";
 import toast from "react-hot-toast";
+import React from "react";
+import { supabase } from "../../../supabase/supabase";
 
 type SigninForm = {
   email: string;
@@ -15,7 +17,7 @@ type SigninForm = {
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn,signInWithGoogle  } = useAuth();
 
   const {
     register,
@@ -24,21 +26,32 @@ const SignIn = () => {
   } = useForm<SigninForm>();
 
   const onSubmitForm = async (data: SigninForm) => {
-    console.log(data, "---");
     try {
-      const res = await signIn({
+      await signIn({
         email: data.email,
         password: data.password,
       });
-
-      console.log("✅ Signed in:", res);
-
       toast.success("Login successful!");
       navigate("/");
     } catch (err: any) {
       toast.error(err.message);
     }
   };
+
+  React.useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        toast.success(`Welcome ${user.user_metadata?.name || user.email}!`);
+        navigate("/");
+      }
+    };
+    getUser();
+  }, [navigate]);
+  
+
   return (
     <Box
       sx={{
@@ -48,7 +61,6 @@ const SignIn = () => {
         overflow: "hidden",
       }}
     >
-      {/* Background image */}
       <Box
         component={"img"}
         src="/assets/images/animated-banner.jpg"
@@ -64,7 +76,6 @@ const SignIn = () => {
         }}
       />
 
-      {/* Centered form */}
       <Box
         component={"form"}
         onSubmit={handleSubmit(onSubmitForm)}
@@ -79,7 +90,7 @@ const SignIn = () => {
       >
         <Box
           sx={{
-            width: 500,
+            width: { md: 500, sm: 500, xs: "100%" },
             p: 3,
             borderRadius: 3,
             bgcolor: "rgba(255,255,255,0.9)",
@@ -87,10 +98,15 @@ const SignIn = () => {
             textAlign: "center",
           }}
         >
-          <Typography sx={{ fontSize: "35px", fontWeight: 700 }}>
+          <Typography
+            sx={{
+              fontSize: { md: "35px", sm: "35px", xs: 22 },
+              fontWeight: 700,
+            }}
+          >
             Sign In
           </Typography>
-          {/* Your inputs & buttons go here */}
+
           <Box mt={5}>
             <CustomInput
               label="Email"
@@ -110,11 +126,12 @@ const SignIn = () => {
               })}
               error={errors.password?.message}
             />
+
             <LandingButton
-              title="Sign in "
+              title="Sign in"
               width="450px"
               personal
-              type={"submit"}
+              type="submit"
             />
 
             <Typography sx={{ fontSize: "13px", textAlign: "start", mt: 3 }}>
@@ -133,12 +150,14 @@ const SignIn = () => {
               .
             </Typography>
 
+            {/* ✅ GOOGLE SIGN-IN BUTTON */}
             <IconButton
+              onClick={signInWithGoogle}
               sx={{
                 p: 1,
                 bgcolor: "brown",
                 color: COLORS.white,
-                width: 450,
+                width: { md: 450, sm: 450, xs: "100%" },
                 borderRadius: 1,
                 fontSize: "15px",
                 mt: 3,

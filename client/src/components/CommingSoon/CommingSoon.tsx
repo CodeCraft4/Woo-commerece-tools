@@ -15,6 +15,7 @@ const CommingSoonOffers = () => {
         justifyContent: "center",
         color: COLORS.white,
         m: "auto",
+        p:{xs:2}
       }}
     >
       <Box
@@ -45,7 +46,7 @@ const CommingSoonOffers = () => {
         <Typography
           sx={{
             py: 1,
-            fontSize: { md: "auto", sm: "auto", xs: "14px" },
+            fontSize: { md: "auto", sm: "auto", xs: "12px" },
             width: { md: "90%", sm: "", xs: "100%" },
             fontWeight: 300,
           }}
@@ -75,7 +76,7 @@ const CommingSoonOffers = () => {
             borderRadius: {
               md: "0px 15px 15px 0px",
               sm: "0px 15px 15px 0px",
-              xs: "15px",
+              xs: "6px",
             },
           }}
         />
