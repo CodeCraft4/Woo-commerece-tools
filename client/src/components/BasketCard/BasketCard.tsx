@@ -1,8 +1,8 @@
 import { Box, Typography } from "@mui/material";
 import LandingButton from "../LandingButton/LandingButton";
 import type { CategoryType } from "../ProductPopup/ProductPopup";
-import { useCart } from "../../context/AddToCart";
 import toast from "react-hot-toast";
+import { useCartStore } from "../../stores";
 
 type BasketType = {
   id?: string | number;
@@ -18,7 +18,7 @@ type BasketType = {
 const BasketCard = (props: BasketType) => {
   const { poster, price, sales, id, title, category, saleprice } = props;
 
-  const { addToCart } = useCart();
+  const { addToCart } = useCartStore();
 
   // Store Card in the context API.
   const handleAddToCart = () => {

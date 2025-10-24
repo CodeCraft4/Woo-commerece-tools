@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import React from "react";
-import { useAdmin } from "../../../../context/AdminContext";
 import { ADMINS_DASHBOARD } from "../../../../constant/route";
+import { useAdmin } from "../../../../context/AdminContext";
 
 type FormValue = {
   email: string;

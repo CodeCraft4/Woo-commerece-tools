@@ -7,6 +7,7 @@ interface PopupWrapperProps {
   onClose?: () => void;
   children: React.ReactNode;
   sx?: object;
+  activeIndex?: number;
 }
 
 const PopupWrapper = ({
@@ -14,6 +15,7 @@ const PopupWrapper = ({
   onClose,
   children,
   sx = {},
+  activeIndex,
 }: PopupWrapperProps) => {
   return (
     <Box
@@ -23,11 +25,12 @@ const PopupWrapper = ({
         borderRadius: "10px",
         height: "600px",
         position: "absolute",
-        top: 105,
-        left: "12%",
+        top: 40,
+        left: activeIndex === 2 ? "29%" : "16%",
         p: 2,
         width: "300px",
-        boxShadow: "3px 4px 12px #d6d6d6ff",
+        boxShadow: "3px 4px 3px #d6d6d6ff",
+        zIndex:99,
         ...sx,
       }}
     >

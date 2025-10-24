@@ -5,7 +5,15 @@ import { FooterLinks } from "../../../constant/data";
 
 const Footer = () => {
   return (
-    <Box>
+    <Box
+      sx={{
+        display: { md: "flex", sm: "", xs: "block" },
+        width: { md: "1360px", sm: "1360px", xs: "100%" },
+        m: "auto",
+        flexDirection: "column",
+        p: { md: 0, sm: 0, xs: 2 },
+      }}
+    >
       <Box
         sx={{
           display: { md: "flex", sm: "flex", xs: "block" },
@@ -16,8 +24,10 @@ const Footer = () => {
         }}
       >
         {FooterLinks.map((e) => (
-          <Box key={e.title} p={{md:0,sm:0,xs:2}}>
-            <Typography sx={{ fontSize: "20px", fontWeight: 800 }}>
+          <Box key={e.title} p={{ md: 0, sm: 0, xs: 2 }}>
+            <Typography
+              sx={{ fontSize: "20px", fontWeight: 800, color: COLORS.seconday }}
+            >
               {e.title}
             </Typography>
             <List>
@@ -25,8 +35,8 @@ const Footer = () => {
                 <ListItem
                   key={link.name}
                   sx={{
-                    fontSize: {md:"18px",sm:"18px",xs:'14px'},
-                    mb: {md:1.5,sm:1.5,xs:'auto'},
+                    fontSize: { md: "18px", sm: "18px", xs: "14px" },
+                    mb: { md: 1.5, sm: 1.5, xs: "auto" },
                     textAlign: "start",
                     px: 0,
                     "&:hover": {
@@ -36,7 +46,7 @@ const Footer = () => {
                 >
                   <a
                     href={link.path}
-                    style={{ textDecoration: "none", color: COLORS.primary }}
+                    style={{ textDecoration: "none", color: COLORS.black }}
                   >
                     {link.name}
                   </a>
@@ -112,7 +122,7 @@ const Footer = () => {
               sx={{
                 height: "50px",
                 borderRadius: 4,
-                bgcolor: COLORS.primary,
+                bgcolor: COLORS.black,
                 color: COLORS.white,
                 px: 3,
                 display: "flex",
@@ -133,7 +143,7 @@ const Footer = () => {
               sx={{
                 height: "50px",
                 borderRadius: 4,
-                bgcolor: COLORS.primary,
+                bgcolor: COLORS.black,
                 color: COLORS.white,
                 px: 3,
                 display: "flex",
@@ -264,10 +274,11 @@ const Footer = () => {
 
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "center",
-          m: "auto",
-          mb: { md: 3, sm: 3, xs: 8 },
+          display: { md: "flex", sm: "flex", xs: "block" },
+          justifyContent: "start",
+          mt: { md: 0, sm: 0, xs: 15 },
+          mb: { md: 2, sm: 3, xs: 0 },
+          textAlign: "start",
         }}
       >
         <Typography
@@ -275,6 +286,7 @@ const Footer = () => {
             fontSize: { md: "14px", sm: "", xs: "14px" },
             width: { md: "900px", sm: "", xs: "100%" },
             fontWeight: 300,
+            textAlign: "start",
           }}
         >
           © 2025 DIYPersonalizatoin.com Limited, County Gates, Ashton Road,

@@ -5,15 +5,14 @@ import CustomButton from "../../../components/CustomButton/CustomButton";
 import A4Img from "/assets/images/A4.png";
 import PrevewCardImg from "/assets/images/preview-card.png";
 import TableBgImg from "/assets/images/table.png";
-import { loadStripe } from "@stripe/stripe-js";
 
-const stripePromise = loadStripe(
-  "pk_test_51Qy8qWQOrHBOHXVwgcKXeKleaQbr43esHIWeeEuLCvE9SfmldVnMVYwnZVf72lHMKj6Hj6Pwh01ak5e7ZsTucB9I00xyfjVroR"
-);
+// const stripePromise = loadStripe(
+//   "pk_test_51Qy8qWQOrHBOHXVwgcKXeKleaQbr43esHIWeeEuLCvE9SfmldVnMVYwnZVf72lHMKj6Hj6Pwh01ak5e7ZsTucB9I00xyfjVroR"
+// );
 
 const Subscription = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>("standard");
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
 
   const plans = [
     {
@@ -32,27 +31,27 @@ const Subscription = () => {
     giant: { width: 250, height: 320 },
   };
 
-  const handleStripeOrder = async (plan: any) => {
-    setLoading(true);
-    try {
-      const res = await fetch("https://cards-server-shahimad499-2660-imads-projects-8cd60545.vercel.app/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(plan),
-      });
+  // const handleStripeOrder = async (plan: any) => {
+  //   setLoading(true);
+  //   try {
+  //     const res = await fetch("https://cards-server-shahimad499-2660-imads-projects-8cd60545.vercel.app/create-checkout-session", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(plan),
+  //     });
 
-      const { id } = await res.json();
+  //     const { id } = await res.json();
 
-      const stripe:any = await stripePromise;
-      await stripe.redirectToCheckout({ sessionId: id });
+  //     const stripe:any = await stripePromise;
+  //     await stripe.redirectToCheckout({ sessionId: id });
 
-    } catch (err) {
-      console.error(err);
-      alert("Payment failed!");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("Payment failed!");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <Applayout>
@@ -180,13 +179,13 @@ const Subscription = () => {
               <CustomButton
                 title="Add to Pay"
                 width="100%"
-                loading={loading}
-                onClick={() => {
-                  const plan = plans.find((p) => p.id === selectedPlan);
-                  if (plan) {
-                    handleStripeOrder(plan);
-                  }
-                }}
+                // loading={loading}
+              //   onClick={() => {
+              //     const plan = plans.find((p) => p.id === selectedPlan);
+              //     if (plan) {
+              //       handleStripeOrder(plan);
+              //     }
+              //   }}
               />
             </Grid>
           </Grid>

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { BorderColorRounded } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { supabase } from "../../../../../supabase/supabase";
-import { useAdmin } from "../../../../../context/AdminContext";
+import { useAdminStore } from "../../../../../stores";
 
 type FormValue = {
   role?: string;
@@ -25,7 +25,7 @@ const SettingForm = () => {
     },
   });
 
-  const { admin } = useAdmin();
+  const { admin } = useAdminStore();
 
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState<string>("/assets/icons/administrater.png");
@@ -53,7 +53,7 @@ const SettingForm = () => {
     }
 
     const payload = {
-      role: data.role || admin.role,
+      role: data.role || "Admin",
       first_name: data.firstName || admin.first_name,
       last_name: data.lastName || admin.last_name,
       email: data.email || admin.email,

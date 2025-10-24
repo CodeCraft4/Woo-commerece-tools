@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
 import {
@@ -6,12 +6,24 @@ import {
   ArrowForwardIos,
   Dashboard,
   LocalMall,
+  Logout,
   Settings,
 } from "@mui/icons-material";
+import { useAdminStore } from "../../../stores";
+import useModal from "../../../hooks/useModal";
+import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 
 const Sidebar = () => {
   const location = useLocation();
   const pathname = location.pathname;
+
+  const { logout } = useAdminStore();
+
+  const {
+    open: isConfirmModal,
+    openModal: openConfirmModal,
+    closeModal: closeConfirmModal,
+  } = useModal();
 
   const links = [
     {
@@ -49,6 +61,7 @@ const Sidebar = () => {
           return (
             <Link
               to={e.href}
+              key={e.href}
               style={{
                 display: "flex",
                 gap: "25px",
@@ -81,7 +94,7 @@ const Sidebar = () => {
         })}
 
         {/* User Profile / Logout */}
-        {/* <Box
+        <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
@@ -89,52 +102,47 @@ const Sidebar = () => {
             mt: "vh",
           }}
         >
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: "center",
+              mt: 35,
+              justifyContent: "center",
+              width: "90%",
+            }}
+          >
             <Box
+              component={"div"}
+              onClick={openConfirmModal}
               sx={{
-                width: 40,
-                height: 40,
+                width: 60,
+                height: 60,
                 borderRadius: "50%",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                bgcolor: "#aca3e6",
-                overflow: "hidden",
+                bgcolor: "white",
               }}
             >
-              <Box
-                component="img"
-                src="/assets/images/AuthLayoutImg.svg"
-                alt="user"
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                }}
-              />
-            </Box>
-            <Box>
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#333" }}>
-                {user ? `${user.firstName} ${user.lastName}` : "Guest"}
-              </Typography>
-              <Typography
-                sx={{ fontSize: 14, fontWeight: 300, color: "#8F95B2" }}
-              >
-                {user?.id ? `Id: ${user.id.slice(0, 10)}` : ""}
-              </Typography>
+              <IconButton>
+                <Logout sx={{ color: "red" }} />
+              </IconButton>
             </Box>
           </Box>
-
-          <Box
-            component="img"
-            src="/assets/icons/up-down-arrow.svg"
-            alt="up-down"
-            sx={{ width: 17, height: 17 }}
-          />
-        </Box> */}
+        </Box>
       </Box>
+
+      {isConfirmModal && (
+        <ConfirmModal
+          open={isConfirmModal}
+          onCloseModal={closeConfirmModal}
+          btnText="Logout"
+          icon={<Logout />}
+          onClick={logout}
+          title="Are you Sure to logout, You are Admin"
+        />
+      )}
     </Box>
   );
 };

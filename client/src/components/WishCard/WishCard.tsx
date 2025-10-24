@@ -1,33 +1,145 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Box, IconButton } from "@mui/material";
-import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
+import {
+  ArrowBackIos,
+  ArrowForwardIos,
+  AudiotrackOutlined,
+  AutoAwesomeMosaicOutlined,
+  BlurOn,
+  CollectionsOutlined,
+  EmojiEmotionsOutlined,
+  SlideshowOutlined,
+  TitleOutlined,
+} from "@mui/icons-material";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import SlideCover from "../SlideCover/SlideCover";
 import SlideLogo from "../SlideLogo/SlideLogo";
 import SlideSpread from "../SpreadSheet/SpreadSheat";
-import LayoutPopup from "../LayoutPopup/LayoutPopup";
-import VideoPopup from "../VideoPopup/VideoPopup";
-import MediaPopup from "../MediaPopup/MediaPopup";
-import StickerPopup from "../StickerPopup/StickerPopup";
-import FontSizePopup from "../FontSizePopup/FontSizePopup";
-import PhotoPopup from "../PhotoPopup/PhotoPopup";
-import TextPopup from "../TextPopup/TextPopup";
-import GeneAIPopup from "../GeneAIPopup/GeneAI";
+import LayoutPopup from "../Slide2/LayoutPopup/LayoutPopup";
+import VideoPopup from "../Slide2/VideoPopup/VideoPopup";
+import MediaPopup from "../Slide2/MediaPopup/MediaPopup";
+import StickerPopup from "../Slide2/StickerPopup/StickerPopup";
+import FontSizePopup from "../Slide2/FontSizePopup/FontSizePopup";
+import PhotoPopup from "../Slide2/PhotoPopup/PhotoPopup";
+import TextPopup from "../Slide2/TextPopup/TextPopup";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "./../../../node_modules/react-dnd-html5-backend/dist/index";
-import FontColorPopup from "../FontColorsPopup/FontColorsPopup";
-import FontFamilyPopup from "../FontFamilyPopup/FontFamilyPopup";
+import FontColorPopup from "../Slide2/FontColorsPopup/FontColorsPopup";
+import FontFamilyPopup from "../Slide2/FontFamilyPopup/FontFamilyPopup";
+import SpreadRightSide from "../SpreadRightSide/SpreadRightSide";
+import Layout3Popup from "../Slide3/Layout3Popup/Layout3Popup";
+import Text3Popup from "../Slide3/Text3Popup/Text3Popup";
+import Photo3Popup from "../Slide3/Photo3Popup/Photo3Popup";
+import Sticker3Popup from "../Slide3/Sticker3Popup/Sticker3Popup";
+import Video3Popup from "../Slide3/Video3Popup/Video3Popup";
+import Media3Popup from "../Slide3/Media3Popup/Media3Popup";
+import FontSize3Popup from "../Slide3/FontSize3Popup/FontSize3Popup";
+import FontColor3Popup from "../Slide3/FontColors3Popup/FontColors3Popup";
+import FontFamily3Popup from "../Slide3/FontFamily3Popup/FontFamily3Popup";
+import GlobalWatermark from "../GlobalWatermark/GlobalWatermark";
+import Layout1Popup from "../Slide1/Layout1Popup/Layout1Popup";
+import Text1Popup from "../Slide1/Text1Popup/Text1Popup";
+import Photo1Popup from "../Slide1/Photo1Popup/Photo1Popup";
+import Sticker1Popup from "../Slide1/Sticker1Popup/Sticker1Popup";
+import Video1Popup from "../Slide1/Video1Popup/Video1Popup";
+import Media1Popup from "../Slide1/Media1Popup/Media1Popup";
+import FontSize1Popup from "../Slide1/FontSize1Popup/FontSize1Popup";
+import FontColor1Popup from "../Slide1/FontColors1Popup/FontColors1Popup";
+import FontFamily1Popup from "../Slide1/FontFamily1Popup/FontFamily1Popup";
+import Layout4Popup from "../Slide4/Layout4Popup/Layout4Popup";
+import Text4Popup from "../Slide4/Text4Popup/Text4Popup";
+import Photo4Popup from "../Slide4/Photo4Popup/Photo4Popup";
+import Sticker4Popup from "../Slide4/Sticker4Popup/Sticker4Popup";
+import Video4Popup from "../Slide4/Video4Popup/Video4Popup";
+import Media4Popup from "../Slide4/Media4Popup/Media4Popup";
+import FontSize4Popup from "../Slide4/FontSize4Popup/FontSize4Popup";
+import FontColor4Popup from "../Slide4/FontColors4Popup/FontColors4Popup";
+import FontFamily4Popup from "../Slide4/FontFamily4Popup/FontFamily4Popup";
+import GeneAIPopup from "../Slide1/GeneAIPopup/GeneAI";
+import GeneAI2Popup from "../Slide2/GeneAI2Popup/GeneAI2";
+import GeneAI3Popup from "../Slide3/GeneAI3Popup/GeneAI3";
+import GeneAI4Popup from "../Slide4/GeneAI4Popup/GeneAI4";
+import { useSlide1 } from "../../context/Slide1Context";
+import { useSlide2 } from "../../context/Slide2Context";
+import { useSlide3 } from "../../context/Slide3Context";
+import { useSlide4 } from "../../context/Slide4Context";
 
-const slides = ["Slide1", "Slide2", "Slide3"];
+const slides = [
+  { id: 1, label: "Slide1" },
+  { id: 2, label: "Slide2" },
+  { id: 3, label: "Slide3" },
+  { id: 4, label: "Slide4" },
+];
 
 const WishCard = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [activePopup, setActivePopup] = useState(null);
-  const [addText,setAddText] = useState(false);
+
+  // const [addTextRightSide, setAddTextRightSide] = useState(false);
+  const [addTextCount, setAddTextCount] = useState(0);
+  const [addTextCountRight, setAddTextCountRight] = useState(0);
+  const [addTextCountFirst, setAddTextCountFirst] = useState(0);
+  const [addTextCountLast, setAddTextCountLast] = useState(0);
+
+  // For slide
+  const [activeTextSlide1Child, setActiveTextSlide1Child] = useState<
+    "size" | "color" | "family" | null
+  >(null);
+
   const [activeTextChild, setActiveTextChild] = useState<
     "size" | "color" | "family" | null
   >(null);
+
+  // For slide 3
+  const [activeTextSlide3Child, setActiveTextSlide3Child] = useState<
+    "size" | "color" | "family" | null
+  >(null);
+
+  // For slide 4
+  const [activeTextSlideLastChild, setActiveTextSlideLastChild] = useState<
+    "size" | "color" | "family" | null
+  >(null);
+
+  const { tips1, setTips1, setIsSlideActive1 } = useSlide1();
+  const { tips, setTips, setIsSlideActive } = useSlide2();
+  const { tips3, setTips3, setIsSlideActive3 } = useSlide3();
+  const { tips4, setTips4, setIsSlideActive4 } = useSlide4();
+
+  // ==============SLIDE STATE MANAGEMENT=======================
+  // Function to handle slide changes and manage state
+  useEffect(() => {
+    setIsSlideActive1(true);
+    setIsSlideActive(false);
+    setIsSlideActive3(false);
+    setIsSlideActive4(false);
+  }, []);
+
+  // Handle slide navigation
+  const handleSlideChange = (direction: "left" | "right") => {
+    let newIndex = activeIndex;
+
+    if (direction === "left") {
+      newIndex = activeIndex > 0 ? activeIndex - 1 : slides.length - 1;
+    } else {
+      newIndex = activeIndex < slides.length - 1 ? activeIndex + 1 : 0;
+    }
+
+    // ✅ Deactivate all slides first
+    setIsSlideActive1(false);
+    setIsSlideActive(false);
+    setIsSlideActive3(false);
+    setIsSlideActive4(false);
+
+    // ✅ Activate only the current slide
+    if (newIndex === 0) setIsSlideActive1(true);
+    if (newIndex === 1) setIsSlideActive(true);
+    if (newIndex === 2) setIsSlideActive3(true);
+    if (newIndex === 3) setIsSlideActive4(true);
+
+    setActiveIndex(newIndex);
+    scrollToSlide(newIndex);
+  };
 
   // ==============VIDEO UPLOADING=======================
   // Toggle popup on icon click
@@ -35,7 +147,24 @@ const WishCard = () => {
     setActivePopup((prev) => (prev === name ? null : name));
   };
 
-  // Function to render the currently active text-editing sub-popup
+  // For Slide 1
+  const renderActiveTextFirstChild = () => {
+    switch (activeTextSlide1Child) {
+      case "size":
+        // FontSizePopup now receives the handleCloseChild function
+        return <FontSize1Popup />;
+      case "color":
+        // FontColorPopup now receives the handleCloseChild function
+        return <FontColor1Popup />;
+      case "family":
+        // FontFamilyPopup now receives the handleCloseChild function
+        return <FontFamily1Popup />;
+      default:
+        return null;
+    }
+  };
+
+  // For Slide 2
   const renderActiveTextChild = () => {
     switch (activeTextChild) {
       case "size":
@@ -52,6 +181,40 @@ const WishCard = () => {
     }
   };
 
+  // For Slide 3
+  const renderActiveTextSlide3Child = () => {
+    switch (activeTextSlide3Child) {
+      case "size":
+        // FontSizePopup now receives the handleCloseChild function
+        return <FontSize3Popup />;
+      case "color":
+        // FontColorPopup now receives the handleCloseChild function
+        return <FontColor3Popup />;
+      case "family":
+        // FontFamilyPopup now receives the handleCloseChild function
+        return <FontFamily3Popup />;
+      default:
+        return null;
+    }
+  };
+
+  // For Slide 4
+  const renderActiveTextSlideLastChild = () => {
+    switch (activeTextSlideLastChild) {
+      case "size":
+        // FontSizePopup now receives the handleCloseChild function
+        return <FontSize4Popup />;
+      case "color":
+        // FontColorPopup now receives the handleCloseChild function
+        return <FontColor4Popup />;
+      case "family":
+        // FontFamilyPopup now receives the handleCloseChild function
+        return <FontFamily4Popup />;
+      default:
+        return null;
+    }
+  };
+
   // Main box scroll refs and drag state
   const mainRef: any = useRef(null);
   const isMainDragging: any = useRef(false);
@@ -63,18 +226,6 @@ const WishCard = () => {
   const isThumbDragging: any = useRef(false);
   const thumbStartX: any = useRef(0);
   const thumbScrollLeft: any = useRef(0);
-
-  // Scroll thumbnails container by fixed amount
-  const scrollThumbnails = (direction: any) => {
-    if (!thumbRef.current) return;
-    const scrollAmount = 100;
-    if (direction === "left") {
-      thumbRef.current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
-    } else {
-      thumbRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-  };
-
   // Main drag handlers
   const onMainMouseDown = (e: any) => {
     isMainDragging.current = true;
@@ -87,14 +238,6 @@ const WishCard = () => {
   const onMainMouseUp = () => {
     isMainDragging.current = false;
   };
-  // const onMainMouseMove = (e: any) => {
-  //   if (!isMainDragging.current) return;
-  //   e.preventDefault();
-  //   const x = e.pageX - mainRef.current.offsetLeft;
-  //   const walk = (x - mainStartX.current) * 2;
-  //   mainRef.current.scrollLeft = mainScrollLeft.current - walk;
-  // };
-
   // Thumbnail drag handlers
   const onThumbMouseDown = (e: any) => {
     isThumbDragging.current = true;
@@ -114,17 +257,28 @@ const WishCard = () => {
     const walk = (x - thumbStartX.current) * 2;
     thumbRef.current.scrollLeft = thumbScrollLeft.current - walk;
   };
-  // Scroll main box to clicked slide
-  const scrollToSlide = (index: any) => {
+
+  // Scroll to selected slide
+  const scrollToSlide = (index: number) => {
     if (!mainRef.current) return;
-    const mainChildren = mainRef.current.children;
-    if (mainChildren[index]) {
-      mainChildren[index].scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-      });
-      setActiveIndex(index);
-    }
+    const slide = mainRef.current.children[index];
+    if (!slide) return;
+
+    slide.scrollIntoView({ behavior: "smooth", inline: "center" });
+
+    // ✅ Deactivate all slides first
+    setIsSlideActive1(false);
+    setIsSlideActive(false);
+    setIsSlideActive3(false);
+    setIsSlideActive4(false);
+
+    // ✅ Activate only the clicked/target slide
+    if (index === 0) setIsSlideActive1(true);
+    if (index === 1) setIsSlideActive(true);
+    if (index === 2) setIsSlideActive3(true);
+    if (index === 3) setIsSlideActive4(true);
+
+    setActiveIndex(index);
   };
 
   return (
@@ -135,6 +289,7 @@ const WishCard = () => {
           margin: "auto",
           textAlign: "center",
           userSelect: "none",
+          position: "relative",
         }}
       >
         {/* Main box */}
@@ -147,7 +302,6 @@ const WishCard = () => {
             gap: 10,
             px: 1,
             py: 5,
-            cursor: isMainDragging.current ? "grabbing" : "grab",
             scrollSnapType: "x mandatory",
             scrollBehavior: "smooth",
           }}
@@ -157,13 +311,13 @@ const WishCard = () => {
           onMouseUp={onMainMouseUp}
           // onMouseMove={onMainMouseMove}
         >
-          {slides.map((_, index) => {
+          {slides.map((e, index) => {
             return (
               <Box
-                key={index}
+                key={e.id}
                 sx={{
                   flex: "0 0 auto",
-                  width: index === 1 ? 800 : 400,
+                  width: 400,
                   height: 600,
                   ml: index === 0 ? 80 : 0,
                   borderRadius: 2,
@@ -177,54 +331,620 @@ const WishCard = () => {
                 // onMouseEnter={() => scrollToSlide(index)}
               >
                 {/* First slide (cover) with image + editable text */}
-                {index === 0 ? (
-                  <SlideCover />
-                ) : index === 1 ? (
+                {e.id === 1 ? (
+                  <SlideCover
+                    togglePopup={togglePopup}
+                    activeIndex={index}
+                    addTextRight={addTextCountFirst}
+                    rightBox={true}
+                  />
+                ) : e.id === 2 ? (
                   <SlideSpread
                     togglePopup={togglePopup}
-                    activeIndex={activeIndex}
-                    addText={addText}
+                    activeIndex={index}
+                    addTextRight={addTextCount}
+                    rightBox={true}
+                  />
+                ) : e.id === 3 ? (
+                  <SpreadRightSide
+                    togglePopup={togglePopup}
+                    activeIndex={index}
+                    addTextRight={addTextCountRight}
+                    rightBox={true}
                   />
                 ) : (
-                  <SlideLogo />
+                  <SlideLogo
+                    togglePopup={togglePopup}
+                    activeIndex={index}
+                    addTextRight={addTextCountLast}
+                    rightBox={true}
+                  />
                 )}
               </Box>
             );
           })}
-          {activePopup === "layout" && (
-            <LayoutPopup onClose={() => setActivePopup(null)} />
-          )}
-          {activePopup === "text" && (
-            <TextPopup
-              onClose={() => setActivePopup(null)}
-              onShowFontSizePopup={() => setActiveTextChild("size")}
-              onShowFontColorPopup={() => setActiveTextChild("color")}
-              onShowFontFamilyPopup={() => setActiveTextChild("family")}
-              activeChildComponent={renderActiveTextChild()}
-              onAddTextToCanvas={()=>setAddText(!addText)}
-            />
-          )}
-          {activePopup === "photo" && (
-            <PhotoPopup onClose={() => setActivePopup(null)} />
+   
+          {activeIndex === 0 && (
+            <>
+              {activePopup === "layout" && (
+                <Layout1Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "text" && (
+                <Text1Popup
+                  onClose={() => setActivePopup(null)}
+                  onShowFontSizePopup={() => setActiveTextSlide1Child("size")}
+                  onShowFontColorPopup={() => setActiveTextSlide1Child("color")}
+                  onShowFontFamilyPopup={() =>
+                    setActiveTextSlide1Child("family")
+                  }
+                  activeChildComponent={renderActiveTextFirstChild()}
+                  onAddTextToCanvas={() =>
+                    setAddTextCountFirst((prev) => prev + 1)
+                  }
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "photo" && (
+                <Photo1Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "sticker" && (
+                <Sticker1Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "video" && (
+                <Video1Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "audio" && (
+                <Media1Popup
+                  onClose={() => setActivePopup(null)}
+                  mediaType="audio"
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "geneAi" && (
+                <GeneAIPopup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+            </>
           )}
 
-          {activePopup === "sticker" && (
-            <StickerPopup onClose={() => setActivePopup(null)} />
+          {activeIndex === 1 && (
+            <>
+              {activePopup === "layout" && (
+                <LayoutPopup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "text" && (
+                <TextPopup
+                  onClose={() => setActivePopup(null)}
+                  onShowFontSizePopup={() => setActiveTextChild("size")}
+                  onShowFontColorPopup={() => setActiveTextChild("color")}
+                  onShowFontFamilyPopup={() => setActiveTextChild("family")}
+                  activeChildComponent={renderActiveTextChild()}
+                  onAddTextToCanvas={() => setAddTextCount((prev) => prev + 1)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "photo" && (
+                <PhotoPopup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "sticker" && (
+                <StickerPopup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "video" && (
+                <VideoPopup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "audio" && (
+                <MediaPopup
+                  onClose={() => setActivePopup(null)}
+                  mediaType="audio"
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "geneAi" && (
+                <GeneAI2Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+            </>
           )}
 
-          {activePopup === "video" && (
-            <VideoPopup onClose={() => setActivePopup(null)} />
+          {activeIndex === 2 && (
+            <>
+              {activePopup === "layout" && (
+                <Layout3Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "text" && (
+                <Text3Popup
+                  onClose={() => setActivePopup(null)}
+                  onShowFontSizePopup={() => setActiveTextSlide3Child("size")}
+                  onShowFontColorPopup={() => setActiveTextSlide3Child("color")}
+                  onShowFontFamilyPopup={() =>
+                    setActiveTextSlide3Child("family")
+                  }
+                  renderActiveTextSlide3Child={renderActiveTextSlide3Child()}
+                  onAddTextToCanvas={() =>
+                    setAddTextCountRight((prev) => prev + 1)
+                  }
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "photo" && (
+                <Photo3Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "sticker" && (
+                <Sticker3Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "video" && (
+                <Video3Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "audio" && (
+                <Media3Popup
+                  onClose={() => {
+                    setActivePopup(null);
+                  }}
+                  mediaType="audio"
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "geneAi" && (
+                <GeneAI3Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+            </>
           )}
 
-          {activePopup === "audio" && (
-            <MediaPopup
-              onClose={() => setActivePopup(null)}
-              mediaType="audio"
-            />
+          {activeIndex === 3 && (
+            <>
+              {activePopup === "layout" && (
+                <Layout4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "text" && (
+                <Text4Popup
+                  onClose={() => setActivePopup(null)}
+                  onShowFontSizePopup={() => setActiveTextSlideLastChild("size")}
+                  onShowFontColorPopup={() => setActiveTextSlideLastChild("color")}
+                  onShowFontFamilyPopup={() =>
+                    setActiveTextSlideLastChild("family")
+                  }
+                  activeChildComponent={renderActiveTextSlideLastChild()}
+                  onAddTextToCanvas={() =>
+                    setAddTextCountLast((prev) => prev + 1)
+                  }
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "photo" && (
+                <Photo4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "sticker" && (
+                <Sticker4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "video" && (
+                <Video4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "audio" && (
+                <Media4Popup
+                  onClose={() => {
+                    setActivePopup(null);
+                  }}
+                  mediaType="audio"
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "geneAi" && (
+                <GeneAI4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+            </>
           )}
 
-          {activePopup === "geneAi" && (
-            <GeneAIPopup onClose={() => setActivePopup(null)} />
+          {/* Editing Toolbar */}
+
+          {/* 1st Card */}
+          {activeIndex === 0 && (
+            <Box
+              sx={{
+                height: "600px",
+                bgcolor: "white",
+                borderRadius: "4px",
+                p: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "15px",
+                position: "absolute",
+                top: 40,
+                left: "31%",
+                zIndex: 10,
+                boxShadow: "3px 4px 12px #f0f0f0ff",
+              }}
+            >
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("layout")}
+                aria-label="Layout"
+              >
+                <AutoAwesomeMosaicOutlined fontSize="large" />
+                Layout
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("text")}
+                aria-label="Text"
+              >
+                <TitleOutlined fontSize="large" />
+                Text
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("photo")}
+                aria-label="Photo"
+              >
+                <CollectionsOutlined fontSize="large" />
+                Photo
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("sticker")}
+                aria-label="Sticker"
+              >
+                <EmojiEmotionsOutlined fontSize="large" />
+                Sticker
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("video");
+                  setTips1(!tips1);
+                }}
+                sx={editingButtonStyle}
+              >
+                <SlideshowOutlined fontSize="large" />
+                Video
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("audio");
+                  setTips1(!tips1);
+                }}
+                sx={editingButtonStyle}
+              >
+                <AudiotrackOutlined fontSize="large" />
+                Audio
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("geneAi");
+                  setTips(!tips);
+                }}
+                sx={editingButtonStyle}
+              >
+                <BlurOn fontSize="large" />
+                GenAI
+              </IconButton>
+            </Box>
+          )}
+          {/* 2nd Card */}
+          {activeIndex === 1 && (
+            <Box
+              sx={{
+                height: "600px",
+                bgcolor: "white",
+                borderRadius: "4px",
+                p: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "15px",
+                position: "absolute",
+                top: 40,
+                left: "34%",
+                zIndex: 10,
+                boxShadow: "3px 4px 12px #f0f0f0ff",
+              }}
+            >
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("layout")}
+                aria-label="Layout"
+              >
+                <AutoAwesomeMosaicOutlined fontSize="large" />
+                Layout
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("text")}
+                aria-label="Text"
+              >
+                <TitleOutlined fontSize="large" />
+                Text
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("photo")}
+                aria-label="Photo"
+              >
+                <CollectionsOutlined fontSize="large" />
+                Photo
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("sticker")}
+                aria-label="Sticker"
+              >
+                <EmojiEmotionsOutlined fontSize="large" />
+                Sticker
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("video");
+                  setTips(!tips);
+                }}
+                sx={editingButtonStyle}
+              >
+                <SlideshowOutlined fontSize="large" />
+                Video
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("audio");
+                  setTips(!tips);
+                }}
+                sx={editingButtonStyle}
+              >
+                <AudiotrackOutlined fontSize="large" />
+                Audio
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("geneAi");
+                  setTips(!tips);
+                }}
+                sx={editingButtonStyle}
+              >
+                <BlurOn fontSize="large" />
+                GenAI
+              </IconButton>
+            </Box>
+          )}
+          {/* 3rd Card */}
+          {activeIndex === 2 && (
+            <Box
+              sx={{
+                height: "600px",
+                bgcolor: "white",
+                borderRadius: "4px",
+                p: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "15px",
+                position: "absolute",
+                top: 40,
+                left: "46%",
+                zIndex: 10,
+                boxShadow: "3px 4px 12px #f0f0f0ff",
+              }}
+            >
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("layout")}
+                aria-label="Layout"
+              >
+                <AutoAwesomeMosaicOutlined fontSize="large" />
+                Layout
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("text")}
+                aria-label="Text"
+              >
+                <TitleOutlined fontSize="large" />
+                Text
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("photo")}
+                aria-label="Photo"
+              >
+                <CollectionsOutlined fontSize="large" />
+                Photo
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("sticker")}
+                aria-label="Sticker"
+              >
+                <EmojiEmotionsOutlined fontSize="large" />
+                Sticker
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("video");
+                  setTips3(!tips3);
+                }}
+                sx={editingButtonStyle}
+              >
+                <SlideshowOutlined fontSize="large" />
+                Video
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("audio");
+                  setTips3(!tips3);
+                }}
+                sx={editingButtonStyle}
+              >
+                <AudiotrackOutlined fontSize="large" />
+                Audio
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("geneAi");
+                  setTips(!tips);
+                }}
+                sx={editingButtonStyle}
+              >
+                <BlurOn fontSize="large" />
+                GenAI
+              </IconButton>
+            </Box>
+          )}
+          {/* 4th card */}
+          {activeIndex === 3 && (
+            <Box
+              sx={{
+                height: "600px",
+                bgcolor: "white",
+                borderRadius: "4px",
+                p: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "15px",
+                position: "absolute",
+                top: 40,
+                right: "23%",
+                zIndex: 10,
+                boxShadow: "3px 4px 12px #f0f0f0ff",
+              }}
+            >
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("layout")}
+                aria-label="Layout"
+              >
+                <AutoAwesomeMosaicOutlined fontSize="large" />
+                Layout
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("text")}
+                aria-label="Text"
+              >
+                <TitleOutlined fontSize="large" />
+                Text
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("photo")}
+                aria-label="Photo"
+              >
+                <CollectionsOutlined fontSize="large" />
+                Photo
+              </IconButton>
+              <IconButton
+                sx={editingButtonStyle}
+                onClick={() => togglePopup("sticker")}
+                aria-label="Sticker"
+              >
+                <EmojiEmotionsOutlined fontSize="large" />
+                Sticker
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("video");
+                  setTips4(!tips4);
+                }}
+                sx={editingButtonStyle}
+              >
+                <SlideshowOutlined fontSize="large" />
+                Video
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("audio");
+                  setTips4(!tips4);
+                }}
+                sx={editingButtonStyle}
+              >
+                <AudiotrackOutlined fontSize="large" />
+                Audio
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("geneAi");
+                  setTips(!tips);
+                }}
+                sx={editingButtonStyle}
+              >
+                <BlurOn fontSize="large" />
+                GenAI
+              </IconButton>
+            </Box>
           )}
         </Box>
 
@@ -243,7 +963,7 @@ const WishCard = () => {
         >
           {/* Prev button */}
           <IconButton
-            onClick={() => scrollThumbnails("left")}
+            onClick={() => handleSlideChange("left")}
             sx={{
               zIndex: 10,
             }}
@@ -271,20 +991,21 @@ const WishCard = () => {
             onMouseUp={onThumbMouseUp}
             onMouseMove={onThumbMouseMove}
           >
-            {slides.map((label, index) => (
+            {slides.map((e, index) => (
               <Box
                 key={index}
                 onClick={() => scrollToSlide(index)}
                 sx={{
-                  width: 80,
-                  height: 60,
-                  bgcolor: index === activeIndex ? "#1976d2" : "#ccc",
-                  color: index === activeIndex ? "white" : "black",
-                  borderRadius: 1,
+                  width: 70,
+                  height: 80,
+                  bgcolor: "#ccc",
+                  color: "#212121",
+                  // color: index === activeIndex ? "white" : "black",
+                  // borderRadius: 1,
                   cursor: "pointer",
                   border:
                     index === activeIndex
-                      ? "3px solid #1976d2"
+                      ? "2px solid #1976d2"
                       : "2px solid transparent",
                   opacity: index === activeIndex ? 1 : 0.6,
                   transition: "all 0.3s ease",
@@ -292,18 +1013,18 @@ const WishCard = () => {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  fontWeight: "bold",
                   userSelect: "none",
+                  fontSize: "15px",
                 }}
               >
-                {label}
+                {e.label}
               </Box>
             ))}
           </Box>
 
           {/* Next button */}
           <IconButton
-            onClick={() => scrollThumbnails("right")}
+            onClick={() => handleSlideChange("right")}
             sx={{
               zIndex: 10,
             }}
@@ -313,8 +1034,20 @@ const WishCard = () => {
           </IconButton>
         </Box>
       </Box>
+      <GlobalWatermark />
     </DndProvider>
   );
 };
 
 export default WishCard;
+
+const editingButtonStyle = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  fontSize: "13px",
+  color: "#212121",
+  "&:hover": {
+    color: "#3a7bd5",
+  },
+};

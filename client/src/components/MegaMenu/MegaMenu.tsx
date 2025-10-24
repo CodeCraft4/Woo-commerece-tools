@@ -1,4 +1,11 @@
-import { Box, List, ListItemButton, ListItemText, Typography } from "@mui/material";
+import {
+  Box,
+  List,
+  ListItemButton,
+  ListItemText,
+  Typography,
+} from "@mui/material";
+import { COLORS } from "../../constant/color";
 
 // Define the type for a single category
 interface Category {
@@ -12,49 +19,70 @@ interface MegaMenuItem {
   categories: Category[];
 }
 
-
 const MegaMenu = ({
   data,
   onSelect,
-}: { data: MegaMenuItem; onSelect: () => void }) => (
+}: {
+  data: MegaMenuItem;
+  onSelect: () => void;
+}) => (
   <Box
     sx={{
       position: "absolute",
-      top: "100%",
+      top: "80%",
       left: 0,
+      // width: {md:'1360px',sm:'',xs:'100%'},
+      bgcolor: "transparent",
       width: "100%",
-      bgcolor: "white",
-      height: 400,
-      boxShadow: 3,
       zIndex: 10,
-      p: 4,
       display: "flex",
-      gap: 5,
-      borderTop: "1px solid #ddd",
+      justifyContent: "center",
+      m: "auto",
     }}
   >
-    <Box sx={{display:'flex',gap:'60px',width:'100%'}}>
-    {data.categories.map((category, index: number) => (
-      <Box key={index}>
-        <Typography variant="h6" sx={{ fontWeight: 500, mb: 1 }}>
-          {category.name}
-        </Typography>
-        <List sx={{ p: 0 }}>
-          {category.links.map((link, linkIndex: number) => (
-            <ListItemButton
-              key={linkIndex}
-              sx={{ py: 0, px: 0 }}
-              onClick={onSelect} 
-            >
-              <ListItemText primary={link} sx={{fontSize:'12px',color:'#212121',"&:hover":{textDecoration:'underline',bgcolor:'transparent'}}} />
-            </ListItemButton>
-          ))}
-        </List>
-      </Box>
-    ))}
-  </Box>
+    <Box
+      sx={{
+        display: "flex",
+        gap: "60px",
+        width: { md: "1310px", sm: "", xs: "auto" },
+        bgcolor: "white",
+        p: 4,
+        boxShadow: 3,
+        position:'absolute' ,
+        top:0,
+        height: 400,
+      }}
+    >
+      {data.categories.map((category, index: number) => (
+        <Box key={index} sx={{ color: COLORS.primary }}>
+          <Typography variant="h6" sx={{ fontWeight: 500, mb: 1 }}>
+            {category.name}
+          </Typography>
+          <List sx={{ p: 0 }}>
+            {category.links.map((link, linkIndex: number) => (
+              <ListItemButton
+                key={linkIndex}
+                sx={{ py: 0, px: 0 }}
+                onClick={onSelect}
+              >
+                <ListItemText
+                  primary={link}
+                  sx={{
+                    fontSize: "12px",
+                    color: "#212121",
+                    "&:hover": {
+                      textDecoration: "underline",
+                      bgcolor: "transparent",
+                    },
+                  }}
+                />
+              </ListItemButton>
+            ))}
+          </List>
+        </Box>
+      ))}
+    </Box>
   </Box>
 );
 
-
-export default MegaMenu
+export default MegaMenu;

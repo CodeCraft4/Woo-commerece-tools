@@ -15,6 +15,7 @@ import SignUp from "../../modules/User/Auth/SignUp";
 import AdminSignIn from "../../modules/Admin/Auth/SignIn";
 import AddToCart from "../../modules/User/AddToCart/AddToCart";
 import AdminRoute from "../../hoc/SecureRoute";
+import AdminEditor from "../../modules/Admin/AdminEditor/AdminEditor";
 
 const Router = () => {
   return (
@@ -56,15 +57,22 @@ const Router = () => {
           </AdminRoute>
         }
       />
-    <Route
-  path={ADMINS_DASHBOARD.SETTINGS}
-  element={
-    <AdminRoute>
-      <Setting />
-    </AdminRoute>
-  }
-/>
-
+      <Route
+        path={ADMINS_DASHBOARD.ADMIN_EDITOR}
+        element={
+          <AdminRoute>
+            <AdminEditor />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.SETTINGS}
+        element={
+          <AdminRoute>
+            <Setting />
+          </AdminRoute>
+        }
+      />
     </ReactRoutes>
   );
 };

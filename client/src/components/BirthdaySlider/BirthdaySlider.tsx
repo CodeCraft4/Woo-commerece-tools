@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, IconButton, Typography } from "@mui/material";
+import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import Slider from "react-slick";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import "slick-carousel/slick/slick.css";
@@ -38,7 +38,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     undefined
   );
 
-  const { data: birthdayCards } = useQuery({
+  const { data: birthdayCards, isLoading } = useQuery({
     queryKey: ["birthdayCards"],
     queryFn: fetchAllCardsFromDB,
   });
@@ -46,7 +46,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
   const filteredCards = birthdayCards
     ? birthdayCards.filter((card) => {
         const selectedCategory = TABS[activeTab];
-        return card.card_category === selectedCategory;
+        return card.cardCategory === selectedCategory;
       })
     : [];
 
@@ -54,10 +54,9 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 6.89,
-    slidesToScroll: 3,
+    slidesToShow: 7,
+    slidesToScroll: 2,
     arrows: false,
-    initialSlide: 0,
     responsive: [
       {
         breakpoint: 1024,
@@ -104,6 +103,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         m: "auto",
         position: "relative",
         mt: { md: 8, sm: 8, xs: 0 },
+        p:{md:0,sm:0,xs:2}
       }}
     >
       <Box
@@ -151,9 +151,11 @@ const BirthdaySlider = (props: BirthdayTypes) => {
               borderRadius: "15px",
               cursor: "pointer",
               transition: "all 0.3s ease-in-out",
-              backgroundColor: activeTab === index ? "black" : "transparent",
+              backgroundColor:
+                activeTab === index ? COLORS.primary : "transparent",
               "&:hover": {
-                backgroundColor: activeTab === index ? "black" : "#f0f0f0",
+                backgroundColor:
+                  activeTab === index ? COLORS.seconday : "#f0f0f0",
               },
             }}
           >
@@ -161,7 +163,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
               sx={{
                 fontSize: "14px",
                 fontWeight: 600,
-                color: activeTab === index ? COLORS.white : COLORS.primary,
+                color: activeTab === index ? COLORS.white : COLORS.black,
               }}
             >
               {e}
@@ -176,25 +178,46 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           position: "relative",
         }}
       >
+        {isLoading && (
+          <Box
+            sx={{
+              width: "100%",
+              height: {
+                md: "300px",
+                sm: "300px",
+                xs: "250px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                m: "auto",
+              },
+            }}
+          >
+            {" "}
+            <CircularProgress sx={{ color: COLORS.seconday }} />
+          </Box>
+        )}
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
           {filteredCards?.map((cate) => (
             <Box key={cate.id}>
               <ProductCard
-                poster={cate?.image_url}
-                tabsSlider={true}
+                poster={cate?.imageUrl || cate?.lastpageImageUrl}
+                tabsSlider
+                layoutCard={cate?.polygonLayout}
                 openModal={() => openDetailModal(cate)}
               />
-              {isOpenDetailModal && (
-                <ProductPopup
-                  open={isOpenDetailModal}
-                  onClose={closeDetailModal}
-                  cate={selectedCate}
-                />
-              )}
             </Box>
           ))}
         </Slider>
+
+        {isOpenDetailModal && selectedCate && (
+          <ProductPopup
+            open={isOpenDetailModal}
+            onClose={closeDetailModal}
+            cate={selectedCate}
+          />
+        )}
 
         {/* Custom arrows */}
         <IconButton
@@ -209,10 +232,10 @@ const BirthdaySlider = (props: BirthdayTypes) => {
             alignItems: "center",
             height: { md: "50px", sm: "50px", xs: "40px" },
             width: { md: "50px", sm: "50px", xs: "40px" },
-            border: "1px solid black",
-            zIndex: 10,
-            bgcolor: COLORS.white,
+            border: `3px solid ${COLORS.primary}`,
             color: COLORS.primary,
+            bgcolor: COLORS.white,
+            zIndex: 10,
             "&:hover": { backgroundColor: "lightgray" },
           }}
         >
@@ -231,10 +254,10 @@ const BirthdaySlider = (props: BirthdayTypes) => {
             alignItems: "center",
             height: { md: "50px", sm: "50px", xs: "40px" },
             width: { md: "50px", sm: "50px", xs: "40px" },
-            border: "1px solid black",
+            border: `3px solid ${COLORS.primary}`,
+            color: COLORS.primary,
             zIndex: 10,
             bgcolor: COLORS.white,
-            color: COLORS.primary,
             "&:hover": { backgroundColor: "lightgray" },
           }}
         >

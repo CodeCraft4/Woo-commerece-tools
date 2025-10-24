@@ -15,6 +15,7 @@ type Admin = {
 type AdminContextType = {
   isAdmin: boolean;
   admin: Admin | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 };
@@ -22,45 +23,99 @@ type AdminContextType = {
 const AdminContext = createContext<AdminContextType | null>(null);
 
 export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isAdmin, setIsAdmin] = useState<boolean>(
-    typeof window !== "undefined" && localStorage.getItem("isAdmin") === "true"
-  );
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [admin, setAdmin] = useState<Admin | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Restore session from localStorage (on refresh)
+  // ✅ Restore admin from localStorage and Supabase session
   useEffect(() => {
-    const storedAdmin = localStorage.getItem("adminData");
-    if (storedAdmin) {
-      setAdmin(JSON.parse(storedAdmin));
-    }
+    const restoreSession = async () => {
+      try {
+        const storedAdmin = localStorage.getItem("adminData");
+
+        if (storedAdmin) {
+          const parsed = JSON.parse(storedAdmin);
+          setAdmin(parsed);
+          setIsAdmin(true);
+        }
+
+        // Optional: Check Supabase auth session (for consistency)
+        const { data, error } = await supabase.auth.getSession();
+        if (error) console.warn("Supabase session error:", error);
+        if (data.session) {
+        }
+
+      } catch (err) {
+        console.error("Error restoring admin session:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    restoreSession();
   }, []);
 
-  // Login function — check Supabase
+  // ✅ Login
   const login = async (email: string, password: string): Promise<boolean> => {
-    const { data, error } = await supabase
-      .from("admins")
-      .select("*")
-      .eq("email", email)
-      .eq("password", password)
-      .single();
+    try {
+      console.log("Logging in admin:", email);
 
-    if (error || !data) {
-      console.error("Invalid credentials:", error);
+      // Hardcoded admin (optional)
+      if (email === "admin123@gmail.com" && password === "Admin123@") {
+        const fakeAdmin: Admin = {
+          id: "local-admin",
+          role: "superadmin",
+          first_name: "Admin",
+          last_name: "User",
+          email,
+          password,
+        };
+        setIsAdmin(true);
+        setAdmin(fakeAdmin);
+        localStorage.setItem("isAdmin", "true");
+        localStorage.setItem("adminData", JSON.stringify(fakeAdmin));
+        console.log("✅ Local admin login successful");
+        return true;
+      }
+
+      // Supabase login
+      const { data, error } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("email", email)
+        .eq("password", password)
+        .single();
+
+      if (error || !data) {
+        console.error("❌ Invalid credentials:", error);
+        return false;
+      }
+
+      setIsAdmin(true);
+      setAdmin(data);
+      localStorage.setItem("isAdmin", "true");
+      localStorage.setItem("adminData", JSON.stringify(data));
+      console.log("✅ Supabase admin login successful:", data);
+
+      return true;
+    } catch (err) {
+      console.error("Login error:", err);
       return false;
     }
-    setIsAdmin(true);
-    setAdmin(data);
-    return true;
   };
 
+  // ✅ Logout
   const logout = () => {
     setIsAdmin(false);
     setAdmin(null);
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("adminData");
+    supabase.auth.signOut();
   };
 
   return (
-    <AdminContext.Provider value={{ isAdmin, admin, login, logout }}>
-      {children}
+    <AdminContext.Provider value={{ isAdmin, admin, loading, login, logout }}>
+      {loading ? <div>Loading...</div> : children}
     </AdminContext.Provider>
   );
 };

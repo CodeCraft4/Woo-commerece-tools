@@ -15,7 +15,11 @@ const PersonalGift = () => {
       <Box
         sx={{
           width: { md: "60%", sm: "", xs: "100%" },
-          borderRadius: "20px 0px 0px 20px",
+          borderRadius: {
+            md: "20px 0px 0px 20px",
+            sm: "20px 0px 0px 20px",
+            xs: ' "0px 0px 0px 0px"',
+          },
         }}
       >
         <Box
@@ -25,7 +29,11 @@ const PersonalGift = () => {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            borderRadius: "20px 0px 0px 20px",
+            borderRadius: {
+              md: "20px 0px 0px 20px",
+              sm: "20px 0px 0px 20px",
+              xs: ' "0px 0px 0px 0px"',
+            },
           }}
         />
       </Box>
@@ -37,17 +45,25 @@ const PersonalGift = () => {
           flexDirection: "column",
           alignItems: "start",
           color: COLORS.white,
-          bgcolor: COLORS.primary,
-          borderRadius: "0px 20px 20px 0px",
-          textAlign:'start',
+          bgcolor: COLORS.seconday,
+          borderRadius: {md:"0px 20px 20px 0px",sm:"0px 20px 20px 0px",xs:0},
+          textAlign: "start",
           p: 5,
         }}
       >
-        <Typography sx={{fontSize:{md:'35px',sm:'35px',xs:'25px'},fontWeight:700}}>
+        <Typography
+          sx={{
+            fontSize: { md: "35px", sm: "35px", xs: "25px" },
+            fontWeight: 700,
+          }}
+        >
           Personlized Gifts <br /> Created by You
         </Typography>
-        <Typography sx={{fontSize:{md:'14px',sm:'14px',xs:12},fontWeight:300}}>
-          Go above and beyond to show how well you know them with personalised gifts, created by you just for them to make their day!
+        <Typography
+          sx={{ fontSize: { md: "14px", sm: "14px", xs: 12 }, fontWeight: 300 }}
+        >
+          Go above and beyond to show how well you know them with personalised
+          gifts, created by you just for them to make their day!
         </Typography>
         <br />
         <Box
@@ -55,14 +71,14 @@ const PersonalGift = () => {
             display: "flex",
             gap: "10px",
             flexWrap: "wrap",
-            width: {md:"500px",sm:'500px',xs:'100%'},
-            mt:2,
+            width: { md: "500px", sm: "500px", xs: "100%" },
+            mt: 2,
           }}
         >
-          <LandingButton title="For Her" width="225px" personal bgblack/>
-          <LandingButton title="For Him" width="225px" personal bgblack/>
-          <LandingButton title="Birthday" width="225px" personal bgblack/>
-          <LandingButton title="Shop All Gift" width="225px" personal bgblack/>
+          <LandingButton title="For Her" width="225px" personal bgblack />
+          <LandingButton title="For Him" width="225px" personal bgblack />
+          <LandingButton title="Birthday" width="225px" personal bgblack />
+          <LandingButton title="Shop All Gift" width="225px" personal bgblack />
         </Box>
       </Box>
     </Box>

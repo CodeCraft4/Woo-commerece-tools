@@ -3,7 +3,7 @@ import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import { Backdrop, CircularProgress, IconButton } from "@mui/material";
 import { Close, LogoutOutlined } from "@mui/icons-material";
-import { useAuth } from "../../context/AuthContext";
+import { useAuthStore } from "../../stores";
 import { useNavigate } from "react-router-dom";
 import LandingButton from "../LandingButton/LandingButton";
 import { useState } from "react";
@@ -36,7 +36,7 @@ type ModalType = {
 const ConfirmModal = (props: ModalType) => {
   const { open, onCloseModal, title, btnText, icon, onClick } = props || {};
 
-  const { signOut } = useAuth();
+  const { signOut } = useAuthStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -109,6 +109,7 @@ const ConfirmModal = (props: ModalType) => {
               personal
               variant="outlined"
               width="200px"
+              onClick={()=>onCloseModal()}
             />
             <LandingButton
               title={btnText || "Logout"}

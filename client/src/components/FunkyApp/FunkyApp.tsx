@@ -58,7 +58,7 @@ const FunkyApp = () => {
             component={"button"}
             sx={{
               ...deployBtn,
-              px: { md: 3, sm: 3, xs: 8 },
+              px: { md: 3, sm: 3, xs: 10 },
             }}
           >
             <Apple fontSize="large" />
@@ -71,7 +71,7 @@ const FunkyApp = () => {
             component={"button"}
             sx={{
               ...deployBtn,
-              px: { md: 3, sm: 3, xs: 8 },
+              px: { md: 3, sm: 3, xs: 10 },
             }}
           >
             <Box
@@ -80,8 +80,12 @@ const FunkyApp = () => {
               sx={{ width: 35 }}
             />
             <Box>
-              <Typography fontSize={{md:"12px",sm:'12px',xs:'11px'}}>ANDRIOD APP ON</Typography>
-              <Typography fontSize={{md:'18px',sm:'18px',xs:'18px'}}>Google Play</Typography>
+              <Typography fontSize={{ md: "12px", sm: "12px", xs: "10px" }}>
+                ANDRIOD APP ON
+              </Typography>
+              <Typography fontSize={{ md: "18px", sm: "18px", xs: "16px" }}>
+                Google Play
+              </Typography>
             </Box>
           </Box>
         </Box>
@@ -103,9 +107,9 @@ const FunkyApp = () => {
 export default FunkyApp;
 
 const deployBtn = {
-  height:'55px',
+  height: "55px",
   borderRadius: 4,
-  bgcolor: COLORS.primary,
+  bgcolor: COLORS.black,
   color: COLORS.white,
   display: "flex",
   justifyContent: "center",

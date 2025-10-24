@@ -60,7 +60,7 @@ const Banner = () => {
           bottom: { md: "18%", sm: "", xs: 0 },
           color: COLORS.white,
           p: 2,
-          left: { md: "2%", sm: "", xs: 0 },
+          left: { md: "2%", sm: "", xs: '4%' },
         }}
       >
         <Typography
@@ -98,7 +98,7 @@ const Banner = () => {
             mt: {md:5,sm:3,xs:1},
           }}
         >
-          <LandingButton title="For Her" width="250px" personal />
+          <LandingButton title="For Her" width="250px" personal active />
           <LandingButton title="For Him" width="250px" personal />
           <LandingButton title="Kids Birthday" width="250px" personal />
           <LandingButton title="All Birthday" width="250px" personal />

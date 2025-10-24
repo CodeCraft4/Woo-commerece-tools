@@ -12,8 +12,10 @@ type Card = {
   actual_price: number;
   sale_price: number;
   description: string;
-  image_url: string;
+  imageUrl?: string;
   created_at: string;
+  polygon_shape?:string;
+  lastpageImageUrl?:string;
 };
 
 type Props = {
@@ -33,8 +35,8 @@ const ProductCard = (props: Props) => {
     <Box
       component={"div"}
       sx={{
-        width: 340,
-        height: 450,
+        width: 280,
+        height: 400,
         border: "1px solid #e0e0e0",
         borderRadius: 3,
         overflow: "hidden",
@@ -52,9 +54,14 @@ const ProductCard = (props: Props) => {
       {/* Product Image */}
       <Box
         component={"img"}
-        src={data?.image_url}
+        src={data?.imageUrl || data?.lastpageImageUrl}
         alt="Product"
-        sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+        sx={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          clipPath: data?.polygon_shape || "none",
+        }}
       />
 
       {/* Overlay with Buttons */}
