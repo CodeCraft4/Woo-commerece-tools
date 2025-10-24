@@ -5,35 +5,36 @@ type CategoryType = {
   id?: number;
   poster?: string;
   title?: string;
+  borderColor?: string;
 };
 
 const CategoryCard = (props: CategoryType) => {
-  const { id, poster, title } = props;
+  const { id, poster, title, borderColor } = props;
 
   return (
     <Box
       key={id}
       sx={{
-        border: "2px solid lightgray",
+        border: "3px solid lightgray",
         borderRadius: 2,
         p: 3,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         width: { md: "175px", sm: "", xs: "100px" },
-        height: {md:"175px",sm:'',xs:'130px'},
+        height: { md: "175px", sm: "", xs: "130px" },
         alignItems: "center",
         textAlign: "center",
         bgcolor: COLORS.white,
-        ml: id === 1 ? {md:"195px",sm:'',xs:0} : 0,
+        ml: id === 1 ? { md: "215px", sm: "", xs: 0 } : 0,
         cursor: "pointer",
         transition: "border-color 0.3s ease",
         "&:hover": {
-          borderColor: "black",
-          borderWidth: 2,
+          borderColor: borderColor,
+          borderWidth: 3,
         },
         "&:hover img": {
-          transform: "scale(1.2)",
+          transform: "scale(1.1)",
         },
       }}
     >

@@ -22,7 +22,7 @@ const VIPFunky = () => {
         src="/assets/images/banner2.jpg"
         sx={{
           width: { md: "100%", sm: 300, xs: "100%" },
-          height: { md: 400, sm: 300, xs: "100%" },
+          height: { md: 400, sm: 300, xs: '100%' },
           borderRadius: 3,
           objectFit: "cover",
         }}

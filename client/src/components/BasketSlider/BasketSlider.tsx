@@ -1,4 +1,4 @@
-import { Box, IconButton, Typography } from "@mui/material";
+import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import React, { useState } from "react";
 import Slider from "react-slick";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
@@ -30,7 +30,7 @@ const BasketSlider = (props: BirthdayTypes) => {
 
   const [activeTab, setActiveTab] = useState(0);
 
-  const { data: basketCards } = useQuery({
+  const { data: basketCards, isLoading } = useQuery({
     queryKey: ["basketCards"],
     queryFn: fetchAllCardsFromDB,
   });
@@ -38,7 +38,7 @@ const BasketSlider = (props: BirthdayTypes) => {
   const filteredCards = basketCards
     ? basketCards.filter((card) => {
         const selectedCategory = TABS[activeTab];
-        return card.card_category === selectedCategory;
+        return card.cardCategory === selectedCategory;
       })
     : [];
 
@@ -62,6 +62,8 @@ const BasketSlider = (props: BirthdayTypes) => {
         m: "auto",
         position: "relative",
         mt: { md: 8, sm: 8, xs: 0 },
+        p:{md:0,sm:0,xs:4}
+
       }}
     >
       <Box
@@ -105,9 +107,11 @@ const BasketSlider = (props: BirthdayTypes) => {
                 borderRadius: "15px",
                 cursor: "pointer",
                 transition: "all 0.3s ease-in-out",
-                backgroundColor: activeTab === index ? "black" : "transparent",
+                backgroundColor:
+                  activeTab === index ? COLORS.primary : "transparent",
                 "&:hover": {
-                  backgroundColor: activeTab === index ? "black" : "#f0f0f0",
+                  backgroundColor:
+                    activeTab === index ? COLORS.seconday : "#f0f0f0",
                 },
               }}
             >
@@ -115,7 +119,7 @@ const BasketSlider = (props: BirthdayTypes) => {
                 sx={{
                   fontSize: "14px",
                   fontWeight: 600,
-                  color: activeTab === index ? COLORS.white : COLORS.primary,
+                  color: activeTab === index ? COLORS.white : COLORS.black,
                 }}
               >
                 {e}
@@ -126,19 +130,38 @@ const BasketSlider = (props: BirthdayTypes) => {
       )}
 
       <Box sx={{ mt: 3, position: "relative" }}>
+        {isLoading && (
+          <Box
+            sx={{
+              width: "100%",
+              height: {
+                md: "300px",
+                sm: "300px",
+                xs: "250px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                m: "auto",
+              },
+            }}
+          >
+            {" "}
+            <CircularProgress sx={{ color: COLORS.seconday }} />
+          </Box>
+        )}
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
           {filteredCards.map((cate, index) => (
-              <BasketCard
-                id={cate.id}
-                key={index}
-                title={cate.card_name}
-                poster={cate.image_url}
-                price={cate.actual_price}
-                saleprice={cate.sale_price}
-                sales={saleSlide}
-                category={cate.card_category}
-              />
+            <BasketCard
+              id={cate.id}
+              key={index}
+              title={cate.cardName}
+              poster={cate.imageUrl || cate?.lastpageImageUrl}
+              price={cate.actualPrice}
+              saleprice={cate.salePrice}
+              sales={saleSlide}
+              category={cate.cardCategory}
+            />
           ))}
         </Slider>
 
@@ -147,18 +170,18 @@ const BasketSlider = (props: BirthdayTypes) => {
           onClick={() => sliderRef.current?.slickPrev()}
           sx={{
             position: "absolute",
-            top: {md:"30%",sm:'30%',xs:'40%'},
-            left: {md:-25,sm:-25,xs:1},
+            top: { md: "30%", sm: "30%", xs: "40%" },
+            left: { md: -25, sm: -25, xs: 1 },
             display: "flex",
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: {md:'50px',sm:'50px',xs:'40px'},
-            width: {md:'50px',sm:'50px',xs:'40px'},
-            border: "1px solid black",
+            height: { md: "50px", sm: "50px", xs: "40px" },
+            width: { md: "50px", sm: "50px", xs: "40px" },
+            border: `3px solid ${COLORS.primary}`,
+            color: COLORS.primary,
             zIndex: 10,
             bgcolor: COLORS.white,
-            color: COLORS.primary,
             "&:hover": { backgroundColor: "lightgray" },
           }}
         >
@@ -169,18 +192,18 @@ const BasketSlider = (props: BirthdayTypes) => {
           onClick={() => sliderRef.current?.slickNext()}
           sx={{
             position: "absolute",
-            top: {md:"30%",sm:'30%',xs:'40%'},
+            top: { md: "30%", sm: "30%", xs: "40%" },
             right: 0,
             display: "flex",
             justifyContent: "center",
             m: "auto",
             alignItems: "center",
-            height: {md:'50px',sm:'50px',xs:'40px'},
-            width: {md:'50px',sm:'50px',xs:'40px'},
-            border: "1px solid black",
+            height: { md: "50px", sm: "50px", xs: "40px" },
+            width: { md: "50px", sm: "50px", xs: "40px" },
+            border: `3px solid ${COLORS.primary}`,
+            color: COLORS.primary,
             zIndex: 10,
             bgcolor: COLORS.white,
-            color: COLORS.primary,
             "&:hover": { backgroundColor: "lightgray" },
           }}
         >

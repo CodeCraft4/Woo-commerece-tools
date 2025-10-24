@@ -111,24 +111,3 @@ i {
   height: 400px;
   object-fit: cover;
 }
-
-#b1 {
-  padding: 20px;
-  text-align: center;
-  font-size: 1.2em;
-  justify-content: space-around;
-}
-
-#b1 h2 {
-  font-size: 2em;
-  margin-top: 10px;
-  margin-bottom: 20px;
-}
-
-#b1 p {
-  margin-bottom: 20px;
-}
-
-#b2{
-    background-color: yello;
-}

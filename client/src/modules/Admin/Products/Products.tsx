@@ -9,7 +9,7 @@ import { Delete } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ProductCard from "./components/ProductCard/ProductCard";
-import { useState, useMemo } from "react"; 
+import { useState, useMemo } from "react";
 
 // ---------------- Types ----------------
 type Card = {
@@ -42,6 +42,7 @@ const fetchCards = async (): Promise<Card[]> => {
     .from("cards")
     .select("*")
     .order("created_at", { ascending: false });
+  console.log(data, "--");
 
   if (error) throw new Error(error.message);
   return data as Card[];
@@ -182,7 +183,7 @@ const Products = () => {
         sx={{
           mt: 4,
           display: "flex",
-          gap: 4,
+          gap: 2,
           flexWrap: "wrap",
         }}
       >

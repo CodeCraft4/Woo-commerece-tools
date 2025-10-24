@@ -14,5 +14,6 @@ export const ADMINS_DASHBOARD = {
   HOME: "/dashboard",
   PRODUCTS_LIST: "/products",
   ADD_NEW_CARDS: "/add-new-cards",
+  ADMIN_EDITOR:'/admin-editor',
   SETTINGS: "/setting",
 };

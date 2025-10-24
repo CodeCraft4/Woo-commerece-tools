@@ -4,7 +4,7 @@ import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuthStore } from "../../../stores";
 import toast from "react-hot-toast";
 
 type SignUpForm = {
@@ -17,7 +17,7 @@ type SignUpForm = {
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { signUp } = useAuthStore();
 
   const {
     register,

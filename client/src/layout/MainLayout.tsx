@@ -13,18 +13,8 @@ const MainLayout = ({ children }: Props) => {
     <Box>
       <Header />
       <StickerLine />
-      <Box
-        sx={{
-          width:{md: "1360px",sm:'',xs:'100%'},
-          display: "flex",
-          flexDirection:'column',
-          justifyContent: "center",
-          m: "auto",
-        }}
-      >
         {children}
         <Footer />
-      </Box>
     </Box>
   );
 };

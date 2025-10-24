@@ -5,10 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 import { COLORS } from "../../../constant/color";
 import { useForm } from "react-hook-form";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuthStore } from "../../../stores";
 import toast from "react-hot-toast";
-import React from "react";
-import { supabase } from "../../../supabase/supabase";
 
 type SigninForm = {
   email: string;
@@ -17,7 +15,7 @@ type SigninForm = {
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn,signInWithGoogle  } = useAuth();
+  const { signIn, signInWithGoogle } = useAuthStore();
 
   const {
     register,
@@ -32,25 +30,11 @@ const SignIn = () => {
         password: data.password,
       });
       toast.success("Login successful!");
-      navigate("/");
+      navigate(-1);
     } catch (err: any) {
       toast.error(err.message);
     }
   };
-
-  React.useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        toast.success(`Welcome ${user.user_metadata?.name || user.email}!`);
-        navigate("/");
-      }
-    };
-    getUser();
-  }, [navigate]);
-  
 
   return (
     <Box

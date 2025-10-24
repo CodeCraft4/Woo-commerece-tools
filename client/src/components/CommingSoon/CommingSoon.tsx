@@ -11,11 +11,11 @@ const CommingSoonOffers = () => {
         height: { md: "450px", sm: "", xs: "auto" },
         display: { md: "flex", sm: "", xs: "block" },
         // mt: 8,
-        bgcolor: COLORS.primary,
+        bgcolor: COLORS.seconday,
         justifyContent: "center",
         color: COLORS.white,
         m: "auto",
-        p:{xs:2}
+        p:{md:0,sm:0,xs:2}
       }}
     >
       <Box

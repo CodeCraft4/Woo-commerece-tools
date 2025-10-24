@@ -1,6 +1,5 @@
-import { AppBar, Box, IconButton, Toolbar } from "@mui/material";
+import { AppBar, Box, Toolbar } from "@mui/material";
 import CustomButton from "../../../components/CustomButton/CustomButton";
-import { Redo, Undo } from "@mui/icons-material";
 import { USER_ROUTES } from "../../../constant/route";
 import { useNavigate } from "react-router-dom";
 
@@ -23,18 +22,8 @@ const Navbar = () => {
           <Box
            component={'img'}
            src="/assets/images/blackLOGO.png"
-           sx={{width:300,height:50}}
+           sx={{width:300,height:80}}
           />
-
-          <Box>
-            <IconButton>
-              <Undo sx={{ color: "gray", cursor: "pointer" }} />
-            </IconButton>
-            <IconButton>
-              <Redo sx={{ color: "gray", cursor: "pointer" }} />
-            </IconButton>
-          </Box>
-
           {pathname ? (
             <CustomButton
               title="Preview"
@@ -43,7 +32,7 @@ const Navbar = () => {
           ) : (
             <Box sx={{display:'flex',gap:3,alignItems:'center'}}>
               <CustomButton
-              onClick={() => navigate(`${USER_ROUTES.HOME}/*path`)}
+              onClick={() => navigate(-1)}
                 title="Edit Design"
                 variant="outlined"
               />

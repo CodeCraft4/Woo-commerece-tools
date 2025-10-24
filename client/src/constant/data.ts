@@ -1,10 +1,14 @@
+import { COLORS } from "./color";
+import { USER_ROUTES } from "./route";
+
 export const CATEGORIES_DATA = [
   {
     id: 1,
     poster: "/assets/images/Wedding.jpg",
-    category: "Birthday Cards",
+    card_category: "Birthday Cards",
     price: "£2",
     title: "Birthday",
+    borderColor: COLORS.primary,
   },
   {
     id: 2,
@@ -12,6 +16,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Gift",
     price: "£3",
     title: "Gifts",
+    borderColor: COLORS.green,
   },
   {
     id: 3,
@@ -19,6 +24,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Cards",
     price: "£1",
     title: "Personal",
+    borderColor: COLORS.seconday,
   },
   {
     id: 4,
@@ -26,6 +32,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Cards",
     price: "£3",
     title: "Flowers",
+    borderColor: COLORS.gray,
   },
   {
     id: 5,
@@ -33,6 +40,7 @@ export const CATEGORIES_DATA = [
     category: "Kids Birthday Cards",
     price: "£5",
     title: "Anniversary",
+    borderColor: COLORS.green,
   },
   {
     id: 6,
@@ -40,6 +48,7 @@ export const CATEGORIES_DATA = [
     category: "Kids Birthday Gift",
     price: "£3",
     title: "New Year",
+    borderColor: COLORS.seconday,
   },
   {
     id: 7,
@@ -47,6 +56,7 @@ export const CATEGORIES_DATA = [
     category: "Kids Birthday Cards",
     price: "£2",
     title: "Wedding",
+    borderColor: COLORS.primary,
   },
   {
     id: 8,
@@ -54,6 +64,7 @@ export const CATEGORIES_DATA = [
     category: "Kids Birthday Gift",
     price: "£5",
     title: "Valentine’s",
+    borderColor: COLORS.black,
   },
   {
     id: 9,
@@ -61,6 +72,7 @@ export const CATEGORIES_DATA = [
     category: "Kids Birthday Cards",
     price: "£2",
     title: "Christmas",
+    borderColor: COLORS.seconday,
   },
   {
     id: 10,
@@ -68,6 +80,7 @@ export const CATEGORIES_DATA = [
     category: "Kids Birthday Cards",
     price: "£7",
     title: "Mother’s ",
+    borderColor: COLORS.green,
   },
   {
     id: 11,
@@ -75,6 +88,7 @@ export const CATEGORIES_DATA = [
     category: "Kids Birthday Gift",
     price: "£3",
     title: "Father’s",
+    borderColor: COLORS.primary,
   },
   {
     id: 12,
@@ -82,6 +96,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Cards",
     price: "£2",
     title: "Graduation",
+    borderColor: COLORS.black,
   },
   {
     id: 13,
@@ -89,6 +104,7 @@ export const CATEGORIES_DATA = [
     category: "Kids Birthday Gift",
     price: "£1",
     title: "Thank",
+    borderColor: COLORS.primary,
   },
   {
     id: 14,
@@ -96,6 +112,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Cards",
     price: "£6",
     title: "Get Well",
+    borderColor: COLORS.green,
   },
   {
     id: 15,
@@ -103,6 +120,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Gift",
     price: "£5",
     title: "Friendship",
+    borderColor: COLORS.primary,
   },
   {
     id: 16,
@@ -110,6 +128,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Cards",
     price: "£3",
     title: "Diwali Cards",
+    borderColor: COLORS.seconday,
   },
   {
     id: 17,
@@ -117,6 +136,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Cards",
     price: "£5",
     title: "Alcohols",
+    borderColor: COLORS.black,
   },
   {
     id: 19,
@@ -124,6 +144,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Cards",
     price: "£3",
     title: "Baloons",
+    borderColor: COLORS.primary,
   },
   {
     id: 20,
@@ -131,6 +152,7 @@ export const CATEGORIES_DATA = [
     category: "Birthday Cards",
     price: "£7",
     title: "Offers",
+    borderColor: COLORS.green,
   },
 ];
 
@@ -287,11 +309,11 @@ export const FooterLinks = [
     links: [
       {
         name: "Sign In",
-        path: "#",
+        path: `${USER_ROUTES.SIGNIN}`,
       },
       {
         name: "Register",
-        path: "#",
+        path: `${USER_ROUTES.SIGNUP}`,
       },
     ],
   },
@@ -427,82 +449,196 @@ export const megaMenuData = {
   },
 };
 
-
+// src/constants/googleFonts.ts
 export const GOOGLE_FONTS = [
-    // --- TOP SANS-SERIF (Highly Readable/Versatile) ---
-    "Roboto",
-    "Open Sans",
-    "Lato",
-    "Montserrat",
-    "Inter",
-    "Source Sans Pro",
-    "Work Sans",
-    "Poppins",
-    "Raleway",
-    "Nunito",
-    "Fira Sans",
-    "IBM Plex Sans",
-    "Karla",
-    "Rubik",
-    "Manrope",
-    "Chivo",
-    "DM Sans",
-    "Space Grotesk",
-    
-    // --- SERIF (Classic/Elegant) ---
-    "Playfair Display",
-    "Merriweather",
-    "Lora",
-    "Alegreya",
-    "Libre Baskerville",
-    "Source Serif Pro",
-    "PT Serif",
-    "Noticia Text",
-    "Crimson Text",
-    "Taviraj",
-    "Spectral",
-    "Cardo",
-    "Cormorant Garamond",
-    "Bitter",
+  "Tangerine",
+  "Great Vibes",
+  "Alex Brush",
+  "Parisienne",
+  "Carattere",
+  "Courgette",
+  "Satisfy",
+  "Cookie",
+  "Dancing Script",
+  "Lobster",
+  "Pacifico",
+  "Handlee",
+  "Kaushan Script",
+  "Allura",
+  "Windsong",
+  "Yellowtail",
+  "Homemade Apple",
+  "Rouge Script",
+  "Delius Swash Caps",
+  "Marck Script",
+  "Grand Hotel",
+  "Monsieur La Doulaise",
+  "Bilbo",
+  "Bilbo Swash Caps",
+  "Bonbon",
+  "Charm",
+  "Crafty Girls",
+  "Damion",
+  "Dawning of a New Day",
+  "Griffy",
+  "La Belle Aurore",
+  "Leckerli One",
+  "Lovers Quarrel",
+  "Meow Script",
+  "Mrs Saint Delafield",
+  "Mrs Sheppards",
+  "Mystery Quest",
+  "Playball",
+  "Princess Sofia",
+];
 
-    // --- SLAB/DISPLAY (Headlines/Strong Impact) ---
-    "Oswald",
-    "Bebas Neue",
-    "Anton",
-    "Cinzel",
-    "Staatliches",
-    "Impact", // Common System Font (Good fallback)
-    "Ultra",
-    "Abril Fatface",
-    "Gilda Display",
-    "Graduate",
-    "Faster One",
-    "Saira Condensed",
-
-    // --- SCRIPT / HANDWRITING (Decorative) ---
-    "Pacifico",
-    "Lobster",
-    "Caveat",
-    "Dancing Script",
-    "Great Vibes",
-    "Indie Flower",
-    "Sacramento",
-    "Yellowtail",
-    "Permanent Marker",
-    "Amatic SC",
-    "Inconsolata",
-    "Source Code Pro",
-    "Cousine",
-    "Cutive Mono",
-    // --- OTHER POPULAR MODERN CHOICES ---
-    "Prompt",
-    "Barlow",
-    "Quicksand",
-    "Exo 2",
-    "Titillium Web",
-    "Vollkorn",
-    "Arapey",
-    "Mukta",
-    "Jost",
-    "Maitree",
+export const STICKERS_DATA = [
+  {
+    id: 1,
+    sticker: "/assets/stickers/alert.png",
+  },
+  {
+    id: 2,
+    sticker: "/assets/stickers/balloon.png",
+  },
+  {
+    id: 3,
+    sticker: "/assets/stickers/balloons.png",
+  },
+  {
+    id: 4,
+    sticker: "/assets/stickers/bird.png",
+  },
+  {
+    id: 5,
+    sticker: "/assets/stickers/cake.png",
+  },
+  {
+    id: 6,
+    sticker: "/assets/stickers/castle-house.png",
+  },
+  {
+    id: 7,
+    sticker: "/assets/stickers/christmas-round.png",
+  },
+  {
+    id: 8,
+    sticker: "/assets/stickers/christmas.png",
+  },
+  {
+    id: 9,
+    sticker: "/assets/stickers/clown.png",
+  },
+  {
+    id: 10,
+    sticker: "/assets/stickers/coffee.png",
+  },
+  {
+    id: 11,
+    sticker: "/assets/stickers/confetti.png",
+  },
+  {
+    id: 12,
+    sticker: "/assets/stickers/greeting-card.png",
+  },
+  {
+    id: 13,
+    sticker: "/assets/stickers/happy-birthday.png",
+  },
+  {
+    id: 14,
+    sticker: "/assets/stickers/hay.png",
+  },
+  {
+    id: 15,
+    sticker: "/assets/stickers/hello.png",
+  },
+  {
+    id: 16,
+    sticker: "/assets/stickers/help-center.png",
+  },
+  {
+    id: 17,
+    sticker: "/assets/stickers/just-be-happy.png",
+  },
+  {
+    id: 18,
+    sticker: "/assets/stickers/let-your-dreams.png",
+  },
+  {
+    id: 19,
+    sticker: "/assets/stickers/look.png",
+  },
+  {
+    id: 20,
+    sticker: "/assets/stickers/love-letter.png",
+  },
+  {
+    id: 21,
+    sticker: "/assets/stickers/love-you.png",
+  },
+  {
+    id: 22,
+    sticker: "/assets/stickers/love.png",
+  },
+  {
+    id: 23,
+    sticker: "/assets/stickers/ok.png",
+  },
+  {
+    id: 24,
+    sticker: "/assets/stickers/save-the-date.png",
+  },
+  {
+    id: 25,
+    sticker: "/assets/stickers/sorry.png",
+  },
+  {
+    id: 26,
+    sticker: "/assets/stickers/unboxing.png",
+  },
+  {
+    id: 27,
+    sticker: "/assets/stickers/wedding.png",
+  },
+  {
+    id: 28,
+    sticker: "/assets/stickers/wine.png",
+  },
+  {
+    id: 29,
+    sticker: "/assets/stickers/you-got-this.png",
+  },
+  {
+    id: 30,
+    sticker: "/assets/stickers/3butterfly.png",
+  },
+  {
+    id: 31,
+    sticker: "/assets/stickers/3hearts.png",
+  },
+  {
+    id: 32,
+    sticker: "/assets/stickers/3colourful-daisy.png",
+  },
+  {
+    id: 33,
+    sticker: "/assets/stickers/happy-bunting.png",
+  },
+  {
+    id: 34,
+    sticker: "/assets/stickers/present.png",
+  },
+  {
+    id: 35,
+    sticker: "/assets/stickers/sunshine.png",
+  },
+  {
+    id: 36,
+    sticker: "/assets/stickers/pastel-rainbow.png",
+  },
+  {
+    id: 37,
+    sticker: "/assets/stickers/bright-rainbow.png",
+  },
 ];

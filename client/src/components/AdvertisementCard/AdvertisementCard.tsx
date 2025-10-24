@@ -6,9 +6,10 @@ type AdvertiseTypes = {
   title: string;
   price?: string;
   poster?:string;
+  bgcolorSide?:string | any
 };
 const AdvertisementCard = (props: AdvertiseTypes) => {
-  const { title, price,poster } = props;
+  const { title, price,poster,bgcolorSide } = props;
 
   return (
     <Box
@@ -27,7 +28,7 @@ const AdvertisementCard = (props: AdvertiseTypes) => {
           flexDirection: "column",
           alignItems: "start",
           color: COLORS.white,
-          bgcolor: COLORS.primary,
+          bgcolor: bgcolorSide,
           borderRadius: {
             md: "20px 0px 0px 20px",
             sm: "20px 0px 0px 20px",

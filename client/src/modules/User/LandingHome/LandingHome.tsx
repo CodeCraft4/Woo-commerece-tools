@@ -20,16 +20,19 @@ const AdverstisementCard = [
     title: "Calendars",
     price: "price £10",
     poster: "/assets/images/Calendar.jpg",
+    bgcolor: COLORS.primary,
   },
   {
     title: "Personlised Gifts",
     price: "price £20",
     poster: "/assets/images/PersonlisedImg.jpg",
+    bgcolor: COLORS.seconday,
   },
   {
     title: "Anniversary Gift",
     price: "",
     poster: "assets/images/Anniversary.jpg",
+    bgcolor: COLORS.green,
   },
 ];
 
@@ -52,7 +55,10 @@ const LandingHome = () => {
           display: "flex",
           flexDirection: "column",
           gap: "40px",
-          width: "100%",
+          // width: "100%",
+          width: { md: "1360px", sm: "", xs: "100%" },
+          justifyContent: "center",
+          m: "auto",
         }}
       >
         {/* Categories */}
@@ -85,6 +91,7 @@ const LandingHome = () => {
               id={cate.id}
               poster={cate.poster}
               title={cate.title}
+              borderColor={`${cate.borderColor}`}
             />
           ))}
         </Box>
@@ -96,18 +103,18 @@ const LandingHome = () => {
         <Box
           sx={{
             display: "flex",
-            gap: { md: "13px", sm: "13px", xs: "5px" },
+            gap: { md: "13px", sm: "13px", xs: "10px" },
             alignItems: "center",
             overflowX: "auto",
-            width: { lg: "99.4%" },
+            width: { lg: "99.4%", sm: "100%", xs: "100%" },
             mr: { md: "5px", sm: "5px", xs: 0 },
             ml: { md: "5px", sm: "5px", xs: 0 },
-            pb: { md: 5, sm: 3, xs: 2 },
+            pb: { md: 3, sm: 3, xs: 2 },
             mt: { md: "-90px", sm: "", xs: 0 },
             zIndex: 100,
             position: "relative",
             "&::-webkit-scrollbar": {
-              height: "8px",
+              height: "7px",
             },
             "&::-webkit-scrollbar-track": {
               backgroundColor: "#f1f1f1",
@@ -120,7 +127,11 @@ const LandingHome = () => {
           }}
         >
           {categories?.map((cate) => (
-            <ProductCard key={cate.id} poster={cate.poster} />
+            <ProductCard
+              key={cate.id}
+              poster={cate.poster}
+              borderColor={cate.borderColor}
+            />
           ))}
         </Box>
 
@@ -139,6 +150,7 @@ const LandingHome = () => {
                 price={e.price}
                 poster={e.poster}
                 key={e.title}
+                bgcolorSide={e.bgcolor}
               />
             ))}
           </Box>

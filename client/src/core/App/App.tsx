@@ -9,16 +9,28 @@ import { CartProvider } from "../../context/AddToCart";
 import { Toaster } from "react-hot-toast";
 import { COLORS } from "../../constant/color";
 import { AdminProvider } from "../../context/AdminContext";
+import { Slide2Provider } from "../../context/Slide2Context";
+import { Slide3Provider } from "../../context/Slide3Context";
+import { Slide4Provider } from "../../context/Slide4Context";
+import { AdminCardEditorProvider } from "../../context/AdminEditorContext";
+import { Slide1Provider } from "../../context/Slide1Context";
 
 const App = () => {
   // React Query Client
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 1000 * 60 * 60,
+        staleTime: 1000 * 60 * 60, // 1 hour
       },
     },
   });
+
+  window.addEventListener("error", (e) =>
+    console.error("Global error:", e.message)
+  );
+  window.addEventListener("unhandledrejection", (e) =>
+    console.error("Promise rejection:", e.reason)
+  );
 
   return (
     <React.Fragment>
@@ -27,9 +39,27 @@ const App = () => {
           <AuthProvider>
             <CartProvider>
               <WishCardProvider>
-                <AdminProvider>
-                <Router />
-                </AdminProvider>
+                {/* Fist Slide */}
+                <Slide1Provider>
+                  {/* Second Slide */}
+                  <Slide2Provider>
+                    {/* Third Slide */}
+                    <Slide3Provider>
+                      {/* Fourth Slide  */}
+                      <Slide4Provider>
+                        <AdminProvider>
+                          <AdminCardEditorProvider>
+                            <Router />
+                          </AdminCardEditorProvider>
+                        </AdminProvider>
+                      </Slide4Provider>
+                    </Slide3Provider>
+                  </Slide2Provider>
+                </Slide1Provider>
+
+                {/* Global water mark */}
+                {/* <GlobalWatermark /> */}
+
                 <Toaster
                   position="bottom-right"
                   reverseOrder={false}
@@ -49,7 +79,7 @@ const App = () => {
                     success: {
                       style: {
                         background: "#f3f3f3ff",
-                        color:COLORS.primary
+                        color: COLORS.black,
                       },
                     },
 
@@ -57,6 +87,7 @@ const App = () => {
                     error: {
                       style: {
                         background: "#f44336",
+                        color: COLORS.black,
                       },
                     },
                   }}

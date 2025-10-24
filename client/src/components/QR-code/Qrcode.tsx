@@ -1,18 +1,15 @@
-// QrGenerator.tsx
 import { QRCodeSVG } from "qrcode.react";
 
 type QrGeneratorProps = {
-  url: string;
+  url: string | any;
+  size?: number;
+  style?: React.CSSProperties;
 };
 
-const QrGenerator = ({ url }: QrGeneratorProps) => {
+const QrGenerator = ({ url, style, size }: QrGeneratorProps) => {
   return (
-    <div style={{ textAlign: "center" }}>
-      <QRCodeSVG
-        value={url}
-        size={80}
-        style={{ marginLeft: "280px", marginTop: "10px" }}
-      />
+    <div style={style}>
+      <QRCodeSVG value={url} size={size} />
     </div>
   );
 };

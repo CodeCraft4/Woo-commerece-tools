@@ -12,24 +12,17 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
-import LOGO from "/assets/images/LOGO.png";
-import {
-  DateRange,
-  Logout,
-  Person,
-  Search,
-  Settings,
-  ShoppingBag,
-} from "@mui/icons-material";
+import LOGO from "/assets/images/blackLOGO.png";
+import { Logout, Person, Search, Settings } from "@mui/icons-material";
 import { megaMenuData, navLinks } from "../../../constant/data";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 import MegaMenu from "../../../components/MegaMenu/MegaMenu";
-import { useAuth } from "../../../context/AuthContext";
+import { useCartStore } from "../../../stores";
 import { Avatar, Badge, ListItemIcon, Menu, MenuItem } from "@mui/material";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
-import { useCart } from "../../../context/AddToCart";
+import { useAuth } from "../../../context/AuthContext";
 
 interface Props {
   window?: () => Window;
@@ -67,8 +60,8 @@ type MegaMenuKeys = keyof MegaMenuData;
 export default function Header(props: Props) {
   const { window } = props;
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { cart } = useCart();
+  const { user,signOut } = useAuth();
+  const { cart } = useCartStore();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [hoveredMenuItem, setHoveredMenuItem] =
@@ -87,7 +80,7 @@ export default function Header(props: Props) {
   };
 
   const handleSelect = () => {
-    setHoveredMenuItem(null); // close mega menu
+    setHoveredMenuItem(null);
   };
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -101,6 +94,7 @@ export default function Header(props: Props) {
   };
 
   const handleLogout = async () => {
+    signOut()
     openLogout();
   };
 
@@ -139,10 +133,10 @@ export default function Header(props: Props) {
     <Box
       sx={{
         display: "flex",
-        bgcolor: COLORS.primary,
+        bgcolor: COLORS.white,
         flexDirection: "column",
         position: "relative",
-        py: 1,
+        pt: 1,
         width: "100%",
       }}
     >
@@ -160,7 +154,7 @@ export default function Header(props: Props) {
           sx={{
             background: "transparent",
             position: "sticky",
-            top: 20,
+            // top: 20,
             width: "100%",
           }}
         >
@@ -168,92 +162,137 @@ export default function Header(props: Props) {
             <Box
               sx={{
                 display: { md: "none", sm: "none", xs: "flex" },
-                justifyContent: "space-between",
-                width: "100%",
+                flexDirection:'column',
+                width:'100%',
+                mb:2
               }}
             >
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={handleDrawerToggle}
-                sx={{ mr: 2 }}
+              <Box
+                sx={{
+                  display: { md: "none", sm: "none", xs: "flex" },
+                  justifyContent: "space-between",
+                  width: "100%",
+                }}
               >
-                <MenuIcon />
-              </IconButton>
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={handleDrawerToggle}
+                  sx={{ mr: 2, color: COLORS.black }}
+                >
+                  <MenuIcon />
+                </IconButton>
 
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                {user ? (
-                  <>
-                    <IconButton onClick={handleOpenMenu}>
-                      <Avatar sx={{ bgcolor: "orange" }}>
-                        {user.email?.charAt(0).toUpperCase()}
-                      </Avatar>
-                    </IconButton>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                  {user ? (
+                    <>
+                      <IconButton onClick={handleOpenMenu}>
+                        <Avatar sx={{ bgcolor: "orange" }}>
+                          {user.email?.charAt(0).toUpperCase()}
+                        </Avatar>
+                      </IconButton>
 
-                    <Menu
-                      anchorEl={anchorEl}
-                      open={Boolean(anchorEl)}
-                      onClose={handleCloseMenu}
+                      <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={handleCloseMenu}
+                      >
+                        <MenuItem
+                          onClick={() => {
+                            // navigate(USER_ROUTES.ACCOUNT_SETTINGS);
+                            handleCloseMenu();
+                          }}
+                          sx={{ width: 150 }}
+                        >
+                          <ListItemIcon>
+                            <Person fontSize="small" />
+                          </ListItemIcon>
+                          <Typography>Profile</Typography>
+                        </MenuItem>
+
+                        <MenuItem
+                          onClick={() => {
+                            // navigate(USER_ROUTES.SETTINGS);
+                            handleCloseMenu();
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Settings fontSize="small" />
+                          </ListItemIcon>
+                          <Typography>Settings</Typography>
+                        </MenuItem>
+
+                        <MenuItem onClick={handleLogout}>
+                          <ListItemIcon>
+                            <Logout fontSize="small" sx={{ color: "red" }} />
+                          </ListItemIcon>
+                          <Typography>Logout</Typography>
+                        </MenuItem>
+                      </Menu>
+                    </>
+                  ) : (
+                    <IconButton
+                      sx={iconStyle}
+                      onClick={() => navigate(USER_ROUTES.SIGNIN)}
                     >
-                      <MenuItem
-                        onClick={() => {
-                          // navigate(USER_ROUTES.ACCOUNT_SETTINGS);
-                          handleCloseMenu();
+                      <Box
+                        component={"img"}
+                        src="/assets/icons/Account.svg"
+                        sx={{
+                          width: 35,
+                          height: 35,
                         }}
-                        sx={{ width: 150 }}
-                      >
-                        <ListItemIcon>
-                          <Person fontSize="small" />
-                        </ListItemIcon>
-                        <Typography>Profile</Typography>
-                      </MenuItem>
+                      />
+                      <Typography fontSize={"10px"}>Accounts</Typography>
+                    </IconButton>
+                  )}
 
-                      <MenuItem
-                        onClick={() => {
-                          // navigate(USER_ROUTES.SETTINGS);
-                          handleCloseMenu();
-                        }}
-                      >
-                        <ListItemIcon>
-                          <Settings fontSize="small" />
-                        </ListItemIcon>
-                        <Typography>Settings</Typography>
-                      </MenuItem>
-
-                      <MenuItem onClick={handleLogout}>
-                        <ListItemIcon>
-                          <Logout fontSize="small" sx={{ color: "red" }} />
-                        </ListItemIcon>
-                        <Typography>Logout</Typography>
-                      </MenuItem>
-                    </Menu>
-                  </>
-                ) : (
                   <IconButton
                     sx={iconStyle}
-                    onClick={() => navigate(USER_ROUTES.SIGNIN)}
+                    onClick={() => navigate(USER_ROUTES.ADD_TO_CART)}
                   >
-                    <Person />
-                    <Typography fontSize={"10px"}>Accounts</Typography>
+                    {/* ✅ Add badge here */}
+                    <Badge
+                      badgeContent={cart.length}
+                      color="error"
+                      overlap="circular"
+                      showZero
+                    >
+                      <Box
+                        component={"img"}
+                        src="/assets/icons/Basket.svg"
+                        sx={{
+                          width: 35,
+                          height: 35,
+                        }}
+                      />
+                    </Badge>
+                    <Typography fontSize={"10px"}>Basket</Typography>
                   </IconButton>
-                )}
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  border: `2px solid ${COLORS.black}`,
+                  borderRadius: 8,
+                  flexGrow: 1,
+                  height: "45px",
+                  display: "flex",
+                  // bgcolor: "lightGray",
+                  // bgcolor:COLORS.gray,
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  // py: 1,
+                }}
+              >
+                <Box
+                  component="input"
+                  sx={searchInputStyle}
+                  placeholder="Search for cards, gift and flowers...."
+                />
 
-                <IconButton
-                  sx={iconStyle}
-                  onClick={() => navigate(USER_ROUTES.ADD_TO_CART)}
-                >
-                  {/* ✅ Add badge here */}
-                  <Badge
-                    badgeContent={cart.length}
-                    color="error"
-                    overlap="circular"
-                    showZero
-                  >
-                    <ShoppingBag />
-                  </Badge>
-                  <Typography fontSize={"10px"}>Basket</Typography>
-                </IconButton>
+                <Search fontSize="large" sx={{ color: COLORS.black, mr: 1 }} />
               </Box>
             </Box>
 
@@ -264,10 +303,8 @@ export default function Header(props: Props) {
                   md: "flex",
                   xs: "none",
                   sm: "block",
-                  alignItems: "center",
-                  gap: "20px",
-                  height: "40px",
                 },
+                alignItems: "center",
               }}
             >
               <a href="/">
@@ -276,120 +313,172 @@ export default function Header(props: Props) {
                   src={LOGO}
                   alt="LOGO"
                   width={"450px"}
-                  height={70}
+                  height={150}
                 />
               </a>
               <Box
                 sx={{
-                  border: "2px solid pink",
-                  borderRadius: 8,
-                  flexGrow: 1.8 / 2,
-                  height: "45px",
+                  // bgcolor: COLORS.black,
+                  // border:`1px solid ${COLORS.black}`,
+                  borderRadius: 2,
+                  width: "100%",
                   display: "flex",
-                  bgcolor: "lightGray",
-                  justifyContent: "space-between",
                   alignItems: "center",
+                  justifyContent: "space-between",
+                  px: 2,
+                  height: "70px",
                 }}
               >
                 <Box
-                  component="input"
-                  sx={searchInputStyle}
-                  placeholder="Search for cards, gift and flowers...."
-                />
+                  sx={{
+                    border: `2px solid ${COLORS.black}`,
+                    borderRadius: 8,
+                    flexGrow: 1,
+                    height: "45px",
+                    display: "flex",
+                    // bgcolor: "lightGray",
+                    // bgcolor:COLORS.gray,
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    // py: 1,
+                  }}
+                >
+                  <Box
+                    component="input"
+                    sx={searchInputStyle}
+                    placeholder="Search for cards, gift and flowers...."
+                  />
 
-                <Search
-                  fontSize="large"
-                  sx={{ color: COLORS.primary, mr: 2 }}
-                />
-              </Box>
-            </Box>
-            <Box
-              sx={{
-                display: { md: "flex", xs: "none", sm: "block", gap: "12px" },
-              }}
-            >
-              <IconButton sx={iconStyle}>
-                <DateRange fontSize="large" />
-                <Typography fontSize={"12px"}>Reminders</Typography>
-              </IconButton>
-              {user ? (
-                <>
-                  <IconButton onClick={handleOpenMenu}>
-                    <Avatar
-                      sx={{ bgcolor: "orange", width: 40, height: 40,border:'2px solid orange' }}
-                      src={user.user_metadata?.avatar_url || undefined}
-                      alt={user.user_metadata?.name || user.email}
-                    >
-                      {/* Fallback letter if no image */}
-                      {!user.user_metadata?.avatar_url &&
-                        (user.user_metadata?.name?.charAt(0).toUpperCase() ||
-                          user.email?.charAt(0).toUpperCase())}
-                    </Avatar>
+                  <Search
+                    fontSize="large"
+                    sx={{ color: COLORS.black, mr: 1 }}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    display: {
+                      md: "flex",
+                      xs: "none",
+                      sm: "block",
+                      gap: "12px",
+                    },
+                  }}
+                >
+                  <IconButton sx={iconStyle}>
+                    <Box
+                      component={"img"}
+                      src="/assets/icons/Reminders.svg"
+                      sx={{
+                        width: 35,
+                        height: 35,
+                      }}
+                    />
+                    {/* <DateRange fontSize="large"/> */}
+                    <Typography fontSize={"12px"}>Reminders</Typography>
                   </IconButton>
+                  {user ? (
+                    <>
+                      <IconButton onClick={handleOpenMenu}>
+                        <Avatar
+                          sx={{
+                            bgcolor: "orange",
+                            width: 40,
+                            height: 40,
+                            border: "2px solid orange",
+                          }}
+                          src={user.user_metadata?.avatar_url || undefined}
+                          alt={user.user_metadata?.name || user.email}
+                        >
+                          {/* Fallback letter if no image */}
+                          {!user.user_metadata?.avatar_url &&
+                            (user.user_metadata?.name
+                              ?.charAt(0)
+                              .toUpperCase() ||
+                              user.email?.charAt(0).toUpperCase())}
+                        </Avatar>
+                      </IconButton>
 
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleCloseMenu}
+                      <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={handleCloseMenu}
+                      >
+                        <MenuItem
+                          onClick={() => {
+                            // navigate(USER_ROUTES.ACCOUNT_SETTINGS);
+                            handleCloseMenu();
+                          }}
+                          sx={{ width: 150 }}
+                        >
+                          <ListItemIcon>
+                            <Person fontSize="small" />
+                          </ListItemIcon>
+                          <Typography>Profile</Typography>
+                        </MenuItem>
+
+                        <MenuItem
+                          onClick={() => {
+                            // navigate(USER_ROUTES.SETTINGS);
+                            handleCloseMenu();
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Settings fontSize="small" />
+                          </ListItemIcon>
+                          <Typography>Settings</Typography>
+                        </MenuItem>
+
+                        <MenuItem onClick={handleLogout}>
+                          <ListItemIcon>
+                            <Logout fontSize="small" sx={{ color: "red" }} />
+                          </ListItemIcon>
+                          <Typography>Logout</Typography>
+                        </MenuItem>
+                      </Menu>
+                    </>
+                  ) : (
+                    <IconButton
+                      sx={iconStyle}
+                      onClick={() => navigate(USER_ROUTES.SIGNIN)}
+                    >
+                      <Box
+                        component={"img"}
+                        src="/assets/icons/Account.svg"
+                        sx={{
+                          width: 35,
+                          height: 35,
+                        }}
+                      />
+                      {/* <Person fontSize="large"/> */}
+                      <Typography fontSize="12px">Accounts</Typography>
+                    </IconButton>
+                  )}
+
+                  <IconButton
+                    sx={iconStyle}
+                    onClick={() => navigate(USER_ROUTES.ADD_TO_CART)}
                   >
-                    <MenuItem
-                      onClick={() => {
-                        // navigate(USER_ROUTES.ACCOUNT_SETTINGS);
-                        handleCloseMenu();
-                      }}
-                      sx={{ width: 150 }}
+                    {/* ✅ Add badge here */}
+                    <Badge
+                      badgeContent={cart.length}
+                      color="error"
+                      overlap="circular"
+                      showZero
                     >
-                      <ListItemIcon>
-                        <Person fontSize="small" />
-                      </ListItemIcon>
-                      <Typography>Profile</Typography>
-                    </MenuItem>
-
-                    <MenuItem
-                      onClick={() => {
-                        // navigate(USER_ROUTES.SETTINGS);
-                        handleCloseMenu();
-                      }}
-                    >
-                      <ListItemIcon>
-                        <Settings fontSize="small" />
-                      </ListItemIcon>
-                      <Typography>Settings</Typography>
-                    </MenuItem>
-
-                    <MenuItem onClick={handleLogout}>
-                      <ListItemIcon>
-                        <Logout fontSize="small" sx={{ color: "red" }} />
-                      </ListItemIcon>
-                      <Typography>Logout</Typography>
-                    </MenuItem>
-                  </Menu>
-                </>
-              ) : (
-                <IconButton
-                  sx={iconStyle}
-                  onClick={() => navigate(USER_ROUTES.SIGNIN)}
-                >
-                  <Person fontSize="large" />
-                  <Typography fontSize="12px">Accounts</Typography>
-                </IconButton>
-              )}
-
-              <IconButton
-                sx={iconStyle}
-                onClick={() => navigate(USER_ROUTES.ADD_TO_CART)}
-              >
-                {/* ✅ Add badge here */}
-                <Badge
-                  badgeContent={cart.length}
-                  color="error"
-                  overlap="circular"
-                  showZero
-                >
-                  <ShoppingBag fontSize="large" />
-                </Badge>
-                <Typography fontSize={"12px"}>Basket</Typography>
-              </IconButton>
+                      <Box
+                        component={"img"}
+                        src="/assets/icons/Basket.svg"
+                        sx={{
+                          width: 35,
+                          height: 35,
+                        }}
+                      />
+                      {/* <ShoppingBag fontSize="large"/> */}
+                    </Badge>
+                    <Typography fontSize={"12px"}>Basket</Typography>
+                  </IconButton>
+                </Box>
+              </Box>
             </Box>
           </Toolbar>
         </AppBar>
@@ -418,11 +507,13 @@ export default function Header(props: Props) {
       </Box>
       <Box
         sx={{
-          width: "1360px",
+          width: "100%",
           display: { md: "flex", sm: "flex", xs: "none" },
           m: "auto",
           flexDirection: "column",
           position: "relative",
+          bgcolor: COLORS.primary,
+          mt: "3px",
         }}
         onMouseLeave={handleMouseLeave}
       >
@@ -431,7 +522,7 @@ export default function Header(props: Props) {
             display: "flex",
             m: "auto",
             color: "white",
-            pt: 3,
+            p: 3,
             width: "70%",
           }}
           // onMouseLeave={handleMouseLeave}
@@ -444,24 +535,35 @@ export default function Header(props: Props) {
                 m: 0,
                 p: 0,
                 cursor: "pointer",
-                "&:hover": { color: "orange" },
+                "&:hover": { color: COLORS.black },
                 flexGrow: 1,
                 fontSize: "14px",
                 display: "flex",
                 width: "100%",
                 justifyContent: "space-around",
+                color: COLORS.black,
               }}
             >
               {item.name}
             </ListItem>
           ))}
         </List>
-        {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
-          <MegaMenu
-            data={megaMenuData[hoveredMenuItem]}
-            onSelect={handleSelect}
-          />
-        )}
+        <Box
+          sx={{
+            width: { md: "1360px", sm: "", xs: "auto" },
+            display: "flex",
+            m: "auto",
+            justifyContent: "center",
+            bgcolor: "red",
+          }}
+        >
+          {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
+            <MegaMenu
+              data={megaMenuData[hoveredMenuItem]}
+              onSelect={handleSelect}
+            />
+          )}
+        </Box>
 
         {/* <Typography
             sx={{
@@ -484,10 +586,11 @@ export default function Header(props: Props) {
 }
 
 const iconStyle = {
-  color: COLORS.white,
+  color: COLORS.black,
   flexDirection: "column",
   "&:hover": {
-    color: "orange",
+    color: COLORS.primary,
+    bgcolor: "transparent",
   },
 };
 
