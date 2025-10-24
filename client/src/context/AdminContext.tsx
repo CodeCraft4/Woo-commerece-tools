@@ -115,7 +115,7 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AdminContext.Provider value={{ isAdmin, admin, loading, login, logout }}>
-      {loading ? <div>Loading...</div> : children}
+      {children}
     </AdminContext.Provider>
   );
 };

@@ -176,9 +176,9 @@ const PreviewBookCard = () => {
                         justifyContent: "center",
                         alignItems: "flex-end",
                         m: "auto",
+                        width:'100%',
                         textAlign: "center",
                          top: qrPosition1.y,
-                        width: qrPosition1.width,
                         height: qrPosition1.height,
                         flex: 1,
                       }}
