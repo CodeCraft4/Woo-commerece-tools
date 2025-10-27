@@ -170,11 +170,11 @@ const TextPopup = ({
       title={"Text Editing"}
       onClose={onClose}
       sx={{
-        width: 500,
-        height: 600,
-        left: '6%',
-        overflowY: "hidden",
-      }}
+        width: {md:500,sm:500,xs:'100%'},
+        mt:{md:0,sm:0,xs:4},
+        height: {md:600,sm:600,xs:500},
+        left: {md:'6%',sm:'6%',xs:10},
+        overflowY: "hidden",}}
     >
       {/* 1. MAIN ICON BAR (Visible if no child popup is active) */}
       <Box

@@ -9,15 +9,15 @@ import {
   Logout,
   Settings,
 } from "@mui/icons-material";
-import { useAdminStore } from "../../../stores";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
+import { useAdmin } from "../../../context/AdminContext";
 
 const Sidebar = () => {
   const location = useLocation();
   const pathname = location.pathname;
 
-  const { logout } = useAdminStore();
+  const { logout } = useAdmin();
 
   const {
     open: isConfirmModal,
@@ -85,7 +85,7 @@ const Sidebar = () => {
                 sx={{ display: "flex", gap: 1, alignItems: "center", flex: 1 }}
               >
                 {e.icon}
-                {e.title}
+                  {e.title}
               </Box>
 
               <ArrowForwardIos fontSize="small" />
@@ -99,7 +99,6 @@ const Sidebar = () => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            mt: "vh",
           }}
         >
           <Box
@@ -107,9 +106,9 @@ const Sidebar = () => {
               display: "flex",
               gap: 2,
               alignItems: "center",
-              mt: 35,
+              mt: {md:35,sm:35,xs:2},
               justifyContent: "center",
-              width: "90%",
+              width: "100%",
             }}
           >
             <Box

@@ -47,11 +47,6 @@ const FontColor3Popup = () => {
   }, [currentFontColor]);
 
   return (
-    // <PopupWrapper
-    //   title="Font Colors"
-    //   onClose={onClose}
-    //   sx={{ }}
-    // >
     <Box
       sx={{
         py: 2,
@@ -59,7 +54,7 @@ const FontColor3Popup = () => {
         justifyContent: "center",
         flexDirection: "column",
         alignItems: "center",
-        width: 460,
+        width: {md:460,sm:460,xs:'100%'},
         height: 420,
         mt: 4,
       }}
@@ -75,7 +70,6 @@ const FontColor3Popup = () => {
         }}
       />
     </Box>
-    // </PopupWrapper>
   );
 };
 

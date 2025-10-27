@@ -1,6 +1,6 @@
 import { Box, Button, Typography } from "@mui/material";
 import Applayout from "../../../layout/Applayout";
-import PreviewBookCard from "../../../components/PreviewCards/PreviewCards";
+import PreviewBookCard from "./component/PreviewCards/PreviewCards";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 

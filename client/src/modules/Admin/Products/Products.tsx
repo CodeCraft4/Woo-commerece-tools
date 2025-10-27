@@ -118,19 +118,6 @@ const Products = () => {
         }}
       >
         <Typography sx={{ fontSize: "25px" }}>PRODUCTS LIST</Typography>
-        {/* <Button
-          variant="outlined"
-          sx={{
-            border: "1px solid black",
-            borderRadius: 40,
-            px: 3,
-            color: "black",
-            display: "flex",
-            gap: 1,
-          }}
-        >
-          See All
-        </Button> */}
       </Box>
 
       {/* Tabs */}
@@ -195,7 +182,7 @@ const Products = () => {
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
-              minHeight: "50vh",
+              minHeight: {md:"50vh",sm:"50vh",xs:'auto'},
             }}
           >
             <CircularProgress disableShrink sx={{ color: "black" }} />

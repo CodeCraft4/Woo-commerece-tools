@@ -236,9 +236,10 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
       title="Video"
       onClose={onClose}
       sx={{
-        width: 300,
+        width: {md:300,sm:300,xs:'95%'},
         height: 600,
-        left: activeIndex === 0 ? "13%" : "16%",
+        left: activeIndex === 0 ? {md:"13%",sm:"13%",xs:10} : "16%",
+        mt:{md:0,sm:0,xs:4},
         overflow: "hidden",
       }}
     >

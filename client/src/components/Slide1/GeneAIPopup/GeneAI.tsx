@@ -285,7 +285,7 @@ const GeneAIPopup = (props: GeneAIType) => {
       const genAI = new GoogleGenerativeAI(
         "AIzaSyCOr6PVpYJ6tOltUM8qkhbf0Pm-F15XM6U"
       );
-      
+
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
       const result = await model.generateContent(
@@ -318,7 +318,12 @@ const GeneAIPopup = (props: GeneAIType) => {
     <PopupWrapper
       title="Gemini AI Designer"
       onClose={onClose}
-      sx={{ width: 350, height: 600, left: activeIndex === 0 ? "11%" : "16%" }}
+      sx={{
+        width: { md: 300, sm: 300, xs: "95%" },
+        height: 600,
+        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 10 } : "16%",
+        mt: { md: 0, sm: 0, xs: 4 },
+      }}
     >
       <canvas ref={canvasRef} style={{ display: "none" }} />
 

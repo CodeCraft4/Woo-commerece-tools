@@ -44,7 +44,7 @@ const MegaMenu = ({
       sx={{
         display: "flex",
         gap: "60px",
-        width: { md: "1310px", sm: "", xs: "auto" },
+        width: {lg:"1310px", md: "100%", sm: "", xs: "auto" },
         bgcolor: "white",
         p: 4,
         boxShadow: 3,

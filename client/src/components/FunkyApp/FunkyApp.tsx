@@ -8,7 +8,7 @@ const FunkyApp = () => {
       sx={{
         display: { md: "flex", sm: "flex", xs: "block" },
         width: "100%",
-        height: { md: 550, sm: 650, xs: "auto" },
+        height: { lg: 550, md: 450, sm: 650, xs: "auto" },
         bgcolor: "#f4e8fe",
         // color: COLORS.white,
         borderRadius: 4,
@@ -29,7 +29,7 @@ const FunkyApp = () => {
       >
         <Typography
           sx={{
-            fontSize: { md: "40px", sm: "", xs: "25px" },
+            fontSize: { md: "35px", sm: "", xs: "25px" },
             fontWeight: 800,
             textAlign: { md: "start", sm: "start", xs: "center" },
           }}
@@ -39,7 +39,7 @@ const FunkyApp = () => {
         <Typography
           sx={{
             fontSize: { md: "16px", sm: "", xs: "12px" },
-            width: { md: "80%", sm: "", xs: "100%" },
+            width: { lg: "80%", md: "100%", sm: "", xs: "100%" },
             fontWeight: 300,
           }}
         >
@@ -52,13 +52,14 @@ const FunkyApp = () => {
             display: { md: "flex", sm: "flex", xs: "block" },
             gap: "15px",
             mt: 3,
+            mx: "auto",
           }}
         >
           <Box
             component={"button"}
             sx={{
               ...deployBtn,
-              px: { md: 3, sm: 3, xs: 10 },
+              px: { lg: 8, md: 4, sm: 3, xs: 10 },
             }}
           >
             <Apple fontSize="large" />
@@ -67,11 +68,12 @@ const FunkyApp = () => {
               <Typography variant="h6">App Store</Typography>
             </Box>
           </Box>
+
           <Box
             component={"button"}
             sx={{
               ...deployBtn,
-              px: { md: 3, sm: 3, xs: 10 },
+              px: { lg: 8, md: 4, sm: 3, xs: 10 },
             }}
           >
             <Box

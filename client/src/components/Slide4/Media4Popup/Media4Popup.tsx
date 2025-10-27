@@ -21,7 +21,7 @@ interface Media4PopupProps {
   activeIndex?: number;
 }
 
-const Media4Popup = ({ onClose, mediaType, activeIndex }: Media4PopupProps) => {
+const Media4Popup = ({ onClose, mediaType }: Media4PopupProps) => {
   const isVideo = mediaType === "video";
   const { user } = useAuth();
   const {
@@ -198,9 +198,10 @@ const Media4Popup = ({ onClose, mediaType, activeIndex }: Media4PopupProps) => {
       title={isVideo ? "Video" : "Audio"}
       onClose={onClose}
       sx={{
-        width: 400,
+        width: { md: 400, sm: 400, xs: "95%" },
         height: 600,
-        left: activeIndex === 2 ? "4%" : activeIndex === 3 ? "50%" : "16%",
+        left: { md: "50%", sm: "50%", xs: 10 },
+        mt:{md:0,sm:0,xs:4},
         overflow: "hidden",
       }}
     >

@@ -1,5 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../constant/color";
+import { useNavigate } from "react-router-dom";
+import { USER_ROUTES } from "../../constant/route";
 
 type CategoryType = {
   id?: number;
@@ -10,9 +12,12 @@ type CategoryType = {
 
 const CategoryCard = (props: CategoryType) => {
   const { id, poster, title, borderColor } = props;
+  const navigate = useNavigate();
 
   return (
     <Box
+      component={"div"}
+     onClick={() => navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(title || "")}`)}
       key={id}
       sx={{
         border: "3px solid lightgray",
@@ -26,7 +31,7 @@ const CategoryCard = (props: CategoryType) => {
         alignItems: "center",
         textAlign: "center",
         bgcolor: COLORS.white,
-        ml: id === 1 ? { md: "215px", sm: "", xs: 0 } : 0,
+        ml: id === 1 ? { md: "275px", sm: "", xs: 0 } : 0,
         cursor: "pointer",
         transition: "border-color 0.3s ease",
         "&:hover": {

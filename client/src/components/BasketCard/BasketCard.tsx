@@ -16,7 +16,8 @@ type BasketType = {
 };
 
 const BasketCard = (props: BasketType) => {
-  const { poster, price, sales, id, title, category, saleprice } = props;
+  const { poster, price, sales, id, title, category, saleprice, openModal } =
+    props;
 
   const { addToCart } = useCartStore();
 
@@ -29,27 +30,32 @@ const BasketCard = (props: BasketType) => {
       price: price,
       category: category ? category : "default",
     });
-    toast.success("Product add to Cart");
+    toast.success("Product add to store");
   };
 
   return (
     <Box
       component={"div"}
-      // onClick={openModal}
       sx={{
         borderRadius: 2,
         width: { md: "250px", sm: " 250px", xs: "100%" },
         height: "450px",
         overflow: "hidden",
+        cursor: "pointer",
       }}
     >
       <Box
         component={"img"}
         src={poster}
+        onClick={() =>
+          openModal?.({
+            id,
+          })
+        }
         alt="backetImg"
         sx={{
           width: { md: "250px", sm: " 250px", xs: "100%" },
-          height: {md:"300px",sm:"300px",xs:'400px'},
+          height: { md: "300px", sm: "300px", xs: "400px" },
           objectFit: "cover",
           borderRadius: 2,
           "&:hover": { transform: "scale(1.03)" },

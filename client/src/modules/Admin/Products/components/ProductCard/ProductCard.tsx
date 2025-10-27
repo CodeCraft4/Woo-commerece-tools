@@ -35,8 +35,8 @@ const ProductCard = (props: Props) => {
     <Box
       component={"div"}
       sx={{
-        width: 280,
-        height: 400,
+        width: {md:280,sm:280,xs:'100%'},
+        height: {md:400,sm:400,xs:280},
         border: "1px solid #e0e0e0",
         borderRadius: 3,
         overflow: "hidden",

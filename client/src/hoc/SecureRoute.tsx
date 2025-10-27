@@ -4,8 +4,9 @@ import { ADMINS_DASHBOARD } from "../constant/route";
 
 const SecureRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAdmin, loading } = useAdmin();
+  console.log(loading,'-')
 
-  if (loading) return <div>Loading admin session...</div>;
+  // if (loading) return <div>Loading admin session...</div>;
   if (!isAdmin) return <Navigate to={ADMINS_DASHBOARD.SIGNIN} replace />;
 
   return <>{children}</>;

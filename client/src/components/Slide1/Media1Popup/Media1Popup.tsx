@@ -196,9 +196,10 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
       title={isVideo ? "Video" : "Audio"}
       onClose={onClose}
       sx={{
-        width: 300,
-        height: 600,
-        left: activeIndex === 0 ? "13%" : "16%",
+        width: { md: 300, sm: 300, xs: "95%" },
+        height: {md:600,sm:600,xs:540},
+        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 10 } : "16%",
+        mt: { md: 0, sm: 0, xs: 4 },
         overflow: "hidden",
       }}
     >
@@ -266,7 +267,7 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
                 title="Maybe Later"
                 width="100%"
                 variant="outlined"
-                 onClick={() => {
+                onClick={() => {
                   setTips1(false);
                   setUpload1(true);
                 }}
@@ -351,7 +352,7 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
                     }}
                   >
                     {userAudios.map((a) => (
-                       <Box
+                      <Box
                         key={a.id}
                         onClick={() => setSelectedAudioUrl1(a.url)}
                         sx={{
@@ -359,16 +360,16 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
                           border:
                             selectedAudioUrl1 === a.url
                               ? "3px solid #3a7bd5"
-                              : "1px solid #ccc", 
+                              : "1px solid #ccc",
                           borderRadius: 2,
                           overflow: "hidden",
                           width: "100%",
-                          height:80,
-                          display:'flex',
-                          alignItems:'center',
-                          flexDirection:'column',
-                          justifyContent:'center',
-                          m:'auto',
+                          height: 80,
+                          display: "flex",
+                          alignItems: "center",
+                          flexDirection: "column",
+                          justifyContent: "center",
+                          m: "auto",
                           cursor: "pointer",
                           opacity: selectedAudioUrl1 === a.url ? 1 : 0.8,
                           transition: "all 0.2s ease-in-out",
@@ -381,7 +382,7 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
                         <audio
                           src={a.url}
                           controls
-                          style={{ width: "100%",height:'40px' }}
+                          style={{ width: "100%", height: "40px" }}
                         />
                         <IconButton
                           onClick={() => handleDeleteAudio(a.id)}

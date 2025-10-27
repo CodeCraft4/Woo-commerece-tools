@@ -234,10 +234,11 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
     <PopupWrapper
       title="Video"
       onClose={onClose}
-      sx={{
-        width: 300,
+     sx={{
+        width: {md:300,sm:300,xs:'95%'},
         height: 600,
-        left: activeIndex === 2 ? "33%" : "17%",
+        left: activeIndex === 1 ? {md:"17%",sm:"13%",xs:10} : "16%",
+        mt:{md:0,sm:0,xs:4},
         overflow: "hidden",
       }}
     >

@@ -1,17 +1,36 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Box } from "@mui/material";
 import { COLORS } from "../../constant/color";
 import { SwapVert, TuneOutlined } from "@mui/icons-material";
 import { CATEGORIES_DATA } from "../../constant/data";
 
 const tabs = ["View All Filters", "For Her", "For Him", "For Kids"];
-const ViewAllCard = () => {
+
+type CategoryFilter = {
+  category?: number | string | null;
+};
+
+const ViewAllCard = (props: CategoryFilter) => {
+  const { category } = props;
+
   const [activeTab, setActiveTab] = useState(tabs[0]);
 
-  const filteredData =
-    activeTab === "View All Filters"
-      ? CATEGORIES_DATA
-      : CATEGORIES_DATA.filter((e) => e.category === activeTab);
+  // ✅ Apply filtering using useMemo for performance
+  const filteredData = useMemo(() => {
+    let data = CATEGORIES_DATA;
+
+    // 1️⃣ Filter by passed category ID (from click)
+    if (category) {
+      data = data.filter((item) => item.id === category);
+    }
+
+    // 2️⃣ Then apply tab-based filter (optional)
+    if (activeTab !== "View All Filters") {
+      data = data.filter((item) => item.category === activeTab);
+    }
+
+    return data;
+  }, [category, activeTab]);
 
   return (
     <Box>
@@ -84,7 +103,7 @@ const ViewAllCard = () => {
         sx={{
           display: "flex",
           flexWrap: "wrap",
-          justifyContent:{md:'auto',sm:'auto',xs:'center'},
+          justifyContent: { md: "auto", sm: "auto", xs: "center" },
           gap: "21px",
           mt: { md: 4, sm: 4, xs: 0 },
         }}

@@ -14,7 +14,7 @@ const PersonalGift = () => {
     >
       <Box
         sx={{
-          width: { md: "60%", sm: "", xs: "100%" },
+          width: {lg:'60%', md: "50%", sm: "", xs: "100%" },
           borderRadius: {
             md: "20px 0px 0px 20px",
             sm: "20px 0px 0px 20px",
@@ -39,7 +39,7 @@ const PersonalGift = () => {
       </Box>
       <Box
         sx={{
-          width: { md: "40%", sm: "", xs: "100%" },
+          width: {lg:'40%', md: "50%", sm: "", xs: "100%" },
           display: "flex",
           justifyContent: "center",
           flexDirection: "column",
@@ -71,7 +71,7 @@ const PersonalGift = () => {
             display: "flex",
             gap: "10px",
             flexWrap: "wrap",
-            width: { md: "500px", sm: "500px", xs: "100%" },
+            width: {lg:'500px', md: "460px", sm: "500px", xs: "100%" },
             mt: 2,
           }}
         >

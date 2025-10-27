@@ -45,7 +45,6 @@ import Sticker1Popup from "../Slide1/Sticker1Popup/Sticker1Popup";
 import Video1Popup from "../Slide1/Video1Popup/Video1Popup";
 import Media1Popup from "../Slide1/Media1Popup/Media1Popup";
 import FontSize1Popup from "../Slide1/FontSize1Popup/FontSize1Popup";
-import FontColor1Popup from "../Slide1/FontColors1Popup/FontColors1Popup";
 import FontFamily1Popup from "../Slide1/FontFamily1Popup/FontFamily1Popup";
 import Layout4Popup from "../Slide4/Layout4Popup/Layout4Popup";
 import Text4Popup from "../Slide4/Text4Popup/Text4Popup";
@@ -64,6 +63,7 @@ import { useSlide1 } from "../../context/Slide1Context";
 import { useSlide2 } from "../../context/Slide2Context";
 import { useSlide3 } from "../../context/Slide3Context";
 import { useSlide4 } from "../../context/Slide4Context";
+import FontColor1Popup from "../Slide1/FontColors1Popup/FontColors1Popup";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -301,7 +301,7 @@ const WishCard = () => {
             "&::-webkit-scrollbar": { display: "none" },
             gap: 10,
             px: 1,
-            py: 5,
+            py: { md: 5, sm: 5, xs: 1 },
             scrollSnapType: "x mandatory",
             scrollBehavior: "smooth",
           }}
@@ -317,14 +317,15 @@ const WishCard = () => {
                 key={e.id}
                 sx={{
                   flex: "0 0 auto",
-                  width: 400,
-                  height: 600,
-                  ml: index === 0 ? 80 : 0,
+                  width: { md: 400, sm: 400, xs: "100%" },
+                  height: { md: 600, sm: 600, xs: "500px" },
+                  ml: index === 0 ? { md: 80, sm: 80, xs: 0 } : 0,
                   borderRadius: 2,
+                  mt: { md: 0, sm: 0, xs: 12 },
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "row",
-                  boxShadow: 1,
+                  boxShadow: 5,
                   transition: "all 0.3s ease",
                   position: "relative",
                 }}
@@ -363,7 +364,7 @@ const WishCard = () => {
               </Box>
             );
           })}
-   
+
           {activeIndex === 0 && (
             <>
               {activePopup === "layout" && (
@@ -563,8 +564,12 @@ const WishCard = () => {
               {activePopup === "text" && (
                 <Text4Popup
                   onClose={() => setActivePopup(null)}
-                  onShowFontSizePopup={() => setActiveTextSlideLastChild("size")}
-                  onShowFontColorPopup={() => setActiveTextSlideLastChild("color")}
+                  onShowFontSizePopup={() =>
+                    setActiveTextSlideLastChild("size")
+                  }
+                  onShowFontColorPopup={() =>
+                    setActiveTextSlideLastChild("color")
+                  }
                   onShowFontFamilyPopup={() =>
                     setActiveTextSlideLastChild("family")
                   }
@@ -622,18 +627,20 @@ const WishCard = () => {
           {activeIndex === 0 && (
             <Box
               sx={{
-                height: "600px",
+                height: { md: "600px", sm: "600px", xs: "80px" },
+                width: { md: "auto", sm: "auto", xs: "95%" },
                 bgcolor: "white",
                 borderRadius: "4px",
                 p: 1,
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: { md: "column", sm: "column", xs: "row" },
+                overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
                 position: "absolute",
-                top: 40,
-                left: "31%",
+                top: { md: 40, sm: 40, xs: 10 },
+                left: { md: "31%", sm: "31%", xs: 10 },
                 zIndex: 10,
-                boxShadow: "3px 4px 12px #f0f0f0ff",
+                boxShadow: 3,
               }}
             >
               <IconButton
@@ -704,18 +711,20 @@ const WishCard = () => {
           {activeIndex === 1 && (
             <Box
               sx={{
-                height: "600px",
+                height: { md: "600px", sm: "600px", xs: "80px" },
+                width: { md: "auto", sm: "auto", xs: "95%" },
                 bgcolor: "white",
                 borderRadius: "4px",
                 p: 1,
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: { md: "column", sm: "column", xs: "row" },
+                overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
                 position: "absolute",
-                top: 40,
-                left: "34%",
+                top: { md: 40, sm: 40, xs: 10 },
+                left: { md: "34.5%", sm: "34.5%", xs: 10 },
                 zIndex: 10,
-                boxShadow: "3px 4px 12px #f0f0f0ff",
+                boxShadow: 3,
               }}
             >
               <IconButton
@@ -786,18 +795,20 @@ const WishCard = () => {
           {activeIndex === 2 && (
             <Box
               sx={{
-                height: "600px",
+                height: { md: "600px", sm: "600px", xs: "80px" },
+                width: { md: "auto", sm: "auto", xs: "95%" },
                 bgcolor: "white",
                 borderRadius: "4px",
                 p: 1,
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: { md: "column", sm: "column", xs: "row" },
+                overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
                 position: "absolute",
-                top: 40,
-                left: "46%",
+                top: { md: 40, sm: 40, xs: 10 },
+                left: { md: "46%", sm: "46%", xs: 10 },
                 zIndex: 10,
-                boxShadow: "3px 4px 12px #f0f0f0ff",
+                boxShadow: 3,
               }}
             >
               <IconButton
@@ -868,18 +879,20 @@ const WishCard = () => {
           {activeIndex === 3 && (
             <Box
               sx={{
-                height: "600px",
+                height: { md: "600px", sm: "600px", xs: "80px" },
+                width: { md: "auto", sm: "auto", xs: "95%" },
                 bgcolor: "white",
                 borderRadius: "4px",
                 p: 1,
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: { md: "column", sm: "column", xs: "row" },
+                overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
                 position: "absolute",
-                top: 40,
-                right: "23%",
+                top: { md: 40, sm: 40, xs: 10 },
+                right: { md: "23%", sm: "23%", xs: 10 },
                 zIndex: 10,
-                boxShadow: "3px 4px 12px #f0f0f0ff",
+                boxShadow: 3,
               }}
             >
               <IconButton

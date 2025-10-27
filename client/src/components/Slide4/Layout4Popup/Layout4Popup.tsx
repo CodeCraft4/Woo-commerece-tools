@@ -40,11 +40,23 @@ const Layout4Popup = ({ onClose, activeIndex }: Layout4PopupProps) => {
     <PopupWrapper
       title="Layout"
       onClose={onClose}
-      sx={{ width: 350,left:'53%' }}
+      sx={{
+        width: { md: 350, sm: 350, xs: "100%" },
+        left: { md: "53%", sm: "53%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 4 },
+      }}
       activeIndex={activeIndex}
     >
       {/* Layout Box */}
-      <Box sx={{ mt: 2, display: "flex", gap: 1, flexWrap: "wrap",bgcolor:'white' }}>
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          gap: 1,
+          flexWrap: "wrap",
+          bgcolor: "white",
+        }}
+      >
         {/* Blank layout */}
         <Box
           onClick={handleBlankLayout}

@@ -1,5 +1,5 @@
 import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
-import {Box, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../../../../constant/color";
 
 // --- Mock Data ---
@@ -53,13 +53,20 @@ const MinimalGradientAreaChart = ({
 // --- Total Product Chart (Pink/Red Gradient Card) ---
 const TotalProductChart = () => {
   return (
-    <Box sx={{ flex: "1 1 300px", maxWidth: 500, minWidth: 300 }}>
+    <Box
+      sx={{
+        flex: "1 1 300px",
+        maxWidth: { md: 500, sm: 300, xs: "100%" },
+        minWidth: 300,
+        mb:{md:0,sm:0,xs:1}
+      }}
+    >
       <Box
         sx={{
           position: "relative",
           p: 3,
           color: "white",
-          height: 240, // Fixed height for visual consistency
+          height: {md:240,sm:240,xs:180}, // Fixed height for visual consistency
           boxShadow: 8,
           borderRadius: 4,
           background: "linear-gradient(135deg, #ec4899 0%, #dc2626 100%)",
@@ -117,7 +124,7 @@ const TotalProductChart = () => {
             <Typography
               variant="body2"
               fontWeight="semibold"
-              sx={{ opacity: 0.8,color:COLORS.white }}
+              sx={{ opacity: 0.8, color: COLORS.white }}
             >
               +2% LAST WEEK
             </Typography>

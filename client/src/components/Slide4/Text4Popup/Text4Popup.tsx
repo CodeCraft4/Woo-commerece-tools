@@ -45,7 +45,6 @@ const Text4Popup = ({
   onShowFontColorPopup,
   onShowFontFamilyPopup,
   activeChildComponent,
-  activeIndex,
   onAddTextToCanvas,
 }: Text4PopupProps) => {
   const {
@@ -182,9 +181,10 @@ const Text4Popup = ({
       title={"Text Editing"}
       onClose={onClose}
       sx={{
-        width: 500,
+        width: { md: 500, sm: 500, xs: "100%" },
         height: 600,
-        left: activeIndex === 3 && "44.5%",
+        left: { md: "44.5%", sm: "44.5%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 4 },
         overflowY: "hidden",
       }}
     >

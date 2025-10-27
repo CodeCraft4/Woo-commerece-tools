@@ -21,7 +21,7 @@ const OfferBanner: React.FC = () => {
     <Box
       sx={{
         width: '100%',
-        height: '400px',
+        height: {md:'400px',sm:'400px',xs:'200px'},
         overflow: 'hidden',
         borderRadius: '12px',
         position: 'relative',

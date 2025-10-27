@@ -11,6 +11,8 @@ import "slick-carousel/slick/slick-theme.css";
 import { USER_ROUTES } from "../../constant/route";
 import { useNavigate } from "react-router-dom";
 import { fetchAllCardsFromDB } from "../../source/source";
+import useModal from "../../hooks/useModal";
+import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
 
 const TABS = ["Birthday Cards", "Letter box", "Under £30", "Under £60"];
 
@@ -26,9 +28,18 @@ const BasketSlider = (props: BirthdayTypes) => {
 
   const navigate = useNavigate();
 
+  const {
+    open: isDetailModal,
+    openModal: isOpenDetailModal,
+    closeModal: isCloseDetailModal,
+  } = useModal();
+
   const sliderRef = React.useRef<Slider | null>(null);
 
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(
+    undefined
+  );
 
   const { data: basketCards, isLoading } = useQuery({
     queryKey: ["basketCards"],
@@ -55,6 +66,11 @@ const BasketSlider = (props: BirthdayTypes) => {
     ],
   };
 
+  const openDetailModal = (cate: CategoryType) => {
+    setSelectedCate(cate);
+    isOpenDetailModal();
+  };
+
   return (
     <Box
       sx={{
@@ -62,8 +78,7 @@ const BasketSlider = (props: BirthdayTypes) => {
         m: "auto",
         position: "relative",
         mt: { md: 8, sm: 8, xs: 0 },
-        p:{md:0,sm:0,xs:4}
-
+        p: { md: 0, sm: 0, xs: 4 },
       }}
     >
       <Box
@@ -154,6 +169,7 @@ const BasketSlider = (props: BirthdayTypes) => {
           {filteredCards.map((cate, index) => (
             <BasketCard
               id={cate.id}
+              openModal={() => openDetailModal(cate)}
               key={index}
               title={cate.cardName}
               poster={cate.imageUrl || cate?.lastpageImageUrl}
@@ -165,13 +181,21 @@ const BasketSlider = (props: BirthdayTypes) => {
           ))}
         </Slider>
 
+        {isDetailModal && selectedCate && (
+          <ProductPopup
+            open={isDetailModal}
+            onClose={isCloseDetailModal}
+            cate={selectedCate}
+          />
+        )}
+
         {/* Custom arrows */}
         <IconButton
           onClick={() => sliderRef.current?.slickPrev()}
           sx={{
             position: "absolute",
             top: { md: "30%", sm: "30%", xs: "40%" },
-            left: { md: -25, sm: -25, xs: 1 },
+            left: 0,
             display: "flex",
             justifyContent: "center",
             m: "auto",

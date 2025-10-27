@@ -20,7 +20,7 @@ interface Video3PopupProps {
   activeIndex?: number;
 }
 
-const Video3Popup = ({ onClose, activeIndex }: Video3PopupProps) => {
+const Video3Popup = ({ onClose }: Video3PopupProps) => {
   const {
     tips3,
     setTips3,
@@ -236,9 +236,10 @@ const Video3Popup = ({ onClose, activeIndex }: Video3PopupProps) => {
       title="Video"
       onClose={onClose}
       sx={{
-        width: 300,
+        width: {md:300,sm:300,xs:'95%'},
         height: 600,
-        left: activeIndex === 2 ? "29%" : "16%",
+        left:{md:"29%",sm:"29%",xs:10},
+        mt:{md:0,sm:0,xs:5},
         overflow: "hidden",
       }}
     >

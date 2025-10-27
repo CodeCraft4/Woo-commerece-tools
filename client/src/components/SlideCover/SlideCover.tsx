@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, IconButton, TextField, Typography } from "@mui/material";
-import { Close, Forward10, TitleOutlined, UploadFileRounded } from "@mui/icons-material";
+import {
+  Close,
+  Forward10,
+  Forward30,
+  TitleOutlined,
+  UploadFileRounded,
+} from "@mui/icons-material";
 import QrGenerator from "../QR-code/Qrcode";
 import { Rnd } from "react-rnd";
 import { COLORS } from "../../constant/color";
@@ -38,41 +44,6 @@ const SlideCover = ({
   addTextRight,
   rightBox,
 }: SlideCoverProps) => {
-  const location = useLocation();
-  const { layout } = location.state || {};
-
-  useEffect(() => {
-    console.log("Layout from previous page:", layout);
-  }, [layout]);
-
-  const [layoutData, setLayoutData] = useState(layout);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
-    null
-  );
-
-  const handleImageUploadClick = (index: number) => {
-    setSelectedImageIndex(index);
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || selectedImageIndex === null) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const newSrc = event.target?.result as string;
-
-      // Replace the image source in layoutData
-      const updated = { ...layoutData };
-      updated.elements[selectedImageIndex].src = newSrc;
-      setLayoutData(updated);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const {
     images1,
     selectedImg1,
@@ -122,9 +93,66 @@ const SlideCover = ({
     removeSticker,
     aimage1,
     setAIImage1,
+    layout1,
+    setLayout1,
   } = useSlide1();
 
+  const location = useLocation();
+  const { layout } = location.state || {};
+
+  useEffect(() => {
+    if (layout && !layout1) {
+      setLayout1(layout);
+    }
+  }, [layout, layout1]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+    null
+  );
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  const handleImageUploadClick = (index: number) => {
+    setSelectedImageIndex(index);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || selectedImageIndex === null) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const newSrc = event.target?.result as string;
+
+      setLayout1((prev: any) => {
+        if (!prev?.elements) return prev;
+        const updatedElements = [...prev.elements];
+        updatedElements[selectedImageIndex] = {
+          ...updatedElements[selectedImageIndex],
+          src: newSrc,
+        };
+        return { ...prev, elements: updatedElements };
+      });
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const handleTextChange = (
+    e: React.ChangeEvent<HTMLDivElement>,
+    index: number
+  ) => {
+    const newText = e.target.innerText;
+    setLayout1((prev: any) => {
+      const updatedTextElements = [...prev.textElements];
+      updatedTextElements[index] = {
+        ...updatedTextElements[index],
+        text: newText,
+      };
+      return { ...prev, textElements: updatedTextElements };
+    });
+  };
 
   // Add this handler to initialize draggable state for images (omitted for brevity)
   useEffect(() => {
@@ -234,6 +262,7 @@ const SlideCover = ({
       }));
     }
   }, [selectedAudioUrl1]);
+  
 
   return (
     <Box
@@ -269,10 +298,19 @@ const SlideCover = ({
               : {},
           }}
         >
-            {layout && (
+          {layout1 && (
             <Box sx={{ width: "100%", height: "100%" }}>
-              {/* Render Images */}
-              {layout.elements.map((el: any, index: number) => (
+              {/* Hidden file input */}
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+
+              {/* Render Images from layout1 */}
+              {layout1.elements.map((el: any, index: number) => (
                 <Box
                   key={el.id}
                   sx={{
@@ -285,24 +323,16 @@ const SlideCover = ({
                     overflow: "hidden",
                   }}
                 >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    style={{ display: "none" }}
-                    onChange={handleFileChange}
-                  />
-
                   {/* Image */}
                   <Box
                     component="img"
-                    src={el.src}
+                    src={el.src} // This src now comes from layout1
                     sx={{
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
                       borderRadius: 1,
-                      filter:'brightness(70%)'
+                      filter: "brightness(70%)",
                     }}
                   />
 
@@ -320,23 +350,29 @@ const SlideCover = ({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      border:'1px solid white',
+                      border: "1px solid white",
                       cursor: "pointer",
                       "&:hover": {
                         backgroundColor: "rgba(0,0,0,0.6)",
                       },
                     }}
+                    // Pass the element's index to the click handler
                     onClick={() => handleImageUploadClick(index)}
                   >
-                    <UploadFileRounded sx={{color:'white'}}/>
+                    <UploadFileRounded sx={{ color: "white" }} />
                   </Box>
                 </Box>
               ))}
 
-              {/* Render Texts */}
-              {layout.textElements.map((te: any) => (
-                <Typography
-                  key={te.id}
+              {/* Render Texts from layout1 */}
+              {layout1.textElements?.map((te: any, index: number) => (
+                <Box
+                  key={te.id || index}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => handleTextChange(e as any, index)}
+                  onFocus={() => setEditingIndex(index)}
+                  onBlur={() => setEditingIndex(null)}
                   sx={{
                     position: "absolute",
                     left: te.x,
@@ -352,10 +388,18 @@ const SlideCover = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    outline:
+                      editingIndex === index ? "1px dashed #1976d2" : "none",
+                    borderRadius: "4px",
+                    cursor: "text",
+                    backgroundColor:
+                      editingIndex === index
+                        ? "rgba(25,118,210,0.1)"
+                        : "transparent",
                   }}
                 >
-                  {te.text}
-                </Typography>
+                  {te.text || ""}
+                </Box>
               ))}
             </Box>
           )}
@@ -664,79 +708,155 @@ const SlideCover = ({
               </Box>
             </Rnd>
           )}
-          
           {draggableImages1
             .filter((img: any) => selectedImg1.includes(img.id))
             .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
-            .map(({ id, src, x, y, width, height, zIndex }: any) => (
-              <Rnd
-                key={id}
-                size={{ width, height }}
-                position={{ x, y }}
-                onDragStop={(_, d) => {
-                  setDraggableImages1((prev) =>
-                    prev.map((img) =>
-                      img.id === id ? { ...img, x: d.x, y: d.y } : img
-                    )
-                  );
-                }}
-                style={{ zIndex: zIndex || 1 }}
-                onResizeStop={(_, __, ref, ___, position) => {
-                  const newWidth = parseInt(ref.style.width);
-                  const newHeight = parseInt(ref.style.height);
-                  setDraggableImages1((prev) =>
-                    prev.map((img) =>
-                      img.id === id
-                        ? {
-                            ...img,
-                            width: newWidth,
-                            height: newHeight,
-                            x: position.x,
-                            y: position.y,
-                          }
-                        : img
-                    )
-                  );
-                }}
-              >
-                <Box sx={{ position: "relative", m: "2px" }}>
-                  <img
-                    src={src}
-                    alt="Uploaded"
-                    style={{
+            .map(
+              ({ id, src, x, y, width, height, zIndex, rotation = 0 }: any) => (
+                <Rnd
+                  key={id}
+                  size={{ width, height }}
+                  position={{ x, y }}
+                  onDragStop={(_, d) => {
+                    setDraggableImages1((prev) =>
+                      prev.map((img) =>
+                        img.id === id ? { ...img, x: d.x, y: d.y } : img
+                      )
+                    );
+                  }}
+                  onResizeStop={(_, __, ref, ___, position) => {
+                    const newWidth = parseInt(ref.style.width);
+                    const newHeight = parseInt(ref.style.height);
+
+                    setDraggableImages1((prev) =>
+                      prev.map((img) =>
+                        img.id === id
+                          ? {
+                              ...img,
+                              width: newWidth,
+                              height: newHeight,
+                              x: position.x,
+                              y: position.y,
+                            }
+                          : img
+                      )
+                    );
+                  }}
+                  // Keep Rnd itself unrotated so drag/resize math remains correct
+                  style={{
+                    zIndex: zIndex || 1,
+                    boxSizing: "border-box",
+                    borderRadius: 8,
+                  }}
+                  enableResizing={{ bottomRight: true }}
+                  resizeHandleStyles={{
+                    bottomRight: {
+                      width: "10px",
+                      height: "10px",
+                      background: "white",
+                      border: "2px solid #1976d2",
+                      borderRadius: "10%",
+                      right: "-5px",
+                      bottom: "-5px",
+                    },
+                  }}
+                >
+                  {/* content wrapper fills the Rnd area */}
+                  <Box
+                    sx={{
+                      position: "relative",
                       width: "100%",
                       height: "100%",
-                      borderRadius: 8,
-                      pointerEvents: "none",
-                      objectFit: "cover",
-                    }}
-                  />
-                  {/* Close Button to unselect this image */}
-                  <Box
-                    onClick={() =>
-                      setSelectedImage1((prev) => prev.filter((i) => i !== id))
-                    }
-                    sx={{
-                      position: "absolute",
-                      top: 4,
-                      right: 4,
-                      bgcolor: "black",
-                      color: "white",
-                      borderRadius: "50%",
+                      overflow: "visible", // allow rotated corners to show
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      p: "2px",
-                      zIndex: 99,
-                      cursor: "pointer",
-                      "&:hover": { bgcolor: "#333" },
                     }}
                   >
-                    <Close fontSize="small" />
+                    {/* rotated inner wrapper — rotate image visually */}
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "block",
+                        transform: `rotate(${rotation}deg)`,
+                        transformOrigin: "center center",
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt="Uploaded"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: 8,
+                          pointerEvents: "none",
+                          border: "2px solid #1976d2",
+                          objectFit: "fill", // or 'contain' / 'cover' depending on what you want
+                          display: "block",
+                        }}
+                      />
+                    </Box>
+
+                    {/* rotate right button */}
+                    <Box
+                      onClick={() =>
+                        setDraggableImages1((prev) =>
+                          prev.map((img) =>
+                            img.id === id
+                              ? { ...img, rotation: (img.rotation || 0) + 15 }
+                              : img
+                          )
+                        )
+                      }
+                      sx={{
+                        position: "absolute",
+                        top: -20,
+                        left: 0,
+                        bgcolor: "black",
+                        color: "white",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        p: "2px",
+                        zIndex: 99,
+                        cursor: "pointer",
+                        "&:hover": { bgcolor: "#333" },
+                      }}
+                    >
+                      <Forward30 fontSize="small" />
+                    </Box>
+
+                    {/* close / deselect */}
+                    <Box
+                      onClick={() =>
+                        setSelectedImage1((prev) =>
+                          prev.filter((i) => i !== id)
+                        )
+                      }
+                      sx={{
+                        position: "absolute",
+                        top: -20,
+                        right: 0,
+                        bgcolor: "black",
+                        color: "white",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        p: "2px",
+                        zIndex: 99,
+                        cursor: "pointer",
+                        "&:hover": { bgcolor: "#333" },
+                      }}
+                    >
+                      <Close fontSize="small" />
+                    </Box>
                   </Box>
-                </Box>
-              </Rnd>
-            ))}
+                </Rnd>
+              )
+            )}
 
           {showOneTextRightSideBox1 && (
             <Box
@@ -745,11 +865,12 @@ const SlideCover = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                height: "100%",
-                width: "370px",
+                height: "97%",
+                width: { md: "370px", sm: "370px", xs: "90%" },
                 border: "3px dashed #3a7bd5",
-                position: "relative",
+                position: "absolute",
                 p: 1,
+                top: 10,
               }}
             >
               <IconButton
@@ -819,10 +940,12 @@ const SlideCover = ({
           {multipleTextValue1 && (
             <Box
               sx={{
-                height: "100%",
-                width: "375px",
+                height: "97%",
+                width: { md: "375px", sm: "375px", xs: "90%" },
                 borderRadius: "6px",
                 p: 1,
+                position: "absolute",
+                top: 10,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent:
@@ -1048,86 +1171,92 @@ const SlideCover = ({
               }
               bounds="parent"
               enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
                 bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "10px",
+                  height: "10px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "10%",
+                  right: "-5px",
+                  bottom: "-5px",
+                },
               }}
               style={{
                 zIndex: sticker.zIndex,
                 position: "absolute",
               }}
             >
-              <Box position={"relative"} width={10} bgcolor={"red"}>
+              {/* Make inner box fill Rnd */}
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                {/* Sticker image fills its container */}
                 <Box
-                  key={index}
                   component="img"
                   src={sticker.sticker}
                   sx={{
-                    position: "absolute",
-                    width: "100px",
-                    height: "auto",
+                    width: "100%", // ✅ dynamic with Rnd
+                    height: "100%", // ✅ dynamic with Rnd
+                    objectFit: "contain", // or "cover" if you want
                     transform: `rotate(${sticker.rotation || 0}deg)`,
                     transition: "transform 0.2s",
+                    pointerEvents: "none",
                   }}
                 />
-                <Box
+
+                {/* Control buttons */}
+                <IconButton
+                  size="small"
+                  onClick={() => removeSticker(index)}
                   sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
                     position: "absolute",
-                    width: "90px",
+                    top: -4,
+                    right: -24,
+                    bgcolor: "black",
+                    color: "white",
+                    p: 1,
+                    width: 25,
+                    height: 25,
+                    zIndex: 2,
+                    "&:hover": {
+                      bgcolor: "red",
+                    },
                   }}
                 >
-                  <IconButton
-                    size="small"
-                    onClick={() => removeSticker(index)}
-                    sx={{
-                      position: "absolute",
-                      top: -4,
-                      right: -24,
-                      bgcolor: "black",
-                      color: "white",
-                      p: 1,
-                      width: 25,
-                      height: 25,
-                      zIndex: 2,
-                      "&:hover": {
-                        bgcolor: "red",
-                      },
-                    }}
-                  >
-                    <Close fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() =>
-                      updateSticker(index, {
-                        rotation: ((sticker.rotation || 0) + 15) % 360,
-                      })
-                    }
-                    sx={{
-                      position: "absolute",
-                      top: -4,
-                      left: 0,
-                      bgcolor: "black",
-                      color: "white",
-                      p: 1,
-                      width: 25,
-                      height: 25,
-                      zIndex: 2,
-                      "&:hover": {
-                        bgcolor: "blue",
-                      },
-                    }}
-                  >
-                    <Forward10 fontSize="small" />
-                  </IconButton>
-                </Box>
+                  <Close fontSize="small" />
+                </IconButton>
+
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    updateSticker(index, {
+                      rotation: ((sticker.rotation || 0) + 15) % 360,
+                    })
+                  }
+                  sx={{
+                    position: "absolute",
+                    top: -4,
+                    left: 0,
+                    bgcolor: "black",
+                    color: "white",
+                    p: 1,
+                    width: 25,
+                    height: 25,
+                    zIndex: 2,
+                    "&:hover": {
+                      bgcolor: "blue",
+                    },
+                  }}
+                >
+                  <Forward10 fontSize="small" />
+                </IconButton>
               </Box>
             </Rnd>
           ))}

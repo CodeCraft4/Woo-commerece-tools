@@ -21,7 +21,12 @@ const StickerPopup = ({ onClose }: Sticker1PopupProps) => {
     <PopupWrapper
       title="Sticker"
       onClose={onClose}
-      sx={{ width: 300, height: 600, left: "17%" }}
+      sx={{
+        width: { md: 300, sm: 300, xs: "95%" },
+        height: 600,
+        mt: { md: 0, sm: 0, xs: 4 },
+        left: { md: "17%", sm: "17%", xs: 10 },
+      }}
     >
       <Box
         sx={{
@@ -50,7 +55,7 @@ const StickerPopup = ({ onClose }: Sticker1PopupProps) => {
             key={stick.id}
             onClick={() => handleSelectSticker(stick)} // ✅ handle click
             sx={{
-              width: "80px",
+              width: { md: "80px", sm: "80px", xs: "70px" },
               height: "90px",
               borderRadius: 2,
               bgcolor: "rgba(233, 232, 232, 1)",

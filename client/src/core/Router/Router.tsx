@@ -24,7 +24,7 @@ const Router = () => {
       <Route path={"/"} element={<LandingHome />} />
       <Route path={`${USER_ROUTES.HOME}/:id`} element={<Home />} />
       <Route path={USER_ROUTES.PREVIEW} element={<Preview />} />
-      <Route path={USER_ROUTES.VIEW_ALL} element={<ViewAll />} />
+      <Route path={`${USER_ROUTES.VIEW_ALL}/:search`} element={<ViewAll />} />
       <Route path={USER_ROUTES.ADD_TO_CART} element={<AddToCart />} />
       <Route path={USER_ROUTES.SUBSCRIPTION} element={<Subscription />} />
       <Route path={USER_ROUTES.SUCCESS_PAY} element={<SuccessPayment />} />

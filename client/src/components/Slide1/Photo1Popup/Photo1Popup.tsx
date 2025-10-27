@@ -204,9 +204,10 @@ const Photo1Popup = ({ onClose, activeIndex }: Photo1PopupProps) => {
       title="Photos"
       onClose={onClose}
       sx={{
-        width: 300,
-        height: 600,
-        left: activeIndex === 0 ? "13%" : "16%",
+        width: {md:300,sm:300,xs:'95%'},
+        height: {md:600,sm:600,xs:500},
+        mt:{md:0,sm:0,xs:4},
+        left: activeIndex === 0 ? {md:"13%",sm:'13%',xs:10} : "16%",
         zIndex: 99,
       }}
     >
