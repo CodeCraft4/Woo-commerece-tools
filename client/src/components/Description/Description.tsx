@@ -10,7 +10,7 @@ const Description = () => {
   };
 
   return (
-    <Box mt={2} sx={{ color: "black",p:{md:0,sm:0,xs:2} }}>
+    <Box mt={2} sx={{ color: "black",p:{lg:0,md:1,sm:0,xs:2} }}>
       <Typography
         sx={{
           fontSize: "20px",

@@ -196,9 +196,10 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
       title={isVideo ? "Video" : "Audio"}
       onClose={onClose}
       sx={{
-        width: 300,
-        height: 600,
-        left: activeIndex === 2 ? "33%" : "17%",
+        width: { md: 300, sm: 300, xs: "95%" },
+        height: {md:600,sm:600,xs:580},
+        left: activeIndex === 1 ? { md: "17%", sm: "13%", xs: 10 } : "16%",
+        mt: { md: 0, sm: 0, xs: 4 },
         overflow: "hidden",
       }}
     >

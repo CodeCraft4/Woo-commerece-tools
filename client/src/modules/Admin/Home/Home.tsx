@@ -8,7 +8,14 @@ const DashboardHome = () => {
     <DashboardLayout>
       <Typography sx={{ fontSize: "25px" }}>Analytics Overview</Typography>
       <br />
-      <Box sx={{ display: "flex", gap: 3, mt: 3, width: "100%" }}>
+      <Box
+        sx={{
+          display: { md: "flex", sm: "flex", xs: "block"},
+          gap: 3,
+          mt: 3,
+          width: "100%",
+        }}
+      >
         <TotalProductChart />
         <OrderChart />
         <OrderChart />

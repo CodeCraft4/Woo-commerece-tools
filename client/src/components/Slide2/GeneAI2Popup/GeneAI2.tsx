@@ -318,7 +318,12 @@ const GeneAI2Popup = (props: GeneAIType) => {
     <PopupWrapper
       title="Gemini AI Designer"
       onClose={onClose}
-      sx={{ width: 350, height: 600, left:"14%" }}
+      sx={{
+        width: { md: 300, sm: 300, xs: "95%" },
+        height: 600,
+        left:{ md: "17%", sm: "14%", xs: 10 },
+        mt: { md: 0, sm: 0, xs: 4 },
+      }}
     >
       <canvas ref={canvasRef} style={{ display: "none" }} />
 

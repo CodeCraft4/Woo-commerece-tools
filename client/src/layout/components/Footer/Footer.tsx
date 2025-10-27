@@ -8,10 +8,10 @@ const Footer = () => {
     <Box
       sx={{
         display: { md: "flex", sm: "", xs: "block" },
-        width: { md: "1360px", sm: "1360px", xs: "100%" },
+        width:['100%'],
         m: "auto",
         flexDirection: "column",
-        p: { md: 0, sm: 0, xs: 2 },
+        p: {lg:2, md: 1, sm: 0, xs: 2 },
       }}
     >
       <Box
@@ -64,7 +64,7 @@ const Footer = () => {
           mt: 5,
         }}
       >
-        <Box sx={{ width: { md: "50%", sm: "", xs: "100%" } }}>
+        <Box sx={{ width: {lg:'50%', md: "100%", sm: "", xs: "100%" } }}>
           <Typography sx={{ fontSize: "20px", fontWeight: 800 }}>
             Let's get Social
           </Typography>
@@ -106,7 +106,7 @@ const Footer = () => {
             />
           </Box>
         </Box>
-        <Box sx={{ width: { md: "50%", sm: "", xs: "100%" } }}>
+        <Box sx={{ width: { lg:'50%', md: "100%",sm: "", xs: "100%" } }}>
           <Typography sx={{ fontSize: "20px", fontWeight: 800 }}>
             Download the App
           </Typography>
@@ -115,7 +115,7 @@ const Footer = () => {
             sx={{
               display: { md: "flex", sm: "", xs: "block" },
               mt: 3,
-              width: { md: "70%", sm: "", xs: "100%" },
+              width: {lg:'70%', md: "100%", sm: "", xs: "100%" },
             }}
           >
             <Box

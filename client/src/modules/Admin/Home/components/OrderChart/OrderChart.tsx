@@ -1,5 +1,5 @@
 import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
-import {Box, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../../../../constant/color";
 
 const orderData = [
@@ -58,12 +58,12 @@ const OrderChart = () => {
           position: "relative",
           p: 3,
           color: "white",
-          height: 240, // Fixed height for visual consistency
+          height: { md: 240, sm: 240, xs: 180 },
           boxShadow: 8,
-          borderRadius:4,
+          borderRadius: 4,
+          mb:{md:0,sm:0,xs:2},
           background: "linear-gradient(135deg, #8b5cf6 0%, #4f0fb4ff 100%)",
           overflow: "hidden",
-          
         }}
       >
         {/* The minimal chart positioned absolutely behind the text/data */}

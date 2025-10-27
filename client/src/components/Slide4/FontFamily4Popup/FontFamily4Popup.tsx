@@ -52,11 +52,6 @@ const FontFamily4Popup = () => {
   }, [currentFontFamily]);
 
   return (
-    // <PopupWrapper
-    //   title="Font Family"
-    //   onClose={onClose}
-    //   sx={{  }}
-    // >
     <Box
       sx={{
         display: "flex",
@@ -64,7 +59,7 @@ const FontFamily4Popup = () => {
         gap: 1.5,
         mt: 2,
         overflowY: "auto",
-        width: 480,
+        width: {md:480,sm:480,xs:'100%'},
         height: "440px",
       }}
     >
@@ -111,7 +106,6 @@ const FontFamily4Popup = () => {
         );
       })}
     </Box>
-    // </PopupWrapper>
   );
 };
 

@@ -13,7 +13,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
 import LOGO from "/assets/images/blackLOGO.png";
-import { Logout, Person, Search, Settings } from "@mui/icons-material";
+import { Close, Logout, Person, Search, Settings } from "@mui/icons-material";
 import { megaMenuData, navLinks } from "../../../constant/data";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
@@ -23,6 +23,7 @@ import { Avatar, Badge, ListItemIcon, Menu, MenuItem } from "@mui/material";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { useAuth } from "../../../context/AuthContext";
+import SearchPopup from "../../../components/SearchPopup/SearchPopup";
 
 interface Props {
   window?: () => Window;
@@ -60,7 +61,7 @@ type MegaMenuKeys = keyof MegaMenuData;
 export default function Header(props: Props) {
   const { window } = props;
   const navigate = useNavigate();
-  const { user,signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { cart } = useCartStore();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -94,7 +95,7 @@ export default function Header(props: Props) {
   };
 
   const handleLogout = async () => {
-    signOut()
+    signOut();
     openLogout();
   };
 
@@ -105,13 +106,23 @@ export default function Header(props: Props) {
     closeModal: closeLogout,
   } = useModal();
 
+  // For Search Modal 
+  const {
+    open: isSearchPopup,
+    openModal: openSearchPopup,
+    closeModal: closeSearchPopup,
+  } = useModal();
+
   const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: "center", pt: 8 }}>
+    <Box sx={{ textAlign: "center", pt: 8 }}>
+      <IconButton sx={{ position: "absolute", top: 0, right: 2 }}>
+        <Close onClick={handleDrawerToggle} fontSize="large" />
+      </IconButton>
       <Box
         component={"img"}
         src={LOGO}
         alt="LOGO"
-        sx={{ width: 200, height: 50, mb: 8, borderBottom: "1px solid white" }}
+        sx={{ width: 200, height: 50, mb: {md:8,sm:8,xs:0} }}
       />
       <Divider />
       <List>
@@ -142,7 +153,7 @@ export default function Header(props: Props) {
     >
       <Box
         sx={{
-          width: { md: "1360px", sm: "1360px", xs: "100%" },
+          width: {lg: "1360px", md: "100%", sm: "1360px", xs: "100%" },
           display: "flex",
           justifyContent: "center",
           m: "auto",
@@ -162,9 +173,9 @@ export default function Header(props: Props) {
             <Box
               sx={{
                 display: { md: "none", sm: "none", xs: "flex" },
-                flexDirection:'column',
-                width:'100%',
-                mb:2
+                flexDirection: "column",
+                width: "100%",
+                mb: 2,
               }}
             >
               <Box
@@ -181,7 +192,7 @@ export default function Header(props: Props) {
                   onClick={handleDrawerToggle}
                   sx={{ mr: 2, color: COLORS.black }}
                 >
-                  <MenuIcon />
+                  <MenuIcon fontSize="large" />
                 </IconButton>
 
                 <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
@@ -272,6 +283,7 @@ export default function Header(props: Props) {
                   </IconButton>
                 </Box>
               </Box>
+              
               <Box
                 sx={{
                   border: `2px solid ${COLORS.black}`,
@@ -290,6 +302,7 @@ export default function Header(props: Props) {
                   component="input"
                   sx={searchInputStyle}
                   placeholder="Search for cards, gift and flowers...."
+                  onChange={openSearchPopup}
                 />
 
                 <Search fontSize="large" sx={{ color: COLORS.black, mr: 1 }} />
@@ -523,7 +536,7 @@ export default function Header(props: Props) {
             m: "auto",
             color: "white",
             p: 3,
-            width: "70%",
+            width: {lg:"70%",md:'100%',sm:'100%',xs:'100%'},
           }}
           // onMouseLeave={handleMouseLeave}
         >
@@ -550,7 +563,7 @@ export default function Header(props: Props) {
         </List>
         <Box
           sx={{
-            width: { md: "1360px", sm: "", xs: "auto" },
+            width: {lg:"1360px", md: "100%", sm: "", xs: "auto" },
             display: "flex",
             m: "auto",
             justifyContent: "center",
@@ -581,6 +594,15 @@ export default function Header(props: Props) {
       {isOpenLogout && (
         <ConfirmModal open={isOpenLogout} onCloseModal={closeLogout} />
       )}
+
+      {
+        isSearchPopup && (
+          <SearchPopup
+           open={isSearchPopup}
+           onClose={closeSearchPopup}
+          />
+        )
+      }
     </Box>
   );
 }

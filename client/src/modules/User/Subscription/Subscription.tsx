@@ -59,7 +59,7 @@ const Subscription = () => {
         sx={{
           bgcolor: "white",
           width: "100%",
-          height: "95vh",
+          height: { md: "95vh", sm: "95vh", xs: "auto" },
           display: "flex",
           alignItems: "start",
           flexDirection: "column",
@@ -71,7 +71,7 @@ const Subscription = () => {
           sx={{
             p: 2,
             textAlign: "start",
-            fontSize: "48px",
+            fontSize: { md: "48px", sm: "48px", xs: "20px" },
             fontWeight: "bold",
           }}
         >
@@ -79,17 +79,25 @@ const Subscription = () => {
         </Typography>
 
         <Container maxWidth="xl">
-          <Grid container spacing={3} sx={{ height: 600 }}>
+          <Grid
+            container
+            spacing={3}
+            sx={{ height: { md: 600, sm: 600, xs: "auto" } }}
+          >
             {/* Left Image */}
             <Grid
-              size={7}
+              size={{ md: 7, sm: 7, xs: 12 }}
               sx={{
-                backgroundImage:
-                  `url(${TableBgImg})`,
-                backgroundSize: "100% 100%",
+                backgroundImage: `url(${TableBgImg})`,
+                backgroundSize: {
+                  md: "100% 100%",
+                  sm: "100% 100%",
+                  xs: "100%",
+                },
                 borderRadius: 7,
                 border: "1px solid gray",
                 position: "relative",
+                height: { md: "auto", sm: "auto", xs: 300 },
               }}
             >
               <Box
@@ -99,9 +107,9 @@ const Subscription = () => {
                 sx={{
                   position: "absolute",
                   bottom: 100,
-                  left: 200,
-                  width: 200,
-                  height: 280,
+                  left: { md: 200, sm: 200, xs: 50 },
+                  width: { md: 200, sm: 200, xs: 100 },
+                  height: { md: 280, sm: 280, xs: 150 },
                 }}
               />
               <Box
@@ -110,8 +118,8 @@ const Subscription = () => {
                 alt="A4Img"
                 sx={{
                   position: "absolute",
-                  bottom: 100,
-                  right: 100,
+                  bottom: { md: 100, sm: 100, xs: 85 },
+                  right: { md: 100, sm: 100, xs: 0 },
                   width: previewSizes[selectedPlan].width,
                   height: previewSizes[selectedPlan].height,
                   transition: "all 0.3s ease",
@@ -121,7 +129,7 @@ const Subscription = () => {
 
             {/* Right Side - Plans */}
             <Grid
-              size={5}
+              size={{ md: 5, sm: 5, xs: 12 }}
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -129,7 +137,13 @@ const Subscription = () => {
                 textAlign: "start",
               }}
             >
-              <Box sx={{ p: 2, bgcolor: "#e6f1e9", borderRadius: 2 }}>
+              <Box
+                sx={{
+                  p: { md: 2, sm: 2, xs: "5px" },
+                  bgcolor: "#e6f1e9",
+                  borderRadius: 2,
+                }}
+              >
                 <Typography variant="h5">
                   🎉 We’ve saved your card design!
                 </Typography>
@@ -155,9 +169,23 @@ const Subscription = () => {
                       style={{ width: "30px", height: "30px" }}
                     />
                     <Box>
-                      <Typography fontWeight={900}>{plan.title}</Typography>
-                      <Typography fontSize={"13px"}>{plan.desc}</Typography>
-                      <Typography variant="h5">£{plan.price}</Typography>
+                      <Typography
+                        sx={{ fontWeight: { md: 900, sm: 900, xs: 700 } }}
+                      >
+                        {plan.title}
+                      </Typography>
+                      <Typography
+                        sx={{ fontSize: "13px", sm: "13px", xs: "10px" }}
+                      >
+                        {plan.desc}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: { md: "auto", sm: "auto", xs: "15px" },
+                        }}
+                      >
+                        £{plan.price}
+                      </Typography>
                     </Box>
                   </Box>
                   <Typography variant="h5">£{plan.price}</Typography>
@@ -171,7 +199,8 @@ const Subscription = () => {
                   style={{ width: "20px", height: "20px" }}
                 />
                 <Typography sx={{ fontSize: "14px", color: "gray" }}>
-                  I accept the Terms & Conditions and give my consent to proceed with the order.
+                  I accept the Terms & Conditions and give my consent to proceed
+                  with the order.
                 </Typography>
               </Box>
 
@@ -180,12 +209,12 @@ const Subscription = () => {
                 title="Add to Pay"
                 width="100%"
                 // loading={loading}
-              //   onClick={() => {
-              //     const plan = plans.find((p) => p.id === selectedPlan);
-              //     if (plan) {
-              //       handleStripeOrder(plan);
-              //     }
-              //   }}
+                //   onClick={() => {
+                //     const plan = plans.find((p) => p.id === selectedPlan);
+                //     if (plan) {
+                //       handleStripeOrder(plan);
+                //     }
+                //   }}
               />
             </Grid>
           </Grid>
@@ -203,7 +232,7 @@ const isActivePay = {
   justifyContent: "space-between",
   alignItems: "center",
   bgcolor: "#e9fbffff",
-  p: 1,
+  p: { md: 1, sm: 1, xs: "2px" },
   borderRadius: 2,
-  boxShadow:'3px 7px 8px #eff1f1ff'
+  boxShadow: "3px 7px 8px #eff1f1ff",
 };

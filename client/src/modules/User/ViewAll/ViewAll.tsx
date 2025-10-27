@@ -1,8 +1,16 @@
 import { Box, Typography } from "@mui/material";
 import MainLayout from "../../../layout/MainLayout";
 import ViewAllCard from "../../../components/ViewAllCard/ViewAllCard";
+import { useLocation, useParams } from "react-router-dom";
 
 const ViewAll = () => {
+
+ const { search } = useParams();
+  const location = useLocation();
+  const categoryId = location.state?.categoryId || null;
+  const categoryTitle = decodeURIComponent(search || "");
+
+
   return (
     <MainLayout>
       <Box
@@ -32,9 +40,19 @@ const ViewAll = () => {
               fontWeight: "bold",
             }}
           >
-            Search Title <span style={{ fontSize: "13px" }}>1234 results</span>{" "}
+           {categoryTitle} <span style={{ fontSize: "13px" }}>1234 results</span>
           </Typography>
-          <Typography
+           <Typography
+            sx={{
+              fontSize: { md: "14px", xs: "10px" },
+              // fontWeight: 300,
+              textAlign: "center",
+              width: { md: "100%", xs: "90%" },
+            }}
+          >
+            Browse all products under <b>{categoryTitle}</b> category.
+          </Typography>
+          {/* <Typography
             sx={{
               fontSize: { md: "14px", sm: "14px", xs: "10px" },
               fontWeight: 300,
@@ -47,9 +65,9 @@ const ViewAll = () => {
             blanditiis! Animi, enim. Molestias. Lorem ipsum dolor sit amet
             consectetur adipisicing elit. Modi obcaecati esse sunt voluptatum
             corporis atque sed rem ea, ad quae!
-          </Typography>
+          </Typography> */}
         </Box>
-        <ViewAllCard />
+        <ViewAllCard category={categoryId} />
         <br />
         <br />
         <br />

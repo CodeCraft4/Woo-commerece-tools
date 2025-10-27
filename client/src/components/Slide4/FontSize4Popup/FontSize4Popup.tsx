@@ -114,7 +114,7 @@ const FontSize4Popup = () => {
     <Box
       mt={4}
       sx={{
-        width: 400,
+        width: {md:400,sm:400,xs:'100%'},
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

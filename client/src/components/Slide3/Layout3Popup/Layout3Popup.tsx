@@ -40,7 +40,11 @@ const Layout3Popup = ({ onClose, activeIndex }: Layout3PopupProps) => {
     <PopupWrapper
       title="Layout"
       onClose={onClose}
-      sx={{ width: 300 }}
+      sx={{
+        width: { md: 300, sm: 300, xs: "100%" },
+        left: { md: "29%", sm: "29%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 4 },
+      }}
       activeIndex={activeIndex}
     >
       {/* Layout Box */}

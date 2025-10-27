@@ -1,29 +1,7 @@
-/* Button */
-button {
-  border: none;
-  background-color: transparent;
-  margin: 10px;
-  cursor: pointer;
-  transition: transform 0.5s;
-}
-
-button:focus {
-  outline: none;
-}
-
-button:hover i {
-  color: rgb(102, 102, 102);
-}
-
-i {
-  color: gray;
-  font-size: 4em;
-}
-
 /* Book */
 .book {
   width: 400px;
-  height: 550px;
+  height: 600px;
   position: relative;
   transition: transform 0.5s;
 }
@@ -39,7 +17,7 @@ i {
 
 .front {
   backface-visibility: hidden;
-  border-left: 6px solid #b6b6b6;
+  border-left: 6px solid #002c0f;
   border-radius: 10px;
 }
 
@@ -110,4 +88,53 @@ i {
   width: 380px;
   height: 400px;
   object-fit: cover;
+}
+
+/* Tablets (≤ 768px) */
+@media (max-width: 768px) {
+  .book {
+    width: 300px;
+    height: 420px;
+  }
+
+  .cover-img {
+    width: 280px;
+    height: 320px;
+  }
+
+  i {
+    font-size: 3em;
+  }
+}
+
+/* Mobile (≤ 480px) */
+@media (max-width: 480px) {
+  .book {
+    width: 350px;
+    height: 500px;
+  }
+
+
+  .book-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* ✅ show only one card in view */
+  }
+
+  .paper {
+    width: 100%;
+    height: 100%;
+  }
+
+  .front-content,
+  .back-content {
+    width: 200%;
+    height: 100%;
+  }
+
+  /* Optional: shrink button size on mobile */
+  button i {
+    font-size: 2.5em;
+  }
 }

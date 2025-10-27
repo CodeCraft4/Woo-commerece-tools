@@ -45,7 +45,6 @@ const Text3Popup = ({
   onShowFontColorPopup,
   onShowFontFamilyPopup,
   renderActiveTextSlide3Child,
-  activeIndex,
   onAddTextToCanvas,
 }: Text3PopupProps) => {
   const {
@@ -182,9 +181,10 @@ const Text3Popup = ({
       title={"Text Editing"}
       onClose={onClose}
       sx={{
-        width: 500,
-        height: 600,
-        left: activeIndex === 2 ? "18%" : "5%",
+        width: { md: 500, sm: 500, xs: "95%" },
+        mt: { md: 0, sm: 0, xs: 4 },
+        height: { md: 600, sm: 600, xs: 500 },
+        left: { md: "18%", sm: "18%", xs: 10 },
         overflowY: "hidden",
       }}
     >

@@ -153,7 +153,9 @@ const FirstSlide = (props: FirstSlideType) => {
   // Separate hidden file input for adding images to canvas elements
   const canvasFileRef = useRef<HTMLInputElement>(null);
   // Currently selected element for editing (select only)
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(
+    null
+  );
   // Selected text element id (for editing & toolbar)
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
   // Dragging guard to avoid click firing after drag
@@ -287,7 +289,7 @@ const FirstSlide = (props: FirstSlideType) => {
       </Box>
       <Box
         sx={{
-          display: "flex",
+          display: { md: "flex", sm: "flex", xs: "block" },
           gap: 2,
           alignItems: "center",
           width: "100%",
@@ -299,14 +301,14 @@ const FirstSlide = (props: FirstSlideType) => {
           <Box
             component={"div"}
             sx={{
-              width: "400px",
-              height: "600px",
+              width: { md: "400px", sm: "400px", xs: "100%" },
+              height: { md: "600px", sm: "600px", xs: "400px" },
               borderRadius: "12px",
               boxShadow: "3px 5px 8px gray",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: activeTab === 'text' ? 'white' : "#e6e6e6ff",
+              backgroundColor: activeTab === "text" ? "white" : "#e6e6e6ff",
               position: "relative",
               overflow: "hidden",
               border: "1px solid lightgray",
@@ -324,7 +326,7 @@ const FirstSlide = (props: FirstSlideType) => {
                   width: "100px",
                   display: "flex",
                   flexDirection: "column",
-                  height: "60%",
+                  height: {md:"60%",sm:"60%",xs:'100%'},
                   gap: 2,
                   alignItems: "center",
                   zIndex: 200,
@@ -531,11 +533,11 @@ const FirstSlide = (props: FirstSlideType) => {
                     bottom: "-5px",
                   },
                 }}
-                onClick={(e:any) => {
+                onClick={(e: any) => {
                   e.stopPropagation();
                   if (draggingRef.current) return;
                   setSelectedElementId(el.id);
-                  uploadToSelected(el.id); 
+                  uploadToSelected(el.id);
                 }}
               >
                 <Box
@@ -766,8 +768,8 @@ const FirstSlide = (props: FirstSlideType) => {
             <Box
               component={"div"}
               sx={{
-                width: "400px",
-                height: "600px",
+                width: { md: "400px", sm: "400px", xs: "100%" },
+                height: { md: "600px", sm: "600px", xs: "400px" },
                 borderRadius: "12px",
                 boxShadow: "3px 5px 8px gray",
                 display: "flex",
@@ -833,12 +835,13 @@ const FirstSlide = (props: FirstSlideType) => {
         {/* RIGHT SIDE — Tabs and Content */}
         <Box
           sx={{
-            width: "60%",
-            height: "600px",
+            width: { md: "75%", sm: "60%", xs: "100%" },
+            height: { md: "600px", sm: "600px", xs: "400px" },
             borderRadius: "12px",
             border: "1px solid lightgray",
             display: "flex",
             flexDirection: "column",
+            mt: { md: 0, sm: 0, xs: 3 },
           }}
         >
           {/* Tabs */}
@@ -894,7 +897,9 @@ const FirstSlide = (props: FirstSlideType) => {
           </Box>
 
           {/* Tab Content */}
-          <Box sx={{ p: 1, flex: 1, overflowY: "auto" }}>
+          <Box
+            sx={{ p: { md: 1, sm: 1, xs: "4px" }, flex: 1, overflowY: "auto" }}
+          >
             {activeTab === "shape" && (
               <>
                 <Box
@@ -910,8 +915,8 @@ const FirstSlide = (props: FirstSlideType) => {
                       key={shape.id}
                       onClick={() => setSelectedShapeImage(shape.path)}
                       sx={{
-                        width: 160,
-                        height: 150,
+                        width: { md: 160, sm: 160, xs: 90 },
+                        height: { md: 150, sm: 150, xs: 100 },
                         border: "1px solid lightgray",
                         borderRadius: "12px",
                         display: "flex",
@@ -922,8 +927,8 @@ const FirstSlide = (props: FirstSlideType) => {
                     >
                       <Box
                         sx={{
-                          width: "80px",
-                          height: "80px",
+                          width: { md: "80px", sm: "80px", xs: "50%" },
+                          height: { md: "80px", sm: "80px", xs: "50%" },
                           margin: "auto",
                           clipPath: shape.path,
                           backgroundColor:
@@ -938,6 +943,7 @@ const FirstSlide = (props: FirstSlideType) => {
                         align="center"
                         sx={{
                           mt: 1,
+                          fontSize: { md: "auto", sm: "auto", xs: "14px" },
                           color:
                             selectedShapeImage === shape.path
                               ? "orange"
@@ -955,20 +961,16 @@ const FirstSlide = (props: FirstSlideType) => {
             {activeTab === "text" && (
               <Box
                 sx={{
-                  display: {
-                    md: "flex",
-                    sm: "flex",
-                    xs: "block",
-                  },
+                  display: "flex",
                   flexWrap: "wrap",
                   width: "100%",
-                  gap: 2,
+                  gap:{md: 2,sm: 2,xs:1},
                 }}
               >
                 <Box
                   onClick={handleAddImage}
                   sx={{
-                    width: 200,
+                    width: { md: 200, sm: 200, xs: "140px" },
                     height: 100,
                     display: "flex",
                     flexDirection: "column",
@@ -986,7 +988,7 @@ const FirstSlide = (props: FirstSlideType) => {
                 <Box
                   onClick={handleAddText}
                   sx={{
-                    width: 200,
+                    width: { md: 200, sm: 200, xs: "140px" },
                     height: 100,
                     display: "flex",
                     flexDirection: "column",

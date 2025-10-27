@@ -82,14 +82,19 @@ const SettingForm = () => {
   };
 
   return (
-    <Box sx={{ p: 5 }}>
+    <Box sx={{ p: { md: 5, sm: 5, xs: 2 } }}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Box sx={{ display: "flex", width: "100%" }}>
+        <Box
+          sx={{
+            display: { md: "flex", sm: "flex", xs: "block" },
+            width: "100%",
+          }}
+        >
           {/* Left Side - Profile Image */}
           <Box
             sx={{
-              width: "50%",
-              p: 3,
+              width: { md: "50%", sm: "50%", xs: "100%" },
+              p:{md: 3,sm:3,xs:0},
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -99,8 +104,8 @@ const SettingForm = () => {
           >
             <Box
               sx={{
-                width: 350,
-                height: 350,
+                width: {md:350,sm:350,xs:250},
+                height: {md:350,sm:350,xs:250},
                 borderRadius: "50%",
                 overflow: "hidden",
                 border: "3px solid #ff4d00",
@@ -164,7 +169,12 @@ const SettingForm = () => {
           </Box>
 
           {/* Right Side - Form Fields */}
-          <Box sx={{ width: "50%", p: 3 }}>
+          <Box
+            sx={{
+              width: { md: "50%", sm: "50%", xs: "100%" },
+              p: {md:3,sm:3,xs:0},
+            }}
+          >
             <CustomInput
               label="First Name"
               placeholder="Enter first name"

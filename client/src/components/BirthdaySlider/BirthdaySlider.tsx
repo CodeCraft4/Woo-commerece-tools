@@ -58,30 +58,8 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     slidesToScroll: 2,
     arrows: false,
     responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 3,
-          slidesToScroll: 3,
-          infinite: true,
-          dots: true,
-        },
-      },
-      {
-        breakpoint: 600,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 2,
-          initialSlide: 2,
-        },
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
+      { breakpoint: 1024, settings: { slidesToShow: 4 } },
+      { breakpoint: 600, settings: { slidesToShow: 1, slidesToScroll: 1 } },
     ],
   };
 
@@ -103,7 +81,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         m: "auto",
         position: "relative",
         mt: { md: 8, sm: 8, xs: 0 },
-        p:{md:0,sm:0,xs:2}
+        p: { md: 0, sm: 0, xs: 2 },
       }}
     >
       <Box
@@ -189,7 +167,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                m: "auto",
+                mx: "auto",
               },
             }}
           >
@@ -198,18 +176,18 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           </Box>
         )}
         {/* Slider */}
-        <Slider ref={sliderRef} {...settings}>
-          {filteredCards?.map((cate) => (
-            <Box key={cate.id}>
+        <Box sx={{ width: "100%" }}>
+          <Slider ref={sliderRef} {...settings}>
+            {filteredCards?.map((cate) => (
               <ProductCard
                 poster={cate?.imageUrl || cate?.lastpageImageUrl}
                 tabsSlider
                 layoutCard={cate?.polygonLayout}
                 openModal={() => openDetailModal(cate)}
               />
-            </Box>
-          ))}
-        </Slider>
+            ))}
+          </Slider>
+        </Box>
 
         {isOpenDetailModal && selectedCate && (
           <ProductPopup
@@ -225,7 +203,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            left: { md: -25, sm: -25, xs: 0 },
+            left: 0,
             display: "flex",
             justifyContent: "center",
             m: "auto",
@@ -247,7 +225,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            right: { md: -20, sm: -20, xs: 0 },
+            right:0,
             display: "flex",
             justifyContent: "center",
             m: "auto",

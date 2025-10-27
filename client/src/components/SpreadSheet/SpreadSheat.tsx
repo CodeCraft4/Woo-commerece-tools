@@ -1,6 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Box, IconButton, TextField, Typography } from "@mui/material";
-import { Close, Forward10, TitleOutlined } from "@mui/icons-material";
+import {
+  Close,
+  Forward10,
+  Forward30,
+  TitleOutlined,
+} from "@mui/icons-material";
 import QrGenerator from "../QR-code/Qrcode";
 import { Rnd } from "react-rnd";
 import { COLORS } from "../../constant/color";
@@ -226,7 +231,7 @@ const SlideSpread = ({
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  backgroundColor: "rgba(105, 105, 105, 0.51)",
+                  backgroundColor: "rgba(146, 145, 145, 0.51)",
                   zIndex: 1000,
                   pointerEvents: "none",
                 }
@@ -342,146 +347,13 @@ const SlideSpread = ({
                     },
                     "& .MuiInputBase-input": {
                       overflowY: "auto",
-                      textAlign:'center',
+                      textAlign: "center",
                     },
                   }}
                 />
               </Box>
             </Rnd>
           ))}
-
-          {/* Existing Rnd components for QR codes and images... (omitted for brevity) */}
-          {/* {selectedVideoUrl && (
-            <Rnd
-              size={{ width: qrPosition.width, height: qrPosition.height }}
-              position={{ x: qrPosition.x, y: qrPosition.y }}
-              onDragStop={(_, d) =>
-                setQrPosition((prev) => ({
-                  ...prev,
-                  x: d.x,
-                  y: d.y,
-                  zIndex: qrPosition.zIndex, // Bring to front on drag
-                }))
-              }
-              onResizeStop={(_, __, ref, ___, position) => {
-                setQrPosition((prev) => ({
-                  ...prev,
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height),
-                  x: position.x,
-                  y: position.y,
-                  zIndex: qrPosition.zIndex, // Bring to front on resize
-                }));
-              }}
-              bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
-              style={{ zIndex: qrPosition.zIndex }} // Apply zIndex from qrPosition
-            >
-              <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-                <QrGenerator
-                  url={selectedVideoUrl}
-                  style={{ width: "100%", height: "100%" }} // Removed static zIndex from QrGenerator
-                  size={Math.min(qrPosition.width, qrPosition.height)}
-                />
-                <IconButton
-                  sx={{
-                    position: "absolute",
-                    top: -10,
-                    right: -10,
-                    width: 20,
-                    height: 20,
-                    zIndex: 2,
-                    // zIndex: qrPosition.zIndex + 1, // Higher zIndex for close button
-                    bgcolor: "black",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    "&:hover": { bgcolor: "black", color: "white" },
-                  }}
-                  onClick={() => setSelectedVideoUrl(null)}
-                >
-                  <Close fontSize="small" />
-                </IconButton>
-              </Box>
-            </Rnd>
-          )}
-
-          {selectedAudioUrl && (
-            <Rnd
-              size={{
-                width: qrAudioPosition.width,
-                height: qrAudioPosition.height,
-              }}
-              position={{ x: qrAudioPosition.x, y: qrAudioPosition.y }}
-              onDragStop={(_, d) =>
-                setQrAudioPosition((prev) => ({
-                  ...prev,
-                  x: d.x,
-                  y: d.y,
-                  zIndex: qrAudioPosition.zIndex,
-                }))
-              }
-              onResizeStop={(_, __, ref, ___, position) => {
-                setQrAudioPosition((prev) => ({
-                  ...prev,
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height),
-                  x: position.x,
-                  y: position.y,
-                  zIndex: qrAudioPosition.zIndex,
-                }));
-              }}
-              bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
-              style={{ zIndex: qrAudioPosition.zIndex }} // Apply zIndex from qrPosition
-            >
-              <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-                <QrGenerator
-                  url={selectedAudioUrl}
-                  style={{ width: "100%", height: "100%" }} // Removed static zIndex from QrGenerator
-                  size={Math.min(qrAudioPosition.width, qrAudioPosition.height)}
-                />
-                <IconButton
-                  sx={{
-                    position: "absolute",
-                    top: -10,
-                    right: -10,
-                    width: 20,
-                    height: 20,
-                    zIndex: 2,
-                    bgcolor: "black",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    "&:hover": { bgcolor: "black", color: "white" },
-                  }}
-                  onClick={() => setSelectedAudioUrl(null)}
-                >
-                  <Close fontSize="small" />
-                </IconButton>
-              </Box>
-            </Rnd>
-          )} */}
 
           {selectedVideoUrl && (
             <Rnd
@@ -673,77 +545,150 @@ const SlideSpread = ({
           {draggableImages
             .filter((img: any) => selectedImg.includes(img.id))
             .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
-            .map(({ id, src, x, y, width, height, zIndex }: any) => (
-              <Rnd
-                key={id}
-                size={{ width, height }}
-                position={{ x, y }}
-                onDragStop={(_, d) => {
-                  setDraggableImages((prev) =>
-                    prev.map((img) =>
-                      img.id === id ? { ...img, x: d.x, y: d.y } : img
-                    )
-                  );
-                }}
-                style={{ zIndex: zIndex || 1 }}
-                onResizeStop={(_, __, ref, ___, position) => {
-                  const newWidth = parseInt(ref.style.width);
-                  console.log(newWidth, "-");
-                  const newHeight = parseInt(ref.style.height);
-                  console.log(newHeight, "-height");
-                  setDraggableImages((prev) =>
-                    prev.map((img) =>
-                      img.id === id
-                        ? {
-                            ...img,
-                            width: newWidth,
-                            height: newHeight,
-                            x: position.x,
-                            y: position.y,
-                          }
-                        : img
-                    )
-                  );
-                }}
-              >
-                <Box sx={{ position: "relative", m: "2px" }}>
-                  <img
-                    src={src}
-                    alt="Uploaded"
-                    style={{
+            .map(
+              ({ id, src, x, y, width, height, zIndex, rotation = 0 }: any) => (
+                <Rnd
+                  key={id}
+                  size={{ width, height }}
+                  position={{ x, y }}
+                  onDragStop={(_, d) => {
+                    setDraggableImages((prev) =>
+                      prev.map((img) =>
+                        img.id === id ? { ...img, x: d.x, y: d.y } : img
+                      )
+                    );
+                  }}
+                  onResizeStop={(_, __, ref, ___, position) => {
+                    const newWidth = parseInt(ref.style.width);
+                    const newHeight = parseInt(ref.style.height);
+
+                    setDraggableImages((prev) =>
+                      prev.map((img) =>
+                        img.id === id
+                          ? {
+                              ...img,
+                              width: newWidth,
+                              height: newHeight,
+                              x: position.x,
+                              y: position.y,
+                            }
+                          : img
+                      )
+                    );
+                  }}
+                  // Keep Rnd itself unrotated so drag/resize math remains correct
+                  style={{
+                    zIndex: zIndex || 1,
+                    boxSizing: "border-box",
+                    borderRadius: 8,
+                  }}
+                  enableResizing={{ bottomRight: true }}
+                  resizeHandleStyles={{
+                    bottomRight: {
+                      width: "10px",
+                      height: "10px",
+                      background: "white",
+                      border: "2px solid #1976d2",
+                      borderRadius: "10%",
+                      right: "-5px",
+                      bottom: "-5px",
+                    },
+                  }}
+                >
+                  {/* content wrapper fills the Rnd area */}
+                  <Box
+                    sx={{
+                      position: "relative",
                       width: "100%",
                       height: "100%",
-                      borderRadius: 8,
-                      pointerEvents: "none",
-                      objectFit: "cover",
-                    }}
-                  />
-                  {/* Close Button to unselect this image */}
-                  <Box
-                    onClick={() =>
-                      setSelectedImage((prev) => prev.filter((i) => i !== id))
-                    }
-                    sx={{
-                      position: "absolute",
-                      top: 4,
-                      right: 4,
-                      bgcolor: "black",
-                      color: "white",
-                      borderRadius: "50%",
+                      overflow: "visible", // allow rotated corners to show
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      p: "2px",
-                      zIndex: 99,
-                      cursor: "pointer",
-                      "&:hover": { bgcolor: "#333" },
                     }}
                   >
-                    <Close fontSize="small" />
+                    {/* rotated inner wrapper — rotate image visually */}
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "block",
+                        transform: `rotate(${rotation}deg)`,
+                        transformOrigin: "center center",
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt="Uploaded"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: 8,
+                          pointerEvents: "none",
+                          border: "2px solid #1976d2",
+                          objectFit: "fill", // or 'contain' / 'cover' depending on what you want
+                          display: "block",
+                        }}
+                      />
+                    </Box>
+
+                    {/* rotate right button */}
+                    <Box
+                      onClick={() =>
+                        setDraggableImages((prev) =>
+                          prev.map((img) =>
+                            img.id === id
+                              ? { ...img, rotation: (img.rotation || 0) + 15 }
+                              : img
+                          )
+                        )
+                      }
+                      sx={{
+                        position: "absolute",
+                        top: -20,
+                        left: 0,
+                        bgcolor: "black",
+                        color: "white",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        p: "2px",
+                        zIndex: 99,
+                        cursor: "pointer",
+                        "&:hover": { bgcolor: "#333" },
+                      }}
+                    >
+                      <Forward30 fontSize="small" />
+                    </Box>
+
+                    {/* close / deselect */}
+                    <Box
+                      onClick={() =>
+                        setSelectedImage((prev) => prev.filter((i) => i !== id))
+                      }
+                      sx={{
+                        position: "absolute",
+                        top: -20,
+                        right: 0,
+                        bgcolor: "black",
+                        color: "white",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        p: "2px",
+                        zIndex: 99,
+                        cursor: "pointer",
+                        "&:hover": { bgcolor: "#333" },
+                      }}
+                    >
+                      <Close fontSize="small" />
+                    </Box>
                   </Box>
-                </Box>
-              </Rnd>
-            ))}
+                </Rnd>
+              )
+            )}
 
           {showOneTextRightSideBox && (
             <Box
@@ -753,7 +698,7 @@ const SlideSpread = ({
                 alignItems: "center",
                 justifyContent: "center",
                 height: "100%",
-                width: "370px",
+                width: { md: "370px", sm: "370px", xs: "100%" },
                 border: "3px dashed #3a7bd5",
                 position: "relative",
                 p: 1,
@@ -827,7 +772,7 @@ const SlideSpread = ({
             <Box
               sx={{
                 height: "100%",
-                width: "375px",
+                width: { md: "375px", sm: "375px", xs: "100%" },
                 borderRadius: "6px",
                 p: 1,
                 display: "flex",
@@ -1055,86 +1000,92 @@ const SlideSpread = ({
               }
               bounds="parent"
               enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
                 bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "10px",
+                  height: "10px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "10%",
+                  right: "-5px",
+                  bottom: "-5px",
+                },
               }}
               style={{
                 zIndex: sticker.zIndex,
                 position: "absolute",
               }}
             >
-              <Box position={"relative"} width={10} bgcolor={"red"}>
+              {/* Make inner box fill Rnd */}
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                {/* Sticker image fills its container */}
                 <Box
-                  key={index}
                   component="img"
                   src={sticker.sticker}
                   sx={{
-                    position: "absolute",
-                    width: "100px",
-                    height: "auto",
+                    width: "100%", // ✅ dynamic with Rnd
+                    height: "100%", // ✅ dynamic with Rnd
+                    objectFit: "contain", // or "cover" if you want
                     transform: `rotate(${sticker.rotation || 0}deg)`,
                     transition: "transform 0.2s",
+                    pointerEvents: "none",
                   }}
                 />
-                <Box
+
+                {/* Control buttons */}
+                <IconButton
+                  size="small"
+                  onClick={() => removeSticker2(index)}
                   sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
                     position: "absolute",
-                    width: "90px",
+                    top: -4,
+                    right: -24,
+                    bgcolor: "black",
+                    color: "white",
+                    p: 1,
+                    width: 25,
+                    height: 25,
+                    zIndex: 2,
+                    "&:hover": {
+                      bgcolor: "red",
+                    },
                   }}
                 >
-                  <IconButton
-                    size="small"
-                    onClick={() => removeSticker2(index)}
-                    sx={{
-                      position: "absolute",
-                      top: -4,
-                      right: -24,
-                      bgcolor: "black",
-                      color: "white",
-                      p: 1,
-                      width: 25,
-                      height: 25,
-                      zIndex: 2,
-                      "&:hover": {
-                        bgcolor: "red",
-                      },
-                    }}
-                  >
-                    <Close fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() =>
-                      updateSticker2(index, {
-                        rotation: ((sticker.rotation || 0) + 15) % 360,
-                      })
-                    }
-                    sx={{
-                      position: "absolute",
-                      top: -4,
-                      left: 0,
-                      bgcolor: "black",
-                      color: "white",
-                      p: 1,
-                      width: 25,
-                      height: 25,
-                      zIndex: 2,
-                      "&:hover": {
-                        bgcolor: "blue",
-                      },
-                    }}
-                  >
-                    <Forward10 fontSize="small" />
-                  </IconButton>
-                </Box>
+                  <Close fontSize="small" />
+                </IconButton>
+
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    updateSticker2(index, {
+                      rotation: ((sticker.rotation || 0) + 15) % 360,
+                    })
+                  }
+                  sx={{
+                    position: "absolute",
+                    top: -4,
+                    left: 0,
+                    bgcolor: "black",
+                    color: "white",
+                    p: 1,
+                    width: 25,
+                    height: 25,
+                    zIndex: 2,
+                    "&:hover": {
+                      bgcolor: "blue",
+                    },
+                  }}
+                >
+                  <Forward10 fontSize="small" />
+                </IconButton>
               </Box>
             </Rnd>
           ))}

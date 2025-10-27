@@ -13,7 +13,7 @@ interface Photo4PopupProps {
   activeIndex?: number;
 }
 
-const Photo4Popup = ({ onClose, activeIndex }: Photo4PopupProps) => {
+const Photo4Popup = ({ onClose }: Photo4PopupProps) => {
   const {
     images4,
     setSelectedImage4,
@@ -212,9 +212,10 @@ const Photo4Popup = ({ onClose, activeIndex }: Photo4PopupProps) => {
       title="Photos"
       onClose={onClose}
       sx={{
-        width: 350,
+        width: { md: 350, sm: 350, xs: "95%" },
         height: 600,
-        left: activeIndex === 2 ? "4%" : activeIndex === 3 ? "53%" : "16%",
+        left: { md: "53%", sm: "53%", xs: 10 },
+        mt: { md: 0, sm: 0, xs: 4 },
         zIndex: 99,
       }}
     >

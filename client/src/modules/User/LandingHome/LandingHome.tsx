@@ -56,9 +56,10 @@ const LandingHome = () => {
           flexDirection: "column",
           gap: "40px",
           // width: "100%",
-          width: { md: "1360px", sm: "", xs: "100%" },
+          width: "100% ",
           justifyContent: "center",
           m: "auto",
+          p: 3,
         }}
       >
         {/* Categories */}
@@ -106,7 +107,7 @@ const LandingHome = () => {
             gap: { md: "13px", sm: "13px", xs: "10px" },
             alignItems: "center",
             overflowX: "auto",
-            width: { lg: "99.4%", sm: "100%", xs: "100%" },
+            width: { lg: "99.4%", md: "99%", sm: "100%", xs: "100%" },
             mr: { md: "5px", sm: "5px", xs: 0 },
             ml: { md: "5px", sm: "5px", xs: 0 },
             pb: { md: 3, sm: 3, xs: 2 },

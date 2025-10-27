@@ -6,11 +6,10 @@ import { useSlide1 } from "../../../context/Slide1Context";
 
 interface Layout1PopupProps {
   onClose: () => void;
-  activeIndex?:number
-
+  activeIndex?: number;
 }
 
-const Layout1Popup = ({ onClose,activeIndex }: Layout1PopupProps) => {
+const Layout1Popup = ({ onClose, activeIndex }: Layout1PopupProps) => {
   const {
     setShowOneTextRightSideBox1,
     setMultipleTextValue1,
@@ -31,8 +30,6 @@ const Layout1Popup = ({ onClose,activeIndex }: Layout1PopupProps) => {
     setMultipleTextValue1(false); // hide others
   };
 
-
-  
   const handleMultipleTextLayout = () => {
     setSelectedLayout1((prev) => {
       if (prev === "multipleText") {
@@ -47,10 +44,18 @@ const Layout1Popup = ({ onClose,activeIndex }: Layout1PopupProps) => {
       }
     });
   };
-   
 
   return (
-    <PopupWrapper title="Layout" onClose={onClose} sx={{ width: 300,left:'14%' }} activeIndex={activeIndex}>
+    <PopupWrapper
+      title="Layout"
+      onClose={onClose}
+      sx={{
+        width: { md: 300, sm: 300, xs: "100%" },
+        left: { md: "14%", sm: "14%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 4 },
+      }}
+      activeIndex={activeIndex}
+    >
       {/* Layout Box */}
       <Box sx={{ mt: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
         {/* Blank layout */}
@@ -62,7 +67,10 @@ const Layout1Popup = ({ onClose,activeIndex }: Layout1PopupProps) => {
             alignItems: "center",
             height: "200px",
             width: "130px",
-            border: selectedLayout1 === "blank" ? "2px solid #3a7bd5" : "1px solid #555555ff",
+            border:
+              selectedLayout1 === "blank"
+                ? "2px solid #3a7bd5"
+                : "1px solid #555555ff",
             borderRadius: "6px",
             flexDirection: "column",
             gap: 1,
@@ -71,7 +79,8 @@ const Layout1Popup = ({ onClose,activeIndex }: Layout1PopupProps) => {
             cursor: "pointer",
             backgroundColor: selectedLayout1 === "blank" ? "#f0f8ff" : "white",
             "&:hover": {
-              backgroundColor: selectedLayout1 === "blank" ? "#f0f8ff" : "#f0f0f0",
+              backgroundColor:
+                selectedLayout1 === "blank" ? "#f0f8ff" : "#f0f0f0",
             },
           }}
         >
@@ -109,14 +118,19 @@ const Layout1Popup = ({ onClose,activeIndex }: Layout1PopupProps) => {
           sx={{
             height: "200px",
             width: "130px",
-            border: selectedLayout1 === "oneText" ? "2px solid #3a7bd5" : "1px solid #555555ff",
+            border:
+              selectedLayout1 === "oneText"
+                ? "2px solid #3a7bd5"
+                : "1px solid #555555ff",
             borderRadius: "6px",
             p: 1.5,
             cursor: "pointer",
             position: "relative",
-            backgroundColor: selectedLayout1 === "oneText" ? "#f0f8ff" : "white",
+            backgroundColor:
+              selectedLayout1 === "oneText" ? "#f0f8ff" : "white",
             "&:hover": {
-              backgroundColor: selectedLayout1 === "oneText" ? "#f0f8ff" : "#f0f0f0",
+              backgroundColor:
+                selectedLayout1 === "oneText" ? "#f0f8ff" : "#f0f0f0",
             },
           }}
           onClick={handleOneTextLayout}
@@ -167,7 +181,10 @@ const Layout1Popup = ({ onClose,activeIndex }: Layout1PopupProps) => {
           sx={{
             height: "200px",
             width: "140px",
-            border: selectedLayout1 === "multipleText" ? "2px solid #3a7bd5" : "1px solid #555555ff",
+            border:
+              selectedLayout1 === "multipleText"
+                ? "2px solid #3a7bd5"
+                : "1px solid #555555ff",
             borderRadius: "6px",
             p: 1,
             display: "flex",
@@ -175,9 +192,11 @@ const Layout1Popup = ({ onClose,activeIndex }: Layout1PopupProps) => {
             gap: 2,
             position: "relative",
             cursor: "pointer",
-            backgroundColor: selectedLayout1 === "multipleText" ? "#f0f8ff" : "white",
+            backgroundColor:
+              selectedLayout1 === "multipleText" ? "#f0f8ff" : "white",
             "&:hover": {
-              backgroundColor: selectedLayout1 === "multipleText" ? "#f0f8ff" : "#f0f0f0",
+              backgroundColor:
+                selectedLayout1 === "multipleText" ? "#f0f8ff" : "#f0f0f0",
             },
           }}
           onClick={handleMultipleTextLayout}

@@ -20,7 +20,7 @@ interface Video4PopupProps {
   activeIndex?: number;
 }
 
-const Video4Popup = ({ onClose, activeIndex }: Video4PopupProps) => {
+const Video4Popup = ({ onClose }: Video4PopupProps) => {
   const {
     tips4,
     setTips4,
@@ -236,9 +236,10 @@ const Video4Popup = ({ onClose, activeIndex }: Video4PopupProps) => {
       title="Video"
       onClose={onClose}
       sx={{
-        width: 400,
+        width: { md: 400, sm: 400, xs: "95%" },
         height: 600,
-        left: activeIndex === 2 ? "29%" : activeIndex === 3 ? "50%" : "16%",
+        left: { md: "50%", sm: "50%", xs: 10 },
+        mt:{md:0,sm:0,xs:4},
         overflow: "hidden",
       }}
     >
@@ -304,7 +305,7 @@ const Video4Popup = ({ onClose, activeIndex }: Video4PopupProps) => {
                 title="Maybe Later"
                 width="100%"
                 variant="outlined"
-               onClick={() => {
+                onClick={() => {
                   setTips4(false);
                   setUpload4(true);
                 }}

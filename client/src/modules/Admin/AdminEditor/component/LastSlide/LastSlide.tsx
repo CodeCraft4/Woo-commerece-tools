@@ -21,19 +21,26 @@ const LastSlide = () => {
 
   return (
     <Box>
-    <Box sx={{display:'flex',justifyContent:'space-between',alignItems:'center',mb:1}}>
-      <Typography sx={{ fontSize: "25px" }}>Last Slide</Typography>
-      <LandingButton
-        title="Save Changes"
-        // onClick={() => navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS)}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 1,
+        }}
+      >
+        <Typography sx={{ fontSize: "25px" }}>Last Slide</Typography>
+        <LandingButton
+          title="Save Changes"
+          // onClick={() => navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS)}
         />
-        </Box>
+      </Box>
       <Box
         sx={{
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          height: "700px",
+          height: { md: "700px", sm: "700px", xs: 400 },
         }}
       >
         <Box
@@ -98,10 +105,10 @@ const LastSlide = () => {
           {/* Editable Text Field */}
           <Box sx={{ width: "100%", mt: 2 }}>
             <TextField
-             placeholder="Enter you Details"
-             fullWidth
-             multiline
-             rows={2}
+              placeholder="Enter you Details"
+              fullWidth
+              multiline
+              rows={2}
             />
           </Box>
         </Box>

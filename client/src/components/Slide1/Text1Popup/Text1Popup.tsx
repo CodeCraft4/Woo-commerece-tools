@@ -172,8 +172,9 @@ const Text1Popup = ({
       title={"Text Editing"}
       onClose={onClose}
       sx={{
-        width: 500,
-        height: 600,
+        width: {md:500,sm:500,xs:'100%'},
+        mt:{md:0,sm:0,xs:4},
+        height: {md:600,sm:600,xs:500},
         left: activeIndex === 0 ? '2%' : "5%",
         overflowY: "hidden",
       }}

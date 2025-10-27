@@ -198,10 +198,11 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
       title={isVideo ? "Video" : "Audio"}
       onClose={onClose}
       sx={{
-        width: 300,
-        height: 600,
-        left: "29%",
-        overflow: "hidden",
+        width: { md: 300, sm: 300, xs: "95%" },
+        height: { md: 600, sm: 600, xs: 540 },
+        left: { md: "29%", sm: "29%", xs: 10 },
+        mt:{md:0,sm:0,xs:4},
+        overflow: "auto",
       }}
     >
       {tips3 && (
@@ -225,7 +226,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
           <Box p={2}>
             <Typography
               sx={{
-                fontSize: "23px",
+                fontSize: {md:"23px",sm:"23px",xs:'20px'},
                 fontWeight: "bold",
                 color: "#363636ff",
                 textAlign: "center",

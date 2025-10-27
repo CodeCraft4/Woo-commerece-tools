@@ -200,10 +200,14 @@ const NewCardsForm = (props: Props) => {
     !uploadedShapeImage &&
     initialElements.length === 0;
 
-  const handleImageUpload = (file: File) => {
-    console.log(file)
-    setLoading(true);
-  };
+const handleImageUpload = (file: File) => {
+  if (!file) return;
+  setLoading(true);
+  const previewUrl = URL.createObjectURL(file);
+  setImage(previewUrl);
+  setLoading(false);
+};
+
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -356,10 +360,10 @@ const NewCardsForm = (props: Props) => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   return (
-    <Box sx={{ px: 3 }}>
+    <Box sx={{ px: {md:3,sm:3,xs:0} }}>
       <Box
         sx={{
-          display: "flex",
+          display: {md:"flex",sm:"flex",xs:'block'},
           gap: "20px",
           justifyContent: "center",
           width: "100%",
@@ -372,8 +376,8 @@ const NewCardsForm = (props: Props) => {
         <Box
           ref={previewRef}
           sx={{
-            width: { md: "400px" },
-            height: "600px",
+            width: { md: "400px",sm:'400px',xs:'100%' },
+            height: {md:"600px",sm:"600px",xs:400},
             borderRadius: "12px",
             boxShadow: "3px 5px 8px gray",
             display: "flex",
@@ -508,7 +512,7 @@ const NewCardsForm = (props: Props) => {
         {/* Right Side - Form */}
         <Box
           component="form"
-          sx={{ width: { md: "600px" } }}
+          sx={{ width: { md: "600px",sm:"600px",xs:'100%'},mt:{md:0,sm:0,xs:3} }}
           onSubmit={handleSubmit(onSubmit)}
         >
           <CustomInput

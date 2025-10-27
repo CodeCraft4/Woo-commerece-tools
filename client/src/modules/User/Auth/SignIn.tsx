@@ -30,7 +30,7 @@ const SignIn = () => {
         password: data.password,
       });
       toast.success("Login successful!");
-      navigate(-1);
+      navigate('/');
     } catch (err: any) {
       toast.error(err.message);
     }
