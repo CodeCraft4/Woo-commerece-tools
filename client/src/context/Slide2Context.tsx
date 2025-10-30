@@ -247,7 +247,7 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 20,
     y: 10,
-    width: 85,
+    width: 59,
     height: 105,
     rotation: 0,
     zIndex: 1000,
@@ -258,17 +258,17 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 20,
     y: 10,
-    width: 85,
+    width: 59,
     height: 1055,
     rotation: 0,
     zIndex: 1000,
   });
 
   const [aimage2, setAIImage2] = useState<ImagePosition>({
-    x: 50,
-    y: 50,
-    width: 200,
-    height: 200,
+    x: 30,
+    y: 30,
+    width: 340,
+    height: 500,
     // zindex: 1000,
   });
 
@@ -298,6 +298,7 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
     {
       value: "",
@@ -306,6 +307,7 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
     {
       value: "",
@@ -314,6 +316,7 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
   ]);
 
@@ -349,16 +352,20 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
   const [selectedStickers2, setSelectedStickers2] = useState<StickerItem[]>([]);
 
-   const addSticker2 = (
-    sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex" | "rotation">
+  const addSticker2 = (
+    sticker: Omit<
+      StickerItem,
+      "x" | "y" | "width" | "height" | "zIndex" | "rotation"
+    >
   ) => {
     setSelectedStickers2((prev) => {
+      const isFirstSticker = prev.length === 0;
       const newSticker: StickerItem = {
         ...sticker,
-        x: 0 + prev.length * 10,
-        y: 0 + prev.length * 10,
-        width: 100,
-        height: 100,
+        x: isFirstSticker ? 30 : 30 + prev.length * 20,
+        y: isFirstSticker ? 30 : 30 + prev.length * 20,
+        width: isFirstSticker ? 120 : 100,
+        height: isFirstSticker ? 120 : 100,
         zIndex: prev.length + 2,
         rotation: 0,
       };

@@ -5,7 +5,7 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: { md: 800, sm: 800, xs: "90%" },
+  width: { md: 1000, sm: 800, xs: "90%" },
   bgcolor: "background.paper",
   borderRadius: 3,
   //   p: 2,
@@ -35,7 +35,7 @@ const SearchPopup = (props: ProductsPopTypes) => {
         <Box
           sx={{
             ...style,
-            height: { md: "auto", sm: "auto", xs: "500px" },
+            height: { md: 600, sm: "auto", xs: "500px" },
             overflowY: "auto",
           }}
         >

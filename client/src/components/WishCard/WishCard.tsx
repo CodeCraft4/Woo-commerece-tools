@@ -64,6 +64,10 @@ import { useSlide2 } from "../../context/Slide2Context";
 import { useSlide3 } from "../../context/Slide3Context";
 import { useSlide4 } from "../../context/Slide4Context";
 import FontColor1Popup from "../Slide1/FontColors1Popup/FontColors1Popup";
+import TextAlign1Popup from "../Slide1/TextAlign1Popup/TextAlign1Popup";
+import TextAlignPopup from "../Slide2/TextAlignPopup/TextAlignPopup";
+import TextAlign3Popup from "../Slide3/TextAlign3Popup/TextAlign3Popup";
+import TextAlign4Popup from "../Slide4/TextAlign4Popup/TextAlign4Popup";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -84,21 +88,21 @@ const WishCard = () => {
 
   // For slide
   const [activeTextSlide1Child, setActiveTextSlide1Child] = useState<
-    "size" | "color" | "family" | null
+    "size" | "color" | "family" | "textAlign" | null
   >(null);
 
   const [activeTextChild, setActiveTextChild] = useState<
-    "size" | "color" | "family" | null
+    "size" | "color" | "family" | "textAlign" | null
   >(null);
 
   // For slide 3
   const [activeTextSlide3Child, setActiveTextSlide3Child] = useState<
-    "size" | "color" | "family" | null
+    "size" | "color" | "family" | "textAlign" | null
   >(null);
 
   // For slide 4
   const [activeTextSlideLastChild, setActiveTextSlideLastChild] = useState<
-    "size" | "color" | "family" | null
+    "size" | "color" | "family" | "textAlign" | null
   >(null);
 
   const { tips1, setTips1, setIsSlideActive1 } = useSlide1();
@@ -159,6 +163,8 @@ const WishCard = () => {
       case "family":
         // FontFamilyPopup now receives the handleCloseChild function
         return <FontFamily1Popup />;
+      case "textAlign":
+        return <TextAlign1Popup />;
       default:
         return null;
     }
@@ -176,6 +182,8 @@ const WishCard = () => {
       case "family":
         // FontFamilyPopup now receives the handleCloseChild function
         return <FontFamilyPopup />;
+      case "textAlign":
+        return <TextAlignPopup />;
       default:
         return null;
     }
@@ -193,6 +201,8 @@ const WishCard = () => {
       case "family":
         // FontFamilyPopup now receives the handleCloseChild function
         return <FontFamily3Popup />;
+      case "textAlign":
+        return <TextAlign3Popup />;
       default:
         return null;
     }
@@ -210,6 +220,8 @@ const WishCard = () => {
       case "family":
         // FontFamilyPopup now receives the handleCloseChild function
         return <FontFamily4Popup />;
+      case "textAlign":
+        return <TextAlign4Popup />;
       default:
         return null;
     }
@@ -383,6 +395,9 @@ const WishCard = () => {
                     setActiveTextSlide1Child("family")
                   }
                   activeChildComponent={renderActiveTextFirstChild()}
+                  onChangeTextAlign={() =>
+                    setActiveTextSlide1Child("textAlign")
+                  }
                   onAddTextToCanvas={() =>
                     setAddTextCountFirst((prev) => prev + 1)
                   }
@@ -444,6 +459,7 @@ const WishCard = () => {
                   onShowFontColorPopup={() => setActiveTextChild("color")}
                   onShowFontFamilyPopup={() => setActiveTextChild("family")}
                   activeChildComponent={renderActiveTextChild()}
+                  onChangeTextAlign={() => setActiveTextChild("textAlign")}
                   onAddTextToCanvas={() => setAddTextCount((prev) => prev + 1)}
                   activeIndex={activeIndex}
                 />
@@ -503,6 +519,9 @@ const WishCard = () => {
                   onShowFontColorPopup={() => setActiveTextSlide3Child("color")}
                   onShowFontFamilyPopup={() =>
                     setActiveTextSlide3Child("family")
+                  }
+                  onChangeTextAlign={() =>
+                    setActiveTextSlide3Child("textAlign")
                   }
                   renderActiveTextSlide3Child={renderActiveTextSlide3Child()}
                   onAddTextToCanvas={() =>
@@ -573,6 +592,9 @@ const WishCard = () => {
                   onShowFontFamilyPopup={() =>
                     setActiveTextSlideLastChild("family")
                   }
+                     onChangeTextAlign={() =>
+                    setActiveTextSlideLastChild("textAlign")
+                  }
                   activeChildComponent={renderActiveTextSlideLastChild()}
                   onAddTextToCanvas={() =>
                     setAddTextCountLast((prev) => prev + 1)
@@ -622,7 +644,6 @@ const WishCard = () => {
           )}
 
           {/* Editing Toolbar */}
-
           {/* 1st Card */}
           {activeIndex === 0 && (
             <Box

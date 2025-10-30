@@ -38,8 +38,8 @@ const BasketCard = (props: BasketType) => {
       component={"div"}
       sx={{
         borderRadius: 2,
-        width: { md: "250px", sm: " 250px", xs: "100%" },
-        height: "450px",
+        width: { md: "100%", sm: "100%", xs: "100%" },
+        height: {lg:"450px",md:"420px",sm:'220px',xs:'auto'},
         overflow: "hidden",
         cursor: "pointer",
       }}
@@ -54,9 +54,9 @@ const BasketCard = (props: BasketType) => {
         }
         alt="backetImg"
         sx={{
-          width: { md: "250px", sm: " 250px", xs: "100%" },
-          height: { md: "300px", sm: "300px", xs: "400px" },
-          objectFit: "cover",
+          width: { md: "100%", sm: "100%", xs: "100%" },
+          height: {lg:'280px', md: "250px", sm: "220px", xs: "400px" },
+          objectFit: "fill",
           borderRadius: 2,
           "&:hover": { transform: "scale(1.03)" },
           transition: "transform 0.3s ease",

@@ -65,7 +65,6 @@ const AddToCart = () => {
   //   }
   // };
 
-
   return (
     <MainLayout>
       <Box
@@ -73,10 +72,10 @@ const AddToCart = () => {
           display: "flex",
           flexDirection: "column",
           gap: "40px",
-          // width: "100%",
-          width: { md: "1360px", sm: "", xs: "100%" },
+          width: { lg: "1340px", md: "100%", sm: "100%", xs: "100%" },
           justifyContent: "center",
           m: "auto",
+          p: { lg: 3, md: 3, sm: 3, xs: 1 },
         }}
       >
         <Box mt={10}>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Box, IconButton, TextField, Typography } from "@mui/material";
 import {
+  AddCircleOutline,
   Close,
   Forward10,
   Forward30,
@@ -23,7 +24,7 @@ const createNewTextElement = (defaults: any) => ({
   rotation: defaults.rotation || 0,
   zIndex: defaults.zIndex || 1,
   position: { x: 50 + Math.random() * 50, y: 50 + Math.random() * 50 },
-  size: { width: 200, height: 20 },
+  size: { width: 200, height: 30 },
   isEditing: false,
 });
 
@@ -41,6 +42,7 @@ const SlideSpread = ({
   activeIndex,
   addTextRight,
   rightBox,
+  togglePopup,
 }: SlideSpreadProps) => {
   const {
     images,
@@ -73,6 +75,8 @@ const SlideSpread = ({
     setFontColor,
     setFontWeight,
     setFontFamily,
+    setTextAlign,
+    setVerticalAlign,
     selectedVideoUrl,
     setSelectedVideoUrl,
     selectedAudioUrl,
@@ -93,8 +97,10 @@ const SlideSpread = ({
     setAIImage2,
   } = useSlide2();
 
-  const rightBoxRef = useRef<HTMLDivElement>(null);
+  const primarySticker = selectedStickers2[0];
+  const additionalStickers = selectedStickers2.slice(1);
 
+  const rightBoxRef = useRef<HTMLDivElement>(null);
   // Add this handler to initialize draggable state for images (omitted for brevity)
   useEffect(() => {
     if (images.length > 0) {
@@ -179,12 +185,14 @@ const SlideSpread = ({
                 fontWeight,
                 fontColor,
                 fontFamily,
+                textAlign,
+                verticalAlign,
               }
             : t
         )
       );
     }
-  }, [fontSize, fontFamily, fontWeight, fontColor]);
+  }, [fontSize, fontFamily, fontWeight, fontColor, textAlign, verticalAlign]);
 
   useEffect(() => {
     if (selectedVideoUrl) {
@@ -249,6 +257,35 @@ const SlideSpread = ({
                 x: textElement.position.x,
                 y: textElement.position.y,
               }}
+              bounds="parent"
+              // ✅ Allow dragging only when not editing
+              disableDragging={!!textElement.isEditing}
+              // ✅ Enable resizing only from bottom-right corner
+              enableResizing={{
+                bottomRight: true,
+                bottom: false,
+                bottomLeft: false,
+                left: false,
+                right: false,
+                top: false,
+                topLeft: false,
+                topRight: false,
+              }}
+              // ✅ Styling for the resize handle
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "12px",
+                  height: "12px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "3px",
+                  right: "-6px",
+                  bottom: "-6px",
+                  cursor: "se-resize",
+                  zIndex: 5,
+                },
+              }}
+              // ✅ Update position and size on move/resize
               onDragStop={(_, d) => {
                 updateTextElement(textElement.id, {
                   position: { x: d.x, y: d.y },
@@ -258,23 +295,20 @@ const SlideSpread = ({
               onResizeStop={(_, __, ref, ___, position) => {
                 updateTextElement(textElement.id, {
                   size: {
-                    width: parseInt(ref.style.width),
-                    height: parseInt(ref.style.height),
+                    width: parseInt(ref.style.width, 10),
+                    height: parseInt(ref.style.height, 10),
                   },
                   position: { x: position.x, y: position.y },
                   zIndex: 2001,
                 });
               }}
-              minWidth={100}
-              minHeight={30}
-              bounds="parent"
-              disableDragging={!!textElement.isEditing}
               style={{
                 zIndex: textElement.zIndex,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "move",
+                border: "1px dashed #4a7bd5",
+                transition: "border 0.2s ease",
               }}
             >
               <Box
@@ -283,28 +317,49 @@ const SlideSpread = ({
                   height: "100%",
                   position: "relative",
                   pointerEvents: "auto",
+                  display: "flex",
+                  justifyContent:
+                    textElement.textAlign === "top"
+                      ? "flex-start"
+                      : textElement.textAlign === "end"
+                      ? "flex-end"
+                      : "center",
+                  alignItems:
+                    textElement.verticalAlign === "top"
+                      ? "flex-start"
+                      : textElement.verticalAlign === "bottom"
+                      ? "flex-end"
+                      : "center",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedTextId(textElement.id);
                 }}
               >
+                {/* Close (delete) icon */}
                 <IconButton
                   size="small"
                   onClick={() => deleteTextElement(textElement.id)}
                   sx={{
                     position: "absolute",
-                    top: -12,
-                    right: -12,
-                    bgcolor: COLORS.primary,
+                    top: -10,
+                    right: -10,
+                    bgcolor: "#1976d2",
                     color: "white",
+                    width: 20,
+                    height: 20,
                     "&:hover": { bgcolor: "#f44336" },
-                    zIndex: textElement.zIndex + 1,
+                    zIndex: 5,
+                    display: "flex",
+                    justifyContent: "center",
+                    m: "auto",
+                    alignItems: "center",
                   }}
                 >
                   <Close fontSize="small" />
                 </IconButton>
 
+                {/* Editable text */}
                 <TextField
                   variant="standard"
                   value={textElement.value}
@@ -326,28 +381,20 @@ const SlideSpread = ({
                       fontWeight: textElement.fontWeight,
                       color: textElement.fontColor,
                       fontFamily: textElement.fontFamily,
-                      textAlign: "center",
                       transform: `rotate(${textElement.rotation}deg)`,
-                      border: "3px dashed #3a7bd5",
-                      padding: "10px",
+                      padding: "0px",
                       width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "move",
+                      height: "100%",
+                      // textAlign: textElement.textAlign || "center",
+                      resize: "none",
                     },
                   }}
                   multiline
                   fullWidth
                   sx={{
-                    "& .MuiInputBase-root": {
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    },
                     "& .MuiInputBase-input": {
+                      textAlign: textElement.textAlign || "center",
                       overflowY: "auto",
-                      textAlign: "center",
                     },
                   }}
                 />
@@ -357,6 +404,7 @@ const SlideSpread = ({
 
           {selectedVideoUrl && (
             <Rnd
+              cancel=".no-drag"
               onDragStop={(_, d) =>
                 setQrPosition((prev) => ({
                   ...prev,
@@ -368,24 +416,15 @@ const SlideSpread = ({
               onResizeStop={(_, __, ref, ___, position) => {
                 setQrPosition((prev) => ({
                   ...prev,
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height),
+                  width: parseInt(ref.style.width, 10),
+                  height: parseInt(ref.style.height, 10),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrPosition.zIndex, // Bring to front on resize
+                  zIndex: qrPosition.zIndex,
                 }));
               }}
               bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
+              enableResizing={false}
               style={{
                 padding: "10px",
               }}
@@ -406,23 +445,22 @@ const SlideSpread = ({
               >
                 <Box
                   component={"img"}
-                  src="/assets/images/QR-tips.jpg"
+                  src="/assets/images/video-qr-tips.png"
                   sx={{
                     width: "100%",
                     height: 200,
                     position: "relative",
+                    pointerEvents: "none",
                   }}
                 />
                 <Box
                   sx={{
                     position: "absolute",
-                    bottom: 46,
-                    height: 100,
-                    width: 100,
+                    top: 59,
+                    height: 10,
+                    width: 10,
+                    left: 55,
                     borderRadius: 2,
-                    ml: "10px",
-                    // bgcolor:'red',
-                    p: 1,
                   }}
                 >
                   <QrGenerator
@@ -430,8 +468,28 @@ const SlideSpread = ({
                     size={Math.min(qrPosition.width, qrPosition.height)}
                   />
                 </Box>
+                <a href={`${selectedVideoUrl}`} target="_blank">
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 80,
+                      right: 25,
+                      zIndex: 99,
+                      color: "black",
+                      fontSize: "10px",
+                      width: "105px",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {`${selectedVideoUrl.slice(0, 20)}.....`}
+                  </Typography>
+                </a>
                 <IconButton
                   onClick={() => setSelectedVideoUrl(null)}
+                  className="no-drag"
                   sx={{
                     position: "absolute",
                     top: 0,
@@ -449,12 +507,13 @@ const SlideSpread = ({
 
           {selectedAudioUrl && (
             <Rnd
+              cancel=".no-drag"
               onDragStop={(_, d) =>
                 setQrAudioPosition((prev) => ({
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrAudioPosition.zIndex,
+                  zIndex: qrAudioPosition.zIndex, // Bring to front on drag
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -464,20 +523,11 @@ const SlideSpread = ({
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrAudioPosition.zIndex,
+                  zIndex: qrAudioPosition.zIndex, // Bring to front on resize
                 }));
               }}
               bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
+              enableResizing={false}
               style={{
                 padding: "10px",
               }}
@@ -498,23 +548,22 @@ const SlideSpread = ({
               >
                 <Box
                   component={"img"}
-                  src="/assets/images/QR-tips.jpg"
+                  src="/assets/images/audio-qr-tips.png"
                   sx={{
                     width: "100%",
                     height: 200,
                     position: "relative",
+                    pointerEvents: "none",
                   }}
                 />
                 <Box
                   sx={{
                     position: "absolute",
-                    bottom: 46,
-                    height: 100,
-                    width: 100,
+                    top: 62,
+                    height: 10,
+                    width: 10,
+                    left: 62,
                     borderRadius: 2,
-                    ml: "10px",
-                    // bgcolor:'red',
-                    p: 1,
                   }}
                 >
                   <QrGenerator
@@ -525,8 +574,28 @@ const SlideSpread = ({
                     )}
                   />
                 </Box>
+                <a href={`${selectedAudioUrl}`} target="_blank">
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 78,
+                      right: 25,
+                      zIndex: 99,
+                      color: "black",
+                      fontSize: "10px",
+                      width: "105px",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {`${selectedAudioUrl.slice(0, 20)}.....`}
+                  </Typography>
+                </a>
                 <IconButton
                   onClick={() => setSelectedAudioUrl(null)}
+                  className="no-drag"
                   sx={{
                     position: "absolute",
                     top: 0,
@@ -700,6 +769,7 @@ const SlideSpread = ({
                 height: "100%",
                 width: { md: "370px", sm: "370px", xs: "100%" },
                 border: "3px dashed #3a7bd5",
+                bgcolor: "#6183cc36",
                 position: "relative",
                 p: 1,
               }}
@@ -771,18 +841,14 @@ const SlideSpread = ({
           {multipleTextValue && (
             <Box
               sx={{
-                height: "100%",
-                width: { md: "375px", sm: "375px", xs: "100%" },
+                height: "97%",
+                width: { md: "375px", sm: "375px", xs: "90%" },
                 borderRadius: "6px",
                 p: 1,
+                position: "absolute",
+                top: 10,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent:
-                  verticalAlign === "top"
-                    ? "flex-start"
-                    : verticalAlign === "center"
-                    ? "center"
-                    : "flex-end",
               }}
             >
               {texts.map((textObj, index) => (
@@ -795,13 +861,8 @@ const SlideSpread = ({
                     mb: 2,
                     border: "3px dashed #3a7bd5",
                     borderRadius: "6px",
+                    justifyContent: "center",
                     display: "flex",
-                    justifyContent:
-                      verticalAlign === "top"
-                        ? "flex-start"
-                        : verticalAlign === "center"
-                        ? "center"
-                        : "flex-end",
                     alignItems:
                       verticalAlign === "top"
                         ? "flex-start"
@@ -836,34 +897,34 @@ const SlideSpread = ({
                       autoFocus
                       fullWidth
                       multiline
-                      // rows={1}
                       variant="standard"
                       value={textObj.value}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setTexts((prev) =>
                           prev.map((t, i) =>
-                            i === index ? { ...t, value: newValue } : t
+                            i === index
+                              ? {
+                                  ...t,
+                                  value: newValue,
+                                  textAlign: textAlign,
+                                  verticalAlign: verticalAlign,
+                                }
+                              : t
                           )
                         );
                       }}
                       InputProps={{
                         disableUnderline: true,
                         sx: {
-                          display: "flex",
-                          // height:'40px',
-                          justifyContent: "center",
-                          alignItems: "center",
                           "& textarea": {
                             width: "100%",
                             resize: "none",
-                            display: "flex",
-                            overflow: "hidden",
-                            textAlign: "center",
                             fontSize: textObj.fontSize,
                             fontWeight: textObj.fontWeight,
                             color: textObj.fontColor,
                             fontFamily: textObj.fontFamily,
+                            textAlign: textAlign,
                           },
                         },
                       }}
@@ -871,33 +932,64 @@ const SlideSpread = ({
                   ) : (
                     <Box
                       onClick={() => {
+                        if (editingIndex !== null) {
+                          setTexts((prev) =>
+                            prev.map((t, i) =>
+                              i === editingIndex
+                                ? {
+                                    ...t,
+                                    textAlign: textAlign,
+                                    verticalAlign: verticalAlign,
+                                  }
+                                : t
+                            )
+                          );
+                        }
+
+                        // ✅ Then select new box
                         setEditingIndex(index);
                         setFontSize(textObj.fontSize);
                         setFontFamily(textObj.fontFamily);
                         setFontWeight(textObj.fontWeight);
                         setFontColor(textObj.fontColor);
+                        setTextAlign(textObj.textAlign);
+                        setVerticalAlign(textObj.verticalAlign);
                       }}
                       sx={{
                         width: "100%",
                         height: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        mx: "auto",
                         cursor: "pointer",
-                        color: "#212121",
-                        borderRadius: "6px",
                       }}
                     >
-                      <TitleOutlined />
                       <Typography
                         sx={{
                           fontSize: textObj.fontSize,
                           fontWeight: textObj.fontWeight,
-                          color: textObj.fontColor,
+                          color: textObj.fontColor1,
                           fontFamily: textObj.fontFamily,
+                          textAlign: textObj.textAlign,
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems:
+                            textObj.verticalAlign === "top"
+                              ? "flex-start"
+                              : textObj.verticalAlign === "bottom"
+                              ? "flex-end"
+                              : "center",
+                          justifyContent:
+                            textObj.textAlign === "left"
+                              ? "flex-start"
+                              : textObj.textAlign === "right"
+                              ? "flex-end"
+                              : "center",
                         }}
                       >
+                        {textObj.value.length === 0 ? (
+                          <TitleOutlined
+                            sx={{ alignSelf: "center", color: "gray" }}
+                          />
+                        ) : null}{" "}
                         {textObj.value}
                       </Typography>
                     </Box>
@@ -909,6 +1001,7 @@ const SlideSpread = ({
 
           {isAIimage2 && (
             <Rnd
+              cancel=".no-drag"
               size={{ width: aimage2.width, height: aimage2.height }}
               position={{ x: aimage2.x, y: aimage2.y }}
               onDragStop={(_, d) =>
@@ -928,36 +1021,62 @@ const SlideSpread = ({
               }
               bounds="parent"
               enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
+                top: false,
+                right: false,
+                bottom: false,
+                left: false,
+                topRight: false,
                 bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
+                bottomLeft: false,
+                topLeft: false,
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "10px",
+                  height: "10px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "10%",
+                  right: "-5px",
+                  bottom: "-5px",
+                  cursor: "se-resize",
+                },
               }}
               style={{
                 zIndex: 10,
+                border: "2px solid #1976d2",
+                display: "flex", // ✅ make content fill
+                alignItems: "stretch",
+                justifyContent: "stretch",
               }}
             >
-              <Box sx={{ position: "relative" }}>
+              {/* ✅ Ensure the container fills RND box */}
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                }}
+              >
+                {/* ✅ Make image fill fully */}
                 <Box
-                  component={"img"}
+                  component="img"
                   src={`${selectedAIimageUrl2}`}
-                  alt={`isAIImage${selectedAIimageUrl2}`}
+                  alt="AI Image"
                   sx={{
                     width: "100%",
                     height: "100%",
-                    // objectFit:'cover'
+                    objectFit: "fill",
+                    display: "block",
+                    pointerEvents: "none",
                   }}
                 />
+
+                {/* Close button */}
                 <IconButton
-                  onClick={() => {
-                    if (setIsAIimage2) {
-                      setIsAIimage2(false);
-                    }
-                  }}
+                  onClick={() => setIsAIimage2?.(false)}
+                  className="no-drag"
                   sx={{
                     position: "absolute",
                     top: -7,
@@ -977,20 +1096,20 @@ const SlideSpread = ({
             </Rnd>
           )}
 
-          {selectedStickers2.map((sticker, index) => (
+          {additionalStickers.map((sticker, index) => (
             <Rnd
-              key={sticker.id || index}
+              key={sticker.id || index + 1}
               size={{ width: sticker.width, height: sticker.height }}
               position={{ x: sticker.x, y: sticker.y }}
               onDragStop={(_, d) =>
-                updateSticker2(index, {
+                updateSticker2(index + 1, {
                   x: d.x,
                   y: d.y,
                   zIndex: sticker.zIndex,
                 })
               }
               onResizeStop={(_, __, ref, ___, position) =>
-                updateSticker2(index, {
+                updateSticker2(index + 1, {
                   width: parseInt(ref.style.width),
                   height: parseInt(ref.style.height),
                   x: position.x,
@@ -1036,6 +1155,7 @@ const SlideSpread = ({
                     objectFit: "contain", // or "cover" if you want
                     transform: `rotate(${sticker.rotation || 0}deg)`,
                     transition: "transform 0.2s",
+                    border: "1px solid #1976d2",
                     pointerEvents: "none",
                   }}
                 />
@@ -1043,11 +1163,11 @@ const SlideSpread = ({
                 {/* Control buttons */}
                 <IconButton
                   size="small"
-                  onClick={() => removeSticker2(index)}
+                  onClick={() => removeSticker2(index + 1)}
                   sx={{
                     position: "absolute",
-                    top: -4,
-                    right: -24,
+                    top: -8,
+                    right: -10,
                     bgcolor: "black",
                     color: "white",
                     p: 1,
@@ -1065,14 +1185,14 @@ const SlideSpread = ({
                 <IconButton
                   size="small"
                   onClick={() =>
-                    updateSticker2(index, {
+                    updateSticker2(index + 1, {
                       rotation: ((sticker.rotation || 0) + 15) % 360,
                     })
                   }
                   sx={{
                     position: "absolute",
-                    top: -4,
-                    left: 0,
+                    top: -8,
+                    left: -5,
                     bgcolor: "black",
                     color: "white",
                     p: 1,
@@ -1089,6 +1209,328 @@ const SlideSpread = ({
               </Box>
             </Rnd>
           ))}
+
+          {/* default sticker */}
+          {primarySticker ? (
+            <Rnd
+            bounds="parent"
+            size={{
+              width: primarySticker.width,
+              height: primarySticker.height,
+            }}
+            position={{ x: primarySticker.x, y: primarySticker.y }}
+            onDragStop={(_, d) =>
+              updateSticker2(0, {
+                x: d.x,
+                y: d.y,
+                zIndex: primarySticker.zIndex,
+              })
+            }
+            onResizeStop={(_, __, ref, ___, position) =>
+              updateSticker2(0, {
+                width: parseInt(ref.style.width, 10),
+                height: parseInt(ref.style.height, 10),
+                x: position.x,
+                y: position.y,
+                zIndex: primarySticker.zIndex,
+              })
+            }
+            enableResizing={{
+              bottomRight: true,
+            }}
+            // resizeHandleStyles={{
+            //   bottomRight: {
+            //     width: "10px",
+            //     height: "10px",
+            //     background: "white",
+            //     border: "2px solid #1976d2",
+            //     borderRadius: "10%",
+            //     right: "-5px",
+            //     bottom: "-5px",
+            //   },
+            // }}
+            style={{
+              position: "absolute",
+              zIndex: primarySticker.zIndex,
+            }}
+          >
+            {/* ✅ Main container */}
+            {/* <Box
+              sx={{
+                position: "relative",
+                width: "100%",
+                height: "100%",
+                borderRadius: "6px",
+                overflow: "hidden",
+                border: "1px dashed #1976d2",
+              }}
+            >
+              <Box
+                component="img"
+                src={primarySticker.sticker}
+                alt="Sticker"
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "4px",
+                  objectFit: "contain",
+                  display: "block",
+                  transform: `rotate(${primarySticker.rotation || 0}deg)`,
+                  transition: "transform 0.2s",
+                  pointerEvents: "none",
+                }}
+              />
+
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  pointerEvents: "none",
+                }}
+              >
+                <IconButton
+                  size="small"
+                  className="no-drag"
+                  onClick={() => removeSticker2(0)}
+                  sx={{
+                    position: "absolute",
+                    top: -8,
+                    right: -10,
+                    bgcolor: "black",
+                    color: "white",
+                    p: 1,
+                    width: 25,
+                    height: 25,
+                    zIndex: 2,
+                    pointerEvents: "auto",
+                    "&:hover": {
+                      bgcolor: "red",
+                    },
+                  }}
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  className="no-drag"
+                  onClick={() =>
+                    updateSticker2(0, {
+                      rotation: ((primarySticker.rotation || 0) + 15) % 360,
+                    })
+                  }
+                  sx={{
+                    position: "absolute",
+                    top: -8,
+                    left: -5,
+                    bgcolor: "black",
+                    color: "white",
+                    p: 1,
+                    width: 25,
+                    height: 25,
+                    zIndex: 2,
+                    pointerEvents: "auto",
+                    "&:hover": {
+                      bgcolor: "blue",
+                    },
+                  }}
+                >
+                  <Forward10 fontSize="small" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  className="no-drag"
+                  onClick={() => togglePopup("sticker")}
+                  sx={{
+                    position: "absolute",
+                    bottom: -12,
+                    right: -12,
+                    bgcolor: "white",
+                    color: "black",
+                    boxShadow: 1,
+                    width: 32,
+                    height: 32,
+                    pointerEvents: "auto",
+                    "&:hover": {
+                      bgcolor: COLORS.primary,
+                      color: "white",
+                    },
+                  }}
+                >
+                  <AddCircleOutline fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box> */}
+          </Rnd>
+          ) : (
+            <Rnd
+              bounds="parent"
+              enableResizing={{
+                bottomRight: true,
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "10px",
+                  height: "10px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "10%",
+                  right: "-5px",
+                  bottom: "-5px",
+                },
+              }}
+              style={{
+                position: "absolute",
+              }}
+              default={{
+                x: 30,
+                y: 30,
+                width: 120,
+                height: 120,
+              }}
+            >
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "6px",
+                  overflow: "hidden",
+                  border: "1px dashed #1976d2",
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/assets/stickers/sunshine.png"
+                  alt="Sticker"
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "4px",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#090155ff",
+                    background: "rgba(26, 26, 26, 0.14)",
+                    pointerEvents: "auto",
+                    zIndex: 2,
+                  }}
+                >
+                  <IconButton onClick={() => togglePopup("sticker")}>
+                    <AddCircleOutline
+                      sx={{ color: "black", fontSize: "35px" }}
+                    />
+                  </IconButton>
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Add Sticker
+                  </Typography>
+                </Box>
+              </Box>
+            </Rnd>
+          )}
+
+          {/* default image popup */}
+          <Rnd
+            bounds="parent"
+            enableResizing={{
+              bottomRight: true,
+            }}
+            resizeHandleStyles={{
+              bottomRight: {
+                width: "10px",
+                height: "10px",
+                background: "white",
+                border: "2px solid #1976d2",
+                borderRadius: "10%",
+                right: "-5px",
+                bottom: "-5px",
+              },
+            }}
+            style={{
+              position: "absolute",
+            }}
+            default={{
+              x: 180,
+              y: 400,
+              width: 200,
+              height: 180,
+            }}
+          >
+            {/* ✅ Main container */}
+            <Box
+              sx={{
+                position: "relative",
+                width: "100%",
+                height: "100%",
+                borderRadius: "6px",
+                overflow: "hidden",
+                border: "1px dashed #1976d2",
+              }}
+            >
+              {/* ✅ Sticker image */}
+              <Box
+                component="img"
+                src="/assets/images/animated-banner.jpg"
+                alt="Sticker"
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "4px",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+
+              {/* ✅ Overlay (always visible and clickable) */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#090155ff",
+                  background: "rgba(26, 26, 26, 0.14)",
+                  pointerEvents: "auto",
+                  zIndex: 2,
+                }}
+              >
+                <IconButton onClick={() => togglePopup("photo")}>
+                  <AddCircleOutline sx={{ color: "black", fontSize: "35px" }} />
+                </IconButton>
+                <Typography
+                  sx={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Add Photo
+                </Typography>
+              </Box>
+            </Box>
+          </Rnd>
+
         </Box>
       )}
     </Box>

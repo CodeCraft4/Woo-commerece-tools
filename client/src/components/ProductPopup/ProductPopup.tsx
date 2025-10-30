@@ -166,7 +166,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
             >
               <Box
                 component="img"
-                src={cate?.imageUrl || cate?.lastpageImageUrl}
+                src={cate?.imageUrl || cate?.lastpageImageUrl || cate?.poster}
                 onClick={handleToggleZoom}
                 sx={{
                   width: "100%",
@@ -220,10 +220,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
                       <Box>
                         <Typography sx={{fontWeight:600,fontSize:{md:'auto',sm:'auto',xs:'12px'}}}>{plan.title}</Typography>
                         <Typography fontSize={{md:"13px",sm:'13px',xs:'10px'}}>{plan.desc}</Typography>
-                        <Typography fontSize={{md:'18px',sm:'18px',xs:'14px'}}>£{plan.price}</Typography>
+                        <Typography fontSize={{md:'18px',sm:'18px',xs:'14px'}}>£{plan.price || '2'}</Typography>
                       </Box>
                     </Box>
-                    <Typography variant="h5">£{plan.price}</Typography>
+                    <Typography variant="h5">£{plan.price || '5'}</Typography>
                   </Box>
                 ))}
 

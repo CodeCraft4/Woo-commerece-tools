@@ -1,79 +1,135 @@
-import React, { useState } from "react";
-import { Box } from "@mui/material";
-import { ChromePicker } from "react-color";
+import {
+  FormatAlignLeft,
+  FormatAlignCenter,
+  FormatAlignRight,
+  VerticalAlignTop,
+  VerticalAlignCenter,
+  VerticalAlignBottom,
+} from "@mui/icons-material";
+import { Box, Divider, Typography } from "@mui/material";
 import { useSlide1 } from "../../../context/Slide1Context";
 
+const verticalAlignOptions = [
+  { key: "top", icon: <VerticalAlignTop />, label: "Top" },
+  { key: "center", icon: <VerticalAlignCenter />, label: "Center" },
+  { key: "bottom", icon: <VerticalAlignBottom />, label: "Bottom" },
+];
+
+const horizontalAlignOptions = [
+  { key: "left", icon: <FormatAlignLeft />, label: "Left" },
+  { key: "center", icon: <FormatAlignCenter />, label: "Center" },
+  { key: "right", icon: <FormatAlignRight />, label: "Right" },
+];
 
 const TextAlign1Popup = () => {
-  const { 
-    setFontColor1,
-    fontColor1,
+  const {
+    verticalAlign1,
+    textAlign1,
     textElements1,
-    setTextElements1,
     selectedTextId1,
+    setTextElements1,
+    setVerticalAlign1,
+    setTextAlign1,
   } = useSlide1();
-  
-  // Get the currently selected text element
-  const selectedTextElement = textElements1.find(text => text.id === selectedTextId1);
-  
-  // Use individual text color or global default
-  const currentFontColor = selectedTextElement?.fontColor || fontColor1;
-  
-  // Initialize state with current color
-  const initialColor = currentFontColor || "#000000";
-  // const [selected, setSelected] = useState<string>(initialColor);
 
-  // 2. State for the custom color picker value
-  const [pickerColor, setPickerColor] = useState<string>(initialColor);
+  const selectedTextElement = textElements1.find(
+    (text) => text.id === selectedTextId1
+  );
 
-  const handlePickerChangeComplete = (color: any) => {
-    const hex = color.hex;
-    
-    // Update individual text element or global context
-    if (selectedTextElement) {
-      setTextElements1(prev => 
-        prev.map(text => 
-          text.id === selectedTextId1
-            ? { ...text, fontColor: hex }
-            : text
+  const updateTextProperty = (property: string, value: any) => {
+    if (selectedTextId1) {
+      setTextElements1((prev) =>
+        prev.map((text) =>
+          text.id === selectedTextId1 ? { ...text, [property]: value } : text
         )
       );
     } else {
-      // Update global context for new text elements
-      setFontColor1(hex);
+      if (property === "verticalAlign") setVerticalAlign1(value);
+      if (property === "textAlign") setTextAlign1(value);
     }
-    
-    setPickerColor(hex);
   };
 
-  React.useEffect(() => {
-    setPickerColor(currentFontColor);
-  }, [currentFontColor]);
-
   return (
-    
     <Box
       sx={{
-        py: 2,
-        display: "flex",
-        justifyContent: "center",
-        flexDirection: "column",
-        alignItems: "center",
-        width: {md:460,sm:460,xs:'100%'},
-        height: 420,
+        p: 2,
+        width: { md: 460, sm: 460, xs: "100%" },
+        height: 400,
         mt: 4,
+        textAlign: "start",
       }}
     >
-      <ChromePicker
-        color={pickerColor} // Use the pickerColor state
-        onChangeComplete={handlePickerChangeComplete}
-        disableAlpha={true}
-        styles={{
-          default: {
-            picker: { boxShadow: "none", width: "95%", height: "100%" },
-          },
-        }}
-      />
+      {/* Vertical Alignment */}
+      <Box>
+        <Typography fontSize={{ md: 20, sm: 20, xs: 15 }} fontWeight={"bold"}>
+          Vertical Alignment
+        </Typography>
+        <Divider />
+        <Box sx={{ display: "flex", gap: 2, py: 2 }}>
+          {verticalAlignOptions.map((opt) => (
+            <Box
+              key={opt.key}
+              onClick={() => updateTextProperty("verticalAlign", opt.key)}
+              sx={{
+                p: 2,
+                border: `2px solid ${
+                  (selectedTextElement?.verticalAlign || verticalAlign1) ===
+                  opt.key
+                    ? "#3a7bd5"
+                    : "lightgray"
+                }`,
+                borderRadius: 3,
+                cursor: "pointer",
+                color:
+                  (selectedTextElement?.verticalAlign || verticalAlign1) ===
+                  opt.key
+                    ? "#3a7bd5"
+                    : "inherit",
+                transition: "all 0.2s ease",
+                "&:hover": { borderColor: "#3a7bd5" },
+              }}
+            >
+              {opt.icon}
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      <br />
+
+      {/* Horizontal Alignment */}
+      <Box>
+        <Typography fontSize={{ md: 20, sm: 20, xs: 15 }} fontWeight={"bold"}>
+          Horizontal Alignment
+        </Typography>
+        <Divider />
+        <Box sx={{ display: "flex", gap: 2, py: 2 }}>
+          {horizontalAlignOptions.map((opt) => (
+            <Box
+              key={opt.key}
+              onClick={() => updateTextProperty("textAlign", opt.key)}
+              sx={{
+                p: 2,
+                border: `2px solid ${
+                  (selectedTextElement?.textAlign || textAlign1) === opt.key
+                    ? "#3a7bd5"
+                    : "lightgray"
+                }`,
+                borderRadius: 3,
+                cursor: "pointer",
+                color:
+                  (selectedTextElement?.textAlign || textAlign1) === opt.key
+                    ? "#3a7bd5"
+                    : "inherit",
+                transition: "all 0.2s ease",
+                "&:hover": { borderColor: "#3a7bd5" },
+              }}
+            >
+              {opt.icon}
+            </Box>
+          ))}
+        </Box>
+      </Box>
     </Box>
   );
 };

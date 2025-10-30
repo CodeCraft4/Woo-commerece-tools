@@ -8,13 +8,13 @@ const PersonalGift = () => {
       sx={{
         borderRadius: 4,
         width: "100%",
-        height: { md: "450px", sm: "", xs: "auto" },
+        height: { md: "450px", sm: "400px", xs: "auto" },
         display: { md: "flex", sm: "flex", xs: "block" },
       }}
     >
       <Box
         sx={{
-          width: {lg:'60%', md: "50%", sm: "", xs: "100%" },
+          width: {lg:'60%', md: "50%", sm: "50%", xs: "100%" },
           borderRadius: {
             md: "20px 0px 0px 20px",
             sm: "20px 0px 0px 20px",
@@ -39,7 +39,7 @@ const PersonalGift = () => {
       </Box>
       <Box
         sx={{
-          width: {lg:'40%', md: "50%", sm: "", xs: "100%" },
+          width: {lg:'40%', md: "50%", sm: "50%", xs: "100%" },
           display: "flex",
           justifyContent: "center",
           flexDirection: "column",
@@ -53,14 +53,14 @@ const PersonalGift = () => {
       >
         <Typography
           sx={{
-            fontSize: { md: "35px", sm: "35px", xs: "25px" },
+            fontSize: { md: "35px", sm: "30px", xs: "25px" },
             fontWeight: 700,
           }}
         >
           Personlized Gifts <br /> Created by You
         </Typography>
         <Typography
-          sx={{ fontSize: { md: "14px", sm: "14px", xs: 12 }, fontWeight: 300 }}
+          sx={{ fontSize: { md: "14px", sm: "13px", xs: 12 }, fontWeight: 300 }}
         >
           Go above and beyond to show how well you know them with personalised
           gifts, created by you just for them to make their day!
@@ -71,7 +71,7 @@ const PersonalGift = () => {
             display: "flex",
             gap: "10px",
             flexWrap: "wrap",
-            width: {lg:'500px', md: "460px", sm: "500px", xs: "100%" },
+            width: {lg:'500px', md: "460px", sm: "100%", xs: "100%" },
             mt: 2,
           }}
         >

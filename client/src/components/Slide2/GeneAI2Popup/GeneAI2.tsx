@@ -283,7 +283,7 @@ const GeneAI2Popup = (props: GeneAIType) => {
 
     try {
       const genAI = new GoogleGenerativeAI(
-        "AIzaSyCOr6PVpYJ6tOltUM8qkhbf0Pm-F15XM6U"
+        "AIzaSyArFGzwFPWF2uAiQs8BkjrEL4EGGJtht-w"
       );
       
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });

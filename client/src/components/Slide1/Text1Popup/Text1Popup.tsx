@@ -23,6 +23,7 @@ interface Text1PopupProps {
   onShowFontSizePopup: () => void;
   onShowFontColorPopup: () => void;
   onShowFontFamilyPopup: () => void;
+  onChangeTextAlign: () => void;
   activeChildComponent: React.ReactNode | null;
   onAddTextToCanvas?: () => void;
 }
@@ -47,6 +48,7 @@ const Text1Popup = ({
   activeChildComponent,
   activeIndex,
   onAddTextToCanvas,
+  onChangeTextAlign
 }: Text1PopupProps) => {
 
   const {
@@ -63,13 +65,10 @@ const Text1Popup = ({
     setFontSize1,
     setFontColor1,
     setFontFamily1,
-    verticalAlign1,
-    setVerticalAlign1,
   } = useSlide1();
 
 
 
-  const verticalAlignOptions: ("top" | "center" | "bottom")[] = ["top", "center", "bottom"];
   // Get the currently selected text element
   const selectedTextElement = textElements1.find(text => text.id === selectedTextId1);
 
@@ -103,9 +102,6 @@ const Text1Popup = ({
         case "fontFamily":
           setFontFamily1(value);
           break;
-        case "verticalAlign":
-          setVerticalAlign1(value);
-          break;
         default:
           break;
       }
@@ -117,14 +113,6 @@ const Text1Popup = ({
     const currentWeight = selectedTextElement?.fontWeight || fontWeight1;
     const newWeight = currentWeight === 700 ? 400 : 700;
     updateTextProperty('fontWeight', newWeight);
-  };
-
-  // Change Text Align
-  const changeTextAlign = () => {
-    const currentAlign:any = selectedTextElement?.verticalAlign || verticalAlign1;
-    const currentIndex = verticalAlignOptions.indexOf(currentAlign);
-    const nextIndex = (currentIndex + 1) % verticalAlignOptions.length;
-    updateTextProperty("verticalAlign", verticalAlignOptions[nextIndex]);
   };
 
   // Text Rotation
@@ -237,7 +225,7 @@ const Text1Popup = ({
         </IconButton>
 
         {/* Align */}
-        <IconButton onClick={changeTextAlign} sx={editingButtonStyle}>
+        <IconButton onClick={onChangeTextAlign} sx={editingButtonStyle}>
           <FormatAlignCenterOutlined fontSize="large" />
           <Typography variant="caption">Align</Typography>
         </IconButton>

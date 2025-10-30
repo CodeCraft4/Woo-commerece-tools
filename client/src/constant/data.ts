@@ -642,3 +642,36 @@ export const STICKERS_DATA = [
     sticker: "/assets/stickers/bright-rainbow.png",
   },
 ];
+
+
+// Payment card
+export const PAYMENT_CARD=[
+  {
+    icon:'/assets/icons/AmericanExprese.svg',
+    href:'/'
+  },
+  {
+    icon:'/assets/icons/mastercard.svg',
+    href:'/'
+  },
+  {
+    icon:'/assets/icons/clearpaylogo.svg',
+    href:'/'
+  },
+  {
+    icon:'/assets/icons/klarnalogo.svg',
+    href:'/'
+  },
+  {
+    icon:'/assets/icons/mastrologo.svg',
+    href:'/'
+  },
+  {
+    icon:'/assets/icons/pappal.svg',
+    href:'/'
+  },
+  {
+    icon:'/assets/icons/Visacardlogo.svg',
+    href:'/'
+  },
+]

@@ -6,7 +6,7 @@ const Banner = () => {
   return (
     <Box
       sx={{
-        height: { md: "500px", sm: "", xs: "100vh" },
+        height: { md: "500px", sm: "500px", xs: "80vh" },
         width: "100%",
         position: "relative",
         overflow: "hidden",
@@ -57,17 +57,17 @@ const Banner = () => {
       <Box
         sx={{
           position: "absolute",
-          bottom: { md: "18%", sm: "", xs: 0 },
+          bottom: { md: "18%", sm: "20%", xs: 0 },
           color: COLORS.white,
           p: 2,
-          left: { md: "2%", sm: "", xs: '4%' },
+          left: { md: "2%", sm: 0, xs: '0%' },
         }}
       >
         <Typography
           sx={{
             fontSize: {
               md: "40px",
-              sm: "",
+              sm: "35px",
               xs: "23px",
               fontWeight: 800,
               width: "100%",
@@ -94,7 +94,7 @@ const Banner = () => {
             display: { md: "flex", sm: "flex", xs: "block" },
             gap: "10px",
             flexWrap: "wrap",
-            width: { md: "50%", sm: "", xs: "100%" },
+            width: { md: "50%", sm: "70%", xs: "100%" },
             mt: {md:5,sm:3,xs:1},
           }}
         >

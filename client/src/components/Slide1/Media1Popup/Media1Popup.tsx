@@ -213,8 +213,8 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
               position: "relative",
             }}
           >
-            <audio
-              src={"/assets/images/audioTip.mp4"}
+            <video
+              src={"/assets/images/diy-tips.mp4"}
               autoPlay
               loop
               muted

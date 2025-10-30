@@ -197,7 +197,7 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: {md:600,sm:600,xs:580},
+        height: { md: 600, sm: 600, xs: 580 },
         left: activeIndex === 1 ? { md: "17%", sm: "13%", xs: 10 } : "16%",
         mt: { md: 0, sm: 0, xs: 4 },
         overflow: "hidden",
@@ -213,8 +213,8 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
               position: "relative",
             }}
           >
-            <audio
-              src={"/assets/images/audioTip.mp4"}
+            <video
+              src={"/assets/images/diy-tips.mp4"}
               autoPlay
               loop
               muted
@@ -267,7 +267,7 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
                 title="Maybe Later"
                 width="100%"
                 variant="outlined"
-                 onClick={() => {
+                onClick={() => {
                   setTips(false);
                   setUpload(true);
                 }}

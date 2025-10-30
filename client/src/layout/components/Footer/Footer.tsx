@@ -1,17 +1,17 @@
 import { Box, List, ListItem, Typography } from "@mui/material";
 import { COLORS } from "../../../constant/color";
-import { Apple } from "@mui/icons-material";
-import { FooterLinks } from "../../../constant/data";
+import { FooterLinks, PAYMENT_CARD } from "../../../constant/data";
 
 const Footer = () => {
   return (
     <Box
       sx={{
         display: { md: "flex", sm: "", xs: "block" },
-        width:['100%'],
+        width: ["100%"],
         m: "auto",
         flexDirection: "column",
-        p: {lg:2, md: 1, sm: 0, xs: 2 },
+        p: { lg: 2, md: 1, sm: 1, xs: 2 },
+        position: "relative",
       }}
     >
       <Box
@@ -24,9 +24,13 @@ const Footer = () => {
         }}
       >
         {FooterLinks.map((e) => (
-          <Box key={e.title} p={{ md: 0, sm: 0, xs: 2 }}>
+          <Box key={e.title} p={{ md: 0, sm: 0, xs: 1 }}>
             <Typography
-              sx={{ fontSize: "20px", fontWeight: 800, color: COLORS.seconday }}
+              sx={{
+                fontSize: { lg: "20px", md: "20px", sm: "15px", xs: "auto" },
+                fontWeight: 800,
+                color: COLORS.seconday,
+              }}
             >
               {e.title}
             </Typography>
@@ -35,7 +39,7 @@ const Footer = () => {
                 <ListItem
                   key={link.name}
                   sx={{
-                    fontSize: { md: "18px", sm: "18px", xs: "14px" },
+                    fontSize: { md: "18px", sm: "14px", xs: "14px" },
                     mb: { md: 1.5, sm: 1.5, xs: "auto" },
                     textAlign: "start",
                     px: 0,
@@ -64,8 +68,13 @@ const Footer = () => {
           mt: 5,
         }}
       >
-        <Box sx={{ width: {lg:'50%', md: "100%", sm: "", xs: "100%" } }}>
-          <Typography sx={{ fontSize: "20px", fontWeight: 800 }}>
+        <Box sx={{ width: { lg: "50%", md: "100%", sm: "100%", xs: "100%" } }}>
+          <Typography
+            sx={{
+              fontSize: { lg: "20px", md: "20px", sm: "17px", xs: "auto" },
+              fontWeight: 800,
+            }}
+          >
             Let's get Social
           </Typography>
 
@@ -82,40 +91,51 @@ const Footer = () => {
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Ffacebook.jpg&w=96&q=75"
-              sx={{ width: "50px", height: "50px" }}
+              sx={{ width: "40px", height: "40px" }}
             />
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Ftiktok.jpg&w=96&q=75"
-              sx={{ width: "50px", height: "50px" }}
+              sx={{ width: "40px", height: "40px" }}
             />
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Finstagram.jpg&w=96&q=75"
-              sx={{ width: "50px", height: "50px" }}
+              sx={{ width: "40px", height: "40px" }}
             />
             <Box
               component={"img"}
               src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fyoutube.jpg&w=96&q=75"
-              sx={{ width: "50px", height: "50px" }}
+              sx={{ width: "40px", height: "40px" }}
             />
             <Box
               component={"img"}
-              src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fblog-disc.jpg&w=96&q=75"
-              sx={{ width: "50px", height: "50px" }}
+              src="/assets/images/DIYP.png"
+              sx={{
+                width: "40px",
+                height: "40px",
+                border: `1px solid ${COLORS.seconday}`,
+                borderRadius: 50,
+              }}
             />
           </Box>
         </Box>
-        <Box sx={{ width: { lg:'50%', md: "100%",sm: "", xs: "100%" } }}>
-          <Typography sx={{ fontSize: "20px", fontWeight: 800 }}>
+
+        <Box sx={{ width: { lg: "50%", md: "100%", sm: "100%", xs: "100%" } }}>
+          <Typography
+            sx={{
+              fontSize: { lg: "20px", md: "20px", sm: "17px", xs: "auto" },
+              fontWeight: 800,
+            }}
+          >
             Download the App
           </Typography>
 
           <Box
             sx={{
-              display: { md: "flex", sm: "", xs: "block" },
+              display: { md: "flex", sm: "block", xs: "block" },
               mt: 3,
-              width: {lg:'70%', md: "100%", sm: "", xs: "100%" },
+              width: { lg: "70%", md: "100%", sm: "90%", xs: "100%" },
             }}
           >
             <Box
@@ -130,10 +150,14 @@ const Footer = () => {
                 alignItems: "center",
                 m: "auto",
                 gap: 2,
-                mb: { md: 0, sm: 0, xs: 2 },
+                mb: { md: 0, sm: 1, xs: 2 },
               }}
             >
-              <Apple fontSize="large" />
+              <Box
+                component={"img"}
+                src="/assets/icons/Apple.svg"
+                sx={{ width: 30 }}
+              />
               <Box>
                 <Typography fontSize={"10px"}>Download on the</Typography>
                 <Typography variant="h6">App Store</Typography>
@@ -155,8 +179,8 @@ const Footer = () => {
             >
               <Box
                 component={"img"}
-                src="/assets/icons/playstore.png"
-                sx={{ width: 40 }}
+                src="/assets/icons/Playstore.svg"
+                sx={{ width: 30 }}
               />
               <Box>
                 <Typography fontSize={"10px"}>ANDRIOD APP ON</Typography>
@@ -169,7 +193,7 @@ const Footer = () => {
 
       <Box
         sx={{
-          display: { md: "flex", sm: "", xs: "block" },
+          display: { md: "flex", sm: "flex", xs: "block" },
           width: "100%",
           mt: 5,
           mb: 5,
@@ -181,13 +205,18 @@ const Footer = () => {
       >
         <Box
           sx={{
-            width: { md: "50%", sm: "", xs: "100%" },
-            display: { md: "flex", sm: "", xs: "block" },
+            width: { md: "50%", sm: "100%", xs: "100%" },
+            display: { md: "flex", sm: "flex", xs: "block" },
             gap: 2,
             alignItems: "center",
           }}
         >
-          <Typography sx={{ fontSize: "20px", fontWeight: 700 }}>
+          <Typography
+            sx={{
+              fontSize: { lg: "20px", md: "20px", sm: "17px", xs: "auto" },
+              fontWeight: 700,
+            }}
+          >
             Shop by Region
           </Typography>
           <Box
@@ -207,68 +236,21 @@ const Footer = () => {
         </Box>
         <Box
           sx={{
-            width: { md: "50%", sm: "", xs: "100%" },
+            width: { md: "50%", sm: "100%", xs: "100%" },
             display: "flex",
             gap: 2,
             flexWrap: "wrap",
           }}
         >
-          <Box
-            component={"img"}
-            src={
-              "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fmastercard.jpg&w=48&q=75"
-            }
-            sx={{ cursor: "pointer", width: "45px", height: "30px" }}
-          />
-          <Box
-            component={"img"}
-            src={
-              "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fmaestro.jpg&w=48&q=75"
-            }
-            sx={{ cursor: "pointer", width: "45px", height: "30px" }}
-          />
-          <Box
-            component={"img"}
-            src={
-              "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fvisa.jpg&w=48&q=75"
-            }
-            sx={{ cursor: "pointer", width: "45px", height: "30px" }}
-          />
-          <Box
-            component={"img"}
-            src={
-              "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Famerican-express.jpg&w=48&q=75"
-            }
-            sx={{ cursor: "pointer", width: "45px", height: "30px" }}
-          />
-          <Box
-            component={"img"}
-            src={
-              "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fapple-pay.jpg&w=48&q=75"
-            }
-            sx={{ cursor: "pointer", width: "45px", height: "30px" }}
-          />
-          <Box
-            component={"img"}
-            src={
-              "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fpaypal.jpg&w=48&q=75"
-            }
-            sx={{ cursor: "pointer", width: "45px", height: "30px" }}
-          />
-          <Box
-            component={"img"}
-            src={
-              "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fclearpay.png&w=96&q=75"
-            }
-            sx={{ cursor: "pointer", width: "45px", height: "30px" }}
-          />
-          <Box
-            component={"img"}
-            src={
-              "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fklarna.png&w=96&q=75"
-            }
-            sx={{ cursor: "pointer", width: "45px", height: "30px" }}
-          />
+          {PAYMENT_CARD.map((e) => (
+            <a href={e.href}>
+              <Box
+                component={"img"}
+                src={e.icon}
+                sx={{ cursor: "pointer", width: "45px", height: "30px" }}
+              />
+            </a>
+          ))}
         </Box>
       </Box>
 
@@ -283,8 +265,8 @@ const Footer = () => {
       >
         <Typography
           sx={{
-            fontSize: { md: "14px", sm: "", xs: "14px" },
-            width: { md: "900px", sm: "", xs: "100%" },
+            fontSize: { md: "14px", sm: "12px", xs: "14px" },
+            width: { md: "900px", sm: "100%", xs: "100%" },
             fontWeight: 300,
             textAlign: "start",
           }}

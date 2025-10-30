@@ -26,12 +26,12 @@ const CategoryCard = (props: CategoryType) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        width: { md: "175px", sm: "", xs: "100px" },
-        height: { md: "175px", sm: "", xs: "130px" },
+        width: { md: "175px", sm: "100px", xs: "100px" },
+        height: { md: "175px", sm: "130px", xs: "130px" },
         alignItems: "center",
         textAlign: "center",
         bgcolor: COLORS.white,
-        ml: id === 1 ? { md: "275px", sm: "", xs: 0 } : 0,
+        ml: id === 1 ? { md: "275px", sm: 0, xs: 0 } : 0,
         cursor: "pointer",
         transition: "border-color 0.3s ease",
         "&:hover": {
@@ -48,8 +48,8 @@ const CategoryCard = (props: CategoryType) => {
         src={poster}
         alt="categoryImg"
         sx={{
-          width: { md: "100px", sm: "", xs: "60px" },
-          height: { md: "100px", sm: "", xs: "60px" },
+          width: { md: "100px", sm: "70px", xs: "60px" },
+          height: { md: "100px", sm: "70px", xs: "60px" },
           borderRadius: "50%",
           objectFit: "cover",
           transition: "transform 0.3s ease",

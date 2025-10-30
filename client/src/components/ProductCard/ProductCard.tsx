@@ -18,11 +18,11 @@ const ProductCard = (props: ProductTypes) => {
       onClick={openModal}
       sx={{
         width: tabsSlider
-          ? { md: "182px", sm: "", xs: "100%" }
-          : { md: "182px", sm: "", xs: "100%" },
+          ? { md: "100%", sm: "100%", xs: "100%" }
+          : { md: "182px", sm: "125px", xs: "157px" },
         height: tabsSlider
-          ? { md: "280px", sm: "", xs: "350px" }
-          : { md: "270px", sm: "", xs: "250px" },
+          ? {lg:'280px', md: "280px", sm: "240px", xs: "350px" }
+          : { md: "270px", sm: "180px", xs: "225px" },
         borderRadius: 3,
         bgcolor: COLORS.white,
         border: tabsSlider ? `1px solid lightGray` : `4px solid ${borderColor}`,
@@ -38,10 +38,10 @@ const ProductCard = (props: ProductTypes) => {
         alt="productImg"
         sx={{
           width: tabsSlider
-            ? { md: "180px", sm: "180px", xs: "100%" }
-            : { md: "168px", sm: "180px", xs: "100%" },
+            ? { md: "100%", sm: "100%", xs: "100%" }
+            : { md: "175px", sm: "120px", xs: "150px" },
           height: "100%",
-          objectFit: "cover",
+          objectFit:"cover",
           borderRadius: 2,
         }}
       />

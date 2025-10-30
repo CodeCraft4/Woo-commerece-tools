@@ -23,7 +23,7 @@ import { Avatar, Badge, ListItemIcon, Menu, MenuItem } from "@mui/material";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { useAuth } from "../../../context/AuthContext";
-import SearchPopup from "../../../components/SearchPopup/SearchPopup";
+import RemindersDrawer from "../../../components/RemindersDrawer/RemindersDrawer";
 
 interface Props {
   window?: () => Window;
@@ -65,6 +65,7 @@ export default function Header(props: Props) {
   const { cart } = useCartStore();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
   const [hoveredMenuItem, setHoveredMenuItem] =
     React.useState<MegaMenuKeys | null>(null);
 
@@ -106,13 +107,6 @@ export default function Header(props: Props) {
     closeModal: closeLogout,
   } = useModal();
 
-  // For Search Modal 
-  const {
-    open: isSearchPopup,
-    openModal: openSearchPopup,
-    closeModal: closeSearchPopup,
-  } = useModal();
-
   const drawer = (
     <Box sx={{ textAlign: "center", pt: 8 }}>
       <IconButton sx={{ position: "absolute", top: 0, right: 2 }}>
@@ -122,7 +116,7 @@ export default function Header(props: Props) {
         component={"img"}
         src={LOGO}
         alt="LOGO"
-        sx={{ width: 200, height: 50, mb: {md:8,sm:8,xs:0} }}
+        sx={{ width: 200, height: 50, mb: { md: 8, sm: 8, xs: 0 } }}
       />
       <Divider />
       <List>
@@ -153,7 +147,7 @@ export default function Header(props: Props) {
     >
       <Box
         sx={{
-          width: {lg: "1360px", md: "100%", sm: "1360px", xs: "100%" },
+          width: { lg: "1360px", md: "100%", sm: "100%", xs: "100%" },
           display: "flex",
           justifyContent: "center",
           m: "auto",
@@ -283,7 +277,7 @@ export default function Header(props: Props) {
                   </IconButton>
                 </Box>
               </Box>
-              
+
               <Box
                 sx={{
                   border: `2px solid ${COLORS.black}`,
@@ -302,10 +296,14 @@ export default function Header(props: Props) {
                   component="input"
                   sx={searchInputStyle}
                   placeholder="Search for cards, gift and flowers...."
-                  onChange={openSearchPopup}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
 
-                <Search fontSize="large" sx={{ color: COLORS.black, mr: 1 }} />
+                <Search
+                  onClick={() => navigate(`${USER_ROUTES.VIEW_ALL}/${search}`)}
+                  fontSize="large"
+                  sx={{ color: COLORS.black, mr: 1, cursor: "pointer" }}
+                />
               </Box>
             </Box>
 
@@ -325,7 +323,7 @@ export default function Header(props: Props) {
                   component={"img"}
                   src={LOGO}
                   alt="LOGO"
-                  width={"450px"}
+                  width={{ lg: "450px", md: "450px", sm: "550px", xs: "100%" }}
                   height={150}
                 />
               </a>
@@ -360,11 +358,20 @@ export default function Header(props: Props) {
                     component="input"
                     sx={searchInputStyle}
                     placeholder="Search for cards, gift and flowers...."
+                    onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && search.trim() !== "") {
+                        navigate(`${USER_ROUTES.VIEW_ALL}/${search}`);
+                      }
+                    }}
                   />
 
                   <Search
+                    onClick={() =>
+                      navigate(`${USER_ROUTES.VIEW_ALL}/${search}`)
+                    }
                     fontSize="large"
-                    sx={{ color: COLORS.black, mr: 1 }}
+                    sx={{ color: COLORS.black, mr: 1, cursor: "pointer" }}
                   />
                 </Box>
                 <Box
@@ -377,18 +384,8 @@ export default function Header(props: Props) {
                     },
                   }}
                 >
-                  <IconButton sx={iconStyle}>
-                    <Box
-                      component={"img"}
-                      src="/assets/icons/Reminders.svg"
-                      sx={{
-                        width: 35,
-                        height: 35,
-                      }}
-                    />
-                    {/* <DateRange fontSize="large"/> */}
-                    <Typography fontSize={"12px"}>Reminders</Typography>
-                  </IconButton>
+                  {/* reminder drawer  */}
+                  <RemindersDrawer />
                   {user ? (
                     <>
                       <IconButton onClick={handleOpenMenu}>
@@ -536,7 +533,7 @@ export default function Header(props: Props) {
             m: "auto",
             color: "white",
             p: 3,
-            width: {lg:"70%",md:'100%',sm:'100%',xs:'100%'},
+            width: { lg: "1360px", md: "100%", sm: "", xs: "auto" },
           }}
           // onMouseLeave={handleMouseLeave}
         >
@@ -563,11 +560,10 @@ export default function Header(props: Props) {
         </List>
         <Box
           sx={{
-            width: {lg:"1360px", md: "100%", sm: "", xs: "auto" },
+            width: { lg: "1340px", md: "100%", sm: "", xs: "auto" },
             display: "flex",
             m: "auto",
             justifyContent: "center",
-            bgcolor: "red",
           }}
         >
           {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
@@ -577,32 +573,11 @@ export default function Header(props: Props) {
             />
           )}
         </Box>
-
-        {/* <Typography
-            sx={{
-              display: "flex",
-              gap: "5px",
-              alignItems: "center",
-              color: "orange",
-            }}
-          >
-            Deliver&nbsp;to
-            <Flag />
-          </Typography> */}
       </Box>
 
       {isOpenLogout && (
         <ConfirmModal open={isOpenLogout} onCloseModal={closeLogout} />
       )}
-
-      {
-        isSearchPopup && (
-          <SearchPopup
-           open={isSearchPopup}
-           onClose={closeSearchPopup}
-          />
-        )
-      }
     </Box>
   );
 }
