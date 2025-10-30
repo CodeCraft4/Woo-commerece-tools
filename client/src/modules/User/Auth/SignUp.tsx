@@ -85,9 +85,9 @@ const SignUp = () => {
       >
         <Box
           sx={{
-            width: { md: 500, sm: 500, xs: "100%" },
-            height:{md:'auto',sm:'auto',xs:'90vh'},
-            overflow:{md:'hidden',sm:'hidden',xs:'scroll'},
+            width: { md: 500, sm: 400, xs: "100%" },
+            height:{md:'auto',sm:'90vh',xs:'80vh'},
+            overflow:{md:'hidden',sm:'scroll',xs:'scroll'},
             p: 3,
             borderRadius: 3,
             bgcolor: "rgba(255,255,255,0.9)",

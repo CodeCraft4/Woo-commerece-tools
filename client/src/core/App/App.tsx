@@ -14,6 +14,7 @@ import { Slide3Provider } from "../../context/Slide3Context";
 import { Slide4Provider } from "../../context/Slide4Context";
 import { AdminCardEditorProvider } from "../../context/AdminEditorContext";
 import { Slide1Provider } from "../../context/Slide1Context";
+import GlobalWatermark from "../../components/GlobalWatermark/GlobalWatermark";
 
 const App = () => {
   // React Query Client
@@ -58,7 +59,7 @@ const App = () => {
                 </Slide1Provider>
 
                 {/* Global water mark */}
-                {/* <GlobalWatermark /> */}
+                <GlobalWatermark />
 
                 <Toaster
                   position="bottom-right"

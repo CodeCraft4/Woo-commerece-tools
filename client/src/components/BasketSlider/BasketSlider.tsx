@@ -61,7 +61,10 @@ const BasketSlider = (props: BirthdayTypes) => {
     slidesToScroll: 2,
     arrows: false,
     responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: 4 } },
+      { breakpoint: 1920, settings: { slidesToShow: 7 } },
+      { breakpoint: 1440, settings: { slidesToShow: 6 } },
+      { breakpoint: 1024, settings: { slidesToShow: 5 } },
+      { breakpoint: 770, settings: { slidesToShow: 4} },
       { breakpoint: 600, settings: { slidesToShow: 1 } },
     ],
   };
@@ -78,7 +81,7 @@ const BasketSlider = (props: BirthdayTypes) => {
         m: "auto",
         position: "relative",
         mt: { md: 8, sm: 8, xs: 0 },
-        p: { md: 0, sm: 0, xs: 4 },
+        p: { md: 0, sm: 0, xs: 2 },
       }}
     >
       <Box
@@ -116,8 +119,8 @@ const BasketSlider = (props: BirthdayTypes) => {
               component={"div"}
               onClick={() => setActiveTab(index)}
               sx={{
-                px: 3,
-                py: 1,
+                px: {md:3,sm:1,xs:1},
+                py: {md:1,sm:0.5,xs:0.5},
                 border: "2px solid black",
                 borderRadius: "15px",
                 cursor: "pointer",
@@ -167,17 +170,19 @@ const BasketSlider = (props: BirthdayTypes) => {
         {/* Slider */}
         <Slider ref={sliderRef} {...settings}>
           {filteredCards.map((cate, index) => (
-            <BasketCard
-              id={cate.id}
-              openModal={() => openDetailModal(cate)}
-              key={index}
-              title={cate.cardName}
-              poster={cate.imageUrl || cate?.lastpageImageUrl}
-              price={cate.actualPrice}
-              saleprice={cate.salePrice}
-              sales={saleSlide}
-              category={cate.cardCategory}
-            />
+            <Box px={1}>
+              <BasketCard
+                id={cate.id}
+                openModal={() => openDetailModal(cate)}
+                key={index}
+                title={cate.cardName}
+                poster={cate.imageUrl || cate?.lastpageImageUrl}
+                price={cate.actualPrice}
+                saleprice={cate.salePrice}
+                sales={saleSlide}
+                category={cate.cardCategory}
+              />
+            </Box>
           ))}
         </Slider>
 
@@ -194,8 +199,8 @@ const BasketSlider = (props: BirthdayTypes) => {
           onClick={() => sliderRef.current?.slickPrev()}
           sx={{
             position: "absolute",
-            top: { md: "30%", sm: "30%", xs: "40%" },
-            left: 0,
+            top: { md: "40%", sm: "40%", xs: "40%" },
+            left: { lg: -20, md: -15, sm: -15, xs: -15 },
             display: "flex",
             justifyContent: "center",
             m: "auto",
@@ -216,8 +221,8 @@ const BasketSlider = (props: BirthdayTypes) => {
           onClick={() => sliderRef.current?.slickNext()}
           sx={{
             position: "absolute",
-            top: { md: "30%", sm: "30%", xs: "40%" },
-            right: 0,
+            top: { md: "40%", sm: "0%", xs: "40%" },
+            right: { lg: -20, md: -15, sm: -15, xs: -15 },
             display: "flex",
             justifyContent: "center",
             m: "auto",

@@ -67,7 +67,7 @@ interface StickerItem {
   width: number;
   height: number;
   zIndex: number;
-  rotation:number
+  rotation: number;
 }
 
 interface ImagePosition {
@@ -248,7 +248,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 20,
     y: 10,
-    width: 85,
+    width: 59,
     height: 105,
     rotation: 0,
     zIndex: 1000,
@@ -258,17 +258,17 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 20,
     y: 10,
-    width: 85,
+    width: 59,
     height: 105,
     rotation: 0,
     zIndex: 1000,
   });
 
   const [aimage3, setAIImage3] = useState<ImagePosition>({
-    x: 50,
-    y: 50,
-    width: 200,
-    height: 200,
+    x: 30,
+    y: 30,
+    width: 340,
+    height: 500,
     // zindex: 1000,
   });
 
@@ -298,6 +298,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
     {
       value: "",
@@ -306,6 +307,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
     {
       value: "",
@@ -314,6 +316,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
   ]);
 
@@ -347,8 +350,11 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
 
   const [slide3DataStore3, setSlide3DataStore3] = useState<any[]>([]);
 
- const addSticker3 = (
-    sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex" | "rotation">
+  const addSticker3 = (
+    sticker: Omit<
+      StickerItem,
+      "x" | "y" | "width" | "height" | "zIndex" | "rotation"
+    >
   ) => {
     setSelectedStickers3((prev) => {
       const newSticker: StickerItem = {

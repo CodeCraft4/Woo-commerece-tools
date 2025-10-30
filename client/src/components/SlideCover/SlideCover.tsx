@@ -22,10 +22,11 @@ const createNewTextElement = (defaults: any) => ({
   fontColor: defaults.fontColor || "#000000",
   fontFamily: defaults.fontFamily || "Roboto",
   textAlign: defaults.textAlign || "center",
+  verticalAlign: defaults.verticalAlign || "center",
   rotation: defaults.rotation || 0,
   zIndex: defaults.zIndex || 1,
   position: { x: 50 + Math.random() * 50, y: 50 + Math.random() * 50 },
-  size: { width: 200, height: 20 },
+  size: { width: 200, height: 30 },
   isEditing: false,
 });
 
@@ -75,6 +76,8 @@ const SlideCover = ({
     setFontColor1,
     setFontWeight1,
     setFontFamily1,
+    setTextAlign1,
+    setVerticalAlign1,
     selectedVideoUrl1,
     setSelectedVideoUrl1,
     selectedAudioUrl1,
@@ -99,18 +102,18 @@ const SlideCover = ({
 
   const location = useLocation();
   const { layout } = location.state || {};
-
-  useEffect(() => {
-    if (layout && !layout1) {
-      setLayout1(layout);
-    }
-  }, [layout, layout1]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
   );
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (layout && !layout1) {
+      setLayout1(layout);
+    }
+  }, [layout, layout1]);
 
   const handleImageUploadClick = (index: number) => {
     setSelectedImageIndex(index);
@@ -238,12 +241,21 @@ const SlideCover = ({
                 fontWeight1,
                 fontColor1,
                 fontFamily1,
+                textAlign1,
+                verticalAlign1,
               }
             : t
         )
       );
     }
-  }, [fontSize1, fontFamily1, fontWeight1, fontColor1]);
+  }, [
+    fontSize1,
+    fontFamily1,
+    fontWeight1,
+    fontColor1,
+    textAlign1,
+    verticalAlign1,
+  ]);
 
   useEffect(() => {
     if (selectedVideoUrl1) {
@@ -262,7 +274,6 @@ const SlideCover = ({
       }));
     }
   }, [selectedAudioUrl1]);
-  
 
   return (
     <Box
@@ -415,6 +426,35 @@ const SlideCover = ({
                 x: textElement.position.x,
                 y: textElement.position.y,
               }}
+              bounds="parent"
+              // ✅ Allow dragging only when not editing
+              disableDragging={!!textElement.isEditing}
+              // ✅ Enable resizing only from bottom-right corner
+              enableResizing={{
+                bottomRight: true,
+                bottom: false,
+                bottomLeft: false,
+                left: false,
+                right: false,
+                top: false,
+                topLeft: false,
+                topRight: false,
+              }}
+              // ✅ Styling for the resize handle
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "12px",
+                  height: "12px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "3px",
+                  right: "-6px",
+                  bottom: "-6px",
+                  cursor: "se-resize",
+                  zIndex: 5,
+                },
+              }}
+              // ✅ Update position and size on move/resize
               onDragStop={(_, d) => {
                 updateTextElement(textElement.id, {
                   position: { x: d.x, y: d.y },
@@ -424,22 +464,20 @@ const SlideCover = ({
               onResizeStop={(_, __, ref, ___, position) => {
                 updateTextElement(textElement.id, {
                   size: {
-                    width: parseInt(ref.style.width),
-                    height: parseInt(ref.style.height),
+                    width: parseInt(ref.style.width, 10),
+                    height: parseInt(ref.style.height, 10),
                   },
                   position: { x: position.x, y: position.y },
                   zIndex: 2001,
                 });
               }}
-              minWidth={100}
-              minHeight={30}
-              bounds="parent"
-              disableDragging={!!textElement.isEditing}
               style={{
                 zIndex: textElement.zIndex,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                border: "1px dashed #4a7bd5",
+                transition: "border 0.2s ease",
               }}
             >
               <Box
@@ -448,28 +486,49 @@ const SlideCover = ({
                   height: "100%",
                   position: "relative",
                   pointerEvents: "auto",
+                  display: "flex",
+                  justifyContent:
+                    textElement.textAlign === "top"
+                      ? "flex-start"
+                      : textElement.textAlign === "end"
+                      ? "flex-end"
+                      : "center",
+                  alignItems:
+                    textElement.verticalAlign === "top"
+                      ? "flex-start"
+                      : textElement.verticalAlign === "bottom"
+                      ? "flex-end"
+                      : "center",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedTextId1(textElement.id);
                 }}
               >
+                {/* Close (delete) icon */}
                 <IconButton
                   size="small"
                   onClick={() => deleteTextElement(textElement.id)}
                   sx={{
                     position: "absolute",
-                    top: -12,
-                    right: -12,
-                    bgcolor: COLORS.primary,
+                    top: -10,
+                    right: -10,
+                    bgcolor: "#1976d2",
                     color: "white",
+                    width: 20,
+                    height: 20,
                     "&:hover": { bgcolor: "#f44336" },
-                    zIndex: textElement.zIndex + 1,
+                    zIndex: 5,
+                    display: "flex",
+                    justifyContent: "center",
+                    m: "auto",
+                    alignItems: "center",
                   }}
                 >
                   <Close fontSize="small" />
                 </IconButton>
 
+                {/* Editable text */}
                 <TextField
                   variant="standard"
                   value={textElement.value}
@@ -491,28 +550,20 @@ const SlideCover = ({
                       fontWeight: textElement.fontWeight,
                       color: textElement.fontColor,
                       fontFamily: textElement.fontFamily,
-                      // textAlign: textElement.textAlign || "center",
                       transform: `rotate(${textElement.rotation}deg)`,
-                      border: "3px dashed #3a7bd5",
-                      padding: "10px",
+                      padding: "0px",
                       width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "move",
+                      height: "100%",
+                      // textAlign: textElement.textAlign || "center",
+                      resize: "none",
                     },
                   }}
                   multiline
                   fullWidth
                   sx={{
-                    "& .MuiInputBase-root": {
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    },
                     "& .MuiInputBase-input": {
-                      overflowY: "auto",
                       textAlign: textElement.textAlign || "center",
+                      overflowY: "auto",
                     },
                   }}
                 />
@@ -520,39 +571,27 @@ const SlideCover = ({
             </Rnd>
           ))}
 
-          {/* Existing Rnd components for QR codes and images... (omitted for brevity) */}
-
           {selectedVideoUrl1 && (
             <Rnd
+              cancel=".no-drag"
               onDragStop={(_, d) =>
                 setQrPosition1((prev) => ({
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrPosition1.zIndex, // Bring to front on drag
                 }))
               }
-              onResizeStop={(_, __, ref, ___, position) => {
+              onResizeStop={(_, __, ref, ___, position) =>
                 setQrPosition1((prev) => ({
                   ...prev,
                   width: parseInt(ref.style.width),
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrPosition1.zIndex, // Bring to front on resize
-                }));
-              }}
+                }))
+              }
               bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
+              enableResizing={false}
               style={{
                 padding: "10px",
               }}
@@ -573,23 +612,22 @@ const SlideCover = ({
               >
                 <Box
                   component={"img"}
-                  src="/assets/images/QR-tips.jpg"
+                  src="/assets/images/video-qr-tips.png"
                   sx={{
                     width: "100%",
                     height: 200,
                     position: "relative",
+                    pointerEvents: "none",
                   }}
                 />
                 <Box
                   sx={{
                     position: "absolute",
-                    bottom: 47,
-                    height: 100,
-                    width: 100,
+                    top: 59,
+                    height: 10,
+                    width: 10,
+                    left: 55,
                     borderRadius: 2,
-                    ml: "8px",
-                    // bgcolor:'red',
-                    p: 1,
                   }}
                 >
                   <QrGenerator
@@ -597,8 +635,28 @@ const SlideCover = ({
                     size={Math.min(qrPosition1.width, qrPosition1.height)}
                   />
                 </Box>
+                <a href={`${selectedVideoUrl1}`} target="_blank">
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 80,
+                      right: 25,
+                      zIndex: 99999,
+                      color: "black",
+                      fontSize: "10px",
+                      width: "105px",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {`${selectedVideoUrl1.slice(0, 20)}.....`}
+                  </Typography>
+                </a>
                 <IconButton
                   onClick={() => setSelectedVideoUrl1(null)}
+                  className="no-drag"
                   sx={{
                     position: "absolute",
                     top: 0,
@@ -616,12 +674,13 @@ const SlideCover = ({
 
           {selectedAudioUrl1 && (
             <Rnd
+              cancel=".no-drag"
               onDragStop={(_, d) =>
                 setQrAudioPosition1((prev) => ({
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrAudioPosition1.zIndex,
+                  zIndex: qrAudioPosition1.zIndex, // Bring to front on drag
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -631,7 +690,7 @@ const SlideCover = ({
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrAudioPosition1.zIndex,
+                  zIndex: qrAudioPosition1.zIndex, // Bring to front on resize
                 }));
               }}
               bounds="parent"
@@ -665,23 +724,22 @@ const SlideCover = ({
               >
                 <Box
                   component={"img"}
-                  src="/assets/images/QR-tips.jpg"
+                  src="/assets/images/audio-qr-tips.png"
                   sx={{
                     width: "100%",
                     height: 200,
                     position: "relative",
+                    pointerEvents:'none'
                   }}
                 />
                 <Box
                   sx={{
                     position: "absolute",
-                    bottom: 47,
-                    height: 100,
-                    width: 100,
+                    top: 62,
+                    height: 10,
+                    width: 10,
+                    left: 62,
                     borderRadius: 2,
-                    ml: "8px",
-                    // bgcolor:'red',
-                    p: 1,
                   }}
                 >
                   <QrGenerator
@@ -692,8 +750,28 @@ const SlideCover = ({
                     )}
                   />
                 </Box>
+                <a href={`${selectedAudioUrl1}`} target="_blank">
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 78,
+                      right: 25,
+                      zIndex: 99999,
+                      color: "black",
+                      fontSize: "10px",
+                      width: "105px",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {`${selectedAudioUrl1.slice(0, 20)}.....`}
+                  </Typography>
+                </a>
                 <IconButton
                   onClick={() => setSelectedAudioUrl1(null)}
+                  className="no-drag"
                   sx={{
                     position: "absolute",
                     top: 0,
@@ -708,6 +786,7 @@ const SlideCover = ({
               </Box>
             </Rnd>
           )}
+
           {draggableImages1
             .filter((img: any) => selectedImg1.includes(img.id))
             .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
@@ -869,6 +948,7 @@ const SlideCover = ({
                 width: { md: "370px", sm: "370px", xs: "90%" },
                 border: "3px dashed #3a7bd5",
                 position: "absolute",
+                bgcolor: "#6183cc36",
                 p: 1,
                 top: 10,
               }}
@@ -909,6 +989,12 @@ const SlideCover = ({
                       : verticalAlign1 === "center"
                       ? "center"
                       : "flex-end",
+                  alignItems:
+                    textAlign1 === "start"
+                      ? "flex-start"
+                      : textAlign1 === "center"
+                      ? "center"
+                      : "flex-end",
                 }}
               >
                 <TextField
@@ -925,7 +1011,8 @@ const SlideCover = ({
                         fontFamily: fontFamily1,
                         textAlign: textAlign1,
                         transform: `rotate(${rotation1}deg)`,
-                        lineHeight: "35px",
+                        lineHeight: "45px",
+                        height: 200,
                       },
                     },
                   }}
@@ -948,12 +1035,6 @@ const SlideCover = ({
                 top: 10,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent:
-                  verticalAlign1 === "top"
-                    ? "flex-start"
-                    : verticalAlign1 === "center"
-                    ? "center"
-                    : "flex-end",
               }}
             >
               {texts1.map((textObj, index) => (
@@ -966,13 +1047,8 @@ const SlideCover = ({
                     mb: 2,
                     border: "3px dashed #3a7bd5",
                     borderRadius: "6px",
+                    justifyContent: "center",
                     display: "flex",
-                    justifyContent:
-                      verticalAlign1 === "top"
-                        ? "flex-start"
-                        : verticalAlign1 === "center"
-                        ? "center"
-                        : "flex-end",
                     alignItems:
                       verticalAlign1 === "top"
                         ? "flex-start"
@@ -1007,34 +1083,34 @@ const SlideCover = ({
                       autoFocus
                       fullWidth
                       multiline
-                      // rows={1}
                       variant="standard"
                       value={textObj.value}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setTexts1((prev) =>
                           prev.map((t, i) =>
-                            i === index ? { ...t, value: newValue } : t
+                            i === index
+                              ? {
+                                  ...t,
+                                  value: newValue,
+                                  textAlign: textAlign1,
+                                  verticalAlign: verticalAlign1,
+                                }
+                              : t
                           )
                         );
                       }}
                       InputProps={{
                         disableUnderline: true,
                         sx: {
-                          display: "flex",
-                          // height:'40px',
-                          justifyContent: "center",
-                          alignItems: "center",
                           "& textarea": {
                             width: "100%",
                             resize: "none",
-                            display: "flex",
-                            overflow: "hidden",
-                            textAlign: "center",
                             fontSize: textObj.fontSize1,
                             fontWeight: textObj.fontWeight1,
                             color: textObj.fontColor1,
                             fontFamily: textObj.fontFamily1,
+                            textAlign: textAlign1,
                           },
                         },
                       }}
@@ -1042,33 +1118,64 @@ const SlideCover = ({
                   ) : (
                     <Box
                       onClick={() => {
+                        if (editingIndex1 !== null) {
+                          setTexts1((prev) =>
+                            prev.map((t, i) =>
+                              i === editingIndex1
+                                ? {
+                                    ...t,
+                                    textAlign: textAlign1,
+                                    verticalAlign: verticalAlign1,
+                                  }
+                                : t
+                            )
+                          );
+                        }
+
+                        // ✅ Then select new box
                         setEditingIndex1(index);
                         setFontSize1(textObj.fontSize1);
                         setFontFamily1(textObj.fontFamily1);
                         setFontWeight1(textObj.fontWeight1);
                         setFontColor1(textObj.fontColor1);
+                        setTextAlign1(textObj.textAlign);
+                        setVerticalAlign1(textObj.verticalAlign);
                       }}
                       sx={{
                         width: "100%",
                         height: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        mx: "auto",
                         cursor: "pointer",
-                        color: "#212121",
-                        borderRadius: "6px",
                       }}
                     >
-                      <TitleOutlined />
                       <Typography
                         sx={{
                           fontSize: textObj.fontSize1,
                           fontWeight: textObj.fontWeight1,
                           color: textObj.fontColor1,
                           fontFamily: textObj.fontFamily1,
+                          textAlign: textObj.textAlign,
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems:
+                            textObj.verticalAlign === "top"
+                              ? "flex-start"
+                              : textObj.verticalAlign === "bottom"
+                              ? "flex-end"
+                              : "center",
+                          justifyContent:
+                            textObj.textAlign === "left"
+                              ? "flex-start"
+                              : textObj.textAlign === "right"
+                              ? "flex-end"
+                              : "center",
                         }}
                       >
+                        {textObj.value.length === 0 ? (
+                          <TitleOutlined
+                            sx={{ alignSelf: "center", color: "gray" }}
+                          />
+                        ) : null}{" "}
                         {textObj.value}
                       </Typography>
                     </Box>
@@ -1080,6 +1187,7 @@ const SlideCover = ({
 
           {isAIimage && (
             <Rnd
+            cancel=".no-drag"
               size={{ width: aimage1.width, height: aimage1.height }}
               position={{ x: aimage1.x, y: aimage1.y }}
               onDragStop={(_, d) =>
@@ -1099,36 +1207,62 @@ const SlideCover = ({
               }
               bounds="parent"
               enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
+                top: false,
+                right: false,
+                bottom: false,
+                left: false,
+                topRight: false,
                 bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
+                bottomLeft: false,
+                topLeft: false,
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "10px",
+                  height: "10px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "10%",
+                  right: "-5px",
+                  bottom: "-5px",
+                  cursor: "se-resize",
+                },
               }}
               style={{
                 zIndex: 10,
+                border: "1px solid #1976d2",
+                display: "flex", // ✅ make content fill
+                alignItems: "stretch",
+                justifyContent: "stretch",
               }}
             >
-              <Box sx={{ position: "relative" }}>
+              {/* ✅ Ensure the container fills RND box */}
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                }}
+              >
+                {/* ✅ Make image fill fully */}
                 <Box
-                  component={"img"}
+                  component="img"
                   src={`${selectedAIimageUrl1}`}
-                  alt={`isAIImage${selectedAIimageUrl1}`}
+                  alt="AI Image"
                   sx={{
                     width: "100%",
                     height: "100%",
-                    // objectFit:'cover'
+                    objectFit: "fill", // or "contain" if you prefer not to crop
+                    display: "block",
+                    pointerEvents:'none'
                   }}
                 />
+
+                {/* Close button */}
                 <IconButton
-                  onClick={() => {
-                    if (setIsAIimage) {
-                      setIsAIimage(false);
-                    }
-                  }}
+                  onClick={() => setIsAIimage?.(false)}
+                  className="no-drag"
                   sx={{
                     position: "absolute",
                     top: -7,
@@ -1207,6 +1341,7 @@ const SlideCover = ({
                     objectFit: "contain", // or "cover" if you want
                     transform: `rotate(${sticker.rotation || 0}deg)`,
                     transition: "transform 0.2s",
+                    border: "1px solid #1976d2",
                     pointerEvents: "none",
                   }}
                 />
@@ -1217,8 +1352,8 @@ const SlideCover = ({
                   onClick={() => removeSticker(index)}
                   sx={{
                     position: "absolute",
-                    top: -4,
-                    right: -24,
+                    top: -8,
+                    right: -10,
                     bgcolor: "black",
                     color: "white",
                     p: 1,
@@ -1242,8 +1377,8 @@ const SlideCover = ({
                   }
                   sx={{
                     position: "absolute",
-                    top: -4,
-                    left: 0,
+                    top: -8,
+                    left: -5,
                     bgcolor: "black",
                     color: "white",
                     p: 1,

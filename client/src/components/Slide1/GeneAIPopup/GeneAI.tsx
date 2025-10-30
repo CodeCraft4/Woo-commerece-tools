@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { Check, Download, Send } from "@mui/icons-material";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
-import { useSlide1Store } from "../../../stores";
+import { useSlide1 } from "../../../context/Slide1Context";
 
 interface GeneAIType {
   onClose: () => void;
@@ -11,14 +11,14 @@ interface GeneAIType {
 }
 
 const GeneAIPopup = (props: GeneAIType) => {
-  const { onClose, activeIndex } = props;
+  const { onClose } = props;
 
   const {
     isAIimage,
     setIsAIimage,
     setSelectedAIimageUrl1,
     selectedAIimageUrl1,
-  } = useSlide1Store();
+  } = useSlide1();
 
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -283,9 +283,9 @@ const GeneAIPopup = (props: GeneAIType) => {
 
     try {
       const genAI = new GoogleGenerativeAI(
-        "AIzaSyCOr6PVpYJ6tOltUM8qkhbf0Pm-F15XM6U"
+        "AIzaSyArFGzwFPWF2uAiQs8BkjrEL4EGGJtht-w"
       );
-
+      
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
       const result = await model.generateContent(
@@ -321,7 +321,7 @@ const GeneAIPopup = (props: GeneAIType) => {
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
         height: 600,
-        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 10 } : "16%",
+        left:{ md: "14%", sm: "14%", xs: 10 },
         mt: { md: 0, sm: 0, xs: 4 },
       }}
     >

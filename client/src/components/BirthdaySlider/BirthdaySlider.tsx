@@ -58,7 +58,10 @@ const BirthdaySlider = (props: BirthdayTypes) => {
     slidesToScroll: 2,
     arrows: false,
     responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: 4 } },
+      { breakpoint: 1920, settings: { slidesToShow: 7 } },
+      { breakpoint: 1440, settings: { slidesToShow: 6 } },
+      { breakpoint: 1030, settings: { slidesToShow: 5 } },
+      { breakpoint: 770, settings: { slidesToShow: 4 } },
       { breakpoint: 600, settings: { slidesToShow: 1, slidesToScroll: 1 } },
     ],
   };
@@ -77,7 +80,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
   return (
     <Box
       sx={{
-        width: { md: "100%", sm: "", xs: "100%" },
+        width: { lg: "100%", md: "100%", sm: "100%", xs: "100%" },
         m: "auto",
         position: "relative",
         mt: { md: 8, sm: 8, xs: 0 },
@@ -92,7 +95,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         }}
       >
         <Typography
-          sx={{ fontSize: { md: "25px", sm: "", xs: "16px" }, fontWeight: 800 }}
+          sx={{ fontSize: { md: "25px", sm: "20px", xs: "16px" }, fontWeight: 800 }}
         >
           {title}
         </Typography>
@@ -123,8 +126,8 @@ const BirthdaySlider = (props: BirthdayTypes) => {
             component={"div"}
             onClick={() => setActiveTab(index)}
             sx={{
-              px: { md: 3, sm: 3, xs: 1 },
-              py: { md: 1, sm: "", xs: 0.5 },
+              px: { md: 3, sm: 1, xs: 1 },
+              py: { md: 1, sm: 0.5, xs: 0.5 },
               border: "2px solid black",
               borderRadius: "15px",
               cursor: "pointer",
@@ -176,18 +179,18 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           </Box>
         )}
         {/* Slider */}
-        <Box sx={{ width: "100%" }}>
-          <Slider ref={sliderRef} {...settings}>
-            {filteredCards?.map((cate) => (
+        <Slider ref={sliderRef} {...settings}>
+          {filteredCards?.map((cate) => (
+            <Box px={{lg:1,md:'2px',sm:1,xs:1}}>
               <ProductCard
                 poster={cate?.imageUrl || cate?.lastpageImageUrl}
                 tabsSlider
                 layoutCard={cate?.polygonLayout}
                 openModal={() => openDetailModal(cate)}
               />
-            ))}
-          </Slider>
-        </Box>
+            </Box>
+          ))}
+        </Slider>
 
         {isOpenDetailModal && selectedCate && (
           <ProductPopup
@@ -203,7 +206,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            left: 0,
+            left: { lg: -20, md: -15, sm: -15, xs: -10 },
             display: "flex",
             justifyContent: "center",
             m: "auto",
@@ -225,7 +228,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           sx={{
             position: "absolute",
             top: "40%",
-            right:0,
+            right: { lg: -20, md: -15, sm: -15, xs: -10 },
             display: "flex",
             justifyContent: "center",
             m: "auto",

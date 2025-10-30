@@ -40,39 +40,39 @@ const Slide4 = () => {
       {selectedVideoUrl4 && (
         <Box
           sx={{
-            position: "relative",
+            position: "absolute", // use absolute like Rnd
+            top: qrPosition4.y,
+            left: qrPosition4.x,
+            width: "100%",
+            height: 180,
             display: "flex",
             justifyContent: "center",
             alignItems: "flex-end",
-            m: "auto",
-            width: "100%",
             textAlign: "center",
-            // height: "100%",
-            top: qrPosition4.y,
-            height: qrPosition4.height,
-            // bottom: 0,
-            flex: 1,
+            zIndex: qrPosition4.zIndex || 1,
           }}
         >
+          {/* Background Image */}
           <Box
-            component={"img"}
-            src="/assets/images/QR-tips.jpg"
+            component="img"
+            src="/assets/images/video-qr-tips.png"
             sx={{
               width: "100%",
-              height: 200,
-              position: "relative",
+              height: "100%",
+              objectFit: "cover",
+              borderRadius: "6px",
             }}
           />
+
+          {/* QR Code */}
           <Box
             sx={{
               position: "absolute",
-              bottom: 46,
-              height: 100,
-              width: 100,
+              top: 49,
+              height: 10,
+              width: 15,
+              left: 58,
               borderRadius: 2,
-              ml: "10px",
-              // bgcolor:'red',
-              p: 1,
             }}
           >
             <QrGenerator
@@ -80,43 +80,68 @@ const Slide4 = () => {
               size={Math.min(qrPosition4.width, qrPosition4.height)}
             />
           </Box>
+
+          {/* Clickable Link */}
+          <a
+            href={`${selectedVideoUrl4}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Typography
+              sx={{
+                position: "absolute",
+                top: 71,
+                right: 25,
+                zIndex: 99,
+                color: "black",
+                fontSize: "10px",
+                width: "105px",
+                cursor: "pointer",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              {`${selectedVideoUrl4.slice(0, 20)}.....`}
+            </Typography>
+          </a>
         </Box>
       )}
 
       {selectedAudioUrl4 && (
         <Box
           sx={{
-            position: "relative",
+            position: "absolute", // use absolute like Rnd
+            top: qrAudioPosition4.y,
+            left: qrAudioPosition4.x,
+            width: "100%",
+            height: 190,
             display: "flex",
             justifyContent: "center",
             alignItems: "flex-end",
-            m: "auto",
-            width: "100%",
             textAlign: "center",
-            height: "100%",
-            bottom: 0,
-            flex: 1,
+            zIndex: qrAudioPosition4.zIndex || 1,
           }}
         >
+          {/* Background Image */}
           <Box
-            component={"img"}
-            src="/assets/images/QR-tips.jpg"
+            component="img"
+            src="/assets/images/audio-qr-tips.png"
             sx={{
               width: "100%",
-              height: 200,
-              position: "relative",
+              height: "100%",
+              objectFit: "cover",
+              borderRadius: "6px",
             }}
           />
+
+          {/* QR Code */}
           <Box
             sx={{
               position: "absolute",
-              bottom: 46,
-              height: 100,
-              width: 100,
+              top: 57,
+              height: 10,
+              width: 15,
+              left: 65,
               borderRadius: 2,
-              ml: "10px",
-              // bgcolor:'red',
-              p: 1,
             }}
           >
             <QrGenerator
@@ -124,6 +149,29 @@ const Slide4 = () => {
               size={Math.min(qrAudioPosition4.width, qrAudioPosition4.height)}
             />
           </Box>
+
+          {/* Clickable Link */}
+          <a
+            href={`${selectedAudioUrl4}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Typography
+              sx={{
+                position: "absolute",
+                top: 71,
+                right: 25,
+                zIndex: 99,
+                color: "black",
+                fontSize: "10px",
+                width: "105px",
+                cursor: "pointer",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              {`${selectedAudioUrl4.slice(0, 20)}.....`}
+            </Typography>
+          </a>
         </Box>
       )}
 
@@ -152,27 +200,30 @@ const Slide4 = () => {
         ))}
 
       {multipleTextValue4 &&
-        texts4.map((e) => (
+        texts4.map((e, index) => (
           <Box
-            key={e}
+            key={index}
             sx={{
               position: "relative",
-              height: "160px",
+              height: "175px",
               width: "100%",
               mb: 2,
               display: "flex",
               justifyContent:
-                e.verticalAlign4 === "top"
+                e.verticalAlign === "top"
                   ? "flex-start"
-                  : e.verticalAlign4 === "center"
+                  : e.verticalAlign === "center"
                   ? "center"
                   : "flex-end",
               alignItems: "center",
+              border: "3px dashed transparent",
+              borderRadius: "6px",
+              p: 1,
             }}
           >
             <Typography
               sx={{
-                textAlign: "center",
+                textAlign: e.textAlign,
                 fontSize: e.fontSize4,
                 fontWeight: e.fontWeight4,
                 color: e.fontColor4,
@@ -180,23 +231,25 @@ const Slide4 = () => {
                 lineHeight: 1.4,
                 wordBreak: "break-word",
                 whiteSpace: "pre-line",
-                // border: "3px dashed #3a7bd5",
-                borderRadius: "6px",
                 width: "100%",
                 height: "80%",
-                dipslay: "flex",
-                alignItems: "center",
-                m: "auto",
-                justifyContent:
-                  e.verticalAlign4 === "top"
+                display: "flex",
+                alignItems:
+                  e.verticalAlign === "top"
                     ? "flex-start"
-                    : e.verticalAlign4 === "center"
-                    ? "center"
-                    : "flex-end",
-                p: 1,
+                    : e.verticalAlign === "bottom"
+                    ? "flex-end"
+                    : "center",
+                justifyContent:
+                  e.textAlign === "left"
+                    ? "flex-start"
+                    : e.textAlign === "right"
+                    ? "flex-end"
+                    : "center",
+                m: "auto",
               }}
             >
-              {e.value || "Add Text"}
+              {e.value}
             </Typography>
           </Box>
         ))}
@@ -317,14 +370,14 @@ const Slide4 = () => {
           src={`${selectedAIimageUrl4}`}
           alt="AIimage"
           style={{
-            position: "absolute", // 👈 so it can use top/left
-            left: aimage4.x, // 👈 saved x position
-            top: aimage4.y, // 👈 saved y position
-            width: `${aimage4.width}px`, // 👈 saved width
-            height: `${aimage4.height}px`, // 👈 saved height
-            objectFit: "contain",
+            position: "absolute",
+            left: aimage4.x,
+            top: aimage4.y,
+            width: `${aimage4.width}px`,
+            height: `${aimage4.height}px`,
+            objectFit: "fill",
             zIndex: 10,
-            pointerEvents: "none", // 👈 prevents accidental clicking
+            pointerEvents: "none", // 👈
           }}
         />
       )}

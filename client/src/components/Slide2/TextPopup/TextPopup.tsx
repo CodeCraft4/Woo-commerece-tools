@@ -23,6 +23,7 @@ interface TextPopupProps {
   onShowFontSizePopup: () => void;
   onShowFontColorPopup: () => void;
   onShowFontFamilyPopup: () => void;
+  onChangeTextAlign: () => void;
   activeChildComponent: React.ReactNode | null;
   onAddTextToCanvas?: () => void;
 }
@@ -44,6 +45,7 @@ const TextPopup = ({
   onShowFontSizePopup,
   onShowFontColorPopup,
   onShowFontFamilyPopup,
+  onChangeTextAlign,
   activeChildComponent,
   onAddTextToCanvas,
 }: TextPopupProps) => {
@@ -61,13 +63,11 @@ const TextPopup = ({
     setFontSize,
     setFontColor,
     setFontFamily,
-    verticalAlign,
     setVerticalAlign,
   } = useSlide2();
 
 
 
-  const verticalAlignOptions: ("top" | "center" | "bottom")[] = ["top", "center", "bottom"];
   // Get the currently selected text element
   const selectedTextElement = textElements.find(text => text.id === selectedTextId);
 
@@ -116,15 +116,6 @@ const TextPopup = ({
     const newWeight = currentWeight === 700 ? 400 : 700;
     updateTextProperty('fontWeight', newWeight);
   };
-
-  // Change Text Align
-  const changeTextAlign = () => {
-    const currentAlign:any = selectedTextElement?.verticalAlign || verticalAlign;
-    const currentIndex = verticalAlignOptions.indexOf(currentAlign);
-    const nextIndex = (currentIndex + 1) % verticalAlignOptions.length;
-    updateTextProperty("verticalAlign", verticalAlignOptions[nextIndex]);
-  };
-
   // Text Rotation
   const rotateText = () => {
     const currentRotation = selectedTextElement?.rotation || rotation;
@@ -234,7 +225,7 @@ const TextPopup = ({
         </IconButton>
 
         {/* Align */}
-        <IconButton onClick={changeTextAlign} sx={editingButtonStyle}>
+        <IconButton onClick={onChangeTextAlign} sx={editingButtonStyle}>
           <FormatAlignCenterOutlined fontSize="large" />
           <Typography variant="caption">Align</Typography>
         </IconButton>

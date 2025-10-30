@@ -20,10 +20,11 @@ const createNewTextElement4 = (defaults: any) => ({
   fontColor: defaults.fontColor || "#000000",
   fontFamily: defaults.fontFamily || "Roboto",
   textAlign: defaults.textAlign || "center",
+  verticalAlign: defaults.verticalAlign || "center",
   rotation: defaults.rotation || 0,
   zIndex: defaults.zIndex || 1,
   position: { x: 50 + Math.random() * 50, y: 50 + Math.random() * 50 },
-  size: { width: 200, height: 20 },
+  size: { width: 200, height: 30 },
   isEditing: false,
 });
 
@@ -56,6 +57,8 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
     verticalAlign4,
     rotation4,
     setTexts4,
+    setVerticalAlign4,
+    setTextAlign4,
     setShowOneTextRightSideBox4,
     fontFamily4,
     // New individual text management
@@ -82,11 +85,9 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
     isAIimage4,
     setIsAIimage4,
     selectedAIimageUrl4,
-
     selectedStickers4,
     updateSticker4,
     removeSticker4,
-
     aimage4,
     setAIImage4,
   } = useSlide4();
@@ -177,13 +178,21 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                 fontWeight4,
                 fontColor4,
                 fontFamily4,
+                textAlign4,
+                verticalAlign4,
               }
             : t
         )
       );
     }
-  }, [fontSize4, fontFamily4, fontWeight4, fontColor4]);
-
+  }, [
+    fontSize4,
+    fontFamily4,
+    fontWeight4,
+    fontColor4,
+    textAlign4,
+    verticalAlign4,
+  ]);
   useEffect(() => {
     if (selectedVideoUrl4) {
       setQrPosition4((prev) => ({
@@ -238,62 +247,114 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                 x: textElement.position.x,
                 y: textElement.position.y,
               }}
+              bounds="parent"
+              // ✅ Allow dragging only when not editing
+              disableDragging={!!textElement.isEditing}
+              // ✅ Enable resizing only from bottom-right corner
+              enableResizing={{
+                bottomRight: true,
+                bottom: false,
+                bottomLeft: false,
+                left: false,
+                right: false,
+                top: false,
+                topLeft: false,
+                topRight: false,
+              }}
+              // ✅ Styling for the resize handle
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "12px",
+                  height: "12px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "3px",
+                  right: "-6px",
+                  bottom: "-6px",
+                  cursor: "se-resize",
+                  zIndex: 5,
+                },
+              }}
+              // ✅ Update position and size on move/resize
               onDragStop={(_, d) => {
                 updateTextElement(textElement.id, {
                   position: { x: d.x, y: d.y },
-                  zIndex: 2001, // Bring to front on drag
+                  zIndex: 2001,
                 });
               }}
               onResizeStop={(_, __, ref, ___, position) => {
                 updateTextElement(textElement.id, {
                   size: {
-                    width: parseInt(ref.style.width),
-                    height: parseInt(ref.style.height),
+                    width: parseInt(ref.style.width, 10),
+                    height: parseInt(ref.style.height, 10),
                   },
                   position: { x: position.x, y: position.y },
-                  zIndex: 2001, // Bring to front on resize
+                  zIndex: 2001,
                 });
               }}
-              bounds="parent"
-              disableDragging={!!textElement.isEditing}
               style={{
                 zIndex: textElement.zIndex,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                border: "1px dashed #4a7bd5",
+                transition: "border 0.2s ease",
               }}
             >
               <Box
                 sx={{
                   width: "100%",
+                  height: "100%",
                   position: "relative",
                   pointerEvents: "auto",
+                  display: "flex",
+                  justifyContent:
+                    textElement.textAlign === "top"
+                      ? "flex-start"
+                      : textElement.textAlign === "end"
+                      ? "flex-end"
+                      : "center",
+                  alignItems:
+                    textElement.verticalAlign === "top"
+                      ? "flex-start"
+                      : textElement.verticalAlign === "bottom"
+                      ? "flex-end"
+                      : "center",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedTextId4(textElement.id);
                 }}
               >
+                {/* Close (delete) icon */}
                 <IconButton
                   size="small"
                   onClick={() => deleteTextElement(textElement.id)}
                   sx={{
                     position: "absolute",
-                    top: -12,
-                    right: -12,
-                    bgcolor: COLORS.primary,
+                    top: -10,
+                    right: -10,
+                    bgcolor: "#1976d2",
                     color: "white",
-                    "&:hover": { bgcolor: "#f4446" },
-                    zIndex: textElement.zIndex + 1,
+                    width: 20,
+                    height: 20,
+                    "&:hover": { bgcolor: "#f44336" },
+                    zIndex: 5,
+                    display: "flex",
+                    justifyContent: "center",
+                    m: "auto",
+                    alignItems: "center",
                   }}
                 >
                   <Close fontSize="small" />
                 </IconButton>
 
+                {/* Editable text */}
                 <TextField
                   variant="standard"
                   value={textElement.value}
                   placeholder="Add Text"
+                  autoFocus
                   onChange={(e) =>
                     updateTextElement(textElement.id, { value: e.target.value })
                   }
@@ -310,35 +371,20 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                       fontWeight: textElement.fontWeight,
                       color: textElement.fontColor,
                       fontFamily: textElement.fontFamily,
-                      // textAlign: textElement.textAlign || "center",
                       transform: `rotate(${textElement.rotation}deg)`,
-                      border:
-                        selectedTextId4 === textElement.id
-                          ? "2px dashed #4a7bd5"
-                          : "2px dashed transparent",
-                      padding: "10px",
+                      padding: "0px",
                       width: "100%",
-                      height: "50px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "move",
+                      height: "100%",
+                      // textAlign: textElement.textAlign || "center",
+                      resize: "none",
                     },
                   }}
                   multiline
                   fullWidth
                   sx={{
-                    "& .MuiInputBase-root": {
-                      // height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "50px",
-                    },
                     "& .MuiInputBase-input": {
-                      overflowY: "auto",
-                      height: "50px",
                       textAlign: textElement.textAlign || "center",
+                      overflowY: "auto",
                     },
                   }}
                 />
@@ -353,7 +399,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrPosition4.zIndex, // Bring to front on drag
+                  zIndex: qrPosition4.zIndex,
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -363,20 +409,11 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrPosition4.zIndex, // Bring to front on resize
+                  zIndex: qrPosition4.zIndex,
                 }));
               }}
               bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
+              enableResizing={false}
               style={{
                 padding: "10px",
               }}
@@ -397,23 +434,22 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
               >
                 <Box
                   component={"img"}
-                  src="/assets/images/QR-tips.jpg"
+                  src="/assets/images/video-qr-tips.png"
                   sx={{
                     width: "100%",
                     height: 200,
                     position: "relative",
+                    pointerEvents:'none'
                   }}
                 />
                 <Box
                   sx={{
                     position: "absolute",
-                    bottom: 46,
-                    height: 100,
-                    width: 100,
+                    top: 59,
+                    height: 10,
+                    width: 10,
+                    left: 55,
                     borderRadius: 2,
-                    ml: "10px",
-                    // bgcolor:'red',
-                    p: 1,
                   }}
                 >
                   <QrGenerator
@@ -421,6 +457,25 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                     size={Math.min(qrPosition4.width, qrPosition4.height)}
                   />
                 </Box>
+                <a href={`${selectedVideoUrl4}`} target="_blank">
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 80,
+                      right: 25,
+                      zIndex: 9999,
+                      color: "black",
+                      fontSize: "10px",
+                      width: "105px",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {`${selectedVideoUrl4.slice(0, 20)}.....`}
+                  </Typography>
+                </a>
                 <IconButton
                   onClick={() => setSelectedVideoUrl4(null)}
                   sx={{
@@ -445,7 +500,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrAudioPosition4.zIndex,
+                  zIndex: qrAudioPosition4.zIndex, // Bring to front on drag
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -455,20 +510,11 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrAudioPosition4.zIndex,
+                  zIndex: qrAudioPosition4.zIndex, // Bring to front on resize
                 }));
               }}
               bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
+              enableResizing={false}
               style={{
                 padding: "10px",
               }}
@@ -489,23 +535,22 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
               >
                 <Box
                   component={"img"}
-                  src="/assets/images/QR-tips.jpg"
+                  src="/assets/images/audio-qr-tips.png"
                   sx={{
                     width: "100%",
                     height: 200,
                     position: "relative",
+                    pointerEvents:'none'
                   }}
                 />
                 <Box
                   sx={{
                     position: "absolute",
-                    bottom: 46,
-                    height: 100,
-                    width: 100,
+                    top: 62,
+                    height: 10,
+                    width: 10,
+                    left: 62,
                     borderRadius: 2,
-                    ml: "10px",
-                    // bgcolor:'red',
-                    p: 1,
                   }}
                 >
                   <QrGenerator
@@ -516,6 +561,25 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                     )}
                   />
                 </Box>
+                <a href={`${selectedAudioUrl4}`} target="_blank">
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 78,
+                      right: 25,
+                      zIndex: 99,
+                      color: "black",
+                      fontSize: "10px",
+                      width: "105px",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {`${selectedAudioUrl4.slice(0, 20)}.....`}
+                  </Typography>
+                </a>
                 <IconButton
                   onClick={() => setSelectedAudioUrl4(null)}
                   sx={{
@@ -690,11 +754,13 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                height: "100%",
-                width: { md: "380px", sm: "380px", xs: "100%" },
-                border: "3px dashed #4a7bd5",
-                position: "relative",
+                height: "97%",
+                width: { md: "370px", sm: "370px", xs: "90%" },
+                border: "3px dashed #3a7bd5",
+                position: "absolute",
+                bgcolor: "#6183cc36",
                 p: 1,
+                top: 10,
               }}
             >
               <IconButton
@@ -703,13 +769,13 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                   position: "absolute",
                   top: -8,
                   right: -8,
-                  width: "45px",
-                  height: "45px",
+                  width: "35px",
+                  height: "35px",
                   p: 1,
                   bgcolor: COLORS.primary,
                   color: "white",
                   border: "1px solid #ccc",
-                  "&:hover": { bgcolor: "#f4446", color: "white" },
+                  "&:hover": { bgcolor: "#f44336", color: "white" },
                   zIndex: 5,
                 }}
                 onClick={() => {
@@ -733,6 +799,12 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                       : verticalAlign4 === "center"
                       ? "center"
                       : "flex-end",
+                  alignItems:
+                    textAlign4 === "start"
+                      ? "flex-start"
+                      : textAlign4 === "center"
+                      ? "center"
+                      : "flex-end",
                 }}
               >
                 <TextField
@@ -750,15 +822,13 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                         textAlign: textAlign4,
                         transform: `rotate(${rotation4}deg)`,
                         lineHeight: "50px",
+                        height: 200,
                       },
                     },
                   }}
                   autoFocus
                   multiline
                   fullWidth
-                  sx={{
-                    width: "100%",
-                  }}
                 />
               </Box>
             </Box>
@@ -767,18 +837,14 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
           {multipleTextValue4 && (
             <Box
               sx={{
-                height: "100%",
-                width: { md: "380px", sm: "380px", xs: "100%" },
+                height: "97%",
+                width: { md: "375px", sm: "375px", xs: "90%" },
                 borderRadius: "6px",
                 p: 1,
+                position: "absolute",
+                top: 10,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent:
-                  verticalAlign4 === "top"
-                    ? "flex-start"
-                    : verticalAlign4 === "center"
-                    ? "center"
-                    : "flex-end",
               }}
             >
               {texts4.map((textObj, index) => (
@@ -789,15 +855,10 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                     height: "175px",
                     width: "100%",
                     mb: 2,
-                    border: "3px dashed #4a7bd5",
+                    border: "3px dashed #3a7bd5",
                     borderRadius: "6px",
+                    justifyContent: "center",
                     display: "flex",
-                    justifyContent:
-                      verticalAlign4 === "top"
-                        ? "flex-start"
-                        : verticalAlign4 === "center"
-                        ? "center"
-                        : "flex-end",
                     alignItems:
                       verticalAlign4 === "top"
                         ? "flex-start"
@@ -810,14 +871,14 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                     size="small"
                     sx={{
                       position: "absolute",
-                      top: -8,
-                      right: -7,
+                      top: -5,
+                      right: -5,
                       width: "28px",
                       height: "28px",
                       bgcolor: COLORS.primary,
                       color: "white",
                       border: "1px solid #ccc",
-                      "&:hover": { bgcolor: "#f4446", color: "white" },
+                      "&:hover": { bgcolor: "#f44336", color: "white" },
                       zIndex: 5,
                     }}
                     onClick={() =>
@@ -832,34 +893,36 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                       autoFocus
                       fullWidth
                       multiline
-                      // rows={1}
                       variant="standard"
                       value={textObj.value}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setTexts4((prev) =>
                           prev.map((t, i) =>
-                            i === index ? { ...t, value: newValue } : t
+                            i === index
+                              ? {
+                                  ...t,
+                                  value: newValue,
+                                  // Ye values bhi update kar do editing ke dauraan
+                                  textAlign: textAlign4,
+                                  verticalAlign: verticalAlign4,
+                                }
+                              : t
                           )
                         );
                       }}
                       InputProps={{
                         disableUnderline: true,
                         sx: {
-                          display: "flex",
-                          // height:'40px',
-                          justifyContent: "center",
-                          alignItems: "center",
                           "& textarea": {
                             width: "100%",
                             resize: "none",
-                            display: "flex",
-                            overflow: "hidden",
-                            textAlign: "center",
+                            height: "100px",
                             fontSize: textObj.fontSize4,
                             fontWeight: textObj.fontWeight4,
                             color: textObj.fontColor4,
                             fontFamily: textObj.fontFamily4,
+                            textAlign: textAlign4, // editing ke dauraan current selection
                           },
                         },
                       }}
@@ -867,33 +930,64 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                   ) : (
                     <Box
                       onClick={() => {
+                        if (editingIndex4 !== null) {
+                          setTexts4((prev) =>
+                            prev.map((t, i) =>
+                              i === editingIndex4
+                                ? {
+                                    ...t,
+                                    textAlign: textAlign4,
+                                    verticalAlign: verticalAlign4,
+                                  }
+                                : t
+                            )
+                          );
+                        }
+
+                        // ✅ Then select new box
                         setEditingIndex4(index);
                         setFontSize4(textObj.fontSize4);
                         setFontFamily4(textObj.fontFamily4);
                         setFontWeight4(textObj.fontWeight4);
                         setFontColor4(textObj.fontColor4);
+                        setTextAlign4(textObj.textAlign);
+                        setVerticalAlign4(textObj.verticalAlign);
                       }}
                       sx={{
                         width: "100%",
                         height: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        mx: "auto",
                         cursor: "pointer",
-                        color: "#212121",
-                        borderRadius: "6px",
                       }}
                     >
-                      <TitleOutlined />
                       <Typography
                         sx={{
                           fontSize: textObj.fontSize4,
                           fontWeight: textObj.fontWeight4,
                           color: textObj.fontColor4,
                           fontFamily: textObj.fontFamily4,
+                          textAlign: textObj.textAlign,
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems:
+                            textObj.verticalAlign === "top"
+                              ? "flex-start"
+                              : textObj.verticalAlign === "bottom"
+                              ? "flex-end"
+                              : "center",
+                          justifyContent:
+                            textObj.textAlign === "left"
+                              ? "flex-start"
+                              : textObj.textAlign === "right"
+                              ? "flex-end"
+                              : "center",
                         }}
                       >
+                        {textObj.value.length === 0 ? (
+                          <TitleOutlined
+                            sx={{ alignSelf: "center", color: "gray" }}
+                          />
+                        ) : null}{" "}
                         {textObj.value}
                       </Typography>
                     </Box>
@@ -924,36 +1018,61 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
               }
               bounds="parent"
               enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
+                top: false,
+                right: false,
+                bottom: false,
+                left: false,
+                topRight: false,
                 bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
+                bottomLeft: false,
+                topLeft: false,
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "10px",
+                  height: "10px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "10%",
+                  right: "-5px",
+                  bottom: "-5px",
+                  cursor: "se-resize",
+                },
               }}
               style={{
                 zIndex: 10,
+                border: "2px solid #1976d2",
+                display: "flex", // ✅ make content fill
+                alignItems: "stretch",
+                justifyContent: "stretch",
               }}
             >
-              <Box sx={{ position: "relative" }}>
+              {/* ✅ Ensure the container fills RND box */}
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                }}
+              >
+                {/* ✅ Make image fill fully */}
                 <Box
-                  component={"img"}
+                  component="img"
                   src={`${selectedAIimageUrl4}`}
-                  alt={`isAIImage${selectedAIimageUrl4}`}
+                  alt="AI Image"
                   sx={{
                     width: "100%",
                     height: "100%",
-                    // objectFit:'cover'
+                    objectFit: "fill", 
+                    display: "block",
+                    pointerEvents:'none'
                   }}
                 />
+
+                {/* Close button */}
                 <IconButton
-                  onClick={() => {
-                    if (setIsAIimage4) {
-                      setIsAIimage4(false);
-                    }
-                  }}
+                  onClick={() => setIsAIimage4?.(false)}
                   sx={{
                     position: "absolute",
                     top: -7,
@@ -1032,6 +1151,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                     objectFit: "contain", // or "cover" if you want
                     transform: `rotate(${sticker.rotation || 0}deg)`,
                     transition: "transform 0.2s",
+                    border: "1px solid #1976d2",
                     pointerEvents: "none",
                   }}
                 />
@@ -1042,8 +1162,8 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                   onClick={() => removeSticker4(index)}
                   sx={{
                     position: "absolute",
-                    top: -4,
-                    right: -24,
+                    top: -8,
+                    right: -10,
                     bgcolor: "black",
                     color: "white",
                     p: 1,
@@ -1067,8 +1187,8 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                   }
                   sx={{
                     position: "absolute",
-                    top: -4,
-                    left: 0,
+                    top: -8,
+                    left: -5,
                     bgcolor: "black",
                     color: "white",
                     p: 1,

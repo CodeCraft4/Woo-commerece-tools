@@ -8,13 +8,13 @@ import {
   PlayCircleOutline,
 } from "@mui/icons-material";
 import CustomButton from "../../CustomButton/CustomButton";
-import TipsVideo from "/assets/images/vedioTip.mp4";
+import TipsVideo from "/assets/images/diy-tips.mp4";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../context/AuthContext";
 import { useSlide2 } from "../../../context/Slide2Context";
-import { COLORS } from "../../../constant/color";
 import toast from "react-hot-toast";
+import { COLORS } from "../../../constant/color";
 
 interface VideoPopupProps {
   onClose: () => void;
@@ -37,6 +37,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
   } = useSlide2();
 
   const [loading, setLoading] = useState(false);
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const { user } = useAuth();
   const generateId = () => Date.now() + Math.random();
 
@@ -204,7 +205,6 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
     loadVideos();
   }, [user, selectedVideoUrl]);
 
-
   // Delete....
   const handleDeleteVideo = async (videoId: string) => {
     if (!user?.id) return;
@@ -234,11 +234,11 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
     <PopupWrapper
       title="Video"
       onClose={onClose}
-     sx={{
-        width: {md:300,sm:300,xs:'95%'},
+      sx={{
+        width: { md: 300, sm: 300, xs: "95%" },
         height: 600,
-        left: activeIndex === 1 ? {md:"17%",sm:"13%",xs:10} : "16%",
-        mt:{md:0,sm:0,xs:4},
+        left: activeIndex === 1 ? { md: "17%", sm: "13%", xs: 10 } : "16%",
+        mt: { md: 0, sm: 0, xs: 4 },
         overflow: "hidden",
       }}
     >
@@ -304,7 +304,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                 title="Maybe Later"
                 width="100%"
                 variant="outlined"
-                  onClick={() => {
+                onClick={() => {
                   setTips(false);
                   setUpload(true);
                 }}
@@ -354,92 +354,177 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                 <ControlPoint fontSize="large" />
                 Add Video
               </Box>
-
-              {userVideos.length > 0 && (
-                <Box
-                  mt={3}
-                  sx={{
-                    height: "400px",
-                    overflowY: "auto",
-                    p: 1,
-                    "&::-webkit-scrollbar": {
-                      height: "6px",
-                      width: "5px",
-                    },
-                    "&::-webkit-scrollbar-track": {
-                      backgroundColor: "#f1f1f1",
-                      borderRadius: "20px",
-                    },
-                    "&::-webkit-scrollbar-thumb": {
-                      backgroundColor: COLORS.primary,
-                      borderRadius: "20px",
-                    },
-                  }}
-                >
-                  <Typography
-                    sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
-                  >
-                    Your Uploaded Videos:
-                  </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
+              >
+                {userVideos.length > 0 && (
                   <Box
+                    mt={3}
                     sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 1,
+                      height: "400px",
+                      overflowY: "auto",
+                      p: 1,
+                      "&::-webkit-scrollbar": {
+                        height: "6px",
+                        width: "5px",
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        backgroundColor: "#f1f1f1",
+                        borderRadius: "20px",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        backgroundColor: COLORS.primary,
+                        borderRadius: "20px",
+                      },
                     }}
                   >
-                    {userVideos.map((v) => (
-                      <Box
-                        key={v.id}
-                        sx={{
-                          position: "relative",
-                          border:
-                            selectedVideoUrl === v.url
-                              ? "3px solid #3a7bd5"
-                              : "1px solid #ccc", // highlight selected
-                          borderRadius: 2,
-                          overflow: "hidden",
-                          width: "100%",
-                          cursor: "pointer",
-                          opacity: selectedVideoUrl === v.url ? 1 : 0.8,
-                          transition: "all 0.2s ease-in-out",
-                          "&:hover": {
-                            borderColor: "#3a7bd5",
-                            opacity: 1,
-                          },
-                        }}
-                      >
-                        <video
-                          src={v.url}
+                    <Typography
+                      sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
+                    >
+                      Your Uploaded Videos:
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                      }}
+                    >
+                      {userVideos.map((v) => (
+                        <Box
+                          key={v.id}
                           onClick={() =>
                             setSelectedVideoUrl((prev) =>
                               prev === v.url ? null : v.url
                             )
                           }
-                          controls
-                          style={{
-                            width: "100%",
-                            height: "160px",
-                            objectFit: "cover",
-                          }}
-                        />
-                        <IconButton
-                          onClick={() => handleDeleteVideo(v.id)}
                           sx={{
-                            position: "absolute",
-                            top: 4,
-                            right: 4,
-                            bgcolor: "#fff",
-                            "&:hover": { bgcolor: "#f3f0f0ff", color: "red" },
+                            position: "relative",
+                            border:
+                              selectedVideoUrl === v.url
+                                ? "3px solid #3a7bd5"
+                                : "1px solid #ccc",
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            width: "100%",
+                            cursor: "pointer",
+                            opacity: selectedVideoUrl === v.url ? 1 : 0.9,
+                            transition: "all 0.2s ease-in-out",
+                            "&:hover": {
+                              borderColor: "#3a7bd5",
+                              opacity: 1,
+                            },
                           }}
                         >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    ))}
+                          {/* 🎥 Video */}
+                          <video
+                            id={`video-${v.id}`}
+                            src={v.url}
+                            controls={playingVideoId ? true : false}
+                            style={{
+                              width: "100%",
+                              height: "150px",
+                              objectFit: "contain",
+                              // objectFit: "cover",
+                            }}
+                            onPlay={() => setPlayingVideoId(v.id)}
+                            onPause={() => setPlayingVideoId(null)}
+                            onEnded={() => setPlayingVideoId(null)}
+                          />
+
+                          {/* ▶ Overlay Play Button (hidden when playing) */}
+                          {playingVideoId !== v.id && (
+                            <Box
+                              onClick={(e) => {
+                                e.stopPropagation(); // prevent parent onClick
+                                const video = document.getElementById(
+                                  `video-${v.id}`
+                                ) as HTMLVideoElement;
+                                if (video) {
+                                  // Pause all other videos
+                                  document
+                                    .querySelectorAll("video")
+                                    .forEach((vid) => {
+                                      if (vid !== video) vid.pause();
+                                    });
+
+                                  // Play/pause toggle
+                                  if (video.paused) {
+                                    video.play();
+                                  } else {
+                                    video.pause();
+                                  }
+                                }
+                              }}
+                              sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                bgcolor: "rgba(0, 0, 0, 0.3)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                transition: "all 0.3s ease",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  bgcolor: "rgba(0, 0, 0, 0.4)",
+                                },
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  bgcolor: "#fff",
+                                  borderRadius: "50%",
+                                  width: 50,
+                                  height: 50,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  border: `3px solid ${COLORS.seconday}`,
+                                  outline: "2px solid white",
+                                }}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  height="30"
+                                  viewBox="0 0 24 24"
+                                  width="30"
+                                  fill="#412485ff"
+                                >
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* 🗑 Delete Button */}
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteVideo(v.id);
+                            }}
+                            sx={{
+                              position: "absolute",
+                              top: 4,
+                              right: 4,
+                              bgcolor: "#fff",
+                              "&:hover": { bgcolor: "#f3f0f0ff", color: "red" },
+                            }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
                   </Box>
-                </Box>
-              )}
+                )}
+              </Box>
             </>
           )}
 

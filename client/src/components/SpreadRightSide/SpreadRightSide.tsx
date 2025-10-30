@@ -23,7 +23,7 @@ const createNewTextElement3 = (defaults: any) => ({
   rotation: defaults.rotation || 0,
   zIndex: defaults.zIndex || 1,
   position: { x: 50 + Math.random() * 50, y: 50 + Math.random() * 50 },
-  size: { width: 200, height: 20 },
+  size: { width: 200, height: 30 },
   isEditing: false,
 });
 
@@ -58,6 +58,8 @@ const SpreadRightSide = ({
     fontColor3,
     textAlign3,
     verticalAlign3,
+    setVerticalAlign3,
+    setTextAlign3,
     rotation3,
     setTexts3,
     setShowOneTextRightSideBox3,
@@ -86,7 +88,6 @@ const SpreadRightSide = ({
     isAIimage3,
     setIsAIimage3,
     selectedAIimageUrl3,
-
     selectedStickers3,
     updateSticker3,
     removeSticker3,
@@ -180,12 +181,21 @@ const SpreadRightSide = ({
                 fontWeight3,
                 fontColor3,
                 fontFamily3,
+                textAlign3,
+                verticalAlign3,
               }
             : t
         )
       );
     }
-  }, [fontSize3, fontFamily3, fontWeight3, fontColor3]);
+  }, [
+    fontSize3,
+    fontFamily3,
+    fontWeight3,
+    fontColor3,
+    textAlign3,
+    verticalAlign3,
+  ]);
 
   useEffect(() => {
     if (selectedVideoUrl3) {
@@ -241,31 +251,58 @@ const SpreadRightSide = ({
                 x: textElement.position.x,
                 y: textElement.position.y,
               }}
+              bounds="parent"
+              // ✅ Allow dragging only when not editing
+              disableDragging={!!textElement.isEditing}
+              // ✅ Enable resizing only from bottom-right corner
+              enableResizing={{
+                bottomRight: true,
+                bottom: false,
+                bottomLeft: false,
+                left: false,
+                right: false,
+                top: false,
+                topLeft: false,
+                topRight: false,
+              }}
+              // ✅ Styling for the resize handle
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "12px",
+                  height: "12px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "3px",
+                  right: "-6px",
+                  bottom: "-6px",
+                  cursor: "se-resize",
+                  zIndex: 5,
+                },
+              }}
+              // ✅ Update position and size on move/resize
               onDragStop={(_, d) => {
                 updateTextElement(textElement.id, {
                   position: { x: d.x, y: d.y },
-                  zIndex: 2001, // Bring to front on drag
+                  zIndex: 2001,
                 });
               }}
               onResizeStop={(_, __, ref, ___, position) => {
                 updateTextElement(textElement.id, {
                   size: {
-                    width: parseInt(ref.style.width),
-                    height: parseInt(ref.style.height),
+                    width: parseInt(ref.style.width, 10),
+                    height: parseInt(ref.style.height, 10),
                   },
                   position: { x: position.x, y: position.y },
-                  zIndex: 2001, // Bring to front on resize
+                  zIndex: 2001,
                 });
               }}
-              minWidth={100}
-              minHeight={30}
-              bounds="parent"
-              disableDragging={!!textElement.isEditing}
               style={{
                 zIndex: textElement.zIndex,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                border: "1px dashed #4a7bd5",
+                transition: "border 0.2s ease",
               }}
             >
               <Box
@@ -274,32 +311,54 @@ const SpreadRightSide = ({
                   height: "100%",
                   position: "relative",
                   pointerEvents: "auto",
+                  display: "flex",
+                  justifyContent:
+                    textElement.textAlign === "top"
+                      ? "flex-start"
+                      : textElement.textAlign === "end"
+                      ? "flex-end"
+                      : "center",
+                  alignItems:
+                    textElement.verticalAlign === "top"
+                      ? "flex-start"
+                      : textElement.verticalAlign === "bottom"
+                      ? "flex-end"
+                      : "center",
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedTextId3(textElement.id);
                 }}
               >
+                {/* Close (delete) icon */}
                 <IconButton
                   size="small"
                   onClick={() => deleteTextElement(textElement.id)}
                   sx={{
                     position: "absolute",
-                    top: -12,
-                    right: -12,
-                    bgcolor: COLORS.primary,
+                    top: -10,
+                    right: -10,
+                    bgcolor: "#1976d2",
                     color: "white",
+                    width: 20,
+                    height: 20,
                     "&:hover": { bgcolor: "#f44336" },
-                    zIndex: textElement.zIndex + 1,
+                    zIndex: 5,
+                    display: "flex",
+                    justifyContent: "center",
+                    m: "auto",
+                    alignItems: "center",
                   }}
                 >
                   <Close fontSize="small" />
                 </IconButton>
 
+                {/* Editable text */}
                 <TextField
                   variant="standard"
                   value={textElement.value}
                   placeholder="Add Text"
+                  autoFocus
                   onChange={(e) =>
                     updateTextElement(textElement.id, { value: e.target.value })
                   }
@@ -316,34 +375,20 @@ const SpreadRightSide = ({
                       fontWeight: textElement.fontWeight,
                       color: textElement.fontColor,
                       fontFamily: textElement.fontFamily,
-                      // textAlign: textElement.textAlign || "center",
                       transform: `rotate(${textElement.rotation}deg)`,
-                      border:
-                        selectedTextId3 === textElement.id
-                          ? "3px dashed #3a7bd5"
-                          : "3px dashed transparent",
-                      padding: "10px",
+                      padding: "0px",
                       width: "100%",
                       height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "move",
+                      // textAlign: textElement.textAlign || "center",
+                      resize: "none",
                     },
                   }}
                   multiline
                   fullWidth
                   sx={{
-                    "& .MuiInputBase-root": {
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    },
                     "& .MuiInputBase-input": {
-                      height: "100% !important",
-                      overflowY: "auto",
                       textAlign: textElement.textAlign || "center",
+                      overflowY: "auto",
                     },
                   }}
                 />
@@ -368,20 +413,11 @@ const SpreadRightSide = ({
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrPosition3.zIndex, // Bring to front on resize
+                  zIndex: qrPosition3.zIndex,
                 }));
               }}
               bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
+              enableResizing={false}
               style={{
                 padding: "10px",
               }}
@@ -402,23 +438,22 @@ const SpreadRightSide = ({
               >
                 <Box
                   component={"img"}
-                  src="/assets/images/QR-tips.jpg"
+                  src="/assets/images/video-qr-tips.png"
                   sx={{
                     width: "100%",
                     height: 200,
                     position: "relative",
+                    pointerEvents:'none'
                   }}
                 />
                 <Box
                   sx={{
                     position: "absolute",
-                    bottom: 46,
-                    height: 100,
-                    width: 100,
+                    top: 59,
+                    height: 10,
+                    width: 10,
+                    left: 55,
                     borderRadius: 2,
-                    ml: "10px",
-                    // bgcolor:'red',
-                    p: 1,
                   }}
                 >
                   <QrGenerator
@@ -426,6 +461,25 @@ const SpreadRightSide = ({
                     size={Math.min(qrPosition3.width, qrPosition3.height)}
                   />
                 </Box>
+                <a href={`${selectedVideoUrl3}`} target="_blank">
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 80,
+                      right: 25,
+                      zIndex: 9999,
+                      color: "black",
+                      fontSize: "10px",
+                      width: "105px",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {`${selectedVideoUrl3.slice(0, 20)}.....`}
+                  </Typography>
+                </a>
                 <IconButton
                   onClick={() => setSelectedVideoUrl3(null)}
                   sx={{
@@ -450,7 +504,7 @@ const SpreadRightSide = ({
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrAudioPosition3.zIndex,
+                  zIndex: qrAudioPosition3.zIndex, // Bring to front on drag
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -460,20 +514,11 @@ const SpreadRightSide = ({
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrAudioPosition3.zIndex,
+                  zIndex: qrAudioPosition3.zIndex, // Bring to front on resize
                 }));
               }}
               bounds="parent"
-              enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
-                bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
-              }}
+              enableResizing={false}
               style={{
                 padding: "10px",
               }}
@@ -494,23 +539,22 @@ const SpreadRightSide = ({
               >
                 <Box
                   component={"img"}
-                  src="/assets/images/QR-tips.jpg"
+                  src="/assets/images/audio-qr-tips.png"
                   sx={{
                     width: "100%",
                     height: 200,
                     position: "relative",
+                    pointerEvents:'none'
                   }}
                 />
                 <Box
                   sx={{
                     position: "absolute",
-                    bottom: 46,
-                    height: 100,
-                    width: 100,
+                    top: 62,
+                    height: 10,
+                    width: 10,
+                    left: 62,
                     borderRadius: 2,
-                    ml: "10px",
-                    // bgcolor:'red',
-                    p: 1,
                   }}
                 >
                   <QrGenerator
@@ -521,6 +565,25 @@ const SpreadRightSide = ({
                     )}
                   />
                 </Box>
+                <a href={`${selectedAudioUrl3}`} target="_blank">
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 78,
+                      right: 25,
+                      zIndex: 9999,
+                      color: "black",
+                      fontSize: "10px",
+                      width: "105px",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {`${selectedAudioUrl3.slice(0, 20)}.....`}
+                  </Typography>
+                </a>
                 <IconButton
                   onClick={() => setSelectedAudioUrl3(null)}
                   sx={{
@@ -695,11 +758,13 @@ const SpreadRightSide = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                height: "100%",
-                width: { md: "370px", sm: "370px", xs: "100%" },
+                height: "97%",
+                width: { md: "370px", sm: "370px", xs: "90%" },
                 border: "3px dashed #3a7bd5",
-                position: "relative",
+                position: "absolute",
+                bgcolor: "#6183cc36",
                 p: 1,
+                top: 10,
               }}
             >
               <IconButton
@@ -738,6 +803,12 @@ const SpreadRightSide = ({
                       : verticalAlign3 === "center"
                       ? "center"
                       : "flex-end",
+                  alignItems:
+                    textAlign3 === "start"
+                      ? "flex-start"
+                      : textAlign3 === "center"
+                      ? "center"
+                      : "flex-end",
                 }}
               >
                 <TextField
@@ -754,16 +825,14 @@ const SpreadRightSide = ({
                         fontFamily: fontFamily3,
                         textAlign: textAlign3,
                         transform: `rotate(${rotation3}deg)`,
-                        lineHeight: "50px",
+                        lineHeight: "45px",
+                        height: 200,
                       },
                     },
                   }}
                   autoFocus
                   multiline
                   fullWidth
-                  sx={{
-                    width: "100%",
-                  }}
                 />
               </Box>
             </Box>
@@ -772,18 +841,14 @@ const SpreadRightSide = ({
           {multipleTextValue3 && (
             <Box
               sx={{
-                height: "100%",
-                width: { md: "375px", sm: "375px", xs: "100%" },
+                height: "97%",
+                width: { md: "375px", sm: "375px", xs: "90%" },
                 borderRadius: "6px",
                 p: 1,
+                position: "absolute",
+                top: 10,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent:
-                  verticalAlign3 === "top"
-                    ? "flex-start"
-                    : verticalAlign3 === "center"
-                    ? "center"
-                    : "flex-end",
               }}
             >
               {texts3.map((textObj, index) => (
@@ -796,13 +861,8 @@ const SpreadRightSide = ({
                     mb: 2,
                     border: "3px dashed #3a7bd5",
                     borderRadius: "6px",
+                    justifyContent: "center",
                     display: "flex",
-                    justifyContent:
-                      verticalAlign3 === "top"
-                        ? "flex-start"
-                        : verticalAlign3 === "center"
-                        ? "center"
-                        : "flex-end",
                     alignItems:
                       verticalAlign3 === "top"
                         ? "flex-start"
@@ -837,34 +897,36 @@ const SpreadRightSide = ({
                       autoFocus
                       fullWidth
                       multiline
-                      // rows={1}
                       variant="standard"
                       value={textObj.value}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setTexts3((prev) =>
                           prev.map((t, i) =>
-                            i === index ? { ...t, value: newValue } : t
+                            i === index
+                              ? {
+                                  ...t,
+                                  value: newValue,
+                                  // Ye values bhi update kar do editing ke dauraan
+                                  textAlign: textAlign3,
+                                  verticalAlign: verticalAlign3,
+                                }
+                              : t
                           )
                         );
                       }}
                       InputProps={{
                         disableUnderline: true,
                         sx: {
-                          display: "flex",
-                          // height:'40px',
-                          justifyContent: "center",
-                          alignItems: "center",
                           "& textarea": {
                             width: "100%",
                             resize: "none",
-                            display: "flex",
-                            overflow: "hidden",
-                            textAlign: "center",
+                            height: "100px",
                             fontSize: textObj.fontSize3,
                             fontWeight: textObj.fontWeight3,
                             color: textObj.fontColor3,
                             fontFamily: textObj.fontFamily3,
+                            textAlign: textAlign3, // editing ke dauraan current selection
                           },
                         },
                       }}
@@ -872,33 +934,64 @@ const SpreadRightSide = ({
                   ) : (
                     <Box
                       onClick={() => {
+                        if (editingIndex3 !== null) {
+                          setTexts3((prev) =>
+                            prev.map((t, i) =>
+                              i === editingIndex3
+                                ? {
+                                    ...t,
+                                    textAlign: textAlign3,
+                                    verticalAlign: verticalAlign3,
+                                  }
+                                : t
+                            )
+                          );
+                        }
+
+                        // ✅ Then select new box
                         setEditingIndex3(index);
                         setFontSize3(textObj.fontSize3);
                         setFontFamily3(textObj.fontFamily3);
                         setFontWeight3(textObj.fontWeight3);
                         setFontColor3(textObj.fontColor3);
+                        setTextAlign3(textObj.textAlign);
+                        setVerticalAlign3(textObj.verticalAlign);
                       }}
                       sx={{
                         width: "100%",
                         height: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        mx: "auto",
                         cursor: "pointer",
-                        color: "#212121",
-                        borderRadius: "6px",
                       }}
                     >
-                      <TitleOutlined />
                       <Typography
                         sx={{
                           fontSize: textObj.fontSize3,
                           fontWeight: textObj.fontWeight3,
                           color: textObj.fontColor3,
                           fontFamily: textObj.fontFamily3,
+                          textAlign: textObj.textAlign,
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems:
+                            textObj.verticalAlign === "top"
+                              ? "flex-start"
+                              : textObj.verticalAlign === "bottom"
+                              ? "flex-end"
+                              : "center",
+                          justifyContent:
+                            textObj.textAlign === "left"
+                              ? "flex-start"
+                              : textObj.textAlign === "right"
+                              ? "flex-end"
+                              : "center",
                         }}
                       >
+                        {textObj.value.length === 0 ? (
+                          <TitleOutlined
+                            sx={{ alignSelf: "center", color: "gray" }}
+                          />
+                        ) : null}{" "}
                         {textObj.value}
                       </Typography>
                     </Box>
@@ -929,36 +1022,61 @@ const SpreadRightSide = ({
               }
               bounds="parent"
               enableResizing={{
-                top: true,
-                right: true,
-                bottom: true,
-                left: true,
-                topRight: true,
+                top: false,
+                right: false,
+                bottom: false,
+                left: false,
+                topRight: false,
                 bottomRight: true,
-                bottomLeft: true,
-                topLeft: true,
+                bottomLeft: false,
+                topLeft: false,
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "10px",
+                  height: "10px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "10%",
+                  right: "-5px",
+                  bottom: "-5px",
+                  cursor: "se-resize",
+                },
               }}
               style={{
                 zIndex: 10,
+                border: "2px solid #1976d2",
+                display: "flex",
+                alignItems: "stretch",
+                justifyContent: "stretch",
               }}
             >
-              <Box sx={{ position: "relative" }}>
+              {/* ✅ Ensure the container fills RND box */}
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                }}
+              >
+                {/* ✅ Make image fill fully */}
                 <Box
-                  component={"img"}
+                  component="img"
                   src={`${selectedAIimageUrl3}`}
-                  alt={`isAIImage${selectedAIimageUrl3}`}
+                  alt="AI Image"
                   sx={{
                     width: "100%",
                     height: "100%",
-                    // objectFit:'cover'
+                    objectFit: "fill", 
+                    display: "block",
+                    pointerEvents:'none'
                   }}
                 />
+
+                {/* Close button */}
                 <IconButton
-                  onClick={() => {
-                    if (setIsAIimage3) {
-                      setIsAIimage3(false);
-                    }
-                  }}
+                  onClick={() => setIsAIimage3?.(false)}
                   sx={{
                     position: "absolute",
                     top: -7,
@@ -1037,6 +1155,7 @@ const SpreadRightSide = ({
                     objectFit: "contain", // or "cover" if you want
                     transform: `rotate(${sticker.rotation || 0}deg)`,
                     transition: "transform 0.2s",
+                    border: "1px solid #1976d2",
                     pointerEvents: "none",
                   }}
                 />
@@ -1047,8 +1166,8 @@ const SpreadRightSide = ({
                   onClick={() => removeSticker3(index)}
                   sx={{
                     position: "absolute",
-                    top: -4,
-                    right: -24,
+                    top: -8,
+                    right: -10,
                     bgcolor: "black",
                     color: "white",
                     p: 1,
@@ -1072,8 +1191,8 @@ const SpreadRightSide = ({
                   }
                   sx={{
                     position: "absolute",
-                    top: -4,
-                    left: 0,
+                    top: -8,
+                    left: -5,
                     bgcolor: "black",
                     color: "white",
                     p: 1,

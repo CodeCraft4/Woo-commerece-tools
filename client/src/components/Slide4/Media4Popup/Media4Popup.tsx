@@ -198,9 +198,9 @@ const Media4Popup = ({ onClose, mediaType }: Media4PopupProps) => {
       title={isVideo ? "Video" : "Audio"}
       onClose={onClose}
       sx={{
-        width: { md: 400, sm: 400, xs: "95%" },
+        width: { md: 300, sm: 400, xs: "95%" },
         height: 600,
-        left: { md: "50%", sm: "50%", xs: 10 },
+        left: { md: "56%", sm: "50%", xs: 10 },
         mt:{md:0,sm:0,xs:4},
         overflow: "hidden",
       }}
@@ -215,8 +215,8 @@ const Media4Popup = ({ onClose, mediaType }: Media4PopupProps) => {
               position: "relative",
             }}
           >
-            <audio
-              src={"/assets/images/audioTip.mp4"}
+            <video
+              src={"/assets/images/diy-tips.mp4"}
               autoPlay
               loop
               muted

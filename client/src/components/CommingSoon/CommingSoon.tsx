@@ -8,8 +8,8 @@ const CommingSoonOffers = () => {
       sx={{
         borderRadius: 4,
         width: "100%",
-        height: { md: "450px", sm: "", xs: "auto" },
-        display: { md: "flex", sm: "", xs: "block" },
+        height: { md: "450px", sm: "100%", xs: "auto" },
+        display: { md: "flex", sm: "flex", xs: "block" },
         // mt: 8,
         bgcolor: COLORS.seconday,
         justifyContent: "center",
@@ -20,7 +20,7 @@ const CommingSoonOffers = () => {
     >
       <Box
         sx={{
-          width: { md: "40%", sm: "", xs: "100%" },
+          width: { md: "40%", sm: "50%", xs: "100%" },
           display: "flex",
           justifyContent: "center",
           flexDirection: "column",
@@ -34,7 +34,7 @@ const CommingSoonOffers = () => {
           sx={{
             fontSize: {
               md: "35px",
-              sm: "",
+              sm: "25px",
               xs: "23px",
               textAlign: { md: "start", sm: "start", xs: "center" },
               fontWeight: 800,
@@ -47,7 +47,7 @@ const CommingSoonOffers = () => {
           sx={{
             py: 1,
             fontSize: { md: "auto", sm: "auto", xs: "12px" },
-            width: { md: "90%", sm: "", xs: "100%" },
+            width: { md: "90%", sm: "100%", xs: "100%" },
             fontWeight: 300,
           }}
         >
@@ -65,7 +65,7 @@ const CommingSoonOffers = () => {
         </Box>
       </Box>
 
-      <Box sx={{ width: { md: "60%", sm: "60%", xs: "100%" } }}>
+      <Box sx={{ width: { md: "60%", sm: "50%", xs: "100%" } }}>
         <Box
           component={"img"}
           src="/assets/images/DIYChristmas.jpg"

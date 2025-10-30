@@ -10,9 +10,7 @@ const Applayout = ({ children }: Props) => {
   return (
     <Box>
       <Navbar />
-      {/* {location.pathname === ADMINS_DASHBOARD.HOME && <DashboardHeader />} */}
       {children}
-      {/* <Footer/> */}
     </Box>
   );
 };

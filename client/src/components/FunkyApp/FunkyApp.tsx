@@ -1,6 +1,5 @@
 import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../constant/color";
-import { Apple } from "@mui/icons-material";
 
 const FunkyApp = () => {
   return (
@@ -8,7 +7,7 @@ const FunkyApp = () => {
       sx={{
         display: { md: "flex", sm: "flex", xs: "block" },
         width: "100%",
-        height: { lg: 550, md: 450, sm: 650, xs: "auto" },
+        height: { lg: 550, md: 450, sm: 300, xs: "auto" },
         bgcolor: "#f4e8fe",
         // color: COLORS.white,
         borderRadius: 4,
@@ -29,7 +28,7 @@ const FunkyApp = () => {
       >
         <Typography
           sx={{
-            fontSize: { md: "35px", sm: "", xs: "25px" },
+            fontSize: { md: "35px", sm: "25px", xs: "25px" },
             fontWeight: 800,
             textAlign: { md: "start", sm: "start", xs: "center" },
           }}
@@ -38,8 +37,8 @@ const FunkyApp = () => {
         </Typography>
         <Typography
           sx={{
-            fontSize: { md: "16px", sm: "", xs: "12px" },
-            width: { lg: "80%", md: "100%", sm: "", xs: "100%" },
+            fontSize: { md: "16px", sm: "14px", xs: "12px" },
+            width: { lg: "80%", md: "100%", sm: "100%", xs: "100%" },
             fontWeight: 300,
           }}
         >
@@ -52,7 +51,7 @@ const FunkyApp = () => {
             display: { md: "flex", sm: "flex", xs: "block" },
             gap: "15px",
             mt: 3,
-            mx: "auto",
+            mx: {md:0,sm:0,xs:'auto'},
           }}
         >
           <Box
@@ -62,10 +61,14 @@ const FunkyApp = () => {
               px: { lg: 8, md: 4, sm: 3, xs: 10 },
             }}
           >
-            <Apple fontSize="large" />
+              <Box
+              component={"img"}
+              src="/assets/icons/Apple.svg"
+              sx={{ width: {md:35,sm:30,xs:30} }}
+            />
             <Box>
-              <Typography fontSize={"12px"}>Download on the</Typography>
-              <Typography variant="h6">App Store</Typography>
+              <Typography fontSize={{md:"12px",sm:"10px",xs:"12px"}}>Download on the</Typography>
+              <Typography fontSize={{md:"18px",sm:"10px",xs:"12px"}}>App Store</Typography>
             </Box>
           </Box>
 
@@ -73,19 +76,19 @@ const FunkyApp = () => {
             component={"button"}
             sx={{
               ...deployBtn,
-              px: { lg: 8, md: 4, sm: 3, xs: 10 },
+              px: { lg: 8, md: 4, sm: 1, xs: 10 },
             }}
           >
             <Box
               component={"img"}
-              src="/assets/icons/playstore.png"
-              sx={{ width: 35 }}
+              src="/assets/icons/Playstore.svg"
+              sx={{ width: {md:35,sm:30,xs:30} }}
             />
             <Box>
-              <Typography fontSize={{ md: "12px", sm: "12px", xs: "10px" }}>
+              <Typography fontSize={{ md: "12px", sm: "8px", xs: "10px" }}>
                 ANDRIOD APP ON
               </Typography>
-              <Typography fontSize={{ md: "18px", sm: "18px", xs: "16px" }}>
+              <Typography fontSize={{ md: "18px", sm: "8px", xs: "16px" }}>
                 Google Play
               </Typography>
             </Box>
@@ -109,7 +112,7 @@ const FunkyApp = () => {
 export default FunkyApp;
 
 const deployBtn = {
-  height: "55px",
+  height: {md:"55px",sm:40,xs:"55px"},
   borderRadius: 4,
   bgcolor: COLORS.black,
   color: COLORS.white,

@@ -78,7 +78,7 @@ interface StickerItem {
   width: number;
   height: number;
   zIndex: number;
-  rotation:number
+  rotation: number;
 }
 
 interface ImagePosition {
@@ -210,6 +210,10 @@ interface Slide4ContextType {
   ) => void;
   updateSticker4: (index: number, data: Partial<StickerItem>) => void;
   removeSticker4: (index: number) => void;
+
+  // Layout with uploaded images for preview
+  layout4: any;
+  setLayout4: React.Dispatch<React.SetStateAction<any>>;
 }
 
 const Slide4Context = createContext<Slide4ContextType | undefined>(undefined);
@@ -245,16 +249,18 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
+  const [layout4, setLayout4] = useState<any>(null);
+
   // QR Resizing and Moving
   const [qrPosition4, setQrPosition4] = useState<DraggableQR>({
     id: "qr4",
     url: "",
     x: 20,
     y: 10,
-    width: 85,
+    width: 59,
     height: 105,
     rotation: 0,
-    zIndex: 4000,
+    zIndex: 999,
   });
 
   const [qrAudioPosition4, setQrAudioPosition4] = useState<DraggableAudioQR>({
@@ -262,17 +268,17 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 20,
     y: 10,
-    width: 85,
+    width: 59,
     height: 105,
     rotation: 0,
-    zIndex: 4000,
+    zIndex: 999,
   });
 
   const [aimage4, setAIImage4] = useState<ImagePosition>({
-    x: 50,
-    y: 50,
-    width: 200,
-    height: 200,
+     x: 30,
+    y: 30,
+    width: 340,
+    height: 500,
     // zindex: 1000,
   });
 
@@ -302,6 +308,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
     {
       value: "",
@@ -310,6 +317,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
     {
       value: "",
@@ -318,6 +326,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
   ]);
 
@@ -358,8 +367,11 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
 
   const [slide4DataStore, setSlide4DataStore] = useState<any[]>([]);
 
-   const addSticker4 = (
-    sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex" | "rotation">
+  const addSticker4 = (
+    sticker: Omit<
+      StickerItem,
+      "x" | "y" | "width" | "height" | "zIndex" | "rotation"
+    >
   ) => {
     setSelectedStickers4((prev) => {
       const newSticker: StickerItem = {
@@ -550,7 +562,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         setIsEditable4,
         verticalAlign4,
         setVerticalAlign4,
-
+        layout4,
+        setLayout4,
         slide4DataStore,
       }}
     >

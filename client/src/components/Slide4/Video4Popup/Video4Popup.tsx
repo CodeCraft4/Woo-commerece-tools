@@ -8,12 +8,13 @@ import {
   PlayCircleOutline,
 } from "@mui/icons-material";
 import CustomButton from "../../CustomButton/CustomButton";
-import TipsVideo from "/assets/images/vedioTip.mp4";
+import TipsVideo from "/assets/images/diy-tips.mp4";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../context/AuthContext";
 import { useSlide4 } from "../../../context/Slide4Context";
 import toast from "react-hot-toast";
+import { COLORS } from "../../../constant/color";
 
 interface Video4PopupProps {
   onClose: () => void;
@@ -36,6 +37,7 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
   } = useSlide4();
 
   const [loading, setLoading] = useState(false);
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const { user } = useAuth();
   const generateId = () => Date.now() + Math.random();
 
@@ -236,10 +238,10 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
       title="Video"
       onClose={onClose}
       sx={{
-        width: { md: 400, sm: 400, xs: "95%" },
+        width: { md: 300, sm: 400, xs: "95%" },
         height: 600,
-        left: { md: "50%", sm: "50%", xs: 10 },
-        mt:{md:0,sm:0,xs:4},
+        left: { md: "56%", sm: "50%", xs: 10 },
+        mt: { md: 0, sm: 0, xs: 4 },
         overflow: "hidden",
       }}
     >
@@ -357,7 +359,26 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
               </Box>
 
               {userVideos.length > 0 && (
-                <Box mt={4}>
+                <Box
+                  mt={3}
+                  sx={{
+                    height: "400px",
+                    overflowY: "auto",
+                    p: 1,
+                    "&::-webkit-scrollbar": {
+                      height: "6px",
+                      width: "5px",
+                    },
+                    "&::-webkit-scrollbar-track": {
+                      backgroundColor: "#f1f1f1",
+                      borderRadius: "20px",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor: COLORS.primary,
+                      borderRadius: "20px",
+                    },
+                  }}
+                >
                   <Typography
                     sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
                   >
@@ -367,58 +388,133 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
                     sx={{
                       display: "flex",
                       flexDirection: "column",
-                      flexWrap: "wrap",
                       gap: 1,
-                      maxHeight: "500px",
-                      overflowY: "auto",
                     }}
                   >
                     {userVideos.map((v) => (
                       <Box
                         key={v.id}
+                        onClick={() =>
+                          setSelectedVideoUrl4((prev) =>
+                            prev === v.url ? null : v.url
+                          )
+                        }
                         sx={{
                           position: "relative",
                           border:
                             selectedVideoUrl4 === v.url
-                              ? "4px solid #4a7bd5"
-                              : "1px solid #ccc", // highlight selected
+                              ? "3px solid #3a7bd5"
+                              : "1px solid #ccc",
                           borderRadius: 2,
                           overflow: "hidden",
                           width: "100%",
                           cursor: "pointer",
-                          opacity: selectedVideoUrl4 === v.url ? 1 : 0.7,
+                          opacity: selectedVideoUrl4 === v.url ? 1 : 0.9,
                           transition: "all 0.2s ease-in-out",
                           "&:hover": {
-                            borderColor: "#4a7bd5",
+                            borderColor: "#3a7bd5",
                             opacity: 1,
                           },
                         }}
                       >
+                        {/* 🎥 Video */}
                         <video
+                          id={`video-${v.id}`}
                           src={v.url}
-                          onClick={() =>
-                            setSelectedVideoUrl4((prev) =>
-                              prev === v.url ? null : v.url
-                            )
-                          }
-                          controls
+                          controls={playingVideoId ? true : false}
                           style={{
                             width: "100%",
-                            height: "160px",
-                            objectFit: "cover",
+                            height: "150px",
+                            objectFit: "contain",
+                            // objectFit: "cover",
                           }}
+                          onPlay={() => setPlayingVideoId(v.id)}
+                          onPause={() => setPlayingVideoId(null)}
+                          onEnded={() => setPlayingVideoId(null)}
                         />
+
+                        {/* ▶ Overlay Play Button (hidden when playing) */}
+                        {playingVideoId !== v.id && (
+                          <Box
+                            onClick={(e) => {
+                              e.stopPropagation(); // prevent parent onClick
+                              const video = document.getElementById(
+                                `video-${v.id}`
+                              ) as HTMLVideoElement;
+                              if (video) {
+                                // Pause all other videos
+                                document
+                                  .querySelectorAll("video")
+                                  .forEach((vid) => {
+                                    if (vid !== video) vid.pause();
+                                  });
+
+                                // Play/pause toggle
+                                if (video.paused) {
+                                  video.play();
+                                } else {
+                                  video.pause();
+                                }
+                              }
+                            }}
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              bgcolor: "rgba(0, 0, 0, 0.3)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              transition: "all 0.3s ease",
+                              cursor: "pointer",
+                              "&:hover": {
+                                bgcolor: "rgba(0, 0, 0, 0.4)",
+                              },
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                bgcolor: "#fff",
+                                borderRadius: "50%",
+                                width: 50,
+                                height: 50,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: `3px solid ${COLORS.seconday}`,
+                                outline: "2px solid white",
+                              }}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                height="30"
+                                viewBox="0 0 24 24"
+                                width="30"
+                                fill="#412485ff"
+                              >
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </Box>
+                          </Box>
+                        )}
+
+                        {/* 🗑 Delete Button */}
                         <IconButton
-                          onClick={() => handleDeleteVideo(v.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteVideo(v.id);
+                          }}
                           sx={{
                             position: "absolute",
                             top: 4,
                             right: 4,
                             bgcolor: "#fff",
-                            "&:hover": { bgcolor: "#f0f1f4", color: "red" },
+                            "&:hover": { bgcolor: "#f3f0f0ff", color: "red" },
                           }}
                         >
-                          <Delete />
+                          <Delete fontSize="small" />
                         </IconButton>
                       </Box>
                     ))}

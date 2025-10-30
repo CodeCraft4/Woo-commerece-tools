@@ -38,8 +38,8 @@ const LandingButton = (props: ButtonTypes) => {
           textTransform: "none",
           px: 2,
           opacity: 0.8,
-          height: { md: personal ? "50px" : "40px", sm: "", xs: "40px" },
-          width: { md: width ? width : "auto", sm: "", xs: "100%" },
+          height: { md: personal ? "50px" : "40px", sm: "40px", xs: "40px" },
+          width: { md: width ? width : "auto", sm: "auto", xs: "100%" },
           border: variant ? `1px solid ${COLORS.primary}` : 0,
           "&:hover": {
             bgcolor: variant ? "transparent" : COLORS.primary,

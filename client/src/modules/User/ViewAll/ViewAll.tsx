@@ -4,12 +4,10 @@ import ViewAllCard from "../../../components/ViewAllCard/ViewAllCard";
 import { useLocation, useParams } from "react-router-dom";
 
 const ViewAll = () => {
-
- const { search } = useParams();
+  const { search } = useParams();
   const location = useLocation();
   const categoryId = location.state?.categoryId || null;
   const categoryTitle = decodeURIComponent(search || "");
-
 
   return (
     <MainLayout>
@@ -19,9 +17,10 @@ const ViewAll = () => {
           flexDirection: "column",
           gap: "40px",
           // width: "100%",
-          width: { md: "1360px", sm: "", xs: "100%" },
+          width: { lg: "1340px", md: "100%", sm: "100%", xs: "100%" },
           justifyContent: "center",
           m: "auto",
+          p: { lg: 3, md: 3, sm: 3, xs: 1 },
         }}
       >
         <Box
@@ -40,9 +39,10 @@ const ViewAll = () => {
               fontWeight: "bold",
             }}
           >
-           {categoryTitle} <span style={{ fontSize: "13px" }}>1234 results</span>
+            {categoryTitle}{" "}
+            <span style={{ fontSize: "13px" }}>1234 results</span>
           </Typography>
-           <Typography
+          <Typography
             sx={{
               fontSize: { md: "14px", xs: "10px" },
               // fontWeight: 300,
@@ -52,20 +52,6 @@ const ViewAll = () => {
           >
             Browse all products under <b>{categoryTitle}</b> category.
           </Typography>
-          {/* <Typography
-            sx={{
-              fontSize: { md: "14px", sm: "14px", xs: "10px" },
-              fontWeight: 300,
-            }}
-          >
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Molestiae
-            ullam harum omnis quod molestias cum eaque nostrum cupiditate ipsam
-            fugit officiis vero facere, minus tempore, corrupti incidunt,
-            facilis nam voluptatibus temporibus est et quia odit possimus
-            blanditiis! Animi, enim. Molestias. Lorem ipsum dolor sit amet
-            consectetur adipisicing elit. Modi obcaecati esse sunt voluptatum
-            corporis atque sed rem ea, ad quae!
-          </Typography> */}
         </Box>
         <ViewAllCard category={categoryId} />
         <br />

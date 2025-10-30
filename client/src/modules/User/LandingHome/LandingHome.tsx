@@ -55,11 +55,10 @@ const LandingHome = () => {
           display: "flex",
           flexDirection: "column",
           gap: "40px",
-          // width: "100%",
-          width: "100% ",
+          width: { lg: "1340px", md: "100%", sm: "100%", xs: "100%" },
           justifyContent: "center",
           m: "auto",
-          p: 3,
+          p: { lg: 3, md: 3, sm: 3, xs: 1 },
         }}
       >
         {/* Categories */}
@@ -104,14 +103,14 @@ const LandingHome = () => {
         <Box
           sx={{
             display: "flex",
-            gap: { md: "13px", sm: "13px", xs: "10px" },
+            gap: { md: "13px", sm: "5px", xs: "10px" },
             alignItems: "center",
             overflowX: "auto",
             width: { lg: "99.4%", md: "99%", sm: "100%", xs: "100%" },
             mr: { md: "5px", sm: "5px", xs: 0 },
             ml: { md: "5px", sm: "5px", xs: 0 },
             pb: { md: 3, sm: 3, xs: 2 },
-            mt: { md: "-90px", sm: "", xs: 0 },
+            mt: { md: "-90px", sm: "-90px", xs: 0 },
             zIndex: 100,
             position: "relative",
             "&::-webkit-scrollbar": {
@@ -142,7 +141,7 @@ const LandingHome = () => {
             sx={{
               display: { md: "flex", sm: "flex", xs: "block" },
               justifyContent: "space-between",
-              gap: "20px",
+              gap: { lg: "20px", md: "20px", sm: "10px", xs: 0 },
             }}
           >
             {AdverstisementCard.map((e) => (

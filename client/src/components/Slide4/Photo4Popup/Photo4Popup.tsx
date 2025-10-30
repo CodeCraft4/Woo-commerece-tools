@@ -212,9 +212,9 @@ const Photo4Popup = ({ onClose }: Photo4PopupProps) => {
       title="Photos"
       onClose={onClose}
       sx={{
-        width: { md: 350, sm: 350, xs: "95%" },
+        width: { md: 300, sm: 350, xs: "95%" },
         height: 600,
-        left: { md: "53%", sm: "53%", xs: 10 },
+        left: { md: "56%", sm: "53%", xs: 10 },
         mt: { md: 0, sm: 0, xs: 4 },
         zIndex: 99,
       }}

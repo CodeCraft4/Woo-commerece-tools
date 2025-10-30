@@ -261,30 +261,30 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
   const [qrPosition1, setQrPosition1] = useState<DraggableQR>({
     id: "qr1",
     url: "",
-    x: 20,
-    y: 10,
-    width: 85,
+    x: 0,
+    y: 0,
+    width: 59,
     height: 105,
     rotation: 0,
-    zIndex: 1000,
+    zIndex: 9999,
   });
 
   const [qrAudioPosition1, setQrAudioPosition1] = useState<DraggableAudioQR>({
     id: "qr2",
     url: "",
-    x: 20,
-    y: 10,
-    width: 85,
+    x: 0,
+    y: 0,
+    width: 59,
     height: 105,
     rotation: 0,
-    zIndex: 1000,
+    zIndex:9999,
   });
 
   const [aimage1, setAIImage1] = useState<ImagePosition>({
-    x: 50,
-    y: 50,
-    width: 200,
-    height: 200,
+    x: 30,
+    y: 30,
+    width: 340,
+    height: 500,
     // zindex: 1000,
   });
 
@@ -314,6 +314,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
     {
       value: "",
@@ -322,6 +323,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
     {
       value: "",
@@ -330,6 +332,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       fontColor: "#000000",
       fontFamily: "Roboto",
       verticalAlign: "center",
+      textAlign: "center",
     },
   ]);
 
@@ -367,7 +370,10 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
   const [layout1, setLayout1] = useState<any>(null);
 
   const addSticker = (
-    sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex" | "rotation">
+    sticker: Omit<
+      StickerItem,
+      "x" | "y" | "width" | "height" | "zIndex" | "rotation"
+    >
   ) => {
     setSelectedStickers((prev) => {
       const newSticker: StickerItem = {

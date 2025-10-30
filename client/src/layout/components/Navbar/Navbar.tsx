@@ -1,10 +1,10 @@
 import { AppBar, Box, Toolbar, Typography } from "@mui/material";
-import CustomButton from "../../../components/CustomButton/CustomButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { useNavigate } from "react-router-dom";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { Drafts } from "@mui/icons-material";
+import LandingButton from './../../../components/LandingButton/LandingButton';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -23,9 +23,9 @@ const Navbar = () => {
         sx={{
           bgcolor: "white",
           color: "black",
-          boxShadow: "4px 0px 8px #929292ff",
+          p:0,
         }}
-        elevation={0}
+        elevation={2}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography
@@ -36,18 +36,18 @@ const Navbar = () => {
           </Typography>
 
           {pathname ? (
-            <CustomButton
+            <LandingButton
               title="Preview"
               onClick={() => navigate(USER_ROUTES.PREVIEW)}
             />
           ) : (
             <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
-              <CustomButton
+              <LandingButton
                 onClick={() => navigate(-1)}
                 title="Edit Design"
                 variant="outlined"
               />
-              <CustomButton title="Add to Basket" />
+              <LandingButton title="Add to Basket" />
             </Box>
           )}
         </Toolbar>
