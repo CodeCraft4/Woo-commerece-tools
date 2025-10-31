@@ -25,7 +25,7 @@ const SimpleAreaChart = () => {
     <Card
       sx={{
         p: 0,
-        width:'70%',
+        width:'50%',
         borderRadius: 4,
         background:
           "linear-gradient(135deg, rgba(255,165,0,0.15), rgba(255,255,255,0.15))",

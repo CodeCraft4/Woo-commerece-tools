@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Box, IconButton, TextField, Typography } from "@mui/material";
 import {
-  AddCircleOutline,
   Close,
   Forward10,
   Forward30,
@@ -42,8 +41,8 @@ const SlideSpread = ({
   activeIndex,
   addTextRight,
   rightBox,
-  togglePopup,
-}: SlideSpreadProps) => {
+}: // togglePopup,
+SlideSpreadProps) => {
   const {
     images,
     selectedImg,
@@ -96,9 +95,6 @@ const SlideSpread = ({
     aimage2,
     setAIImage2,
   } = useSlide2();
-
-  const primarySticker = selectedStickers2[0];
-  const additionalStickers = selectedStickers2.slice(1);
 
   const rightBoxRef = useRef<HTMLDivElement>(null);
   // Add this handler to initialize draggable state for images (omitted for brevity)
@@ -1096,7 +1092,7 @@ const SlideSpread = ({
             </Rnd>
           )}
 
-          {additionalStickers.map((sticker, index) => (
+          {selectedStickers2.map((sticker, index) => (
             <Rnd
               key={sticker.id || index + 1}
               size={{ width: sticker.width, height: sticker.height }}
@@ -1210,244 +1206,8 @@ const SlideSpread = ({
             </Rnd>
           ))}
 
-          {/* default sticker */}
-          {primarySticker ? (
-            <Rnd
-            bounds="parent"
-            size={{
-              width: primarySticker.width,
-              height: primarySticker.height,
-            }}
-            position={{ x: primarySticker.x, y: primarySticker.y }}
-            onDragStop={(_, d) =>
-              updateSticker2(0, {
-                x: d.x,
-                y: d.y,
-                zIndex: primarySticker.zIndex,
-              })
-            }
-            onResizeStop={(_, __, ref, ___, position) =>
-              updateSticker2(0, {
-                width: parseInt(ref.style.width, 10),
-                height: parseInt(ref.style.height, 10),
-                x: position.x,
-                y: position.y,
-                zIndex: primarySticker.zIndex,
-              })
-            }
-            enableResizing={{
-              bottomRight: true,
-            }}
-            // resizeHandleStyles={{
-            //   bottomRight: {
-            //     width: "10px",
-            //     height: "10px",
-            //     background: "white",
-            //     border: "2px solid #1976d2",
-            //     borderRadius: "10%",
-            //     right: "-5px",
-            //     bottom: "-5px",
-            //   },
-            // }}
-            style={{
-              position: "absolute",
-              zIndex: primarySticker.zIndex,
-            }}
-          >
-            {/* ✅ Main container */}
-            {/* <Box
-              sx={{
-                position: "relative",
-                width: "100%",
-                height: "100%",
-                borderRadius: "6px",
-                overflow: "hidden",
-                border: "1px dashed #1976d2",
-              }}
-            >
-              <Box
-                component="img"
-                src={primarySticker.sticker}
-                alt="Sticker"
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "4px",
-                  objectFit: "contain",
-                  display: "block",
-                  transform: `rotate(${primarySticker.rotation || 0}deg)`,
-                  transition: "transform 0.2s",
-                  pointerEvents: "none",
-                }}
-              />
-
-              <Box
-                sx={{
-                  position: "absolute",
-                  inset: 0,
-                  pointerEvents: "none",
-                }}
-              >
-                <IconButton
-                  size="small"
-                  className="no-drag"
-                  onClick={() => removeSticker2(0)}
-                  sx={{
-                    position: "absolute",
-                    top: -8,
-                    right: -10,
-                    bgcolor: "black",
-                    color: "white",
-                    p: 1,
-                    width: 25,
-                    height: 25,
-                    zIndex: 2,
-                    pointerEvents: "auto",
-                    "&:hover": {
-                      bgcolor: "red",
-                    },
-                  }}
-                >
-                  <Close fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  className="no-drag"
-                  onClick={() =>
-                    updateSticker2(0, {
-                      rotation: ((primarySticker.rotation || 0) + 15) % 360,
-                    })
-                  }
-                  sx={{
-                    position: "absolute",
-                    top: -8,
-                    left: -5,
-                    bgcolor: "black",
-                    color: "white",
-                    p: 1,
-                    width: 25,
-                    height: 25,
-                    zIndex: 2,
-                    pointerEvents: "auto",
-                    "&:hover": {
-                      bgcolor: "blue",
-                    },
-                  }}
-                >
-                  <Forward10 fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  className="no-drag"
-                  onClick={() => togglePopup("sticker")}
-                  sx={{
-                    position: "absolute",
-                    bottom: -12,
-                    right: -12,
-                    bgcolor: "white",
-                    color: "black",
-                    boxShadow: 1,
-                    width: 32,
-                    height: 32,
-                    pointerEvents: "auto",
-                    "&:hover": {
-                      bgcolor: COLORS.primary,
-                      color: "white",
-                    },
-                  }}
-                >
-                  <AddCircleOutline fontSize="small" />
-                </IconButton>
-              </Box>
-            </Box> */}
-          </Rnd>
-          ) : (
-            <Rnd
-              bounds="parent"
-              enableResizing={{
-                bottomRight: true,
-              }}
-              resizeHandleStyles={{
-                bottomRight: {
-                  width: "10px",
-                  height: "10px",
-                  background: "white",
-                  border: "2px solid #1976d2",
-                  borderRadius: "10%",
-                  right: "-5px",
-                  bottom: "-5px",
-                },
-              }}
-              style={{
-                position: "absolute",
-              }}
-              default={{
-                x: 30,
-                y: 30,
-                width: 120,
-                height: 120,
-              }}
-            >
-              <Box
-                sx={{
-                  position: "relative",
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "6px",
-                  overflow: "hidden",
-                  border: "1px dashed #1976d2",
-                }}
-              >
-                <Box
-                  component="img"
-                  src="/assets/stickers/sunshine.png"
-                  alt="Sticker"
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: "4px",
-                    objectFit: "cover",
-                    display: "block",
-                  }}
-                />
-
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#090155ff",
-                    background: "rgba(26, 26, 26, 0.14)",
-                    pointerEvents: "auto",
-                    zIndex: 2,
-                  }}
-                >
-                  <IconButton onClick={() => togglePopup("sticker")}>
-                    <AddCircleOutline
-                      sx={{ color: "black", fontSize: "35px" }}
-                    />
-                  </IconButton>
-                  <Typography
-                    sx={{
-                      fontSize: "14px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Add Sticker
-                  </Typography>
-                </Box>
-              </Box>
-            </Rnd>
-          )}
-
           {/* default image popup */}
-          <Rnd
+          {/* <Rnd
             bounds="parent"
             enableResizing={{
               bottomRight: true,
@@ -1473,7 +1233,6 @@ const SlideSpread = ({
               height: 180,
             }}
           >
-            {/* ✅ Main container */}
             <Box
               sx={{
                 position: "relative",
@@ -1484,7 +1243,6 @@ const SlideSpread = ({
                 border: "1px dashed #1976d2",
               }}
             >
-              {/* ✅ Sticker image */}
               <Box
                 component="img"
                 src="/assets/images/animated-banner.jpg"
@@ -1498,7 +1256,6 @@ const SlideSpread = ({
                 }}
               />
 
-              {/* ✅ Overlay (always visible and clickable) */}
               <Box
                 sx={{
                   position: "absolute",
@@ -1529,8 +1286,7 @@ const SlideSpread = ({
                 </Typography>
               </Box>
             </Box>
-          </Rnd>
-
+          </Rnd> */}
         </Box>
       )}
     </Box>

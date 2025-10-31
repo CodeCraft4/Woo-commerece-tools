@@ -32,6 +32,7 @@ interface StickerItem {
   width: number;
   height: number;
   zIndex: number;
+  rotation: number;
 }
 
 interface TextElement {
@@ -99,6 +100,7 @@ interface Slide4State {
   oneTextValue4: string;
   multipleTextValue4: boolean;
   selectedLayout4: "blank" | "oneText" | "multipleText";
+  layout4: any;
   
   // Font and text properties
   fontSize4: number;
@@ -149,6 +151,7 @@ interface Slide4State {
   duration4: number | null;
   isSlideActive4: boolean;
   isEditable4: boolean;
+  slide4DataStore: any[];
   
   // Actions
   setActiveIndex4: (index: number) => void;
@@ -193,9 +196,11 @@ interface Slide4State {
   setDuration4: (duration: number | null) => void;
   setIsSlideActive4: (active: boolean) => void;
   setIsEditable4: (editable: boolean) => void;
+  setLayout4: (layout: any) => void;
+  setSlide4DataStore: (payload: any[]) => void;
   
   // Sticker actions
-  addSticker4: (sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex">) => void;
+  addSticker4: (sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex" | "rotation">) => void;
   updateSticker4: (index: number, data: Partial<StickerItem>) => void;
   removeSticker4: (index: number) => void;
 }
@@ -212,6 +217,7 @@ export const useSlide4Store = create<Slide4State>()(
       oneTextValue4: "",
       multipleTextValue4: false,
       selectedLayout4: "blank",
+      layout4: null,
       fontSize4: 20,
       fontWeight4: 400,
       textAlign4: "start",
@@ -294,6 +300,7 @@ export const useSlide4Store = create<Slide4State>()(
       duration4: null,
       isSlideActive4: false,
       isEditable4: true,
+      slide4DataStore: [],
 
       // Setters
       setActiveIndex4: (index) => set({ activeIndex4: index }),
@@ -338,6 +345,8 @@ export const useSlide4Store = create<Slide4State>()(
       setDuration4: (duration) => set({ duration4: duration }),
       setIsSlideActive4: (active) => set({ isSlideActive4: active }),
       setIsEditable4: (editable) => set({ isEditable4: editable }),
+      setLayout4: (layout) => set({ layout4: layout }),
+      setSlide4DataStore: (payload) => set({ slide4DataStore: payload }),
 
       // Sticker actions
       addSticker4: (sticker) => {
@@ -349,6 +358,7 @@ export const useSlide4Store = create<Slide4State>()(
           width: 100,
           height: 100,
           zIndex: state.selectedStickers4.length + 1,
+          rotation: 0,
         };
         set({ selectedStickers4: [...state.selectedStickers4, newSticker] });
       },
@@ -405,6 +415,8 @@ export const useSlide4Store = create<Slide4State>()(
         selectedVideoUrl4: state.selectedVideoUrl4,
         selectedAudioUrl4: state.selectedAudioUrl4,
         isEditable4: state.isEditable4,
+        layout4: state.layout4,
+        slide4DataStore: state.slide4DataStore,
       }),
     }
   )

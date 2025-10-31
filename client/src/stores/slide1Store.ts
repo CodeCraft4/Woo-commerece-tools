@@ -32,6 +32,7 @@ interface StickerItem {
   width: number;
   height: number;
   zIndex: number;
+  rotation: number;
 }
 
 interface TextElement {
@@ -99,6 +100,7 @@ interface Slide1State {
   oneTextValue1: string;
   multipleTextValue1: boolean;
   selectedLayout1: "blank" | "oneText" | "multipleText";
+  layout1: any;
   
   // Font and text properties
   fontSize1: number;
@@ -149,6 +151,7 @@ interface Slide1State {
   duration1: number | null;
   isSlideActive1: boolean;
   isEditable1: boolean;
+  slide1DataStore: any[];
   
   // Actions
   setActiveIndex1: (index: number) => void;
@@ -193,9 +196,11 @@ interface Slide1State {
   setDuration1: (duration: number | null) => void;
   setIsSlideActive1: (active: boolean) => void;
   setIsEditable1: (editable: boolean) => void;
+  setLayout1: (layout: any) => void;
+  setSlide1DataStore: (payload: any[]) => void;
   
   // Sticker actions
-  addSticker: (sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex">) => void;
+  addSticker: (sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex" | "rotation">) => void;
   updateSticker: (index: number, data: Partial<StickerItem>) => void;
   removeSticker: (index: number) => void;
 }
@@ -212,6 +217,7 @@ export const useSlide1Store = create<Slide1State>()(
       oneTextValue1: "",
       multipleTextValue1: false,
       selectedLayout1: "blank",
+      layout1: null,
       fontSize1: 20,
       fontWeight1: 400,
       textAlign1: "start",
@@ -294,6 +300,7 @@ export const useSlide1Store = create<Slide1State>()(
       duration1: null,
       isSlideActive1: false,
       isEditable1: true,
+      slide1DataStore: [],
 
       // Setters
       setActiveIndex1: (index) => set({ activeIndex1: index }),
@@ -338,6 +345,8 @@ export const useSlide1Store = create<Slide1State>()(
       setDuration1: (duration) => set({ duration1: duration }),
       setIsSlideActive1: (active) => set({ isSlideActive1: active }),
       setIsEditable1: (editable) => set({ isEditable1: editable }),
+      setLayout1: (layout) => set({ layout1: layout }),
+      setSlide1DataStore: (payload) => set({ slide1DataStore: payload }),
 
       // Sticker actions
       addSticker: (sticker) => {
@@ -349,6 +358,7 @@ export const useSlide1Store = create<Slide1State>()(
           width: 100,
           height: 100,
           zIndex: state.selectedStickers.length + 2,
+          rotation: 0,
         };
         set({ selectedStickers: [...state.selectedStickers, newSticker] });
       },
@@ -405,6 +415,8 @@ export const useSlide1Store = create<Slide1State>()(
         selectedVideoUrl1: state.selectedVideoUrl1,
         selectedAudioUrl1: state.selectedAudioUrl1,
         isEditable1: state.isEditable1,
+        layout1: state.layout1,
+        slide1DataStore: state.slide1DataStore,
       }),
     }
   )

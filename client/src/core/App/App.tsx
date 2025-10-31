@@ -22,6 +22,7 @@ const App = () => {
     defaultOptions: {
       queries: {
         staleTime: 1000 * 60 * 60, // 1 hour
+        gcTime: 1000 * 60 * 60, // v5 is convert cache to gctime. 1 hour
       },
     },
   });
