@@ -1,40 +1,36 @@
-import { Box, IconButton, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
 import {
   AddShoppingCart,
   ArrowForwardIos,
-  Dashboard,
-  LocalMall,
-  Logout,
-  Settings,
+  AssessmentOutlined,
+  FolderOutlined,
+  HomeOutlined,
+  LocalOfferOutlined,
+  SettingsOutlined,
 } from "@mui/icons-material";
-import useModal from "../../../hooks/useModal";
-import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
-import { useAdmin } from "../../../context/AdminContext";
+import { COLORS } from "../../../constant/color";
 
 const Sidebar = () => {
   const location = useLocation();
   const pathname = location.pathname;
 
-  const { logout } = useAdmin();
-
-  const {
-    open: isConfirmModal,
-    openModal: openConfirmModal,
-    closeModal: closeConfirmModal,
-  } = useModal();
-
   const links = [
     {
-      icon: <Dashboard />,
+      icon: <HomeOutlined />,
       title: "Dashboard",
       href: ADMINS_DASHBOARD.HOME,
     },
     {
-      icon: <LocalMall />,
+      icon: <LocalOfferOutlined />,
       title: "Products",
       href: ADMINS_DASHBOARD.PRODUCTS_LIST,
+    },
+    {
+      icon: <FolderOutlined />,
+      title: "Categories",
+      href: ADMINS_DASHBOARD.ADMIN_CATEGORIES,
     },
     {
       icon: <AddShoppingCart />,
@@ -42,19 +38,28 @@ const Sidebar = () => {
       href: ADMINS_DASHBOARD.ADD_NEW_CARDS,
     },
     {
-      icon: <Settings />,
-      title: "Settings",
+      icon: <AssessmentOutlined />,
+      title: "Reports",
+      href: ADMINS_DASHBOARD.ADMIN_REPORTS,
+    },
+    {
+      icon: <SettingsOutlined />,
+      title: "Personal Settings",
       href: ADMINS_DASHBOARD.SETTINGS,
     },
   ];
 
   return (
-    <Box sx={{ mt: 3 }}>
-      <Typography sx={{ fontSize: 12, color: "white", fontWeight: 600 }}>
-        ADMIN
-      </Typography>
-
-      <Box sx={{ pt: 2, display: "flex", flexDirection: "column", gap: "8px" }}>
+    <Box sx={{ pt: 3 }}>
+      <Box
+        sx={{
+          pt: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          zIndex: 0,
+        }}
+      >
         {links.map((e) => {
           const isActive = pathname === e.href;
 
@@ -67,16 +72,14 @@ const Sidebar = () => {
                 gap: "25px",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "20px 14px",
-                borderLeft: `4px solid ${
-                  isActive ? "#eb5611ff" : "transparent"
-                }`,
-                // borderRadius: "14px 50px 50px 14px",
+                height: "44px",
+                borderRadius: 6,
                 fontWeight: 600,
-                fontSize: "14px",
+                paddingLeft: 2,
+                fontSize:'12px',
                 textDecoration: "none",
-                color: "black",
-                backgroundColor: isActive ? "#f0f0f0ff" : "white",
+                color: isActive ? "#414040ff" : COLORS.white,
+                backgroundColor: isActive ? `${COLORS.white}` : "#1313137c",
                 transition: "background-color 0.3s",
                 marginBottom: 4,
               }}
@@ -85,63 +88,14 @@ const Sidebar = () => {
                 sx={{ display: "flex", gap: 1, alignItems: "center", flex: 1 }}
               >
                 {e.icon}
-                  {e.title}
+                {e.title}
               </Box>
 
               <ArrowForwardIos fontSize="small" />
             </Link>
           );
         })}
-
-        {/* User Profile / Logout */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              alignItems: "center",
-              mt: {md:35,sm:35,xs:2},
-              justifyContent: "center",
-              width: "100%",
-            }}
-          >
-            <Box
-              component={"div"}
-              onClick={openConfirmModal}
-              sx={{
-                width: 60,
-                height: 60,
-                borderRadius: "50%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                bgcolor: "white",
-              }}
-            >
-              <IconButton>
-                <Logout sx={{ color: "red" }} />
-              </IconButton>
-            </Box>
-          </Box>
-        </Box>
       </Box>
-
-      {isConfirmModal && (
-        <ConfirmModal
-          open={isConfirmModal}
-          onCloseModal={closeConfirmModal}
-          btnText="Logout"
-          icon={<Logout />}
-          onClick={logout}
-          title="Are you Sure to logout, You are Admin"
-        />
-      )}
     </Box>
   );
 };

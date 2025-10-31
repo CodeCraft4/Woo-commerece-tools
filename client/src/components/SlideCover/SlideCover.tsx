@@ -29,7 +29,6 @@ const createNewTextElement = (defaults: any) => ({
   size: { width: 200, height: 30 },
   isEditing: false,
 });
-
 interface SlideCoverProps {
   textAlign?: "start" | "center" | "end";
   rotation?: number;

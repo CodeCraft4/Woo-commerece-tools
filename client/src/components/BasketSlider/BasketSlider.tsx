@@ -199,7 +199,7 @@ const BasketSlider = (props: BirthdayTypes) => {
           onClick={() => sliderRef.current?.slickPrev()}
           sx={{
             position: "absolute",
-            top: { md: "40%", sm: "40%", xs: "40%" },
+            top: { md: "30%", sm: "40%", xs: "40%" },
             left: { lg: -20, md: -15, sm: -15, xs: -15 },
             display: "flex",
             justifyContent: "center",
@@ -221,7 +221,7 @@ const BasketSlider = (props: BirthdayTypes) => {
           onClick={() => sliderRef.current?.slickNext()}
           sx={{
             position: "absolute",
-            top: { md: "40%", sm: "0%", xs: "40%" },
+            top: { md: "30%", sm: "0%", xs: "40%" },
             right: { lg: -20, md: -15, sm: -15, xs: -15 },
             display: "flex",
             justifyContent: "center",

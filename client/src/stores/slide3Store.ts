@@ -32,6 +32,7 @@ interface StickerItem {
   width: number;
   height: number;
   zIndex: number;
+  rotation: number;
 }
 
 interface TextElement {
@@ -138,6 +139,7 @@ interface Slide3State {
   duration3: number | null;
   isSlideActive3: boolean;
   isEditable3: boolean;
+  slide3DataStore3: any[];
   
   // Actions
   setActiveIndex3: (index: number) => void;
@@ -182,9 +184,10 @@ interface Slide3State {
   setDuration3: (duration: number | null) => void;
   setIsSlideActive3: (active: boolean) => void;
   setIsEditable3: (editable: boolean) => void;
+  setSlide3DataStore3: (payload: any[]) => void;
   
   // Sticker actions
-  addSticker3: (sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex">) => void;
+  addSticker3: (sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex" | "rotation">) => void;
   updateSticker3: (index: number, data: Partial<StickerItem>) => void;
   removeSticker3: (index: number) => void;
 }
@@ -283,6 +286,7 @@ export const useSlide3Store = create<Slide3State>()(
       duration3: null,
       isSlideActive3: false,
       isEditable3: true,
+      slide3DataStore3: [],
 
       // Setters
       setActiveIndex3: (index) => set({ activeIndex3: index }),
@@ -327,6 +331,7 @@ export const useSlide3Store = create<Slide3State>()(
       setDuration3: (duration) => set({ duration3: duration }),
       setIsSlideActive3: (active) => set({ isSlideActive3: active }),
       setIsEditable3: (editable) => set({ isEditable3: editable }),
+      setSlide3DataStore3: (payload) => set({ slide3DataStore3: payload }),
 
       // Sticker actions
       addSticker3: (sticker) => {
@@ -338,6 +343,7 @@ export const useSlide3Store = create<Slide3State>()(
           width: 100,
           height: 100,
           zIndex: state.selectedStickers3.length + 1,
+          rotation: 0,
         };
         set({ selectedStickers3: [...state.selectedStickers3, newSticker] });
       },
@@ -394,6 +400,7 @@ export const useSlide3Store = create<Slide3State>()(
         selectedVideoUrl3: state.selectedVideoUrl3,
         selectedAudioUrl3: state.selectedAudioUrl3,
         isEditable3: state.isEditable3,
+        slide3DataStore3: state.slide3DataStore3,
       }),
     }
   )

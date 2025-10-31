@@ -3,7 +3,7 @@ import DashboardLayout from "../../../layout/DashboardLayout";
 import TotalProductChart from "./components/TotalProductChart/TotalProductChart";
 import OrderChart from "./components/OrderChart/OrderChart";
 import SimpleAreaChart from "./components/FullAnalytics/FullAnalytics";
-import AddCelebChart from "./components/AddCelebChart/AddCelebChart";
+import VisitorMiniChart from "./components/VisitorBarChart/VisitorBarChart";
 
 const DashboardHome = () => {
   return (
@@ -13,6 +13,7 @@ const DashboardHome = () => {
       <Box
         sx={{
           display: { md: "flex", sm: "flex", xs: "block" },
+          flexWrap: "wrap",
           gap: 3,
           mt: 3,
           width: "100%",
@@ -20,14 +21,11 @@ const DashboardHome = () => {
       >
         <TotalProductChart />
         <OrderChart />
-
-        {/* <TotalSalesChart /> */}
-      </Box>
-
-      <Box sx={{display:'flex',gap:2,mt:4}}>
+        <VisitorMiniChart />
         <SimpleAreaChart />
-        <AddCelebChart />
+        {/* <AddCelebChart /> */}
       </Box>
+
     </DashboardLayout>
   );
 };

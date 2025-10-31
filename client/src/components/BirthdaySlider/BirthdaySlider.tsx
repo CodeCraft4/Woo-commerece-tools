@@ -39,9 +39,13 @@ const BirthdaySlider = (props: BirthdayTypes) => {
   );
 
   const { data: birthdayCards, isLoading } = useQuery({
-    queryKey: ["birthdayCards"],
-    queryFn: fetchAllCardsFromDB,
-  });
+  queryKey: ["birthdayCards"],
+  queryFn: fetchAllCardsFromDB,
+  staleTime: 1000 * 60 * 5, // 5 minutes
+  refetchOnWindowFocus: false,
+  refetchOnMount: false,
+  refetchOnReconnect: false,
+});
 
   const filteredCards = birthdayCards
     ? birthdayCards.filter((card) => {
@@ -49,6 +53,8 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         return card.cardCategory === selectedCategory;
       })
     : [];
+
+    console.log(filteredCards,'--')
 
   const settings = {
     dots: false,

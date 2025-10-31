@@ -32,6 +32,7 @@ interface StickerItem {
   width: number;
   height: number;
   zIndex: number;
+  rotation: number;
 }
 
 interface TextElement {
@@ -149,6 +150,7 @@ interface Slide2State {
   duration: number | null;
   isSlideActive: boolean;
   isEditable: boolean;
+  slide2DataStore: any[];
   
   // Actions
   setActiveIndex: (index: number) => void;
@@ -193,9 +195,10 @@ interface Slide2State {
   setDuration: (duration: number | null) => void;
   setIsSlideActive: (active: boolean) => void;
   setIsEditable: (editable: boolean) => void;
+  setSlide2DataStore: (payload: any[]) => void;
   
   // Sticker actions
-  addSticker2: (sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex">) => void;
+  addSticker2: (sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex" | "rotation">) => void;
   updateSticker2: (index: number, data: Partial<StickerItem>) => void;
   removeSticker2: (index: number) => void;
 }
@@ -294,6 +297,7 @@ export const useSlide2Store = create<Slide2State>()(
       duration: null,
       isSlideActive: false,
       isEditable: true,
+      slide2DataStore: [],
 
       // Setters
       setActiveIndex: (index) => set({ activeIndex: index }),
@@ -338,6 +342,7 @@ export const useSlide2Store = create<Slide2State>()(
       setDuration: (duration) => set({ duration }),
       setIsSlideActive: (active) => set({ isSlideActive: active }),
       setIsEditable: (editable) => set({ isEditable:editable }),
+      setSlide2DataStore: (payload) => set({ slide2DataStore: payload }),
 
       // Sticker actions
       addSticker2: (sticker) => {
@@ -349,6 +354,7 @@ export const useSlide2Store = create<Slide2State>()(
           width: 100,
           height: 100,
           zIndex: state.selectedStickers2.length + 1,
+          rotation: 0,
         };
         set({ selectedStickers2: [...state.selectedStickers2, newSticker] });
       },
@@ -405,6 +411,7 @@ export const useSlide2Store = create<Slide2State>()(
         selectedVideoUrl: state.selectedVideoUrl,
         selectedAudioUrl: state.selectedAudioUrl,
         isEditable: state.isEditable,
+        slide2DataStore: state.slide2DataStore,
       }),
     }
   )

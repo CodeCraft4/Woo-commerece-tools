@@ -56,9 +56,9 @@ const TotalProductChart = () => {
     <Box
       sx={{
         flex: "1 1 300px",
-        maxWidth: { md: 500, sm: 300, xs: "100%" },
+        maxWidth: { md: 250, sm: 300, xs: "100%" },
         minWidth: 300,
-        mb:{md:0,sm:0,xs:1}
+        mb: { md: 0, sm: 0, xs: 1 },
       }}
     >
       <Box
@@ -66,10 +66,10 @@ const TotalProductChart = () => {
           position: "relative",
           p: 3,
           color: "white",
-          height: {md:240,sm:240,xs:180}, // Fixed height for visual consistency
+          height: { md: 160, sm: 200, xs: 180 },
           boxShadow: 8,
           borderRadius: 4,
-          background: "linear-gradient(135deg, #ec4899 0%, #dc2626 100%)",
+          background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.seconday} 100%)`,
         }}
       >
         {/* The minimal chart positioned absolutely behind the text/data */}
@@ -111,13 +111,13 @@ const TotalProductChart = () => {
               mx: "auto",
               flexDirection: "column",
               mt: 3,
-              color: COLORS.primary,
+              color: COLORS.black,
             }}
           >
             <Typography
               variant="h2"
               fontWeight="bold"
-              sx={{ my: 1, fontSize: "3.5rem" }}
+              sx={{ my: 1, fontSize: "2rem" }}
             >
               20,149
             </Typography>

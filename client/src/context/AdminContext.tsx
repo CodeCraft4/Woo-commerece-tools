@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../supabase/supabase";
+import toast from "react-hot-toast";
 
 type Admin = {
   id: string;
@@ -44,7 +45,6 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
         if (error) console.warn("Supabase session error:", error);
         if (data.session) {
         }
-
       } catch (err) {
         console.error("Error restoring admin session:", err);
       } finally {
@@ -111,6 +111,7 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.removeItem("isAdmin");
     localStorage.removeItem("adminData");
     supabase.auth.signOut();
+    toast.success("Now the Admin is logout");
   };
 
   return (

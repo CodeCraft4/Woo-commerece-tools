@@ -7,7 +7,7 @@ const AddCelebChart = () => {
     <Card
       sx={{
         p: 3,
-        width:'40%',
+        width:'45%',
         borderRadius: 4,
         background:
           "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,165,0,0.1))",

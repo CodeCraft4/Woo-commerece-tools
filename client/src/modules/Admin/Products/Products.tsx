@@ -1,21 +1,35 @@
-import { Box, CircularProgress, Typography } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
 import OfferBanner from "./components/Banner/Banner";
 import { supabase } from "../../../supabase/supabase";
 import { COLORS } from "../../../constant/color";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
-import { Delete } from "@mui/icons-material";
+import {
+  Delete,
+  FormatListBulletedOutlined,
+  GridViewOutlined,
+} from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ProductCard from "./components/ProductCard/ProductCard";
 import { useState, useMemo } from "react";
 
-// ---------------- Types ----------------
 type Card = {
   id: number;
   card_name: string;
-  // NOTE: This property must match the values in the database's card_category column
   card_category: string;
   sku: string;
   actual_price: number;
@@ -25,25 +39,20 @@ type Card = {
   created_at: string;
 };
 
-// Map the display names in TABS to the actual card_category values in the database.
-// 'All Cards' will use a special value to indicate no filtering.
 const TABS = [
-  { name: "All Cards", categoryValue: "ALL" }, // Use a special value like "ALL"
-  // Assuming these are the exact values from the car.card_category column in your database
+  { name: "All Cards", categoryValue: "ALL" },
   { name: "Birthday Cards", categoryValue: "Birthday Cards" },
   { name: "Birthday Gift", categoryValue: "Birthday Gift" },
   { name: "Kids Birthday Cards", categoryValue: "Kids Birthday Cards" },
   { name: "Kids Birthday Gift", categoryValue: "Kids Birthday Gift" },
 ];
 
-// ---------------- API Functions ----------------
+// Fetch all cards
 const fetchCards = async (): Promise<Card[]> => {
   const { data, error } = await supabase
     .from("cards")
     .select("*")
     .order("created_at", { ascending: false });
-  console.log(data, "--");
-
   if (error) throw new Error(error.message);
   return data as Card[];
 };
@@ -54,19 +63,14 @@ const deleteCard = async (id: number) => {
   return id;
 };
 
-// ---------------- Component ----------------
 const Products = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const {
-    open: isOpenDeleteModal,
-    openModal: openDeleteModal,
-    closeModal: closeDeleteModal,
-  } = useModal();
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid"); // 👈 view mode state
+  const { open: isOpenDeleteModal, openModal, closeModal } = useModal();
 
   const queryClient = useQueryClient();
 
-  // Get cards with React Query
   const {
     data: cards = [],
     isLoading,
@@ -74,22 +78,15 @@ const Products = () => {
   } = useQuery({
     queryKey: ["cards"],
     queryFn: fetchCards,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5,
   });
 
-  // 1. Filter the cards based on the active tab
   const filteredCards = useMemo(() => {
     const selectedCategory = TABS[activeTab].categoryValue;
-
-    if (selectedCategory === "ALL") {
-      return cards; // Return all cards for the "All Cards" tab
-    }
-
-    // Filter cards where the card_category matches the selected category value
+    if (selectedCategory === "ALL") return cards;
     return cards.filter((card) => card.card_category === selectedCategory);
-  }, [cards, activeTab]); // Re-calculate when cards data or activeTab changes
+  }, [cards, activeTab]);
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: deleteCard,
     onSuccess: (id) => {
@@ -97,27 +94,63 @@ const Products = () => {
       queryClient.setQueryData<Card[]>(["cards"], (old) =>
         old ? old.filter((c) => c.id !== id) : []
       );
-      closeDeleteModal();
+      closeModal();
       setSelectedCard(null);
     },
     onError: () => toast.error("Error deleting card"),
   });
 
-  // UI
   return (
     <DashboardLayout>
-      <Typography sx={{ fontSize: "25px", fontWeight: 800 }}>OFFERS</Typography>
-      <OfferBanner />
+      {/* <Typography sx={{ fontSize: "25px", fontWeight: 800 }}>OFFERS</Typography> */}
+      {/* <OfferBanner /> */}
 
+      {/* Header section */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mt: 5,
+          // mt: 5,
         }}
       >
         <Typography sx={{ fontSize: "25px" }}>PRODUCTS LIST</Typography>
+
+        {/* View Mode Switch */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            border: "1px solid gray",
+            borderRadius: 50,
+            p: 0.5,
+          }}
+        >
+          <IconButton
+            onClick={() => setViewMode("grid")}
+            sx={{
+              color: viewMode === "grid" ? COLORS.seconday : "gray",
+              backgroundColor:
+                viewMode === "grid" ? "rgba(0,0,0,0.1)" : "transparent",
+              borderRadius: "50%",
+            }}
+          >
+            <GridViewOutlined />
+          </IconButton>
+
+          <IconButton
+            onClick={() => setViewMode("list")}
+            sx={{
+              color: viewMode === "list" ? COLORS.seconday : "gray",
+              backgroundColor:
+                viewMode === "list" ? "rgba(0,0,0,0.1)" : "transparent",
+              borderRadius: "50%",
+            }}
+          >
+            <FormatListBulletedOutlined />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Tabs */}
@@ -130,50 +163,38 @@ const Products = () => {
           mt: 4,
         }}
       >
-        {TABS.map(
-          (
-            tab,
-            index // Use TABS with categoryValue
-          ) => (
-            <Box
-              key={tab.name}
-              onClick={() => setActiveTab(index)} // 2. Update activeTab state on click
+        {TABS.map((tab, index) => (
+          <Box
+            key={tab.name}
+            onClick={() => setActiveTab(index)}
+            sx={{
+              px: { md: 3, sm: 3, xs: 1 },
+              py: { md: 1.5, sm: "", xs: 0.5 },
+              border: "1px solid black",
+              borderRadius: "5px",
+              cursor: "pointer",
+              transition: "all 0.3s ease-in-out",
+              backgroundColor: activeTab === index ? "black" : "transparent",
+              "&:hover": {
+                backgroundColor: activeTab === index ? "black" : "#f0f0f0",
+              },
+            }}
+          >
+            <Typography
               sx={{
-                px: { md: 3, sm: 3, xs: 1 },
-                py: { md: 1.5, sm: "", xs: 0.5 },
-                border: "1px solid black",
-                borderRadius: "5px",
-                cursor: "pointer",
-                transition: "all 0.3s ease-in-out",
-                backgroundColor: activeTab === index ? "black" : "transparent",
-                "&:hover": {
-                  backgroundColor: activeTab === index ? "black" : "#f0f0f0",
-                },
+                fontSize: "14px",
+                fontWeight: 600,
+                color: activeTab === index ? COLORS.white : COLORS.primary,
               }}
             >
-              <Typography
-                sx={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: activeTab === index ? COLORS.white : COLORS.primary,
-                }}
-              >
-                {tab.name}
-              </Typography>
-            </Box>
-          )
-        )}
+              {tab.name}
+            </Typography>
+          </Box>
+        ))}
       </Box>
 
-      {/* Product list */}
-      <Box
-        sx={{
-          mt: 4,
-          display: "flex",
-          gap: 2,
-          flexWrap: "wrap",
-        }}
-      >
+      {/* Main Content */}
+      <Box sx={{ mt: 2 }}>
         {isLoading ? (
           <Box
             sx={{
@@ -182,7 +203,7 @@ const Products = () => {
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
-              minHeight: {md:"50vh",sm:"50vh",xs:'auto'},
+              minHeight: "50vh",
             }}
           >
             <CircularProgress disableShrink sx={{ color: "black" }} />
@@ -192,31 +213,88 @@ const Products = () => {
           <Typography color="error">
             Failed to load products. Try again later.
           </Typography>
-        ) : filteredCards.length === 0 ? ( // Display message if no cards for the category
+        ) : filteredCards.length === 0 ? (
           <Typography>No products found for the selected category.</Typography>
-        ) : (
-          filteredCards.map(
-            (
-              card // 3. Render the filtered cards
-            ) => (
+        ) : viewMode === "grid" ? (
+          // 🟩 GRID VIEW
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            {filteredCards.map((card) => (
               <ProductCard
                 key={card.id}
                 data={card}
                 openDeleteModal={() => {
                   setSelectedCard(card);
-                  openDeleteModal();
+                  openModal();
                 }}
               />
-            )
-          )
+            ))}
+          </Box>
+        ) : (
+          // 📋 LIST VIEW (Table)
+          <TableContainer
+            component={Paper}
+            sx={{
+              mt: 2,
+              boxShadow: "4px 7px 21px gray",
+              height: 600,
+              overflowY: "scroll",
+              "&::-webkit-scrollbar": {
+                height: "6px",
+                width:'6px'
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: "#f1f1f1",
+                borderRadius: "20px",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: COLORS.primary,
+                borderRadius: "20px",
+              },
+            }}
+          >
+            <Table sx={{ width: "100%" }}>
+              <TableHead
+                sx={{ backgroundColor: "#f4f4f4", position: "sticky", top: 0 }}
+              >
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }} align="left">
+                    id
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="left">
+                    Name
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="left">
+                    Category
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="left">
+                    ActualPrice
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="center">
+                    SalePrice
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredCards.map((card: any) => (
+                  <TableRow key={card.id} hover>
+                    <TableCell align="left">{card.id}.</TableCell>
+                    <TableCell align="left">{card.cardName}</TableCell>
+                    <TableCell align="left">{card.cardCategory}</TableCell>
+                    <TableCell align="left">£{card.actualPrice}</TableCell>
+                    <TableCell align="center">£{card.salePrice}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </Box>
 
-      {/* Confirm Delete Modal */}
+      {/* Delete Modal */}
       {isOpenDeleteModal && selectedCard && (
         <ConfirmModal
           open={isOpenDeleteModal}
-          onCloseModal={closeDeleteModal}
+          onCloseModal={closeModal}
           title="Are you sure you want to delete this product?"
           icon={<Delete fontSize="large" />}
           btnText={deleteMutation.isPending ? "Deleting..." : "Delete"}

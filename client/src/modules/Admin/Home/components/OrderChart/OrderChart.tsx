@@ -52,17 +52,17 @@ const MinimalGradientAreaChart = ({
 // --- Order Chart (Purple/Violet Gradient Card) ---
 const OrderChart = () => {
   return (
-    <Box sx={{ flex: "1 1 300px", maxWidth: 500, minWidth: 300 }}>
+    <Box sx={{ flex: "1 1 300px", maxWidth: 250, minWidth: 300 }}>
       <Box
         sx={{
           position: "relative",
           p: 3,
           color: "white",
-          height: { md: 240, sm: 240, xs: 180 },
+          height: { md: 160, sm: 200, xs: 180 },
           boxShadow: 8,
           borderRadius: 4,
           mb:{md:0,sm:0,xs:2},
-          background: "linear-gradient(135deg, #8b5cf6 0%, #4f0fb4ff 100%)",
+          background: `linear-gradient(135deg, ${COLORS.green} 0%, ${COLORS.primary} 100%)`,
           overflow: "hidden",
         }}
       >
@@ -105,13 +105,13 @@ const OrderChart = () => {
               mx: "auto",
               flexDirection: "column",
               mt: 3,
-              color: COLORS.primary,
+              color: COLORS.black,
             }}
           >
             <Typography
               variant="h2"
               fontWeight="bold"
-              sx={{ my: 1, fontSize: "3.5rem" }}
+              sx={{ my: 1, fontSize: "2rem" }}
             >
               50,229
             </Typography>

@@ -7,7 +7,7 @@ const Footer = () => {
     <Box
       sx={{
         display: { md: "flex", sm: "", xs: "block" },
-        width: ["100%"],
+        width: { lg: "1340px", md: "100%", sm: "100%", xs: "100%" },
         m: "auto",
         flexDirection: "column",
         p: { lg: 2, md: 1, sm: 1, xs: 2 },
@@ -110,11 +110,10 @@ const Footer = () => {
             />
             <Box
               component={"img"}
-              src="/assets/images/DIYP.png"
+              src="/assets/icons/DIYP.svg"
               sx={{
                 width: "40px",
                 height: "40px",
-                border: `1px solid ${COLORS.seconday}`,
                 borderRadius: 50,
               }}
             />
@@ -242,8 +241,8 @@ const Footer = () => {
             flexWrap: "wrap",
           }}
         >
-          {PAYMENT_CARD.map((e) => (
-            <a href={e.href}>
+          {PAYMENT_CARD.map((e,i) => (
+            <a key={i} href={e.href}>
               <Box
                 component={"img"}
                 src={e.icon}
