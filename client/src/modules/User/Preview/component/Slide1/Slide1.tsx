@@ -25,9 +25,9 @@ const Slide1 = () => {
     isAIimage,
     aimage1,
     layout1,
+    lineHeight1,
+    letterSpacing1
   } = useSlide1();
-
-  console.log(layout1?.textElements, "--");
 
   return (
     <Box
@@ -39,8 +39,9 @@ const Slide1 = () => {
         backgroundColor: "#fff",
       }}
     >
+
       {layout1 && (
-        <Box>
+        <Box sx={{ width: "100%", height: "100%", position: "relative", p: 1 }}>
           {/* Render Images */}
           {layout1?.elements.map((el: any) => (
             <Box
@@ -70,34 +71,64 @@ const Slide1 = () => {
           ))}
 
           {/* Render Texts */}
-          {layout1.textElements.map((te: any) => (
-            <Typography
-              key={te.id}
-              sx={{
-                position: "absolute",
-                left: te.x,
-                top: te.y,
-                fontSize: te.fontSize || 14,
-                fontFamily: te.fontFamily || "sans-serif",
-                color: te.color || "#000",
-                fontWeight: te.bold ? 700 : 400,
-                fontStyle: te.italic ? "italic" : "normal",
-                textAlign: "center",
-                width: te.width,
-                height: te.height,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: te.zIndex || 2,
-                transform: `rotate(${te.rotation || 0}deg)`,
-                wordBreak: "break-word",
-              }}
-            >
-              {te.text}
-            </Typography>
-          ))}
+          {layout1.textElements.map((te: any) => {
+            // Horizontal alignment map
+            const hAlign =
+              te.textAlign === "left"
+                ? "flex-start"
+                : te.textAlign === "right"
+                  ? "flex-end"
+                  : "center";
+
+            const vAlign =
+              te.verticalAlign === "top"
+                ? "flex-start"
+                : te.verticalAlign === "bottom"
+                  ? "flex-end"
+                  : "center";
+
+
+            return (
+              <Box
+                key={te.id}
+                sx={{
+                  position: "absolute",
+                  left: te.x,
+                  top: te.y,
+                  width: te.width,
+                  height: te.height,
+                  display: "flex",
+                  justifyContent: hAlign,
+                  alignItems: vAlign,
+
+                  // ✅ Font and style properties (directly from DB or user changes)
+                  color: te.color || "#000",
+                  fontSize: te.fontSize || 16,
+                  fontFamily: te.fontFamily || "Roboto, sans-serif",
+                  fontWeight: te.bold ? 700 : te.fontWeight || 400,
+                  fontStyle: te.italic ? "italic" : "normal",
+                  textTransform: te.uppercase ? "uppercase" : "none",
+
+                  // ✅ Layout and alignment
+                  textAlign: te.textAlign || "center",
+                  lineHeight: 1.2,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+
+                  // ✅ Rotation & layer
+                  transform: `rotate(${te.rotation || 0}deg)`,
+                  transformOrigin: "center center",
+                  zIndex: te.zIndex || 2,
+                  pointerEvents: "none", // avoid selection in preview
+                }}
+              >
+                {te.text || ""}
+              </Box>
+            );
+          })}
         </Box>
       )}
+
 
       {selectedVideoUrl1 && (
         <Box
@@ -277,8 +308,8 @@ const Slide1 = () => {
                 e.verticalAlign === "top"
                   ? "flex-start"
                   : e.verticalAlign === "center"
-                  ? "center"
-                  : "flex-end",
+                    ? "center"
+                    : "flex-end",
               p: 1,
             }}
           >
@@ -291,7 +322,6 @@ const Slide1 = () => {
                 textAlign: e.textAlign,
                 width: "100%",
                 height: "100%",
-                lineHeight: 1.4,
                 wordBreak: "break-word",
                 whiteSpace: "pre-line",
                 display: "flex",
@@ -299,16 +329,18 @@ const Slide1 = () => {
                   e.verticalAlign === "top"
                     ? "flex-start"
                     : e.verticalAlign === "bottom"
-                    ? "flex-end"
-                    : "center",
+                      ? "flex-end"
+                      : "center",
                 justifyContent:
                   e.textAlign1 === "left"
                     ? "flex-start"
                     : e.textAlign1 === "right"
-                    ? "flex-end"
-                    : "center",
+                      ? "flex-end"
+                      : "center",
                 borderRadius: "6px",
                 transition: "all 0.2s ease",
+                lineHeight: lineHeight1,
+                letterSpacing: letterSpacing1,
               }}
             >
               {e.value?.length === 0 ? (
@@ -338,105 +370,61 @@ const Slide1 = () => {
               verticalAlign1 === "top"
                 ? "flex-start"
                 : verticalAlign1 === "center"
-                ? "center"
-                : "flex-end",
+                  ? "center"
+                  : "flex-end",
             justifyContent:
               verticalAlign1 === "top"
                 ? "flex-start"
                 : verticalAlign1 === "center"
-                ? "center"
-                : "flex-end",
+                  ? "center"
+                  : "flex-end",
             height: "100%",
             color: fontColor1,
             fontFamily: fontFamily1,
             fontSize: fontSize1,
             fontWeight: fontWeight1,
+            lineHeight: lineHeight1,
+            letterSpacing: letterSpacing1,
             whiteSpace: "pre-wrap",
             width: "100%",
+            p: 1
           }}
         >
           {oneTextValue1}
         </Box>
       )}
 
-      {/* ✍️ Multiple Text Layout */}
-      {selectedLayout1 === "multipleText" && texts1.length > 0 && (
-        <Box
-          sx={{
-            height: "100%",
-            width: "375px",
-            borderRadius: "6px",
-            p: 1,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {texts1.map((textObj: any, index: number) => (
-            <Box
-              key={index}
-              sx={{
-                position: "relative",
-                height: "175px",
-                width: "100%",
-                mb: 2,
-                display: "flex",
-                justifyContent:
-                  textObj.verticalAlign1 === "top"
-                    ? "flex-start"
-                    : textObj.verticalAlign1 === "center"
-                    ? "center"
-                    : "flex-end",
-                alignItems: "center",
-              }}
-            >
-              <Typography
-                sx={{
-                  textAlign: "center",
-                  fontSize: textObj.fontSize1,
-                  fontWeight: textObj.fontWeight1,
-                  color: textObj.fontColor1,
-                  fontFamily: textObj.fontFamily1,
-                  lineHeight: 1.4,
-                  wordBreak: "break-word",
-                  whiteSpace: "pre-line",
-                  border: "3px dashed #3a7bd5",
-                  borderRadius: "6px",
-                  width: "100%",
-                  p: 1,
-                }}
-              >
-                {textObj.value || "Add Text"}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      )}
+      {
+        multipleTextValue1 || selectedLayout1 === "oneText" ? null : (
+          <>
+            {textElements1 &&
+              textElements1.map((e) => (
+                <Typography
+                  key={e.id}
+                  sx={{
+                    fontSize: e.fontSize,
+                    color: e.fontColor,
+                    fontFamily: e.fontFamily,
+                    fontWeight: e.fontWeight,
+                    textAlign: e.textAlign || "center",
+                    position: "absolute", // Use absolute positioning
+                    left: e.position.x, // X position
+                    top: e.position.y, // Y position
+                    width: e.size.width, // Width from size object
+                    height: e.size.height, // Height from size object
+                    zIndex: e.zIndex, // Apply zIndex
+                    transform: `rotate(${e.rotation}deg)`, // Apply rotation
+                    padding: "5px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  {e.value} {/* Display the text value */}
+                </Typography>
+              ))}</>
+        )
+      }
 
-      {textElements1 &&
-        textElements1.map((e) => (
-          <Typography
-            key={e.id}
-            sx={{
-              border: "1px dashed blue",
-              fontSize: e.fontSize,
-              color: e.fontColor,
-              fontFamily: e.fontFamily,
-              fontWeight: e.fontWeight,
-              textAlign: e.textAlign || "center",
-              position: "absolute", // Use absolute positioning
-              left: e.position.x, // X position
-              top: e.position.y, // Y position
-              width: e.size.width, // Width from size object
-              height: "auto", // Height from size object
-              zIndex: e.zIndex, // Apply zIndex
-              transform: `rotate(${e.rotation}deg)`, // Apply rotation
-              padding: "5px",
-              boxSizing: "border-box",
-            }}
-          >
-            {e.value} {/* Display the text value */}
-          </Typography>
-        ))}
+
 
       {isAIimage && (
         <img

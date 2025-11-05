@@ -214,8 +214,8 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
       sx={{
         width: {md:300,sm:300,xs:'95%'},
         height: 600,
-        left:{md: "29%",sm: "29%",xs:10},
-        mt:{md:0,sm:0,xs:4},
+        left:{md: "33.5%",sm: "0%",xs:0},
+        mt:{md:0,sm:0,xs:0},
         zIndex: 99,
       }}
     >

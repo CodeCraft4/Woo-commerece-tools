@@ -93,6 +93,12 @@ interface Slide3ContextType {
   multipleTextValue3: boolean;
   setMultipleTextValue3: React.Dispatch<React.SetStateAction<boolean>>;
 
+  lineHeight3: number;
+  setLineHeight3: React.Dispatch<React.SetStateAction<number>>;
+  letterSpacing3: number;
+  setLetterSpacing3: React.Dispatch<React.SetStateAction<number>>;
+
+
   aimage3: ImagePosition;
   setAIImage3: React.Dispatch<React.SetStateAction<ImagePosition>>;
 
@@ -267,8 +273,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   const [aimage3, setAIImage3] = useState<ImagePosition>({
     x: 30,
     y: 30,
-    width: 340,
-    height: 500,
+    width: 300,
+    height: 400,
     // zindex: 1000,
   });
 
@@ -319,6 +325,9 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       textAlign: "center",
     },
   ]);
+
+  const [lineHeight3, setLineHeight3] = useState(1.5);
+  const [letterSpacing3, setLetterSpacing3] = useState(0);
 
   const [editingIndex3, setEditingIndex3] = useState<number | null>(null);
 
@@ -529,6 +538,13 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         setTextPositions3,
         textSizes3,
         setTextSizes3,
+
+
+        lineHeight3,
+        setLineHeight3,
+        letterSpacing3,
+        setLetterSpacing3,
+
         imagePositions3,
         setImagePositions3,
         imageSizes3,

@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../supabase/supabase";
+import toast from "react-hot-toast";
 
 interface SignUpInput {
   fullName: string;
@@ -159,6 +160,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         },
       },
     });
+
+    toast.success("User is Logged In")
     if (error) throw error;
     return data;
   };

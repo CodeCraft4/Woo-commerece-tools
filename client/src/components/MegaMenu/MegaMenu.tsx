@@ -51,7 +51,7 @@ const MegaMenu = ({
     >
       <Box
         sx={{
-          width: { lg: "1310px", md: "100%", sm: "100%", xs: "auto" },
+          width: { lg: "1310px", md: "100%", sm: "100%", xs: "100%" },
           bgcolor: "white",
           display: "flex",
           p: 4,
@@ -127,11 +127,11 @@ const MegaMenu = ({
           {CATEGORIES_DATA.map((item: any) => (
             <Box
               key={item.id}
-              onClick={() => handleCardClick(item)} // ✅ open popup with selected item
+              onClick={() => handleCardClick(item)} 
               sx={{
                 border: `2px solid ${item.borderColor}`,
                 borderRadius: "8px",
-                width: "115px",
+                width: {md:"115px",sm:'95px',xs:'none'},
                 height: "160px",
                 overflow: "hidden",
                 cursor: "pointer",

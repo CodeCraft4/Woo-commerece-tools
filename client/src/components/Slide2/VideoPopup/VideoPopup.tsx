@@ -38,6 +38,8 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
 
   const [loading, setLoading] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
   const { user } = useAuth();
   const generateId = () => Date.now() + Math.random();
 
@@ -46,10 +48,12 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
     const files = e.target.files;
     if (!files) return;
 
+    setFileError(null);
+
     const validFiles: any = Array.from(files).filter((file) => {
       const fileSizeMB = file.size / (1024 * 1024);
       if (fileSizeMB > 50) {
-        alert(`❌ ${file.name} is too large (max 50MB)`);
+        setFileError(`❌ ${file.name.slice(0, 20)} is too large (max 50MB).`);
         return false;
       }
       return true;
@@ -236,10 +240,11 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: 600,
-        left: activeIndex === 1 ? { md: "17%", sm: "13%", xs: 10 } : "16%",
-        mt: { md: 0, sm: 0, xs: 4 },
-        overflow: "hidden",
+        height: { md: 600, sm: 600, xs: 450 },
+        mt: { md: 0, sm: 0, xs: 0 },
+        overflowY: "scroll",
+        left: activeIndex === 1 ? { md: "19.5%", sm: "0%", xs: 0 } : "16%",
+        overflow: 'hidden',
       }}
     >
       {tips && (
@@ -250,6 +255,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
               width: "100%",
               bgcolor: "gray",
               position: "relative",
+              display: { md: 'flex', sm: 'flex', xs: 'none' }
             }}
           >
             <video
@@ -257,7 +263,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
               autoPlay
               loop
               muted
-              style={{ width: "100%", height: "100%" }}
+              style={{ width: "100%", height: "100%", }}
             />
           </Box>
           <Box p={2}>
@@ -354,6 +360,20 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                 <ControlPoint fontSize="large" />
                 Add Video
               </Box>
+
+              {fileError && (
+                <Typography
+                  sx={{
+                    color: "red",
+                    fontSize: "13px",
+                    mt: 1,
+                    textAlign: "center",
+                    fontWeight: 500,
+                  }}
+                >
+                  {fileError}
+                </Typography>
+              )}
               <Box
                 sx={{
                   display: "flex",

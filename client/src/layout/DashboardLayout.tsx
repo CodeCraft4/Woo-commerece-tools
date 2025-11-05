@@ -32,6 +32,7 @@ const DashboardLayout = ({ children }: LayoutType) => {
             position: { xs: "fixed", sm: "relative" },
             top: 0,
             left: 0,
+            zIndex:{md:0,sm:0,xs:9999}
           }}
         >
           {/* Sidebar Header */}

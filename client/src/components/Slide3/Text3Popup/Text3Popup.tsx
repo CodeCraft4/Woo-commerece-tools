@@ -11,6 +11,7 @@ import {
   Delete,
   FormatBoldOutlined,
   Title,
+  TextRotateVertical,
 } from "@mui/icons-material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { COLORS } from "../../../constant/color";
@@ -22,6 +23,7 @@ interface Text3PopupProps {
   activeIndex?: number;
   onShowFontSizePopup: () => void;
   onShowFontColorPopup: () => void;
+  onSetLineHeightPopup: () => void;
   onShowFontFamilyPopup: () => void;
   onChangeTextAlign: () => void;
   renderActiveTextSlide3Child: React.ReactNode | null;
@@ -45,6 +47,7 @@ const Text3Popup = ({
   onShowFontSizePopup,
   onShowFontColorPopup,
   onShowFontFamilyPopup,
+  onSetLineHeightPopup,
   onChangeTextAlign,
   renderActiveTextSlide3Child,
   onAddTextToCanvas,
@@ -64,11 +67,15 @@ const Text3Popup = ({
     setFontColor3,
     setFontFamily3,
     setVerticalAlign3,
+    multipleTextValue3,
+    showOneTextRightSideBox3,
   } = useSlide3();
 
   const selectedTextElement = textElements3.find(
     (text: any) => text.id === selectedTextId3
   );
+
+  const isLayoutUse = multipleTextValue3 || showOneTextRightSideBox3
 
   // Function to update individual text element or global defaults
   const updateTextProperty = (property: string, value: any) => {
@@ -168,10 +175,10 @@ const Text3Popup = ({
       title={"Text Editing"}
       onClose={onClose}
       sx={{
-        width: { md: 500, sm: 500, xs: "95%" },
-        mt: { md: 0, sm: 0, xs: 4 },
+        width: { md: 500, sm: 250, xs: "95%" },
+        mt: { md: 0, sm: 0, xs: 0 },
         height: { md: 600, sm: 600, xs: 500 },
-        left: { md: "18%", sm: "18%", xs: 10 },
+        left: { md: "23%", sm: "0%", xs: 0 },
         overflowY: "hidden",
       }}
     >
@@ -198,7 +205,7 @@ const Text3Popup = ({
         }}
       >
         {/* Add Text */}
-        <IconButton onClick={onAddTextToCanvas} sx={editingButtonStyle}>
+        <IconButton disabled={isLayoutUse} onClick={onAddTextToCanvas} sx={editingButtonStyle}>
           <Title fontSize="large" />
           <Typography variant="caption">Add</Typography>
         </IconButton>
@@ -239,6 +246,13 @@ const Text3Popup = ({
         <IconButton onClick={onChangeTextAlign} sx={editingButtonStyle}>
           <FormatAlignCenterOutlined fontSize="large" />
           <Typography variant="caption">Align</Typography>
+        </IconButton>
+
+
+        {/* Line Height  */}
+        <IconButton disableRipple onClick={onSetLineHeightPopup} sx={editingButtonStyle} >
+          <TextRotateVertical fontSize="large" />
+          <Typography variant="caption">Line Height</Typography>
         </IconButton>
 
         {/* Rotate */}

@@ -5,7 +5,6 @@ import { useState } from "react";
 import LandingButton from "../LandingButton/LandingButton";
 import { IconButton } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import { COLORS } from "../../constant/color";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../constant/route";
 import { useCartStore } from "../../stores";
@@ -17,7 +16,7 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: { md: 800, sm: 800, xs: "90%" },
+  width: { md: 800, sm: 700, xs: "90%" },
   bgcolor: "background.paper",
   borderRadius: 3,
   //   p: 2,
@@ -112,25 +111,25 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
 
   const plans = [
-  {
-    id: "square-card",
-    title: "Square Card",
-    desc: "For the little message",
-    price: cate?.actualPrice,
-  },
-  {
-    id: "Medium square card",
-    title: "Medium Square Card",
-    desc: "IDEA Favourite",
-    price: cate?.actualPrice + 3,
-  },
-  {
-    id: "large square card",
-    title: "Large Square Card",
-    desc: "IDEA Favourite",
-    price: cate?.actualPrice + 5,
-  },
-];
+    {
+      id: "square-card",
+      title: "Square Card",
+      desc: "For the little message",
+      price: cate?.actualPrice,
+    },
+    {
+      id: "Medium square card",
+      title: "Medium Square Card",
+      desc: "IDEA Favourite",
+      price: cate?.actualPrice + 3,
+    },
+    {
+      id: "large square card",
+      title: "Large Square Card",
+      desc: "IDEA Favourite",
+      price: cate?.actualPrice + 5,
+    },
+  ];
 
 
   return (
@@ -147,7 +146,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
           },
         }}
       >
-        <Box sx={{ ...style, height: { md: "auto", sm: "auto", xs: "500px" },overflowY:'auto' }}>
+        <Box sx={{ ...style, height: { md: "auto", sm: "auto", xs: "500px" }, overflowY: 'auto' }}>
           <Box
             sx={{
               display: { md: "flex", sm: "flex", xs: "block" },
@@ -202,10 +201,9 @@ const ProductPopup = (props: ProductsPopTypes) => {
                     onClick={() => setSelectedPlan(plan.id)}
                     sx={{
                       ...isActivePay,
-                      height:{md:'auto',sm:'auto',xs:'60px'},
-                      border: `3px solid ${
-                        selectedPlan === plan.id ? "#004099" : "transparent"
-                      }`,
+                      height: { md: 'auto', sm: 'auto', xs: '60px' },
+                      border: `3px solid ${selectedPlan === plan.id ? "#004099" : "transparent"
+                        }`,
                       cursor: "pointer",
                     }}
                   >
@@ -218,9 +216,9 @@ const ProductPopup = (props: ProductsPopTypes) => {
                         style={{ width: "30px", height: "30px" }}
                       />
                       <Box>
-                        <Typography sx={{fontWeight:600,fontSize:{md:'auto',sm:'auto',xs:'12px'}}}>{plan.title}</Typography>
-                        <Typography fontSize={{md:"13px",sm:'13px',xs:'10px'}}>{plan.desc}</Typography>
-                        <Typography fontSize={{md:'18px',sm:'18px',xs:'14px'}}>£{plan.price || '2'}</Typography>
+                        <Typography sx={{ fontWeight: 600, fontSize: { md: 'auto', sm: 'auto', xs: '12px' } }}>{plan.title}</Typography>
+                        <Typography fontSize={{ md: "13px", sm: '13px', xs: '10px' }}>{plan.desc}</Typography>
+                        <Typography fontSize={{ md: '18px', sm: '18px', xs: '14px' }}>£{plan.price || '2'}</Typography>
                       </Box>
                     </Box>
                     <Typography variant="h5">£{plan.price || '5'}</Typography>
@@ -232,7 +230,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
                     sx={{
                       ...isActivePay,
                       bgcolor: "#ffd3db",
-                      fontSize: {md:"20px",sm:'16px',xs:'14px'},
+                      fontSize: { md: "20px", sm: '16px', xs: '14px' },
                       color: "#212121",
                       p: 1,
                     }}
@@ -270,9 +268,9 @@ const ProductPopup = (props: ProductsPopTypes) => {
           </Box>
           <IconButton
             onClick={onClose}
-            sx={{ position: "absolute", top: 0, right: 4 }}
+            sx={{ position: "absolute", top: 4, right: 4, bgcolor: "black", color: 'white', width: '30px', height: '30px', p: 1, "&:hover": { bgcolor: '#212121' } }}
           >
-            <Close fontSize="large" sx={{ color: COLORS.black }} />
+            <Close fontSize="large" />
           </IconButton>
         </Box>
       </Modal>

@@ -175,6 +175,14 @@ interface Slide4ContextType {
   setTextPositions4: React.Dispatch<React.SetStateAction<Position[]>>;
   textSizes4: Size[];
   setTextSizes4: React.Dispatch<React.SetStateAction<Size[]>>;
+
+
+  lineHeight4: number;
+  setLineHeight4: React.Dispatch<React.SetStateAction<number>>;
+  letterSpacing4: number;
+  setLetterSpacing4: React.Dispatch<React.SetStateAction<number>>;
+
+
   imagePositions4: Record<number, Position>; // keyed by image id
   setImagePositions4: React.Dispatch<
     React.SetStateAction<Record<number, Position>>
@@ -275,10 +283,10 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   const [aimage4, setAIImage4] = useState<ImagePosition>({
-     x: 30,
+    x: 30,
     y: 30,
-    width: 340,
-    height: 500,
+    width: 300,
+    height: 400,
     // zindex: 1000,
   });
 
@@ -329,6 +337,10 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       textAlign: "center",
     },
   ]);
+
+  const [lineHeight4, setLineHeight4] = useState(1.5);
+  const [letterSpacing4, setLetterSpacing4] = useState(0);
+
 
   const [editingIndex4, setEditingIndex4] = useState<number | null>(null);
 
@@ -554,6 +566,12 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         setImageSizes4,
         poster4,
         setPoster4,
+
+        
+        lineHeight4,
+        setLineHeight4,
+        letterSpacing4,
+        setLetterSpacing4,
 
         // Slide state management
         isSlideActive4,

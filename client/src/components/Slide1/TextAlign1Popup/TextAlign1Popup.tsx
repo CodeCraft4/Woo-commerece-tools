@@ -53,10 +53,11 @@ const TextAlign1Popup = () => {
     <Box
       sx={{
         p: 2,
-        width: { md: 460, sm: 460, xs: "100%" },
-        height: 400,
-        mt: 4,
+        width: { md: 460, sm: 230, xs: "100%" },
+        height: {md:400,sm:400,xs:200},
+        mt: {md:4,sm:4,xs:0},
         textAlign: "start",
+        overflowY: "auto",
       }}
     >
       {/* Vertical Alignment */}
@@ -72,17 +73,16 @@ const TextAlign1Popup = () => {
               onClick={() => updateTextProperty("verticalAlign", opt.key)}
               sx={{
                 p: 2,
-                border: `2px solid ${
-                  (selectedTextElement?.verticalAlign || verticalAlign1) ===
-                  opt.key
+                border: `2px solid ${(selectedTextElement?.verticalAlign || verticalAlign1) ===
+                    opt.key
                     ? "#3a7bd5"
                     : "lightgray"
-                }`,
+                  }`,
                 borderRadius: 3,
                 cursor: "pointer",
                 color:
                   (selectedTextElement?.verticalAlign || verticalAlign1) ===
-                  opt.key
+                    opt.key
                     ? "#3a7bd5"
                     : "inherit",
                 transition: "all 0.2s ease",
@@ -110,11 +110,10 @@ const TextAlign1Popup = () => {
               onClick={() => updateTextProperty("textAlign", opt.key)}
               sx={{
                 p: 2,
-                border: `2px solid ${
-                  (selectedTextElement?.textAlign || textAlign1) === opt.key
+                border: `2px solid ${(selectedTextElement?.textAlign || textAlign1) === opt.key
                     ? "#3a7bd5"
                     : "lightgray"
-                }`,
+                  }`,
                 borderRadius: 3,
                 cursor: "pointer",
                 color:

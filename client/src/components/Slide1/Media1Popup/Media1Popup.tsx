@@ -49,16 +49,34 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
     const files = e.target.files;
     if (!files) return;
 
+    // Allowed extensions
+    const allowedExtensions = ["mp3", "wav", "aiff", "aac", "m4a"];
+
     const validFiles = Array.from(files).filter((file) => {
       const fileSizeMB = file.size / (1024 * 1024);
-      if (fileSizeMB > 50) {
-        alert(`❌ ${file.name} is too large (max 50MB)`);
+      const ext = file.name.split(".").pop()?.toLowerCase();
+
+      // ✅ Check file type
+      if (!ext || !allowedExtensions.includes(ext)) {
+        alert(`❌ ${file.name} is not a supported audio format.`);
         return false;
       }
+
+      // ✅ Check file size (max 50MB)
+      if (fileSizeMB > 50) {
+        alert(`❌ ${file.name} is too large (max 50MB).`);
+        return false;
+      }
+
       return true;
     });
 
-    if (validFiles.length === 0) return;
+    if (validFiles.length === 0) {
+      e.target.value = ""; // clear invalid input
+      return;
+    }
+
+    // ✅ Set valid audio files
     setAudio1(validFiles);
   };
 
@@ -197,20 +215,21 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: {md:600,sm:600,xs:540},
-        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 10 } : "16%",
-        mt: { md: 0, sm: 0, xs: 4 },
-        overflow: "hidden",
+        height: { md: 600, sm: 600, xs: 450 },
+        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 0 } : "16%",
+        mt: { md: 0, sm: 0, xs: 0 },
+        overflowY: "hidden",
       }}
     >
       {tips1 && (
         <>
           <Box
             sx={{
-              height: 200,
+              height: 220,
               width: "100%",
               bgcolor: "gray",
               position: "relative",
+              display: { md: 'flex', sm: 'flex', xs: 'none' }
             }}
           >
             <video
@@ -284,7 +303,7 @@ const Media1Popup = ({ onClose, mediaType, activeIndex }: Media1PopupProps) => {
               <Box
                 component="input"
                 type="file"
-                accept={isVideo ? "video/*" : "audio/*"}
+                accept=".mp3, .wav, .aiff, audio/mpeg, audio/wav, audio/aiff"
                 sx={{
                   position: "absolute",
                   width: "260px",

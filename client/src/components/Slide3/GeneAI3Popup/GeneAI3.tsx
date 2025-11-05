@@ -319,10 +319,11 @@ const GeneAI3Popup = (props: GeneAIType) => {
       title="Gemini AI Designer"
       onClose={onClose}
       sx={{
-        width: { md: 350, sm: 350, xs: "100%" },
-        height: 600,
-        mt:{md:0,sm:0,xs:4},
-        left: { md: "26%", sm: "26%", xs: 0 },
+        width: { md: 350, sm: 300, xs: "95%" },
+        height: { md: 600, sm: 600, xs: 450 },
+        mt: { md: 0, sm: 0, xs: 0 },
+        left: { md: "31%", sm: "0%", xs: 0 },
+        overflowY: "auto",
       }}
     >
       <canvas ref={canvasRef} style={{ display: "none" }} />
@@ -339,11 +340,11 @@ const GeneAI3Popup = (props: GeneAIType) => {
 
       <Box
         sx={{
-          height: 420,
+          height: { md: 420, sm: 420, xs: 250 },
           border: "2px solid #acc9c9ff",
           borderRadius: 2,
           width: "100%",
-          p: 1,
+          p: { md: 1, sm: 1, xs: 0 },
         }}
       >
         {selectedAIimageUrl3 && (
@@ -356,7 +357,8 @@ const GeneAI3Popup = (props: GeneAIType) => {
               position: "relative",
             }}
           >
-            <img
+            <Box
+              component={"img"}
               src={`${selectedAIimageUrl3}`}
               alt="Generated design"
               onClick={() => {
@@ -364,9 +366,10 @@ const GeneAI3Popup = (props: GeneAIType) => {
                   setIsAIimage3(true);
                 }
               }}
-              style={{
+              sx={{
                 maxWidth: "100%",
-                borderRadius: 8,
+                height: { md: '100%', sm: '100%', xs: '250px' },
+                objectFit: 'cover',
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               }}
             />
@@ -443,7 +446,7 @@ const GeneAI3Popup = (props: GeneAIType) => {
         }}
       >
         <InputBase
-          placeholder="e.g., Birthday card for mom with flowers"
+          placeholder="e.g., Birthday card "
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           sx={{ p: 1, width: "90%" }}

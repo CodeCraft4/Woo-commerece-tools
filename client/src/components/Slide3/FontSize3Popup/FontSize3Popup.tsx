@@ -114,13 +114,13 @@ const FontSize3Popup = () => {
     <Box
       mt={3}
       sx={{
-        width: 300,
+        width: { md: 300, sm: 230, xs: '100%' },
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "column",
         gap: 2,
-        height: 350,
+        height: {md:350,sm:300,xs:250},
         m: "auto",
       }}
     >
@@ -158,7 +158,7 @@ const FontSize3Popup = () => {
           variant="standard"
           size="small"
           sx={{
-            width: 200,
+            width: { md: 200, sm: 100, xs: 200 },
             "& input": {
               textAlign: "center",
               fontWeight: "bold",

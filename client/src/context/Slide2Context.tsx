@@ -104,6 +104,11 @@ interface Slide2ContextType {
   multipleTextValue: boolean;
   setMultipleTextValue: React.Dispatch<React.SetStateAction<boolean>>;
 
+  lineHeight2: number;
+  setLineHeight2: React.Dispatch<React.SetStateAction<number>>;
+  letterSpacing2: number;
+  setLetterSpacing2: React.Dispatch<React.SetStateAction<number>>;
+
   // Layout selection
   selectedLayout: "blank" | "oneText" | "multipleText";
   setSelectedLayout: React.Dispatch<
@@ -129,6 +134,24 @@ interface Slide2ContextType {
   setFontFamily: React.Dispatch<React.SetStateAction<string>>;
   rotation: number;
   setRotation: React.Dispatch<React.SetStateAction<number>>;
+  defaultFontSize: number;
+  setDefaultFontSize: React.Dispatch<React.SetStateAction<number>>;
+  defaultFontWeight: number;
+  setDefaultFontWeight: React.Dispatch<React.SetStateAction<number>>;
+  defaultFontColor: string;
+  setDefaultFontColor: React.Dispatch<React.SetStateAction<string>>;
+  defaultFontFamily: string;
+  setDefaultFontFamily: React.Dispatch<React.SetStateAction<string>>;
+  defaultTextAlign: "start" | "center" | "end";
+  setDefaultTextAlign: React.Dispatch<
+    React.SetStateAction<"start" | "center" | "end">
+  >;
+  defaultVerticalAlign: "top" | "center" | "bottom";
+  setDefaultVerticalAlign: React.Dispatch<
+    React.SetStateAction<"top" | "center" | "bottom">
+  >;
+  defaultRotation: number;
+  setDefaultRotation: React.Dispatch<React.SetStateAction<number>>;
 
   // Individual text elements management
   textElements: TextElement[];
@@ -267,8 +290,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
   const [aimage2, setAIImage2] = useState<ImagePosition>({
     x: 30,
     y: 30,
-    width: 340,
-    height: 500,
+    width: 300,
+    height: 400,
     // zindex: 1000,
   });
 
@@ -288,6 +311,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
   // Individual text elements management
   const [textElements, setTextElements] = useState<TextElement[]>([]);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
+
+
 
   // Legacy support
   const [texts, setTexts] = useState([
@@ -319,6 +344,10 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       textAlign: "center",
     },
   ]);
+
+  const [lineHeight2, setLineHeight2] = useState(1.5);
+  const [letterSpacing2, setLetterSpacing2] = useState(0);
+
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -440,6 +469,11 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     isSlideActive,
     selectedPreviewImage,
     setSelectedPreviewImage,
+
+    lineHeight2,
+    setLineHeight2,
+    letterSpacing2,
+    setLetterSpacing2,
   ]);
 
   return (
@@ -459,6 +493,20 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         setOneTextValue,
         multipleTextValue,
         setMultipleTextValue,
+        defaultFontColor: fontColors[0],
+        setDefaultFontColor: () => { },
+        defaultFontSize: 20,
+        setDefaultFontSize: () => { },
+        defaultFontWeight: 400,
+        setDefaultFontWeight: () => { },
+        defaultFontFamily: "Roboto",
+        setDefaultFontFamily: () => { },
+        defaultTextAlign: "start",
+        setDefaultTextAlign: () => { },
+        defaultVerticalAlign: "top",
+        setDefaultVerticalAlign: () => { },
+        defaultRotation: 0,
+        setDefaultRotation: () => { },
 
         // Layout selection
         selectedLayout,
@@ -531,6 +579,15 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         setTextPositions,
         textSizes,
         setTextSizes,
+
+
+        lineHeight2,
+        setLineHeight2,
+        letterSpacing2,
+        setLetterSpacing2,
+
+
+
         imagePositions,
         setImagePositions,
         imageSizes,

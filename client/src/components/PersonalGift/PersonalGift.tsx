@@ -24,7 +24,7 @@ const PersonalGift = () => {
       >
         <Box
           component={"img"}
-          src="/assets/images/personlised.jpg"
+          src="/assets/images/PersonlisedImg.jpg"
           sx={{
             width: "100%",
             height: "100%",
@@ -57,7 +57,7 @@ const PersonalGift = () => {
             fontWeight: 700,
           }}
         >
-          Personlized Gifts <br /> Created by You
+          Personalised Gifts <br /> Created by You
         </Typography>
         <Typography
           sx={{ fontSize: { md: "14px", sm: "13px", xs: 12 }, fontWeight: 300 }}

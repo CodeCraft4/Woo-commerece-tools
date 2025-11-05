@@ -18,7 +18,7 @@ const Description = () => {
           lineHeight: { md: "50px", sm: "", xs: "auto" },
         }}
       >
-        Make It Special with Personalised Cards and Gifts at DIY Personlization
+        Make It Special with Personalised Cards and Gifts at DIY Personlisation
       </Typography>
       <Typography
         sx={{
@@ -36,7 +36,7 @@ const Description = () => {
           mb: 2,
         }}
       >
-        Here at DIY Personalization, you'll find 1,000's of brilliantly unique greeting
+        Here at DIY Personalisation, you'll find 1,000's of brilliantly unique greeting
         cards and gifts at your fingertips, ready to personalise with your
         inside jokes, photos and heartfelt messages using our helpful online
         editor. Perfect for creating a memorable keepsake that they can treasure

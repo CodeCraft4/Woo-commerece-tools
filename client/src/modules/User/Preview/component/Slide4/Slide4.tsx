@@ -25,6 +25,9 @@ const Slide4 = () => {
     selectedStickers4,
     isAIimage4,
     aimage4,
+
+    lineHeight4,
+    letterSpacing4
   } = useSlide4();
 
   return (
@@ -213,8 +216,8 @@ const Slide4 = () => {
                 e.verticalAlign === "top"
                   ? "flex-start"
                   : e.verticalAlign === "center"
-                  ? "center"
-                  : "flex-end",
+                    ? "center"
+                    : "flex-end",
               alignItems: "center",
               border: "3px dashed transparent",
               borderRadius: "6px",
@@ -228,7 +231,8 @@ const Slide4 = () => {
                 fontWeight: e.fontWeight4,
                 color: e.fontColor4,
                 fontFamily: e.fontFamily4,
-                lineHeight: 1.4,
+                lineHeight: lineHeight4,
+                letterSpacing: letterSpacing4,
                 wordBreak: "break-word",
                 whiteSpace: "pre-line",
                 width: "100%",
@@ -238,14 +242,14 @@ const Slide4 = () => {
                   e.verticalAlign === "top"
                     ? "flex-start"
                     : e.verticalAlign === "bottom"
-                    ? "flex-end"
-                    : "center",
+                      ? "flex-end"
+                      : "center",
                 justifyContent:
                   e.textAlign === "left"
                     ? "flex-start"
                     : e.textAlign === "right"
-                    ? "flex-end"
-                    : "center",
+                      ? "flex-end"
+                      : "center",
                 m: "auto",
               }}
             >
@@ -264,106 +268,60 @@ const Slide4 = () => {
               verticalAlign4 === "top"
                 ? "flex-start"
                 : verticalAlign4 === "center"
-                ? "center"
-                : "flex-end",
+                  ? "center"
+                  : "flex-end",
             justifyContent:
               verticalAlign4 === "top"
                 ? "flex-start"
                 : verticalAlign4 === "center"
-                ? "center"
-                : "flex-end",
+                  ? "center"
+                  : "flex-end",
             height: "100%",
             color: fontColor4,
-            fontFamily4,
-            fontSize4,
-            fontWeight4,
-            textAlign4,
+            fontFamily: fontFamily4,
+            fontSize: fontSize4,
+            fontWeight: fontWeight4,
+            textAlign: textAlign4,
+            lineHeight: lineHeight4,
+            letterSpacing: letterSpacing4,
             whiteSpace: "pre-wrap",
             width: "100%",
+            p: 1
           }}
         >
           {oneTextValue4}
         </Box>
       )}
 
-      {/* ✍️ Multiple Text Layout */}
-      {selectedLayout4 === "multipleText" && texts4.length > 0 && (
-        <Box
-          sx={{
-            height: "100%",
-            width: "375px",
-            borderRadius: "6px",
-            p: 1,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {texts4.map((textObj: any, index: number) => (
-            <Box
-              key={index}
-              sx={{
-                position: "relative",
-                height: "175px",
-                width: "100%",
-                mb: 2,
-                display: "flex",
-                justifyContent:
-                  textObj.verticalAlign4 === "top"
-                    ? "flex-start"
-                    : textObj.verticalAlign4 === "center"
-                    ? "center"
-                    : "flex-end",
-                alignItems: "center",
-              }}
-            >
-              <Typography
-                sx={{
-                  textAlign: "center",
-                  fontSize: textObj.fontSize4,
-                  fontWeight: textObj.fontWeight4,
-                  color: textObj.fontColor4,
-                  fontFamily: textObj.fontFamily4,
-                  lineHeight: 1.4,
-                  wordBreak: "break-word",
-                  whiteSpace: "pre-line",
-                  border: "3px dashed #3a7bd5",
-                  borderRadius: "6px",
-                  width: "100%",
-                  p: 1,
-                }}
-              >
-                {textObj.value || "Add Text"}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      )}
-
-      {textElements4 &&
-        textElements4.map((e) => (
-          <Typography
-            key={e.id}
-            sx={{
-              border: "1px dashed blue",
-              fontSize: e.fontSize,
-              color: e.fontColor,
-              fontFamily: e.fontFamily,
-              fontWeight: e.fontWeight,
-              textAlign: e.textAlign || "center",
-              position: "absolute", // Use absolute positioning
-              left: e.position.x, // X position
-              top: e.position.y, // Y position
-              width: e.size.width, // Width from size object
-              height: "auto", // Height from size object
-              zIndex: e.zIndex, // Apply zIndex
-              transform: `rotate(${e.rotation}deg)`, // Apply rotation
-              padding: "5px",
-              boxSizing: "border-box",
-            }}
-          >
-            {e.value} {/* Display the text value */}
-          </Typography>
-        ))}
+      {
+        multipleTextValue4 || selectedLayout4 === "oneText" ? null : (
+          <>
+            {textElements4 &&
+              textElements4.map((e) => (
+                <Typography
+                  key={e.id}
+                  sx={{
+                    fontSize: e.fontSize,
+                    color: e.fontColor,
+                    fontFamily: e.fontFamily,
+                    fontWeight: e.fontWeight,
+                    textAlign: e.textAlign || "center",
+                    position: "absolute", // Use absolute positioning
+                    left: e.position.x, // X position
+                    top: e.position.y, // Y position
+                    width: e.size.width, // Width from size object
+                    height: e.size.height, // Height from size object
+                    zIndex: e.zIndex, // Apply zIndex
+                    transform: `rotate(${e.rotation}deg)`, // Apply rotation
+                    padding: "5px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  {e.value} {/* Display the text value */}
+                </Typography>
+              ))}</>
+        )
+      }
 
       {isAIimage4 && (
         <img

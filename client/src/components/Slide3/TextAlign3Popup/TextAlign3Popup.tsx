@@ -53,10 +53,11 @@ const TextAlign3Popup = () => {
     <Box
       sx={{
         p: 2,
-        width: { md: 460, sm: 460, xs: "100%" },
-        height: 400,
-        mt: 4,
+        width: { md: 460, sm: 230, xs: "100%" },
+        height: {md: 400,sm:400,xs:200},
+        mt: {md: 4, sm: 4, xs: 0},
         textAlign: "start",
+        overflowY: "auto",
       }}
     >
       {/* Vertical Alignment */}

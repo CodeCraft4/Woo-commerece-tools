@@ -319,9 +319,10 @@ const GeneAI4Popup = (props: GeneAIType) => {
       title="Gemini AI Designer"
       onClose={onClose}
       sx={{
-        width: { md: 300, sm: 350, xs: "95%" },
-        height: 600,
-        left: { md: "56%", sm: "53%", xs: 10 },
+        width: { md: 300, sm: 280, xs: "95%" },
+        height: { md: 600, sm: 600, xs: 450 },
+        left: { md: "58%", sm: "0%", xs: 0 },
+        overflow: "hidden",
       }}
     >
       <canvas ref={canvasRef} style={{ display: "none" }} />
@@ -338,11 +339,11 @@ const GeneAI4Popup = (props: GeneAIType) => {
 
       <Box
         sx={{
-          height: 420,
+          height: { md: 420, sm: 420, xs: 250 },
           border: "2px solid #acc9c9ff",
           borderRadius: 2,
           width: "100%",
-          p: 1,
+          p: { md: 1, sm: 1, xs: 0 },
         }}
       >
         {selectedAIimageUrl4 && (
@@ -354,8 +355,9 @@ const GeneAI4Popup = (props: GeneAIType) => {
               alignItems: "center",
               position: "relative",
             }}
-          >
-            <img
+          > 
+            <Box
+              component={'img'}
               src={`${selectedAIimageUrl4}`}
               alt="Generated design"
               onClick={() => {
@@ -363,9 +365,11 @@ const GeneAI4Popup = (props: GeneAIType) => {
                   setIsAIimage4(true);
                 }
               }}
-              style={{
+              sx={{
                 maxWidth: "100%",
-                borderRadius: 8,
+                height: { md: '100%', sm: '100%', xs: '250px' },
+
+                objectFit: "cover",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               }}
             />
@@ -442,7 +446,7 @@ const GeneAI4Popup = (props: GeneAIType) => {
         }}
       >
         <InputBase
-          placeholder="e.g., Birthday card for mom with flowers"
+          placeholder="e.g., Birthday card"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           sx={{ p: 1, width: "90%" }}

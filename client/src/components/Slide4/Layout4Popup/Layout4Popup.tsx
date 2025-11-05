@@ -41,8 +41,8 @@ const Layout4Popup = ({ onClose, activeIndex }: Layout4PopupProps) => {
       title="Layout"
       onClose={onClose}
       sx={{
-        width: { md: 350, sm: 350, xs: "100%" },
-        left: { md: "53%", sm: "53%", xs: 0 },
+        width: { md: 350, sm: 350, xs: "95%" },
+        left: { md: "55.5%", sm: "0%", xs: 0 },
         mt: { md: 0, sm: 0, xs: 4 },
       }}
       activeIndex={activeIndex}

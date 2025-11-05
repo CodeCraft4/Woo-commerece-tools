@@ -54,9 +54,10 @@ const FontColor4Popup = () => {
         justifyContent: "center",
         flexDirection: "column",
         alignItems: "center",
-        width: {md:460,sm:460,xs:'100%'},
-        height: 420,
-        mt: 4,
+        width: {md:460,sm:250,xs:'100%'},
+        height: {md:420,sm:420,xs:250},
+        mt: {md:4,sm:4,xs:0},
+        overflowY: {xs:"scroll",sm:"scroll",md:"hidden"},
       }}
     >
       <ChromePicker

@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
-import Slider from "react-slick";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+
 import LandingButton from "../LandingButton/LandingButton";
 import ProductCard from "../ProductCard/ProductCard";
 import { COLORS } from "../../constant/color";
@@ -27,56 +29,27 @@ type BirthdayTypes = {
   brandSlider?: boolean;
 };
 
-const BirthdaySlider = (props: BirthdayTypes) => {
-  const { title, description, brandSlider } = props;
+const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
   const navigate = useNavigate();
-
-  const sliderRef = React.useRef<Slider | null>(null);
-
   const [activeTab, setActiveTab] = useState(0);
-  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(
-    undefined
-  );
+  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>();
 
   const { data: birthdayCards, isLoading } = useQuery({
-  queryKey: ["birthdayCards"],
-  queryFn: fetchAllCardsFromDB,
-  staleTime: 1000 * 60 * 5, // 5 minutes
-  refetchOnWindowFocus: false,
-  refetchOnMount: false,
-  refetchOnReconnect: false,
-});
+    queryKey: ["birthdayCards"],
+    queryFn: fetchAllCardsFromDB,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
 
   const filteredCards = birthdayCards
-    ? birthdayCards.filter((card) => {
-        const selectedCategory = TABS[activeTab];
-        return card.cardCategory === selectedCategory;
-      })
+    ? birthdayCards.filter(
+        (card) => card.cardCategory === TABS[activeTab]
+      )
     : [];
 
-    console.log(filteredCards,'--')
-
-  const settings = {
-    dots: false,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 7,
-    slidesToScroll: 2,
-    arrows: false,
-    responsive: [
-      { breakpoint: 1920, settings: { slidesToShow: 7 } },
-      { breakpoint: 1440, settings: { slidesToShow: 6 } },
-      { breakpoint: 1030, settings: { slidesToShow: 5 } },
-      { breakpoint: 770, settings: { slidesToShow: 4 } },
-      { breakpoint: 600, settings: { slidesToShow: 1, slidesToScroll: 1 } },
-    ],
-  };
-
-  const {
-    open: isOpenDetailModal,
-    openModal,
-    closeModal: closeDetailModal,
-  } = useModal();
+  const { open: isOpenDetailModal, openModal, closeModal } = useModal();
 
   const openDetailModal = (cate: CategoryType) => {
     setSelectedCate(cate);
@@ -86,13 +59,14 @@ const BirthdaySlider = (props: BirthdayTypes) => {
   return (
     <Box
       sx={{
-        width: { lg: "100%", md: "100%", sm: "100%", xs: "100%" },
+        width: "100%",
         m: "auto",
         position: "relative",
         mt: { md: 8, sm: 8, xs: 0 },
         p: { md: 0, sm: 0, xs: 2 },
       }}
     >
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -101,12 +75,15 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         }}
       >
         <Typography
-          sx={{ fontSize: { md: "25px", sm: "20px", xs: "16px" }, fontWeight: 800 }}
+          sx={{
+            fontSize: { md: "25px", sm: "20px", xs: "16px" },
+            fontWeight: 800,
+          }}
         >
           {title}
         </Typography>
 
-        {brandSlider ? null : (
+        {!brandSlider && (
           <Box sx={{ display: { md: "flex", sm: "flex", xs: "none" } }}>
             <LandingButton
               title="Shop All"
@@ -117,6 +94,7 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         )}
       </Box>
 
+      {/* Tabs */}
       <Box
         sx={{
           display: "flex",
@@ -126,10 +104,9 @@ const BirthdaySlider = (props: BirthdayTypes) => {
           mt: 2,
         }}
       >
-        {TABS.map((e, index) => (
+        {TABS.map((tab, index) => (
           <Box
             key={index}
-            component={"div"}
             onClick={() => setActiveTab(index)}
             sx={{
               px: { md: 3, sm: 1, xs: 1 },
@@ -153,72 +130,73 @@ const BirthdaySlider = (props: BirthdayTypes) => {
                 color: activeTab === index ? COLORS.white : COLORS.black,
               }}
             >
-              {e}
+              {tab}
             </Typography>
           </Box>
         ))}
       </Box>
 
-      <Box
-        sx={{
-          mt: 3,
-          position: "relative",
-        }}
-      >
-        {isLoading && (
+      {/* Slider */}
+      <Box sx={{ mt: 3, position: "relative" }}>
+        {isLoading ? (
           <Box
             sx={{
               width: "100%",
-              height: {
-                md: "300px",
-                sm: "300px",
-                xs: "250px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                mx: "auto",
-              },
+              height: "300px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            {" "}
             <CircularProgress sx={{ color: COLORS.seconday }} />
           </Box>
+        ) : (
+          <Swiper
+            modules={[Navigation]}
+            spaceBetween={10}
+            navigation={{
+              prevEl: ".swiper-button-prev",
+              nextEl: ".swiper-button-next",
+            }}
+            breakpoints={{
+              0: { slidesPerView: 1 },
+              600: { slidesPerView: 3 },
+              760: { slidesPerView: 4 },
+              1030: { slidesPerView: 5 },
+              1440: { slidesPerView: 7 },
+              1920: { slidesPerView: 7 },
+            }}
+          >
+            {filteredCards.map((cate, idx) => (
+              <SwiperSlide key={idx}>
+                <Box px={{ lg: 1, md: "2px", sm: 1, xs: 1 }}>
+                  <ProductCard
+                    poster={cate?.imageUrl || cate?.lastpageImageUrl}
+                    tabsSlider
+                    layoutCard={cate?.polygonLayout}
+                    openModal={() => openDetailModal(cate)}
+                  />
+                </Box>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         )}
-        {/* Slider */}
-        <Slider ref={sliderRef} {...settings}>
-          {filteredCards?.map((cate) => (
-            <Box px={{lg:1,md:'2px',sm:1,xs:1}}>
-              <ProductCard
-                poster={cate?.imageUrl || cate?.lastpageImageUrl}
-                tabsSlider
-                layoutCard={cate?.polygonLayout}
-                openModal={() => openDetailModal(cate)}
-              />
-            </Box>
-          ))}
-        </Slider>
 
         {isOpenDetailModal && selectedCate && (
           <ProductPopup
             open={isOpenDetailModal}
-            onClose={closeDetailModal}
+            onClose={closeModal}
             cate={selectedCate}
           />
         )}
 
-        {/* Custom arrows */}
+        {/* Custom Navigation Buttons */}
         <IconButton
-          onClick={() => sliderRef.current?.slickPrev()}
+          className="swiper-button-prev"
           sx={{
             position: "absolute",
             top: "40%",
             left: { lg: -20, md: -15, sm: -15, xs: -10 },
-            display: "flex",
-            justifyContent: "center",
-            m: "auto",
-            alignItems: "center",
-            height: { md: "50px", sm: "50px", xs: "40px" },
-            width: { md: "50px", sm: "50px", xs: "40px" },
             border: `3px solid ${COLORS.primary}`,
             color: COLORS.primary,
             bgcolor: COLORS.white,
@@ -230,21 +208,15 @@ const BirthdaySlider = (props: BirthdayTypes) => {
         </IconButton>
 
         <IconButton
-          onClick={() => sliderRef.current?.slickNext()}
+          className="swiper-button-next"
           sx={{
             position: "absolute",
             top: "40%",
             right: { lg: -20, md: -15, sm: -15, xs: -10 },
-            display: "flex",
-            justifyContent: "center",
-            m: "auto",
-            alignItems: "center",
-            height: { md: "50px", sm: "50px", xs: "40px" },
-            width: { md: "50px", sm: "50px", xs: "40px" },
             border: `3px solid ${COLORS.primary}`,
             color: COLORS.primary,
-            zIndex: 10,
             bgcolor: COLORS.white,
+            zIndex: 10,
             "&:hover": { backgroundColor: "lightgray" },
           }}
         >

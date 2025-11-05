@@ -182,6 +182,13 @@ interface Slide1ContextType {
   setTextPositions1: React.Dispatch<React.SetStateAction<Position[]>>;
   textSizes1: Size[];
   setTextSizes1: React.Dispatch<React.SetStateAction<Size[]>>;
+
+  lineHeight1: number;
+  setLineHeight1: React.Dispatch<React.SetStateAction<number>>;
+  letterSpacing1: number;
+  setLetterSpacing1: React.Dispatch<React.SetStateAction<number>>;
+
+
   imagePositions1: Record<number, Position>; // keyed by image id
   setImagePositions1: React.Dispatch<
     React.SetStateAction<Record<number, Position>>
@@ -277,14 +284,14 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     width: 59,
     height: 105,
     rotation: 0,
-    zIndex:9999,
+    zIndex: 9999,
   });
 
   const [aimage1, setAIImage1] = useState<ImagePosition>({
     x: 30,
     y: 30,
-    width: 340,
-    height: 500,
+    width: 300,
+    height: 400,
     // zindex: 1000,
   });
 
@@ -335,6 +342,10 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       textAlign: "center",
     },
   ]);
+
+  const [lineHeight1, setLineHeight1] = useState(1.5);
+  const [letterSpacing1, setLetterSpacing1] = useState(0);
+
 
   const [editingIndex1, setEditingIndex1] = useState<number | null>(null);
 
@@ -431,6 +442,11 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       selectedPreviewImage1,
       setSelectedPreviewImage1,
       layout1,
+
+      lineHeight1,
+      setLineHeight1,
+      letterSpacing1,
+      setLetterSpacing1,
     ]);
   }, [
     activeIndex1,
@@ -458,6 +474,11 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     selectedPreviewImage1,
     setSelectedPreviewImage1,
     layout1,
+
+    lineHeight1,
+    setLineHeight1,
+    letterSpacing1,
+    setLetterSpacing1,
   ]);
 
   return (
@@ -509,6 +530,11 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
         setTexts1,
         editingIndex1,
         setEditingIndex1,
+
+        lineHeight1,
+        setLineHeight1,
+        letterSpacing1,
+        setLetterSpacing1,
 
         images1,
         setImages1,

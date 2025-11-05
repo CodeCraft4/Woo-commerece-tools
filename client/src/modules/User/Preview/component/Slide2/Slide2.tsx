@@ -25,6 +25,8 @@ const Slide2 = () => {
     selectedStickers2,
     isAIimage2,
     aimage2,
+    lineHeight2,
+    letterSpacing2
   } = useSlide2();
 
   return (
@@ -198,13 +200,13 @@ const Slide2 = () => {
           />
         ))}
 
-       {multipleTextValue &&
+      {multipleTextValue &&
         texts.map((e, index) => (
           <Box
             key={index}
             sx={{
               position: "relative",
-             height: "175px", // ✅ match editable container height
+              height: "175px", // ✅ match editable container height
               width: "100%",
               mb: 2,
               display: "flex",
@@ -212,8 +214,8 @@ const Slide2 = () => {
                 e.verticalAlign === "top"
                   ? "flex-start"
                   : e.verticalAlign === "center"
-                  ? "center"
-                  : "flex-end",
+                    ? "center"
+                    : "flex-end",
               alignItems: "center",
               border: "3px dashed transparent", // ✅ visually matches editable version but invisible
               borderRadius: "6px",
@@ -227,7 +229,8 @@ const Slide2 = () => {
                 fontWeight: e.fontWeight,
                 color: e.fontColor,
                 fontFamily: e.fontFamily,
-                lineHeight: 1.4,
+                lineHeight: lineHeight2,
+                letterSpacing: letterSpacing2,
                 wordBreak: "break-word",
                 whiteSpace: "pre-line",
                 width: "100%",
@@ -237,14 +240,14 @@ const Slide2 = () => {
                   e.verticalAlign === "top"
                     ? "flex-start"
                     : e.verticalAlign === "bottom"
-                    ? "flex-end"
-                    : "center",
+                      ? "flex-end"
+                      : "center",
                 justifyContent:
                   e.textAlign === "left"
                     ? "flex-start"
                     : e.textAlign === "right"
-                    ? "flex-end"
-                    : "center",
+                      ? "flex-end"
+                      : "center",
                 m: "auto",
               }}
             >
@@ -263,16 +266,18 @@ const Slide2 = () => {
               verticalAlign === "top"
                 ? "flex-start"
                 : verticalAlign === "center"
-                ? "center"
-                : "flex-end",
+                  ? "center"
+                  : "flex-end",
             justifyContent:
               verticalAlign === "top"
                 ? "flex-start"
                 : verticalAlign === "center"
-                ? "center"
-                : "flex-end",
+                  ? "center"
+                  : "flex-end",
             height: "100%",
             color: fontColor,
+            lineHeight: lineHeight2,
+            letterSpacing: letterSpacing2,
             fontFamily,
             fontSize,
             fontWeight,
@@ -285,31 +290,35 @@ const Slide2 = () => {
         </Box>
       )}
 
-      {textElements &&
-        textElements.map((e) => (
-          <Typography
-            key={e.id}
-            sx={{
-              border: "1px dashed blue",
-              fontSize: e.fontSize,
-              color: e.fontColor,
-              fontFamily: e.fontFamily,
-              fontWeight: e.fontWeight,
-              textAlign: e.textAlign || "center",
-              position: "absolute", // Use absolute positioning
-              left: e.position.x, // X position
-              top: e.position.y, // Y position
-              width: e.size.width, // Width from size object
-              height: "auto", // Height from size object
-              zIndex: e.zIndex, // Apply zIndex
-              transform: `rotate(${e.rotation}deg)`, // Apply rotation
-              padding: "5px",
-              boxSizing: "border-box",
-            }}
-          >
-            {e.value} {/* Display the text value */}
-          </Typography>
-        ))}
+      {
+        multipleTextValue || selectedLayout === "oneText" ? null : (
+          <>
+            {textElements &&
+              textElements.map((e) => (
+                <Typography
+                  key={e.id}
+                  sx={{
+                    fontSize: e.fontSize,
+                    color: e.fontColor,
+                    fontFamily: e.fontFamily,
+                    fontWeight: e.fontWeight,
+                    textAlign: e.textAlign || "center",
+                    position: "absolute", // Use absolute positioning
+                    left: e.position.x, // X position
+                    top: e.position.y, // Y position
+                    width: e.size.width, // Width from size object
+                    height: e.size.height, // Height from size object
+                    zIndex: e.zIndex, // Apply zIndex
+                    transform: `rotate(${e.rotation}deg)`, // Apply rotation
+                    padding: "5px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  {e.value} {/* Display the text value */}
+                </Typography>
+              ))}</>
+        )
+      }
 
       {isAIimage2 && (
         <img
@@ -346,6 +355,7 @@ const Slide2 = () => {
           }}
         />
       ))}
+
     </Box>
   );
 };
