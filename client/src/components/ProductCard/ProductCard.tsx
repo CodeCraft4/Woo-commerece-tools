@@ -21,7 +21,7 @@ const ProductCard = (props: ProductTypes) => {
           ? { md: "100%", sm: "100%", xs: "100%" }
           : { md: "182px", sm: "125px", xs: "157px" },
         height: tabsSlider
-          ? {lg:'280px', md: "280px", sm: "240px", xs: "350px" }
+          ? {lg:'250px', md: "250px", sm: "240px", xs: "370px" }
           : { md: "270px", sm: "180px", xs: "225px" },
         borderRadius: 3,
         bgcolor: COLORS.white,

@@ -21,8 +21,8 @@ const App = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 1000 * 60 * 60, // 1 hour
-        gcTime: 1000 * 60 * 60, // v5 is convert cache to gctime. 1 hour
+        staleTime: 1000 * 60 * 60, 
+        gcTime: 1000 * 60 * 60,
       },
     },
   });
@@ -80,7 +80,7 @@ const App = () => {
                     // success specific
                     success: {
                       style: {
-                        background: "#f3f3f3ff",
+                        background: "#ecececff",
                         color: COLORS.black,
                       },
                     },
@@ -88,8 +88,8 @@ const App = () => {
                     // error specific
                     error: {
                       style: {
-                        background: "#f44336",
-                        color: COLORS.black,
+                        background: "#9c1006ff",
+                        color: COLORS.white,
                       },
                     },
                   }}

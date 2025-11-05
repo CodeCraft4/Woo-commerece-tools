@@ -6,7 +6,7 @@ const Banner = () => {
   return (
     <Box
       sx={{
-        height: { md: "500px", sm: "500px", xs: "80vh" },
+        height: { md: "500px", sm: "500px", xs: "50vh" },
         width: "100%",
         position: "relative",
         overflow: "hidden",
@@ -18,6 +18,7 @@ const Banner = () => {
       <Box
         component="img"
         src="/assets/images/animated-banner.jpg"
+        alt="animated ImG"
         sx={{
           display:{md:'none',sm:'none',xs:'block'},
           width: "100%",
@@ -29,11 +30,10 @@ const Banner = () => {
       <Box
         component="img"
         src="/assets/images/animated-banner.jpg"
-        
+        alt="animated ImG"
         className="panning-img"
         sx={{
           display:{md:'block',sm:'block',xs:'none'},
-
           width: "100%",
           height: "100%",
           objectFit: "cover",

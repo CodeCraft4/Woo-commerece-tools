@@ -1,5 +1,4 @@
 import { Box } from "@mui/material";
-import { COLORS } from "../../constant/color";
 
 const VIPFunky = () => {
   return (
@@ -9,8 +8,6 @@ const VIPFunky = () => {
         width: "100%",
         height: { md: "400px", sm: "300px", xs: "auto" },
         borderRadius: 4,
-        bgcolor: COLORS.primary,
-        color: COLORS.white,
         display: { md: "flex", sm: "flex", xs: "block" },
         alignItems: "center",
         justifyContent: "space-around",

@@ -11,6 +11,7 @@ import {
   Delete,
   FormatBoldOutlined,
   Title,
+  TextRotateVertical,
 } from "@mui/icons-material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { COLORS } from "../../../constant/color";
@@ -23,6 +24,7 @@ interface Text4PopupProps {
   onShowFontSizePopup: () => void;
   onShowFontColorPopup: () => void;
   onShowFontFamilyPopup: () => void;
+  onSetLineHeightPopup: () => void;
   onChangeTextAlign: () => void;
   activeChildComponent: React.ReactNode | null;
   onAddTextToCanvas?: () => void;
@@ -44,6 +46,7 @@ const Text4Popup = ({
   onClose,
   onShowFontSizePopup,
   onShowFontColorPopup,
+  onSetLineHeightPopup,
   onShowFontFamilyPopup,
   onChangeTextAlign,
   activeChildComponent,
@@ -64,6 +67,8 @@ const Text4Popup = ({
     setFontColor4,
     setFontFamily4,
     setVerticalAlign4,
+    multipleTextValue4,
+    showOneTextRightSideBox4
   } = useSlide4();
 
   // Get the currently selected text element
@@ -164,15 +169,18 @@ const Text4Popup = ({
     setSelectedTextId4(null);
   };
 
+  const isLayoutUse = multipleTextValue4 || showOneTextRightSideBox4
+
+
   return (
     <PopupWrapper
       title={"Text Editing"}
       onClose={onClose}
       sx={{
-        width: { md: 500, sm: 500, xs: "100%" },
+        width: { md: 500, sm: 270, xs: "95%" },
         height: 600,
-        left: { md: "44.5%", sm: "44.5%", xs: 0 },
-        mt: { md: 0, sm: 0, xs: 4 },
+        left: { md: "48%", sm: "0%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 0 },
         overflowY: "hidden",
       }}
     >
@@ -199,7 +207,7 @@ const Text4Popup = ({
         }}
       >
         {/* Add Text */}
-        <IconButton onClick={onAddTextToCanvas} sx={editingButtonStyle}>
+        <IconButton disabled={isLayoutUse} onClick={onAddTextToCanvas} sx={editingButtonStyle}>
           <Title fontSize="large" />
           <Typography variant="caption">Add</Typography>
         </IconButton>
@@ -240,6 +248,11 @@ const Text4Popup = ({
         <IconButton onClick={onChangeTextAlign} sx={editingButtonStyle}>
           <FormatAlignCenterOutlined fontSize="large" />
           <Typography variant="caption">Align</Typography>
+        </IconButton>
+
+        <IconButton disableRipple onClick={onSetLineHeightPopup} sx={editingButtonStyle} >
+          <TextRotateVertical fontSize="large" />
+          <Typography variant="caption">Line Height</Typography>
         </IconButton>
 
         {/* Rotate */}

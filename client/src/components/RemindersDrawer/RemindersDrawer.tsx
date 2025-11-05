@@ -48,14 +48,14 @@ const RemindersDrawer = () => {
           alignItems: "center",
         }}
       >
-       <Box
-       component={'img'}
-       src="/assets/icons/reminder-calender.svg"
-       sx={{
-        width:130,
-        height:130
-       }}
-       />
+        <Box
+          component={"img"}
+          src="/assets/icons/reminder-calender.svg"
+          sx={{
+            width: 130,
+            height: 130,
+          }}
+        />
 
         <Typography sx={{ fontSize: "24px", fontWeight: 700, pb: 2 }}>
           80% of our customers have got a reminder.
@@ -88,7 +88,13 @@ const RemindersDrawer = () => {
 
   return (
     <div>
-      <IconButton onClick={toggleDrawer(true)} sx={iconStyle}>
+      <IconButton
+        onClick={toggleDrawer(true)}
+        sx={{
+          ...iconStyle,
+          display: { lg: "flex", md: "flex", sm: "none", xs: "none" },
+        }}
+      >
         <Box
           component="img"
           src="/assets/icons/Reminders.svg"

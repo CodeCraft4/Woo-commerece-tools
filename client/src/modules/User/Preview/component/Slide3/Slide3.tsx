@@ -25,6 +25,8 @@ const Slide3 = () => {
     selectedStickers3,
     isAIimage3,
     aimage3,
+    letterSpacing3,
+    lineHeight3
   } = useSlide3();
   return (
     <Box
@@ -204,7 +206,7 @@ const Slide3 = () => {
             key={index}
             sx={{
               position: "relative",
-             height: "175px", // ✅ match editable container height
+              height: "175px", // ✅ match editable container height
               width: "100%",
               mb: 2,
               display: "flex",
@@ -212,8 +214,8 @@ const Slide3 = () => {
                 e.verticalAlign === "top"
                   ? "flex-start"
                   : e.verticalAlign === "center"
-                  ? "center"
-                  : "flex-end",
+                    ? "center"
+                    : "flex-end",
               alignItems: "center",
               border: "3px dashed transparent", // ✅ visually matches editable version but invisible
               borderRadius: "6px",
@@ -227,7 +229,8 @@ const Slide3 = () => {
                 fontWeight: e.fontWeight3,
                 color: e.fontColor3,
                 fontFamily: e.fontFamily3,
-                lineHeight: 1.4,
+                lineHeight: lineHeight3,
+                letterSpacing: letterSpacing3,
                 wordBreak: "break-word",
                 whiteSpace: "pre-line",
                 width: "100%",
@@ -237,14 +240,14 @@ const Slide3 = () => {
                   e.verticalAlign === "top"
                     ? "flex-start"
                     : e.verticalAlign === "bottom"
-                    ? "flex-end"
-                    : "center",
+                      ? "flex-end"
+                      : "center",
                 justifyContent:
                   e.textAlign === "left"
                     ? "flex-start"
                     : e.textAlign === "right"
-                    ? "flex-end"
-                    : "center",
+                      ? "flex-end"
+                      : "center",
                 m: "auto",
               }}
             >
@@ -263,106 +266,62 @@ const Slide3 = () => {
               verticalAlign3 === "top"
                 ? "flex-start"
                 : verticalAlign3 === "center"
-                ? "center"
-                : "flex-end",
+                  ? "center"
+                  : "flex-end",
             justifyContent:
               verticalAlign3 === "top"
                 ? "flex-start"
                 : verticalAlign3 === "center"
-                ? "center"
-                : "flex-end",
+                  ? "center"
+                  : "flex-end",
             height: "100%",
             color: fontColor3,
-            fontFamily3,
-            fontSize3,
-            fontWeight3,
-            textAlign3,
+            fontFamily: fontFamily3,
+            fontSize: fontSize3,
+            fontWeight: fontWeight3,
+            textAlign: textAlign3,
+            lineHeight: lineHeight3,
+            letterSpacing: letterSpacing3,
             whiteSpace: "pre-wrap",
             width: "100%",
+            p: 1
           }}
         >
           {oneTextValue3}
         </Box>
       )}
 
-      {/* ✍️ Multiple Text Layout */}
-      {selectedLayout3 === "multipleText" && texts3.length > 0 && (
-        <Box
-          sx={{
-            height: "100%",
-            width: "375px",
-            borderRadius: "6px",
-            p: 1,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {texts3.map((textObj: any, index: number) => (
-            <Box
-              key={index}
-              sx={{
-                position: "relative",
-                height: "175px",
-                width: "100%",
-                mb: 2,
-                display: "flex",
-                justifyContent:
-                  textObj.verticalAlign3 === "top"
-                    ? "flex-start"
-                    : textObj.verticalAlign3 === "center"
-                    ? "center"
-                    : "flex-end",
-                alignItems: "center",
-              }}
-            >
-              <Typography
-                sx={{
-                  textAlign: "center",
-                  fontSize: textObj.fontSize3,
-                  fontWeight: textObj.fontWeight3,
-                  color: textObj.fontColor3,
-                  fontFamily: textObj.fontFamily3,
-                  lineHeight: 1.4,
-                  wordBreak: "break-word",
-                  whiteSpace: "pre-line",
-                  border: "3px dashed #3a7bd5",
-                  borderRadius: "6px",
-                  width: "100%",
-                  p: 1,
-                }}
-              >
-                {textObj.value || "Add Text"}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      )}
+      {
+        multipleTextValue3 && selectedLayout3 === "oneText" ? null : (
+          <>
+            {textElements3 &&
+              textElements3.map((e) => (
+                <Typography
+                  key={e.id}
+                  sx={{
+                    fontSize: e.fontSize,
+                    color: e.fontColor,
+                    fontFamily: e.fontFamily,
+                    fontWeight: e.fontWeight,
+                    textAlign: e.textAlign || "center",
+                    position: "absolute", // Use absolute positioning
+                    left: e.position.x, // X position
+                    top: e.position.y, // Y position
+                    width: e.size.width, // Width from size object
+                    height: e.size.height, // Height from size object
+                    zIndex: e.zIndex, // Apply zIndex
+                    transform: `rotate(${e.rotation}deg)`, // Apply rotation
+                    padding: "5px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  {e.value} {/* Display the text value */}
+                </Typography>
+              ))}</>
+        )
+      }
 
-      {textElements3 &&
-        textElements3.map((e) => (
-          <Typography
-            key={e.id}
-            sx={{
-              border: "1px dashed blue",
-              fontSize: e.fontSize,
-              color: e.fontColor,
-              fontFamily: e.fontFamily,
-              fontWeight: e.fontWeight,
-              textAlign: e.textAlign || "center",
-              position: "absolute", // Use absolute positioning
-              left: e.position.x, // X position
-              top: e.position.y, // Y position
-              width: e.size.width, // Width from size object
-              height: "auto", // Height from size object
-              zIndex: e.zIndex, // Apply zIndex
-              transform: `rotate(${e.rotation}deg)`, // Apply rotation
-              padding: "5px",
-              boxSizing: "border-box",
-            }}
-          >
-            {e.value} {/* Display the text value */}
-          </Typography>
-        ))}
+
 
       {isAIimage3 && (
         <img

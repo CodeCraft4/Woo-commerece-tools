@@ -7,7 +7,7 @@ const FunkyApp = () => {
       sx={{
         display: { md: "flex", sm: "flex", xs: "block" },
         width: "100%",
-        height: { lg: 550, md: 450, sm: 300, xs: "auto" },
+        height: { lg: 500, md: 450, sm: 300, xs: "auto" },
         bgcolor: "#f4e8fe",
         // color: COLORS.white,
         borderRadius: 4,
@@ -33,7 +33,7 @@ const FunkyApp = () => {
             textAlign: { md: "start", sm: "start", xs: "center" },
           }}
         >
-          The DIY Personalization App
+          The DIY Personalisation App
         </Typography>
         <Typography
           sx={{
@@ -42,7 +42,7 @@ const FunkyApp = () => {
             fontWeight: 300,
           }}
         >
-          Now, it's easier than ever to give a DIY with the DIY Personalization
+          Now, it's easier than ever to give a DIY with the DIY Personalisation
           app! Send personalised cards, gifts and more for every occasion.
         </Typography>
 

@@ -11,7 +11,7 @@ const Home = () => {
         sx={{
           display: "flex",
           justifyContent: "center",
-          height: "90vh",
+          height: "80vh",
           alignItems: "center",
           m: "auto",
           gap: "10px",

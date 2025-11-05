@@ -285,7 +285,7 @@ const GeneAIPopup = (props: GeneAIType) => {
       const genAI = new GoogleGenerativeAI(
         "AIzaSyArFGzwFPWF2uAiQs8BkjrEL4EGGJtht-w"
       );
-      
+
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
       const result = await model.generateContent(
@@ -320,9 +320,10 @@ const GeneAIPopup = (props: GeneAIType) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: 600,
-        left:{ md: "14%", sm: "14%", xs: 10 },
-        mt: { md: 0, sm: 0, xs: 4 },
+        height: { md: 600, sm: 600, xs: 450 },
+        left: { md: "13%", sm: "14%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 0 },
+        overflowY: "hidden",
       }}
     >
       <canvas ref={canvasRef} style={{ display: "none" }} />
@@ -339,11 +340,11 @@ const GeneAIPopup = (props: GeneAIType) => {
 
       <Box
         sx={{
-          height: 420,
+          height: {md:420,sm:420,xs:250},
           border: "2px solid #acc9c9ff",
           borderRadius: 2,
           width: "100%",
-          p: 1,
+          p: {md:1,sm:1,xs:0},
         }}
       >
         {selectedAIimageUrl1 && (
@@ -356,7 +357,8 @@ const GeneAIPopup = (props: GeneAIType) => {
               position: "relative",
             }}
           >
-            <img
+            <Box
+              component={"img"}
               src={`${selectedAIimageUrl1}`}
               alt="Generated design"
               onClick={() => {
@@ -364,9 +366,10 @@ const GeneAIPopup = (props: GeneAIType) => {
                   setIsAIimage(true);
                 }
               }}
-              style={{
-                maxWidth: "100%",
-                borderRadius: 8,
+              sx={{
+               width: "100%",
+                height:{md:'100%',sm:'100%',xs:'250px'},
+                objectFit: "fill",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               }}
             />
@@ -443,7 +446,7 @@ const GeneAIPopup = (props: GeneAIType) => {
         }}
       >
         <InputBase
-          placeholder="e.g., Birthday card for mom with flowers"
+          placeholder="e.g., Birthday card"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           sx={{ p: 1, width: "90%" }}

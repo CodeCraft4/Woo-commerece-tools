@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
-import React, { useState } from "react";
-import Slider from "react-slick";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+
 import LandingButton from "../LandingButton/LandingButton";
 import { COLORS } from "../../constant/color";
 import BasketCard from "../BasketCard/BasketCard";
 import { useQuery } from "@tanstack/react-query";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 import { USER_ROUTES } from "../../constant/route";
 import { useNavigate } from "react-router-dom";
 import { fetchAllCardsFromDB } from "../../source/source";
@@ -27,19 +29,14 @@ const BasketSlider = (props: BirthdayTypes) => {
   const { title, description, brandSlider, saleSlide } = props;
 
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(0);
+  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>();
 
   const {
     open: isDetailModal,
-    openModal: isOpenDetailModal,
-    closeModal: isCloseDetailModal,
+    openModal: openDetailModal,
+    closeModal: closeDetailModal,
   } = useModal();
-
-  const sliderRef = React.useRef<Slider | null>(null);
-
-  const [activeTab, setActiveTab] = useState(0);
-  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(
-    undefined
-  );
 
   const { data: basketCards, isLoading } = useQuery({
     queryKey: ["basketCards"],
@@ -47,31 +44,12 @@ const BasketSlider = (props: BirthdayTypes) => {
   });
 
   const filteredCards = basketCards
-    ? basketCards.filter((card) => {
-        const selectedCategory = TABS[activeTab];
-        return card.cardCategory === selectedCategory;
-      })
+    ? basketCards.filter((card) => card.cardCategory === TABS[activeTab])
     : [];
 
-  const settings = {
-    dots: false,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 5,
-    slidesToScroll: 2,
-    arrows: false,
-    responsive: [
-      { breakpoint: 1920, settings: { slidesToShow: 7 } },
-      { breakpoint: 1440, settings: { slidesToShow: 6 } },
-      { breakpoint: 1024, settings: { slidesToShow: 5 } },
-      { breakpoint: 770, settings: { slidesToShow: 4} },
-      { breakpoint: 600, settings: { slidesToShow: 1 } },
-    ],
-  };
-
-  const openDetailModal = (cate: CategoryType) => {
+  const handleOpenModal = (cate: CategoryType) => {
     setSelectedCate(cate);
-    isOpenDetailModal();
+    openDetailModal();
   };
 
   return (
@@ -84,6 +62,7 @@ const BasketSlider = (props: BirthdayTypes) => {
         p: { md: 0, sm: 0, xs: 2 },
       }}
     >
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -94,7 +73,8 @@ const BasketSlider = (props: BirthdayTypes) => {
         <Typography fontWeight={700} fontSize={{ md: "26px" }}>
           {title}
         </Typography>
-        {brandSlider ? null : (
+
+        {!brandSlider && (
           <LandingButton
             title="Shop All"
             width="150px"
@@ -103,7 +83,8 @@ const BasketSlider = (props: BirthdayTypes) => {
         )}
       </Box>
 
-      {saleSlide ? null : (
+      {/* Tabs */}
+      {!saleSlide && (
         <Box
           sx={{
             display: "flex",
@@ -113,14 +94,13 @@ const BasketSlider = (props: BirthdayTypes) => {
             mt: 2,
           }}
         >
-          {TABS.map((e, index) => (
+          {TABS.map((tab, index) => (
             <Box
               key={index}
-              component={"div"}
               onClick={() => setActiveTab(index)}
               sx={{
-                px: {md:3,sm:1,xs:1},
-                py: {md:1,sm:0.5,xs:0.5},
+                px: { md: 3, sm: 1, xs: 1 },
+                py: { md: 1, sm: 0.5, xs: 0.5 },
                 border: "2px solid black",
                 borderRadius: "15px",
                 cursor: "pointer",
@@ -140,77 +120,84 @@ const BasketSlider = (props: BirthdayTypes) => {
                   color: activeTab === index ? COLORS.white : COLORS.black,
                 }}
               >
-                {e}
+                {tab}
               </Typography>
             </Box>
           ))}
         </Box>
       )}
 
+      {/* Slider */}
       <Box sx={{ mt: 3, position: "relative" }}>
-        {isLoading && (
+        {isLoading ? (
           <Box
             sx={{
               width: "100%",
-              height: {
-                md: "300px",
-                sm: "300px",
-                xs: "250px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                m: "auto",
-              },
+              height: "300px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            {" "}
             <CircularProgress sx={{ color: COLORS.seconday }} />
           </Box>
+        ) : (
+          <Swiper
+            modules={[Navigation]}
+            navigation={{
+              prevEl: ".swiper-button-prev",
+              nextEl: ".swiper-button-next",
+            }}
+            spaceBetween={10}
+            breakpoints={{
+              0: { slidesPerView: 1 },
+              600: { slidesPerView: 3 },
+              760: { slidesPerView: 4 },
+              1024: { slidesPerView: 5 },
+              1440: { slidesPerView: 6 },
+              1920: { slidesPerView: 7 },
+            }}
+          >
+            {filteredCards.map((cate, index) => (
+              <SwiperSlide key={index}>
+                <Box px={{md:1,sm:'5px',xs:'4px'}}>
+                  <BasketCard
+                    id={cate.id}
+                    openModal={() => handleOpenModal(cate)}
+                    title={cate.cardName}
+                    poster={cate.imageUrl || cate.lastpageImageUrl}
+                    price={cate.actualPrice}
+                    saleprice={cate.salePrice}
+                    sales={saleSlide}
+                    category={cate.cardCategory}
+                  />
+                </Box>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         )}
-        {/* Slider */}
-        <Slider ref={sliderRef} {...settings}>
-          {filteredCards.map((cate, index) => (
-            <Box px={1}>
-              <BasketCard
-                id={cate.id}
-                openModal={() => openDetailModal(cate)}
-                key={index}
-                title={cate.cardName}
-                poster={cate.imageUrl || cate?.lastpageImageUrl}
-                price={cate.actualPrice}
-                saleprice={cate.salePrice}
-                sales={saleSlide}
-                category={cate.cardCategory}
-              />
-            </Box>
-          ))}
-        </Slider>
 
+        {/* Modal */}
         {isDetailModal && selectedCate && (
           <ProductPopup
             open={isDetailModal}
-            onClose={isCloseDetailModal}
+            onClose={closeDetailModal}
             cate={selectedCate}
           />
         )}
 
-        {/* Custom arrows */}
+        {/* Custom Navigation Buttons */}
         <IconButton
-          onClick={() => sliderRef.current?.slickPrev()}
+          className="swiper-button-prev"
           sx={{
             position: "absolute",
-            top: { md: "30%", sm: "40%", xs: "40%" },
-            left: { lg: -20, md: -15, sm: -15, xs: -15 },
-            display: "flex",
-            justifyContent: "center",
-            m: "auto",
-            alignItems: "center",
-            height: { md: "50px", sm: "50px", xs: "40px" },
-            width: { md: "50px", sm: "50px", xs: "40px" },
+            top: "30%",
+            left: { lg: -20, md: -15, sm: -15, xs: -10 },
+            transform: "translateY(-50%)",
             border: `3px solid ${COLORS.primary}`,
             color: COLORS.primary,
-            zIndex: 10,
             bgcolor: COLORS.white,
+            zIndex: 10,
             "&:hover": { backgroundColor: "lightgray" },
           }}
         >
@@ -218,21 +205,16 @@ const BasketSlider = (props: BirthdayTypes) => {
         </IconButton>
 
         <IconButton
-          onClick={() => sliderRef.current?.slickNext()}
+          className="swiper-button-next"
           sx={{
             position: "absolute",
-            top: { md: "30%", sm: "0%", xs: "40%" },
-            right: { lg: -20, md: -15, sm: -15, xs: -15 },
-            display: "flex",
-            justifyContent: "center",
-            m: "auto",
-            alignItems: "center",
-            height: { md: "50px", sm: "50px", xs: "40px" },
-            width: { md: "50px", sm: "50px", xs: "40px" },
+            top: "30%",
+            right: { lg: -20, md: -15, sm: -15, xs: -10 },
+            transform: "translateY(-50%)",
             border: `3px solid ${COLORS.primary}`,
             color: COLORS.primary,
-            zIndex: 10,
             bgcolor: COLORS.white,
+            zIndex: 10,
             "&:hover": { backgroundColor: "lightgray" },
           }}
         >
@@ -240,6 +222,7 @@ const BasketSlider = (props: BirthdayTypes) => {
         </IconButton>
       </Box>
 
+      {/* Description */}
       <Typography
         sx={{
           mt: 2,
@@ -248,8 +231,6 @@ const BasketSlider = (props: BirthdayTypes) => {
         }}
       >
         {description}
-        {/* Show you give a funk and celebrate their birthday with a personalised
-        card <a href="#" style={{textDecoration:"none",fontWeight:'bolder',color:COLORS.primary}}>for him</a>, <a href="#" style={{textDecoration:"none",fontWeight:'bolder',color:COLORS.primary}}>for her</a>  or <a href="#" style={{textDecoration:"none",fontWeight:'bolder',color:COLORS.primary}}>for kids</a>! */}
       </Typography>
     </Box>
   );

@@ -38,6 +38,8 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
 
   const [loading, setLoading] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
   const { user } = useAuth();
   const generateId = () => Date.now() + Math.random();
 
@@ -46,10 +48,12 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
     const files = e.target.files;
     if (!files) return;
 
+    setFileError(null);
+
     const validFiles: any = Array.from(files).filter((file) => {
       const fileSizeMB = file.size / (1024 * 1024);
       if (fileSizeMB > 50) {
-        alert(`❌ ${file.name} is too large (max 50MB)`);
+        setFileError(`❌ ${file.name.slice(0, 20)} is too large (max 50MB).`);
         return false;
       }
       return true;
@@ -238,10 +242,10 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
       title="Video"
       onClose={onClose}
       sx={{
-        width: { md: 300, sm: 400, xs: "95%" },
-        height: 600,
-        left: { md: "56%", sm: "50%", xs: 10 },
-        mt: { md: 0, sm: 0, xs: 4 },
+        width: { md: 300, sm: 280, xs: "95%" },
+        height: {md:600,sm:600,xs:480},
+        left: { md: "58%", sm: "0%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 0 },
         overflow: "hidden",
       }}
     >
@@ -253,6 +257,8 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
               width: "100%",
               bgcolor: "gray",
               position: "relative",
+              display: { md: 'flex', sm: 'flex', xs: 'none' }
+
             }}
           >
             <video
@@ -357,6 +363,20 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
                 <ControlPoint fontSize="large" />
                 Add Video
               </Box>
+
+              {fileError && (
+                <Typography
+                  sx={{
+                    color: "red",
+                    fontSize: "13px",
+                    mt: 1,
+                    textAlign: "center",
+                    fontWeight: 500,
+                  }}
+                >
+                  {fileError}
+                </Typography>
+              )}
 
               {userVideos.length > 0 && (
                 <Box

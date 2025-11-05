@@ -10,6 +10,7 @@ import QrGenerator from "../QR-code/Qrcode";
 import { Rnd } from "react-rnd";
 import { COLORS } from "../../constant/color";
 import { useSlide2 } from "../../context/Slide2Context";
+import { motion } from "framer-motion";
 
 // Helper function to create a new text element
 const createNewTextElement = (defaults: any) => ({
@@ -23,7 +24,7 @@ const createNewTextElement = (defaults: any) => ({
   rotation: defaults.rotation || 0,
   zIndex: defaults.zIndex || 1,
   position: { x: 50 + Math.random() * 50, y: 50 + Math.random() * 50 },
-  size: { width: 200, height: 30 },
+  size: { width: 200, height: 40 },
   isEditing: false,
 });
 
@@ -42,7 +43,7 @@ const SlideSpread = ({
   addTextRight,
   rightBox,
 }: // togglePopup,
-SlideSpreadProps) => {
+  SlideSpreadProps) => {
   const {
     images,
     selectedImg,
@@ -94,9 +95,13 @@ SlideSpreadProps) => {
     removeSticker2,
     aimage2,
     setAIImage2,
+
+    lineHeight2,
+    letterSpacing2
   } = useSlide2();
 
   const rightBoxRef = useRef<HTMLDivElement>(null);
+
   // Add this handler to initialize draggable state for images (omitted for brevity)
   useEffect(() => {
     if (images.length > 0) {
@@ -128,12 +133,12 @@ SlideSpreadProps) => {
   // Function to add new text element
   const addNewTextElement = () => {
     const newTextElement = createNewTextElement({
-      fontSize,
-      fontWeight,
-      fontColor,
-      fontFamily,
-      textAlign,
-      rotation,
+      fontSize: 16,
+      fontWeight: 400,
+      fontColor: "#000000",
+      fontFamily: "Roboto",
+      textAlign: "center",
+      rotation: 0,
       zIndex: textElements.length + 1,
     });
     setTextElements((prev) => [...prev, newTextElement]);
@@ -176,14 +181,14 @@ SlideSpreadProps) => {
         prev.map((t, i) =>
           i === editingIndex
             ? {
-                ...t,
-                fontSize,
-                fontWeight,
-                fontColor,
-                fontFamily,
-                textAlign,
-                verticalAlign,
-              }
+              ...t,
+              fontSize,
+              fontWeight,
+              fontColor,
+              fontFamily,
+              textAlign,
+              verticalAlign,
+            }
             : t
         )
       );
@@ -229,175 +234,179 @@ SlideSpreadProps) => {
             pointerEvents: isSlideActive ? "auto" : "none",
             "&::after": !isSlideActive
               ? {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: "rgba(146, 145, 145, 0.51)",
-                  zIndex: 1000,
-                  pointerEvents: "none",
-                }
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(146, 145, 145, 0.51)",
+                zIndex: 1000,
+                pointerEvents: "none",
+              }
               : {},
           }}
         >
-          {textElements.map((textElement) => (
-            <Rnd
-              key={textElement.id}
-              size={{
-                width: textElement.size.width,
-                height: textElement.size.height,
-              }}
-              position={{
-                x: textElement.position.x,
-                y: textElement.position.y,
-              }}
-              bounds="parent"
-              // ✅ Allow dragging only when not editing
-              disableDragging={!!textElement.isEditing}
-              // ✅ Enable resizing only from bottom-right corner
-              enableResizing={{
-                bottomRight: true,
-                bottom: false,
-                bottomLeft: false,
-                left: false,
-                right: false,
-                top: false,
-                topLeft: false,
-                topRight: false,
-              }}
-              // ✅ Styling for the resize handle
-              resizeHandleStyles={{
-                bottomRight: {
-                  width: "12px",
-                  height: "12px",
-                  background: "white",
-                  border: "2px solid #1976d2",
-                  borderRadius: "3px",
-                  right: "-6px",
-                  bottom: "-6px",
-                  cursor: "se-resize",
-                  zIndex: 5,
-                },
-              }}
-              // ✅ Update position and size on move/resize
-              onDragStop={(_, d) => {
-                updateTextElement(textElement.id, {
-                  position: { x: d.x, y: d.y },
-                  zIndex: 2001,
-                });
-              }}
-              onResizeStop={(_, __, ref, ___, position) => {
-                updateTextElement(textElement.id, {
-                  size: {
-                    width: parseInt(ref.style.width, 10),
-                    height: parseInt(ref.style.height, 10),
-                  },
-                  position: { x: position.x, y: position.y },
-                  zIndex: 2001,
-                });
-              }}
-              style={{
-                zIndex: textElement.zIndex,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px dashed #4a7bd5",
-                transition: "border 0.2s ease",
-              }}
-            >
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  position: "relative",
-                  pointerEvents: "auto",
-                  display: "flex",
-                  justifyContent:
+
+          {
+            multipleTextValue || showOneTextRightSideBox ? null : (
+
+              <>
+                {textElements.map((textElement) => {
+                  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+                  // Fallbacks to avoid undefined alignment
+                  const hAlign =
                     textElement.textAlign === "top"
                       ? "flex-start"
                       : textElement.textAlign === "end"
-                      ? "flex-end"
-                      : "center",
-                  alignItems:
+                        ? "flex-end"
+                        : "center";
+                  const vAlign =
                     textElement.verticalAlign === "top"
                       ? "flex-start"
                       : textElement.verticalAlign === "bottom"
-                      ? "flex-end"
-                      : "center",
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedTextId(textElement.id);
-                }}
-              >
-                {/* Close (delete) icon */}
-                <IconButton
-                  size="small"
-                  onClick={() => deleteTextElement(textElement.id)}
-                  sx={{
-                    position: "absolute",
-                    top: -10,
-                    right: -10,
-                    bgcolor: "#1976d2",
-                    color: "white",
-                    width: 20,
-                    height: 20,
-                    "&:hover": { bgcolor: "#f44336" },
-                    zIndex: 5,
-                    display: "flex",
-                    justifyContent: "center",
-                    m: "auto",
-                    alignItems: "center",
-                  }}
-                >
-                  <Close fontSize="small" />
-                </IconButton>
+                        ? "flex-end"
+                        : "center";
 
-                {/* Editable text */}
-                <TextField
-                  variant="standard"
-                  value={textElement.value}
-                  placeholder="Add Text"
-                  autoFocus
-                  onChange={(e) =>
-                    updateTextElement(textElement.id, { value: e.target.value })
-                  }
-                  onFocus={() =>
-                    updateTextElement(textElement.id, { isEditing: true })
-                  }
-                  onBlur={() =>
-                    updateTextElement(textElement.id, { isEditing: false })
-                  }
-                  InputProps={{
-                    disableUnderline: true,
-                    style: {
-                      fontSize: textElement.fontSize,
-                      fontWeight: textElement.fontWeight,
-                      color: textElement.fontColor,
-                      fontFamily: textElement.fontFamily,
-                      transform: `rotate(${textElement.rotation}deg)`,
-                      padding: "0px",
-                      width: "100%",
-                      height: "100%",
-                      // textAlign: textElement.textAlign || "center",
-                      resize: "none",
-                    },
-                  }}
-                  multiline
-                  fullWidth
-                  sx={{
-                    "& .MuiInputBase-input": {
-                      textAlign: textElement.textAlign || "center",
-                      overflowY: "auto",
-                    },
-                  }}
-                />
-              </Box>
-            </Rnd>
-          ))}
+                  return (
+                    <Rnd
+                      key={textElement.id}
+                      size={{
+                        width: textElement.size.width,
+                        height: textElement.size.height,
+                      }}
+                      position={{
+                        x: textElement.position.x,
+                        y: textElement.position.y,
+                      }}
+                      bounds="parent"
+                      enableResizing={{
+                        bottomRight: true,
+                      }}
+                      resizeHandleStyles={{
+                        bottomRight: {
+                          width: isMobile ? "20px" : "12px",
+                          height: isMobile ? "20px" : "12px",
+                          background: "white",
+                          border: "2px solid #1976d2",
+                          borderRadius: "3px",
+                          right: isMobile ? "-10px" : "-6px",
+                          bottom: isMobile ? "-10px" : "-6px",
+                          cursor: "se-resize",
+                          zIndex: 10,
+                        },
+                      }}
+                      style={{
+                        zIndex: textElement.zIndex,
+                        display: "flex",
+                        alignItems: vAlign,
+                        justifyContent: hAlign,
+                        border: "1px dashed #4a7bd5",
+                        touchAction: "none",
+                        transition: "border 0.2s ease",
+                      }}
+                      onDragStop={(_, d) => {
+                        updateTextElement(textElement.id, {
+                          position: { x: d.x, y: d.y },
+                          zIndex: 2001,
+                        });
+                      }}
+                      onResizeStop={(_, __, ref, ___, position) => {
+                        updateTextElement(textElement.id, {
+                          size: {
+                            width: parseInt(ref.style.width, 10),
+                            height: parseInt(ref.style.height, 10),
+                          },
+                          position: { x: position.x, y: position.y },
+                          zIndex: 2001,
+                        });
+                      }}
+                    >
+                      <Box
+                        onDoubleClick={() =>
+                          updateTextElement(textElement.id, { isEditing: true })
+                        }
+                        sx={{
+                          position: "relative",
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems: vAlign,
+                          justifyContent: hAlign,
+                          touchAction: "manipulation",
+                          cursor: textElement.isEditing ? "text" : "move",
+                        }}
+                      >
+                        {/* Close Button */}
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTextElement(textElement.id);
+                          }}
+                          sx={{
+                            position: "absolute",
+                            top: -10,
+                            right: -10,
+                            bgcolor: "#1976d2",
+                            color: "white",
+                            width: isMobile ? 28 : 20,
+                            height: isMobile ? 28 : 20,
+                            "&:hover": { bgcolor: "#f44336" },
+                            zIndex: 9999,
+                            pointerEvents: "auto",
+                          }}
+                        >
+                          <Close fontSize="small" />
+                        </IconButton>
 
+                        {/* Editable Text */}
+                        <TextField
+                          variant="standard"
+                          value={textElement.value}
+                          placeholder="Add Text"
+                          multiline
+                          fullWidth
+                          tabIndex={0}
+                          autoFocus={textElement.isEditing}
+                          InputProps={{
+                            readOnly: !textElement.isEditing,
+                            disableUnderline: true,
+                            style: {
+                              fontSize: textElement.fontSize,
+                              fontWeight: textElement.fontWeight,
+                              color: textElement.fontColor,
+                              fontFamily: textElement.fontFamily,
+                              transform: `rotate(${textElement.rotation}deg)`,
+                              padding: 0,
+                              width: "100%",
+                              height: "100%",
+                              cursor: textElement.isEditing ? "text" : "pointer",
+                              backgroundColor: "transparent",
+                              display: "flex",
+                              alignItems: vAlign,
+                              justifyContent: hAlign,
+                            },
+                          }}
+                          onChange={(e) =>
+                            updateTextElement(textElement.id, { value: e.target.value })
+                          }
+                          onFocus={() => updateTextElement(textElement.id, { isEditing: true })}
+                          onBlur={() => updateTextElement(textElement.id, { isEditing: false })}
+                          sx={{
+                            "& .MuiInputBase-input": {
+                              overflowY: "auto",
+                              textAlign: textElement.textAlign || "center",
+                            },
+                            pointerEvents: "auto",
+                          }}
+                        />
+                      </Box>
+                    </Rnd>
+                  );
+                })}</>
+            )
+          }
           {selectedVideoUrl && (
             <Rnd
               cancel=".no-drag"
@@ -423,81 +432,91 @@ SlideSpreadProps) => {
               enableResizing={false}
               style={{
                 padding: "10px",
+                zIndex: 999
               }}
             >
-              <Box
-                sx={{
-                  position: "relative",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "flex-end",
-                  m: "auto",
-                  width: "100%",
-                  textAlign: "center",
-                  height: "100%",
-                  bottom: 0,
-                  flex: 1,
-                }}
+              <motion.div
+                key={selectedVideoUrl} // ✅ unique key triggers re-animation on change
+                initial={{ opacity: 0, x: 100 }} // start off-screen (right)
+                animate={{ opacity: 1, x: 0 }} // slide in
+                exit={{ opacity: 0, x: -100 }} // slide out left
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              // style={{ position: "absolute", width: "100%" }}
               >
                 <Box
-                  component={"img"}
-                  src="/assets/images/video-qr-tips.png"
                   sx={{
-                    width: "100%",
-                    height: 200,
                     position: "relative",
-                    pointerEvents: "none",
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 59,
-                    height: 10,
-                    width: 10,
-                    left: 55,
-                    borderRadius: 2,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "flex-end",
+                    m: "auto",
+                    width: "100%",
+                    textAlign: "center",
+                    height: "100%",
+                    bottom: 0,
+                    flex: 1,
                   }}
                 >
-                  <QrGenerator
-                    url={selectedVideoUrl}
-                    size={Math.min(qrPosition.width, qrPosition.height)}
+                  <Box
+                    component={"img"}
+                    src="/assets/images/video-qr-tips.png"
+                    sx={{
+                      width: "100%",
+                      height: 200,
+                      position: "relative",
+                      pointerEvents: "none",
+                    }}
                   />
-                </Box>
-                <a href={`${selectedVideoUrl}`} target="_blank">
-                  <Typography
+                  <Box
                     sx={{
                       position: "absolute",
-                      top: 80,
-                      right: 25,
-                      zIndex: 99,
-                      color: "black",
-                      fontSize: "10px",
-                      width: "105px",
-                      cursor: "pointer",
-                      "&:hover": {
-                        textDecoration: "underline",
-                      },
+                      top: 59,
+                      height: 10,
+                      width: 10,
+                      left: 55,
+                      borderRadius: 2,
                     }}
                   >
-                    {`${selectedVideoUrl.slice(0, 20)}.....`}
-                  </Typography>
-                </a>
-                <IconButton
-                  onClick={() => setSelectedVideoUrl(null)}
-                  className="no-drag"
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    bgcolor: COLORS.black,
-                    color: COLORS.white,
-                    "&:hover": { bgcolor: "red" },
-                  }}
-                >
-                  <Close fontSize="small" />
-                </IconButton>
-              </Box>
+                    <QrGenerator
+                      url={selectedVideoUrl}
+                      size={Math.min(qrPosition.width, qrPosition.height)}
+                    />
+                  </Box>
+                  <a href={`${selectedVideoUrl}`} target="_blank">
+                    <Typography
+                      sx={{
+                        position: "absolute",
+                        top: 80,
+                        right: 25,
+                        zIndex: 99,
+                        color: "black",
+                        fontSize: "10px",
+                        width: "105px",
+                        cursor: "pointer",
+                        "&:hover": {
+                          textDecoration: "underline",
+                        },
+                      }}
+                    >
+                      {`${selectedVideoUrl.slice(0, 20)}.....`}
+                    </Typography>
+                  </a>
+                  <IconButton
+                    onClick={() => setSelectedVideoUrl(null)}
+                    className="no-drag"
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      bgcolor: COLORS.black,
+                      color: COLORS.white,
+                      "&:hover": { bgcolor: "red" },
+                    }}
+                  >
+                    <Close fontSize="small" />
+                  </IconButton>
+                </Box>
+              </motion.div>
             </Rnd>
           )}
 
@@ -526,96 +545,112 @@ SlideSpreadProps) => {
               enableResizing={false}
               style={{
                 padding: "10px",
+                zIndex: 999
               }}
             >
-              <Box
-                sx={{
-                  position: "relative",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "flex-end",
-                  m: "auto",
-                  width: "100%",
-                  textAlign: "center",
-                  height: "100%",
-                  bottom: 0,
-                  flex: 1,
-                }}
+              <motion.div
+                key={selectedVideoUrl} // ✅ unique key triggers re-animation on change
+                initial={{ opacity: 0, x: 100 }} // start off-screen (right)
+                animate={{ opacity: 1, x: 0 }} // slide in
+                exit={{ opacity: 0, x: -100 }} // slide out left
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              // style={{ position: "absolute", width: "100%" }}
               >
                 <Box
-                  component={"img"}
-                  src="/assets/images/audio-qr-tips.png"
                   sx={{
-                    width: "100%",
-                    height: 200,
                     position: "relative",
-                    pointerEvents: "none",
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 62,
-                    height: 10,
-                    width: 10,
-                    left: 62,
-                    borderRadius: 2,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "flex-end",
+                    m: "auto",
+                    width: "100%",
+                    textAlign: "center",
+                    height: "100%",
+                    bottom: 0,
+                    flex: 1,
                   }}
                 >
-                  <QrGenerator
-                    url={selectedAudioUrl}
-                    size={Math.min(
-                      qrAudioPosition.width,
-                      qrAudioPosition.height
-                    )}
+                  <Box
+                    component={"img"}
+                    src="/assets/images/audio-qr-tips.png"
+                    sx={{
+                      width: "100%",
+                      height: 200,
+                      position: "relative",
+                      pointerEvents: "none",
+                    }}
                   />
-                </Box>
-                <a href={`${selectedAudioUrl}`} target="_blank">
-                  <Typography
+                  <Box
                     sx={{
                       position: "absolute",
-                      top: 78,
-                      right: 25,
-                      zIndex: 99,
-                      color: "black",
-                      fontSize: "10px",
-                      width: "105px",
-                      cursor: "pointer",
-                      "&:hover": {
-                        textDecoration: "underline",
-                      },
+                      top: 62,
+                      height: 10,
+                      width: 10,
+                      left: 62,
+                      borderRadius: 2,
                     }}
                   >
-                    {`${selectedAudioUrl.slice(0, 20)}.....`}
-                  </Typography>
-                </a>
-                <IconButton
-                  onClick={() => setSelectedAudioUrl(null)}
-                  className="no-drag"
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    bgcolor: COLORS.black,
-                    color: COLORS.white,
-                    "&:hover": { bgcolor: "red" },
-                  }}
-                >
-                  <Close fontSize="small" />
-                </IconButton>
-              </Box>
+                    <QrGenerator
+                      url={selectedAudioUrl}
+                      size={Math.min(
+                        qrAudioPosition.width,
+                        qrAudioPosition.height
+                      )}
+                    />
+                  </Box>
+                  <a href={`${selectedAudioUrl}`} target="_blank">
+                    <Typography
+                      sx={{
+                        position: "absolute",
+                        top: 78,
+                        right: 25,
+                        zIndex: 99,
+                        color: "black",
+                        fontSize: "10px",
+                        width: "105px",
+                        cursor: "pointer",
+                        "&:hover": {
+                          textDecoration: "underline",
+                        },
+                      }}
+                    >
+                      {`${selectedAudioUrl.slice(0, 20)}.....`}
+                    </Typography>
+                  </a>
+                  <IconButton
+                    onClick={() => setSelectedAudioUrl(null)}
+                    className="no-drag"
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      bgcolor: COLORS.black,
+                      color: COLORS.white,
+                      "&:hover": { bgcolor: "red" },
+                    }}
+                  >
+                    <Close fontSize="small" />
+                  </IconButton>
+                </Box>
+              </motion.div>
             </Rnd>
           )}
 
           {draggableImages
             .filter((img: any) => selectedImg.includes(img.id))
             .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
-            .map(
-              ({ id, src, x, y, width, height, zIndex, rotation = 0 }: any) => (
+            .map(({ id, src, x, y, width, height, zIndex, rotation = 0 }: any) => {
+              const isMobile =
+                typeof window !== "undefined" && window.innerWidth < 768;
+
+              return (
                 <Rnd
                   key={id}
                   size={{ width, height }}
                   position={{ x, y }}
+                  bounds="parent"
+                  enableUserSelectHack={false} // ✅ allow touches to propagate
+                  cancel=".non-draggable" // ✅ prevents RND drag from hijacking taps on buttons
                   onDragStop={(_, d) => {
                     setDraggableImages((prev) =>
                       prev.map((img) =>
@@ -626,58 +661,55 @@ SlideSpreadProps) => {
                   onResizeStop={(_, __, ref, ___, position) => {
                     const newWidth = parseInt(ref.style.width);
                     const newHeight = parseInt(ref.style.height);
-
                     setDraggableImages((prev) =>
                       prev.map((img) =>
                         img.id === id
                           ? {
-                              ...img,
-                              width: newWidth,
-                              height: newHeight,
-                              x: position.x,
-                              y: position.y,
-                            }
+                            ...img,
+                            width: newWidth,
+                            height: newHeight,
+                            x: position.x,
+                            y: position.y,
+                          }
                           : img
                       )
                     );
                   }}
-                  // Keep Rnd itself unrotated so drag/resize math remains correct
                   style={{
                     zIndex: zIndex || 1,
                     boxSizing: "border-box",
                     borderRadius: 8,
+                    touchAction: "none",
                   }}
                   enableResizing={{ bottomRight: true }}
                   resizeHandleStyles={{
                     bottomRight: {
-                      width: "10px",
-                      height: "10px",
+                      width: isMobile ? "20px" : "10px",
+                      height: isMobile ? "20px" : "10px",
                       background: "white",
                       border: "2px solid #1976d2",
                       borderRadius: "10%",
-                      right: "-5px",
-                      bottom: "-5px",
+                      right: isMobile ? "-10px" : "-5px",
+                      bottom: isMobile ? "-10px" : "-5px",
                     },
                   }}
                 >
-                  {/* content wrapper fills the Rnd area */}
                   <Box
                     sx={{
                       position: "relative",
                       width: "100%",
                       height: "100%",
-                      overflow: "visible", // allow rotated corners to show
+                      overflow: "visible",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    {/* rotated inner wrapper — rotate image visually */}
+                    {/* rotated image */}
                     <Box
                       sx={{
                         width: "100%",
                         height: "100%",
-                        display: "block",
                         transform: `rotate(${rotation}deg)`,
                         transformOrigin: "center center",
                       }}
@@ -691,69 +723,76 @@ SlideSpreadProps) => {
                           borderRadius: 8,
                           pointerEvents: "none",
                           border: "2px solid #1976d2",
-                          objectFit: "fill", // or 'contain' / 'cover' depending on what you want
-                          display: "block",
+                          objectFit: "fill",
                         }}
                       />
                     </Box>
 
-                    {/* rotate right button */}
+                    {/* Rotate button */}
                     <Box
-                      onClick={() =>
+                      className="non-draggable" // ✅ ensures RND doesn’t hijack
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setDraggableImages((prev) =>
                           prev.map((img) =>
                             img.id === id
                               ? { ...img, rotation: (img.rotation || 0) + 15 }
                               : img
                           )
-                        )
-                      }
+                        );
+                      }}
                       sx={{
                         position: "absolute",
-                        top: -20,
-                        left: 0,
+                        top: -25,
+                        left: -5,
                         bgcolor: "black",
                         color: "white",
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        p: "2px",
-                        zIndex: 99,
+                        p: isMobile ? "4px" : "2px",
+                        zIndex: 9999,
                         cursor: "pointer",
+                        pointerEvents: "auto",
+                        touchAction: "manipulation",
                         "&:hover": { bgcolor: "#333" },
                       }}
                     >
-                      <Forward30 fontSize="small" />
+                      <Forward30 fontSize={isMobile ? "medium" : "small"} />
                     </Box>
 
-                    {/* close / deselect */}
+                    {/* Close button */}
                     <Box
-                      onClick={() =>
-                        setSelectedImage((prev) => prev.filter((i) => i !== id))
-                      }
+                      className="non-draggable"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage((prev) => prev.filter((i) => i !== id));
+                      }}
                       sx={{
                         position: "absolute",
-                        top: -20,
-                        right: 0,
+                        top: -25,
+                        right: -5,
                         bgcolor: "black",
                         color: "white",
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        p: "2px",
-                        zIndex: 99,
+                        p: isMobile ? "4px" : "2px",
+                        zIndex: 9999,
                         cursor: "pointer",
+                        pointerEvents: "auto",
+                        touchAction: "manipulation",
                         "&:hover": { bgcolor: "#333" },
                       }}
                     >
-                      <Close fontSize="small" />
+                      <Close fontSize={isMobile ? "medium" : "small"} />
                     </Box>
                   </Box>
                 </Rnd>
-              )
-            )}
+              );
+            })}
 
           {showOneTextRightSideBox && (
             <Box
@@ -804,8 +843,8 @@ SlideSpreadProps) => {
                     verticalAlign === "top"
                       ? "flex-start"
                       : verticalAlign === "center"
-                      ? "center"
-                      : "flex-end",
+                        ? "center"
+                        : "flex-end",
                 }}
               >
                 <TextField
@@ -822,7 +861,8 @@ SlideSpreadProps) => {
                         fontFamily: fontFamily,
                         textAlign: textAlign,
                         transform: `rotate(${rotation}deg)`,
-                        lineHeight: "35px",
+                        lineHeight: lineHeight2,
+                        letterSpacing: letterSpacing2
                       },
                     },
                   }}
@@ -863,8 +903,8 @@ SlideSpreadProps) => {
                       verticalAlign === "top"
                         ? "flex-start"
                         : verticalAlign === "center"
-                        ? "center"
-                        : "flex-end",
+                          ? "center"
+                          : "flex-end",
                   }}
                 >
                   <IconButton
@@ -901,11 +941,11 @@ SlideSpreadProps) => {
                           prev.map((t, i) =>
                             i === index
                               ? {
-                                  ...t,
-                                  value: newValue,
-                                  textAlign: textAlign,
-                                  verticalAlign: verticalAlign,
-                                }
+                                ...t,
+                                value: newValue,
+                                textAlign: textAlign,
+                                verticalAlign: verticalAlign,
+                              }
                               : t
                           )
                         );
@@ -921,6 +961,8 @@ SlideSpreadProps) => {
                             color: textObj.fontColor,
                             fontFamily: textObj.fontFamily,
                             textAlign: textAlign,
+                            lineHeight: lineHeight2,
+                            letterSpacing: letterSpacing2
                           },
                         },
                       }}
@@ -933,10 +975,10 @@ SlideSpreadProps) => {
                             prev.map((t, i) =>
                               i === editingIndex
                                 ? {
-                                    ...t,
-                                    textAlign: textAlign,
-                                    verticalAlign: verticalAlign,
-                                  }
+                                  ...t,
+                                  textAlign: textAlign,
+                                  verticalAlign: verticalAlign,
+                                }
                                 : t
                             )
                           );
@@ -961,9 +1003,11 @@ SlideSpreadProps) => {
                         sx={{
                           fontSize: textObj.fontSize,
                           fontWeight: textObj.fontWeight,
-                          color: textObj.fontColor1,
+                          color: textObj.fontColor,
                           fontFamily: textObj.fontFamily,
                           textAlign: textObj.textAlign,
+                          lineHeight: lineHeight2,
+                          letterSpacing: letterSpacing2,
                           width: "100%",
                           height: "100%",
                           display: "flex",
@@ -971,14 +1015,14 @@ SlideSpreadProps) => {
                             textObj.verticalAlign === "top"
                               ? "flex-start"
                               : textObj.verticalAlign === "bottom"
-                              ? "flex-end"
-                              : "center",
+                                ? "flex-end"
+                                : "center",
                           justifyContent:
                             textObj.textAlign === "left"
                               ? "flex-start"
                               : textObj.textAlign === "right"
-                              ? "flex-end"
-                              : "center",
+                                ? "flex-end"
+                                : "center",
                         }}
                       >
                         {textObj.value.length === 0 ? (
@@ -1092,119 +1136,137 @@ SlideSpreadProps) => {
             </Rnd>
           )}
 
-          {selectedStickers2.map((sticker, index) => (
-            <Rnd
-              key={sticker.id || index + 1}
-              size={{ width: sticker.width, height: sticker.height }}
-              position={{ x: sticker.x, y: sticker.y }}
-              onDragStop={(_, d) =>
-                updateSticker2(index + 1, {
-                  x: d.x,
-                  y: d.y,
+          {selectedStickers2.map((sticker, index) => {
+            const isMobile =
+              typeof window !== "undefined" && window.innerWidth < 768;
+
+            return (
+              <Rnd
+                key={sticker.id || index}
+                size={{ width: sticker.width, height: sticker.height }}
+                position={{ x: sticker.x, y: sticker.y }}
+                bounds="parent"
+                enableUserSelectHack={false} // ✅ allows touch events
+                cancel=".non-draggable" // ✅ prevents RND drag hijack on buttons
+                onDragStop={(_, d) =>
+                  updateSticker2(index, {
+                    x: d.x,
+                    y: d.y,
+                    zIndex: sticker.zIndex,
+                  })
+                }
+                onResizeStop={(_, __, ref, ___, position) =>
+                  updateSticker2(index, {
+                    width: parseInt(ref.style.width),
+                    height: parseInt(ref.style.height),
+                    x: position.x,
+                    y: position.y,
+                    zIndex: sticker.zIndex,
+                  })
+                }
+                enableResizing={{
+                  bottomRight: true,
+                }}
+                resizeHandleStyles={{
+                  bottomRight: {
+                    width: isMobile ? "20px" : "10px",
+                    height: isMobile ? "20px" : "10px",
+                    background: "white",
+                    border: "2px solid #1976d2",
+                    borderRadius: "10%",
+                    right: isMobile ? "-10px" : "-5px",
+                    bottom: isMobile ? "-10px" : "-5px",
+                    cursor: "se-resize",
+                  },
+                }}
+                style={{
                   zIndex: sticker.zIndex,
-                })
-              }
-              onResizeStop={(_, __, ref, ___, position) =>
-                updateSticker2(index + 1, {
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height),
-                  x: position.x,
-                  y: position.y,
-                  zIndex: sticker.zIndex,
-                })
-              }
-              bounds="parent"
-              enableResizing={{
-                bottomRight: true,
-              }}
-              resizeHandleStyles={{
-                bottomRight: {
-                  width: "10px",
-                  height: "10px",
-                  background: "white",
-                  border: "2px solid #1976d2",
-                  borderRadius: "10%",
-                  right: "-5px",
-                  bottom: "-5px",
-                },
-              }}
-              style={{
-                zIndex: sticker.zIndex,
-                position: "absolute",
-              }}
-            >
-              {/* Make inner box fill Rnd */}
-              <Box
-                sx={{
-                  position: "relative",
-                  width: "100%",
-                  height: "100%",
+                  position: "absolute",
+                  touchAction: "none", // ✅ allow touch drag + taps
                 }}
               >
-                {/* Sticker image fills its container */}
                 <Box
-                  component="img"
-                  src={sticker.sticker}
                   sx={{
-                    width: "100%", // ✅ dynamic with Rnd
-                    height: "100%", // ✅ dynamic with Rnd
-                    objectFit: "contain", // or "cover" if you want
-                    transform: `rotate(${sticker.rotation || 0}deg)`,
-                    transition: "transform 0.2s",
-                    border: "1px solid #1976d2",
-                    pointerEvents: "none",
-                  }}
-                />
-
-                {/* Control buttons */}
-                <IconButton
-                  size="small"
-                  onClick={() => removeSticker2(index + 1)}
-                  sx={{
-                    position: "absolute",
-                    top: -8,
-                    right: -10,
-                    bgcolor: "black",
-                    color: "white",
-                    p: 1,
-                    width: 25,
-                    height: 25,
-                    zIndex: 2,
-                    "&:hover": {
-                      bgcolor: "red",
-                    },
+                    position: "relative",
+                    width: "100%",
+                    height: "100%",
                   }}
                 >
-                  <Close fontSize="small" />
-                </IconButton>
+                  {/* Sticker image */}
+                  <Box
+                    component="img"
+                    src={sticker.sticker}
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      transform: `rotate(${sticker.rotation || 0}deg)`,
+                      transition: "transform 0.2s",
+                      border: "1px solid #1976d2",
+                      pointerEvents: "none",
+                    }}
+                  />
 
-                <IconButton
-                  size="small"
-                  onClick={() =>
-                    updateSticker2(index + 1, {
-                      rotation: ((sticker.rotation || 0) + 15) % 360,
-                    })
-                  }
-                  sx={{
-                    position: "absolute",
-                    top: -8,
-                    left: -5,
-                    bgcolor: "black",
-                    color: "white",
-                    p: 1,
-                    width: 25,
-                    height: 25,
-                    zIndex: 2,
-                    "&:hover": {
-                      bgcolor: "blue",
-                    },
-                  }}
-                >
-                  <Forward10 fontSize="small" />
-                </IconButton>
-              </Box>
-            </Rnd>
-          ))}
+                  {/* Close Button */}
+                  <IconButton
+                    className="non-draggable" // ✅ prevent drag capture
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeSticker2(index);
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: -isMobile ? -20 : -8,
+                      right: -isMobile ? -20 : -10,
+                      bgcolor: "black",
+                      color: "white",
+                      p: isMobile ? 1.5 : 1,
+                      width: isMobile ? 32 : 25,
+                      height: isMobile ? 32 : 25,
+                      zIndex: 9999,
+                      cursor: "pointer",
+                      pointerEvents: "auto",
+                      touchAction: "manipulation",
+                      "&:hover": { bgcolor: "red" },
+                    }}
+                  >
+                    <Close fontSize={isMobile ? "medium" : "small"} />
+                  </IconButton>
+
+                  {/* Rotate Button */}
+                  <IconButton
+                    className="non-draggable"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateSticker2(index, {
+                        rotation: ((sticker.rotation || 0) + 15) % 360,
+                      });
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: -isMobile ? -20 : -8,
+                      left: -isMobile ? -20 : -5,
+                      bgcolor: "black",
+                      color: "white",
+                      p: isMobile ? 1.5 : 1,
+                      width: isMobile ? 32 : 25,
+                      height: isMobile ? 32 : 25,
+                      zIndex: 9999,
+                      cursor: "pointer",
+                      pointerEvents: "auto",
+                      touchAction: "manipulation",
+                      "&:hover": { bgcolor: "blue" },
+                    }}
+                  >
+                    <Forward10 fontSize={isMobile ? "medium" : "small"} />
+                  </IconButton>
+                </Box>
+              </Rnd>
+            );
+          })}
+
 
           {/* default image popup */}
           {/* <Rnd

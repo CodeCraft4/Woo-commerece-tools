@@ -50,8 +50,8 @@ const Layout1Popup = ({ onClose, activeIndex }: Layout1PopupProps) => {
       title="Layout"
       onClose={onClose}
       sx={{
-        width: { md: 300, sm: 300, xs: "100%" },
-        left: { md: "14%", sm: "14%", xs: 0 },
+        width: { md: 320, sm: 300, xs: "95%" },
+        left: { md: "12%", sm: "14%", xs: 0 },
         mt: { md: 0, sm: 0, xs: 4 },
       }}
       activeIndex={activeIndex}

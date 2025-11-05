@@ -22,7 +22,7 @@ const Photo1Popup = ({ onClose, activeIndex }: Photo1PopupProps) => {
     setDraggableImages1,
   } = useSlide1(
 
-  );
+    );
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth();
@@ -194,20 +194,20 @@ const Photo1Popup = ({ onClose, activeIndex }: Photo1PopupProps) => {
     }
   };
 
- useEffect(() => {
-  if (!user) return;
-  fetchUserImages();
-}, [user]); 
+  useEffect(() => {
+    if (!user) return;
+    fetchUserImages();
+  }, [user]);
 
   return (
     <PopupWrapper
       title="Photos"
       onClose={onClose}
       sx={{
-        width: {md:300,sm:300,xs:'95%'},
-        height: {md:600,sm:600,xs:500},
-        mt:{md:0,sm:0,xs:4},
-        left: activeIndex === 0 ? {md:"13%",sm:'13%',xs:10} : "16%",
+        width: { md: 300, sm: 300, xs: '95%' },
+        height: { md: 600, sm: 600, xs: 450 },
+        mt: { md: 0, sm: 0, xs: 0 },
+        left: activeIndex === 0 ? { md: "13%", sm: '13%', xs: 0 } : "16%",
         zIndex: 99,
       }}
     >
@@ -232,7 +232,7 @@ const Photo1Popup = ({ onClose, activeIndex }: Photo1PopupProps) => {
           height: "auto",
           "&::-webkit-scrollbar": {
             height: "6px",
-            width:'5px'
+            width: '5px'
           },
           "&::-webkit-scrollbar-track": {
             backgroundColor: "#f1f1f1",
@@ -298,11 +298,11 @@ const Photo1Popup = ({ onClose, activeIndex }: Photo1PopupProps) => {
                   imgs.map((img) =>
                     img.id === id
                       ? {
-                          ...img,
-                          zIndex: !isSelected
-                            ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1
-                            : img.zIndex, // keep current zIndex when unselecting
-                        }
+                        ...img,
+                        zIndex: !isSelected
+                          ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1
+                          : img.zIndex, // keep current zIndex when unselecting
+                      }
                       : img
                   )
                 );
@@ -316,9 +316,8 @@ const Photo1Popup = ({ onClose, activeIndex }: Photo1PopupProps) => {
             sx={{
               width: 115,
               height: 115,
-              border: `2px solid ${
-                selectedImg1?.includes(id) ? "#3a7bd5" : "#bd7082ff"
-              }`,
+              border: `2px solid ${selectedImg1?.includes(id) ? "#3a7bd5" : "#bd7082ff"
+                }`,
               borderRadius: 2,
               position: "relative",
               cursor: "pointer",

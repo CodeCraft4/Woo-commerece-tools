@@ -37,6 +37,8 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
 
   const [loading, setLoading] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
   const { user } = useAuth();
   const generateId = () => Date.now() + Math.random();
 
@@ -45,10 +47,12 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
     const files = e.target.files;
     if (!files) return;
 
+    setFileError(null);
+
     const validFiles: any = Array.from(files).filter((file) => {
       const fileSizeMB = file.size / (1024 * 1024);
       if (fileSizeMB > 50) {
-        alert(`❌ ${file.name} is too large (max 50MB)`);
+        setFileError(`❌ ${file.name.slice(0, 20)} is too large (max 50MB).`);
         return false;
       }
       return true;
@@ -237,10 +241,10 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: 600,
-        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 10 } : "16%",
-        mt: { md: 0, sm: 0, xs: 4 },
-        overflow: "hidden",
+        height: { md: 600, sm: 600, xs: 450 },
+        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 0 } : "16%",
+        mt: { md: 0, sm: 0, xs: 0 },
+        overflowY: "hidden",
       }}
     >
       {tips1 && (
@@ -251,6 +255,7 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
               width: "100%",
               bgcolor: "gray",
               position: "relative",
+              display: { md: 'flex', sm: 'flex', xs: 'none' }
             }}
           >
             <video
@@ -355,6 +360,20 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
                 <ControlPoint fontSize="large" />
                 Add Video
               </Box>
+
+              {fileError && (
+                <Typography
+                  sx={{
+                    color: "red",
+                    fontSize: "13px",
+                    mt: 1,
+                    textAlign: "center",
+                    fontWeight: 500,
+                  }}
+                >
+                  {fileError}
+                </Typography>
+              )}
 
               {userVideos.length > 0 && (
                 <Box
@@ -482,7 +501,7 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
                                 alignItems: "center",
                                 justifyContent: "center",
                                 border: `3px solid ${COLORS.seconday}`,
-                                outline:'2px solid white'
+                                outline: '2px solid white'
                               }}
                             >
                               <svg

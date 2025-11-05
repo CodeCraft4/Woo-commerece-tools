@@ -10,7 +10,8 @@ import {
   KeyboardArrowDown,
   Delete,
   FormatBoldOutlined,
-  Title, 
+  Title,
+  TextRotateVertical,
 } from "@mui/icons-material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { COLORS } from "../../../constant/color";
@@ -24,6 +25,7 @@ interface Text1PopupProps {
   onShowFontColorPopup: () => void;
   onShowFontFamilyPopup: () => void;
   onChangeTextAlign: () => void;
+  onSetLineHeightPopup: () => void;
   activeChildComponent: React.ReactNode | null;
   onAddTextToCanvas?: () => void;
 }
@@ -48,7 +50,8 @@ const Text1Popup = ({
   activeChildComponent,
   activeIndex,
   onAddTextToCanvas,
-  onChangeTextAlign
+  onChangeTextAlign,
+  onSetLineHeightPopup
 }: Text1PopupProps) => {
 
   const {
@@ -65,6 +68,7 @@ const Text1Popup = ({
     setFontSize1,
     setFontColor1,
     setFontFamily1,
+    multipleTextValue1, showOneTextRightSideBox1
   } = useSlide1();
 
 
@@ -107,7 +111,7 @@ const Text1Popup = ({
       }
     }
   };
-  
+
   // Function to toggle Font Weight (Bold) between 400 and 700
   const toggleFontWeight = () => {
     const currentWeight = selectedTextElement?.fontWeight || fontWeight1;
@@ -155,15 +159,18 @@ const Text1Popup = ({
     setSelectedTextId1(null);
   };
 
+  const isLayoutUse = multipleTextValue1 || showOneTextRightSideBox1
+
+
   return (
     <PopupWrapper
       title={"Text Editing"}
       onClose={onClose}
       sx={{
-        width: {md:500,sm:500,xs:'100%'},
-        mt:{md:0,sm:0,xs:4},
-        height: {md:600,sm:600,xs:500},
-        left: activeIndex === 0 ? '2%' : "5%",
+        width: { md: 500, sm: 250, xs: '95%' },
+        mt: { md: 0, sm: 0, xs: 0 },
+        height: { md: 600, sm: 600, xs: 500 },
+        left: activeIndex === 0 ? { md: '3%', sm: '0%', xs: 0 } : "5%",
         overflowY: "hidden",
       }}
     >
@@ -190,18 +197,18 @@ const Text1Popup = ({
         }}
       >
         {/* Add Text */}
-        <IconButton onClick={onAddTextToCanvas} sx={editingButtonStyle}>
+        <IconButton disabled={isLayoutUse} disableRipple onClick={onAddTextToCanvas} sx={editingButtonStyle}>
           <Title fontSize="large" />
           <Typography variant="caption">Add</Typography>
         </IconButton>
         {/* Size */}
-        <IconButton onClick={onShowFontSizePopup} sx={editingButtonStyle}>
+        <IconButton disableRipple onClick={onShowFontSizePopup} sx={editingButtonStyle}>
           <TextIncreaseOutlined fontSize="large" />
           <Typography variant="caption">Size</Typography>
         </IconButton>
 
         {/* Font Family */}
-        <IconButton onClick={onShowFontFamilyPopup} sx={editingButtonStyle}>
+        <IconButton disableRipple onClick={onShowFontFamilyPopup} sx={editingButtonStyle}>
           <TextFields fontSize="large" />
           <Typography variant="caption">Font</Typography>
         </IconButton>
@@ -219,20 +226,26 @@ const Text1Popup = ({
         </IconButton>
 
         {/* Colour */}
-        <IconButton onClick={onShowFontColorPopup} sx={editingButtonStyle}>
+        <IconButton disableRipple onClick={onShowFontColorPopup} sx={editingButtonStyle}>
           <PaletteOutlined fontSize="large" />
           <Typography variant="caption">Colour</Typography>
         </IconButton>
 
         {/* Align */}
-        <IconButton onClick={onChangeTextAlign} sx={editingButtonStyle}>
+        <IconButton disableRipple onClick={onChangeTextAlign} sx={editingButtonStyle}>
           <FormatAlignCenterOutlined fontSize="large" />
           <Typography variant="caption">Align</Typography>
         </IconButton>
 
+        {/* Line Height  */}
+        <IconButton disableRipple onClick={onSetLineHeightPopup} sx={editingButtonStyle} >
+          <TextRotateVertical fontSize="large" />
+          <Typography variant="caption">Line Height</Typography>
+        </IconButton>
+
         {/* Rotate */}
-        <IconButton onClick={rotateText} sx={editingButtonStyle}
-        disabled={!selectedTextElement}>
+        <IconButton disableRipple onClick={rotateText} sx={editingButtonStyle}
+          disabled={!selectedTextElement}>
           <TextRotationAngleupOutlined fontSize="large" />
           <Typography variant="caption">Rotate</Typography>
         </IconButton>

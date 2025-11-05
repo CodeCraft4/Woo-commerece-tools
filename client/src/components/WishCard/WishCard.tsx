@@ -68,6 +68,11 @@ import TextAlign1Popup from "../Slide1/TextAlign1Popup/TextAlign1Popup";
 import TextAlignPopup from "../Slide2/TextAlignPopup/TextAlignPopup";
 import TextAlign3Popup from "../Slide3/TextAlign3Popup/TextAlign3Popup";
 import TextAlign4Popup from "../Slide4/TextAlign4Popup/TextAlign4Popup";
+import { useLocation } from "react-router-dom";
+import LineHeight1Popup from "../Slide1/LineHeight1Popup/LineHeight1Popup";
+import LineHeight2Popup from "../Slide2/LineHeight2Popup/LineHeight2Popup";
+import LineHeight4Popup from "../Slide4/LineHeight4Popup/LineHeight4Popup";
+import LineHeight3Popup from "../Slide3/LineHeight3Popup/LineHeight3Popup";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -80,6 +85,16 @@ const WishCard = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [activePopup, setActivePopup] = useState(null);
 
+  const location = useLocation();
+  const { layout } = location.state || {};
+  const { layout1, setLayout1 } = useSlide1();
+
+  useEffect(() => {
+    if (layout && !layout1) {
+      setLayout1(layout);
+    }
+  }, [layout, layout1]);
+
   // const [addTextRightSide, setAddTextRightSide] = useState(false);
   const [addTextCount, setAddTextCount] = useState(0);
   const [addTextCountRight, setAddTextCountRight] = useState(0);
@@ -88,27 +103,27 @@ const WishCard = () => {
 
   // For slide
   const [activeTextSlide1Child, setActiveTextSlide1Child] = useState<
-    "size" | "color" | "family" | "textAlign" | null
+    "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
   const [activeTextChild, setActiveTextChild] = useState<
-    "size" | "color" | "family" | "textAlign" | null
+    "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
   // For slide 3
   const [activeTextSlide3Child, setActiveTextSlide3Child] = useState<
-    "size" | "color" | "family" | "textAlign" | null
+    "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
   // For slide 4
   const [activeTextSlideLastChild, setActiveTextSlideLastChild] = useState<
-    "size" | "color" | "family" | "textAlign" | null
+    "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
-  const { tips1, setTips1, setIsSlideActive1 } = useSlide1();
-  const { tips, setTips, setIsSlideActive } = useSlide2();
-  const { tips3, setTips3, setIsSlideActive3 } = useSlide3();
-  const { tips4, setTips4, setIsSlideActive4 } = useSlide4();
+  const { setTips1, setIsSlideActive1 } = useSlide1();
+  const { setTips, setIsSlideActive } = useSlide2();
+  const { setTips3, setIsSlideActive3 } = useSlide3();
+  const { setTips4, setIsSlideActive4 } = useSlide4();
 
   // ==============SLIDE STATE MANAGEMENT=======================
   // Function to handle slide changes and manage state
@@ -165,6 +180,8 @@ const WishCard = () => {
         return <FontFamily1Popup />;
       case "textAlign":
         return <TextAlign1Popup />;
+      case "lineHeight":
+        return <LineHeight1Popup />;
       default:
         return null;
     }
@@ -184,6 +201,8 @@ const WishCard = () => {
         return <FontFamilyPopup />;
       case "textAlign":
         return <TextAlignPopup />;
+      case "lineHeight":
+        return <LineHeight2Popup />;
       default:
         return null;
     }
@@ -203,6 +222,8 @@ const WishCard = () => {
         return <FontFamily3Popup />;
       case "textAlign":
         return <TextAlign3Popup />;
+      case "lineHeight":
+        return <LineHeight3Popup />;
       default:
         return null;
     }
@@ -222,6 +243,8 @@ const WishCard = () => {
         return <FontFamily4Popup />;
       case "textAlign":
         return <TextAlign4Popup />;
+      case "lineHeight":
+        return <LineHeight4Popup />;
       default:
         return null;
     }
@@ -321,7 +344,7 @@ const WishCard = () => {
           onMouseDown={onMainMouseDown}
           onMouseLeave={onMainMouseLeave}
           onMouseUp={onMainMouseUp}
-          // onMouseMove={onMainMouseMove}
+        // onMouseMove={onMainMouseMove}
         >
           {slides.map((e, index) => {
             return (
@@ -330,10 +353,10 @@ const WishCard = () => {
                 sx={{
                   flex: "0 0 auto",
                   width: { md: 400, sm: 400, xs: "100%" },
-                  height: { md: 600, sm: 600, xs: "500px" },
-                  ml: index === 0 ? { md: 80, sm: 80, xs: 0 } : 0,
+                  height: { md: 600, sm: 600, xs: "600px" },
+                  ml: index === 0 ? { md: 80, sm: 23, xs: 0 } : 0,
                   borderRadius: 2,
-                  mt: { md: 0, sm: 0, xs: 12 },
+                  mt: { md: 0, sm: 0, xs: 0 },
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "row",
@@ -341,7 +364,7 @@ const WishCard = () => {
                   transition: "all 0.3s ease",
                   position: "relative",
                 }}
-                // onMouseEnter={() => scrollToSlide(index)}
+              // onMouseEnter={() => scrollToSlide(index)}
               >
                 {/* First slide (cover) with image + editable text */}
                 {e.id === 1 ? (
@@ -401,6 +424,7 @@ const WishCard = () => {
                   onAddTextToCanvas={() =>
                     setAddTextCountFirst((prev) => prev + 1)
                   }
+                  onSetLineHeightPopup={() => setActiveTextSlide1Child("lineHeight")}
                   activeIndex={activeIndex}
                 />
               )}
@@ -461,6 +485,7 @@ const WishCard = () => {
                   activeChildComponent={renderActiveTextChild()}
                   onChangeTextAlign={() => setActiveTextChild("textAlign")}
                   onAddTextToCanvas={() => setAddTextCount((prev) => prev + 1)}
+                  onSetLineHeightPopup={() => setActiveTextChild("lineHeight")}
                   activeIndex={activeIndex}
                 />
               )}
@@ -520,6 +545,7 @@ const WishCard = () => {
                   onShowFontFamilyPopup={() =>
                     setActiveTextSlide3Child("family")
                   }
+                  onSetLineHeightPopup={() => setActiveTextSlide3Child("lineHeight")}
                   onChangeTextAlign={() =>
                     setActiveTextSlide3Child("textAlign")
                   }
@@ -592,8 +618,12 @@ const WishCard = () => {
                   onShowFontFamilyPopup={() =>
                     setActiveTextSlideLastChild("family")
                   }
-                     onChangeTextAlign={() =>
+                  onChangeTextAlign={() =>
                     setActiveTextSlideLastChild("textAlign")
+                  }
+
+                  onSetLineHeightPopup={() =>
+                    setActiveTextSlideLastChild("lineHeight")
                   }
                   activeChildComponent={renderActiveTextSlideLastChild()}
                   onAddTextToCanvas={() =>
@@ -643,91 +673,98 @@ const WishCard = () => {
             </>
           )}
 
-          {/* Editing Toolbar */}
+          {/* Editing Toolbar 
           {/* 1st Card */}
-          {activeIndex === 0 && (
-            <Box
-              sx={{
-                height: { md: "600px", sm: "600px", xs: "80px" },
-                width: { md: "auto", sm: "auto", xs: "95%" },
-                bgcolor: "white",
-                borderRadius: "4px",
-                p: 1,
-                display: "flex",
-                flexDirection: { md: "column", sm: "column", xs: "row" },
-                overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
-                gap: "15px",
-                position: "absolute",
-                top: { md: 40, sm: 40, xs: 10 },
-                left: { md: "31%", sm: "31%", xs: 10 },
-                zIndex: 10,
-                boxShadow: 3,
-              }}
-            >
-              <IconButton
-                sx={editingButtonStyle}
-                onClick={() => togglePopup("layout")}
-                aria-label="Layout"
-              >
-                <AutoAwesomeMosaicOutlined fontSize="large" />
-                Layout
-              </IconButton>
-              <IconButton
-                sx={editingButtonStyle}
-                onClick={() => togglePopup("text")}
-                aria-label="Text"
-              >
-                <TitleOutlined fontSize="large" />
-                Text
-              </IconButton>
-              <IconButton
-                sx={editingButtonStyle}
-                onClick={() => togglePopup("photo")}
-                aria-label="Photo"
-              >
-                <CollectionsOutlined fontSize="large" />
-                Photo
-              </IconButton>
-              <IconButton
-                sx={editingButtonStyle}
-                onClick={() => togglePopup("sticker")}
-                aria-label="Sticker"
-              >
-                <EmojiEmotionsOutlined fontSize="large" />
-                Sticker
-              </IconButton>
-              <IconButton
-                onClick={() => {
-                  togglePopup("video");
-                  setTips1(!tips1);
-                }}
-                sx={editingButtonStyle}
-              >
-                <SlideshowOutlined fontSize="large" />
-                Video
-              </IconButton>
-              <IconButton
-                onClick={() => {
-                  togglePopup("audio");
-                  setTips1(!tips1);
-                }}
-                sx={editingButtonStyle}
-              >
-                <AudiotrackOutlined fontSize="large" />
-                Audio
-              </IconButton>
-              <IconButton
-                onClick={() => {
-                  togglePopup("geneAi");
-                  setTips(!tips);
-                }}
-                sx={editingButtonStyle}
-              >
-                <BlurOn fontSize="large" />
-                GenAI
-              </IconButton>
-            </Box>
-          )}
+          {layout1 &&
+            (
+              (!layout1.elements || layout1.elements.length === 0) &&
+              (!layout1.textElements || layout1.textElements.length === 0)
+            ) && (
+              <>
+                {activeIndex === 0 && (
+                  <Box
+                    sx={{
+                      height: { md: "600px", sm: "600px", xs: "80px" },
+                      width: { md: "auto", sm: "auto", xs: "95%" },
+                      bgcolor: "white",
+                      borderRadius: "4px",
+                      p: 1,
+                      display: "flex",
+                      flexDirection: { md: "column", sm: "column", xs: "row" },
+                      overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
+                      gap: "15px",
+                      position: "absolute",
+                      top: { md: 40, sm: 40, xs: '100%' },
+                      left: { md: "29.5%", sm: "14%", xs: 10 },
+                      zIndex: { md: 10, sm: 10, xs: 99999 },
+                      boxShadow: 3,
+                    }}
+                  >
+                    <IconButton
+                      sx={editingButtonStyle}
+                      onClick={() => togglePopup("layout")}
+                      aria-label="Layout"
+                    >
+                      <AutoAwesomeMosaicOutlined fontSize="large" />
+                      Layout
+                    </IconButton>
+                    <IconButton
+                      sx={editingButtonStyle}
+                      onClick={() => togglePopup("text")}
+                      aria-label="Text"
+                    >
+                      <TitleOutlined fontSize="large" />
+                      Text
+                    </IconButton>
+                    <IconButton
+                      sx={editingButtonStyle}
+                      onClick={() => togglePopup("photo")}
+                      aria-label="Photo"
+                    >
+                      <CollectionsOutlined fontSize="large" />
+                      Photo
+                    </IconButton>
+                    <IconButton
+                      sx={editingButtonStyle}
+                      onClick={() => togglePopup("sticker")}
+                      aria-label="Sticker"
+                    >
+                      <EmojiEmotionsOutlined fontSize="large" />
+                      Sticker
+                    </IconButton>
+                    <IconButton
+                      onClick={() => {
+                        togglePopup("video");
+                        setTips1(true);
+                      }}
+                      sx={editingButtonStyle}
+                    >
+                      <SlideshowOutlined fontSize="large" />
+                      Video
+                    </IconButton>
+                    <IconButton
+                      onClick={() => {
+                        togglePopup("audio");
+                        setTips1(true);
+                      }}
+                      sx={editingButtonStyle}
+                    >
+                      <AudiotrackOutlined fontSize="large" />
+                      Audio
+                    </IconButton>
+                    <IconButton
+                      onClick={() => {
+                        togglePopup("geneAi");
+                      }}
+                      sx={editingButtonStyle}
+                    >
+                      <BlurOn fontSize="large" />
+                      GenAI
+                    </IconButton>
+                  </Box>
+                )}
+              </>
+            )}
           {/* 2nd Card */}
           {activeIndex === 1 && (
             <Box
@@ -742,9 +779,9 @@ const WishCard = () => {
                 overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
                 position: "absolute",
-                top: { md: 40, sm: 40, xs: 10 },
-                left: { md: "34.5%", sm: "34.5%", xs: 10 },
-                zIndex: 10,
+                top: { md: 40, sm: 40, xs: '100%' },
+                left: { md: "35.5%", sm: "14%", xs: 10 },
+                zIndex: { md: 10, sm: 10, xs: 99999 },
                 boxShadow: 3,
               }}
             >
@@ -783,7 +820,7 @@ const WishCard = () => {
               <IconButton
                 onClick={() => {
                   togglePopup("video");
-                  setTips(!tips);
+                  setTips(true);
                 }}
                 sx={editingButtonStyle}
               >
@@ -793,7 +830,7 @@ const WishCard = () => {
               <IconButton
                 onClick={() => {
                   togglePopup("audio");
-                  setTips(!tips);
+                  setTips(true);
                 }}
                 sx={editingButtonStyle}
               >
@@ -803,7 +840,6 @@ const WishCard = () => {
               <IconButton
                 onClick={() => {
                   togglePopup("geneAi");
-                  setTips(!tips);
                 }}
                 sx={editingButtonStyle}
               >
@@ -826,9 +862,9 @@ const WishCard = () => {
                 overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
                 position: "absolute",
-                top: { md: 40, sm: 40, xs: 10 },
-                left: { md: "46%", sm: "46%", xs: 10 },
-                zIndex: 10,
+                top: { md: 40, sm: 40, xs: '100%' },
+                left: { md: "49.4%", sm: "14%", xs: 10 },
+                zIndex: { md: 10, sm: 10, xs: 99999 },
                 boxShadow: 3,
               }}
             >
@@ -867,7 +903,7 @@ const WishCard = () => {
               <IconButton
                 onClick={() => {
                   togglePopup("video");
-                  setTips3(!tips3);
+                  setTips3(true);
                 }}
                 sx={editingButtonStyle}
               >
@@ -877,7 +913,7 @@ const WishCard = () => {
               <IconButton
                 onClick={() => {
                   togglePopup("audio");
-                  setTips3(!tips3);
+                  setTips3(true);
                 }}
                 sx={editingButtonStyle}
               >
@@ -887,7 +923,6 @@ const WishCard = () => {
               <IconButton
                 onClick={() => {
                   togglePopup("geneAi");
-                  setTips(!tips);
                 }}
                 sx={editingButtonStyle}
               >
@@ -897,89 +932,86 @@ const WishCard = () => {
             </Box>
           )}
           {/* 4th card */}
-          {activeIndex === 3 && (
-            <Box
-              sx={{
-                height: { md: "600px", sm: "600px", xs: "80px" },
-                width: { md: "auto", sm: "auto", xs: "95%" },
-                bgcolor: "white",
-                borderRadius: "4px",
-                p: 1,
-                display: "flex",
-                flexDirection: { md: "column", sm: "column", xs: "row" },
-                overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
-                gap: "15px",
-                position: "absolute",
-                top: { md: 40, sm: 40, xs: 10 },
-                right: { md: "23%", sm: "23%", xs: 10 },
-                zIndex: 10,
-                boxShadow: 3,
-              }}
-            >
-              <IconButton
-                sx={editingButtonStyle}
-                onClick={() => togglePopup("layout")}
-                aria-label="Layout"
-              >
-                <AutoAwesomeMosaicOutlined fontSize="large" />
-                Layout
-              </IconButton>
-              <IconButton
-                sx={editingButtonStyle}
-                onClick={() => togglePopup("text")}
-                aria-label="Text"
-              >
-                <TitleOutlined fontSize="large" />
-                Text
-              </IconButton>
-              <IconButton
-                sx={editingButtonStyle}
-                onClick={() => togglePopup("photo")}
-                aria-label="Photo"
-              >
-                <CollectionsOutlined fontSize="large" />
-                Photo
-              </IconButton>
-              <IconButton
-                sx={editingButtonStyle}
-                onClick={() => togglePopup("sticker")}
-                aria-label="Sticker"
-              >
-                <EmojiEmotionsOutlined fontSize="large" />
-                Sticker
-              </IconButton>
-              <IconButton
-                onClick={() => {
-                  togglePopup("video");
-                  setTips4(!tips4);
-                }}
-                sx={editingButtonStyle}
-              >
-                <SlideshowOutlined fontSize="large" />
-                Video
-              </IconButton>
-              <IconButton
-                onClick={() => {
-                  togglePopup("audio");
-                  setTips4(!tips4);
-                }}
-                sx={editingButtonStyle}
-              >
-                <AudiotrackOutlined fontSize="large" />
-                Audio
-              </IconButton>
-              <IconButton
-                onClick={() => {
-                  togglePopup("geneAi");
-                  setTips(!tips);
-                }}
-                sx={editingButtonStyle}
-              >
-                <BlurOn fontSize="large" />
-                GenAI
-              </IconButton>
-            </Box>
-          )}
+          {layout1 &&
+            (
+              (!layout1.elements || layout1.elements.length === 0) &&
+              (!layout1.textElements || layout1.textElements.length === 0)
+            ) && (
+              <>
+                {activeIndex === 3 && (
+                  <Box
+                    sx={{
+                      height: { md: "600px", sm: "600px", xs: "80px" },
+                      width: { md: "auto", sm: "auto", xs: "95%" },
+                      bgcolor: "white",
+                      borderRadius: "4px",
+                      p: 1,
+                      display: "flex",
+                      flexDirection: { md: "column", sm: "column", xs: "row" },
+                      overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
+                      gap: "15px",
+                      position: "absolute",
+                      top: { md: 40, sm: 40, xs: '100%' },
+                      right: { md: "22%", sm: "54%", xs: 10 },
+                      zIndex: { md: 10, sm: 10, xs: 99999 },
+                      boxShadow: 3,
+                    }}
+                  >
+                    <IconButton sx={editingButtonStyle} onClick={() => togglePopup("layout")}>
+                      <AutoAwesomeMosaicOutlined fontSize="large" />
+                      Layout
+                    </IconButton>
+
+                    <IconButton sx={editingButtonStyle} onClick={() => togglePopup("text")}>
+                      <TitleOutlined fontSize="large" />
+                      Text
+                    </IconButton>
+
+                    <IconButton sx={editingButtonStyle} onClick={() => togglePopup("photo")}>
+                      <CollectionsOutlined fontSize="large" />
+                      Photo
+                    </IconButton>
+
+                    <IconButton sx={editingButtonStyle} onClick={() => togglePopup("sticker")}>
+                      <EmojiEmotionsOutlined fontSize="large" />
+                      Sticker
+                    </IconButton>
+
+                    <IconButton
+                      onClick={() => {
+                        togglePopup("video");
+                        setTips4(true);
+                      }}
+                      sx={editingButtonStyle}
+                    >
+                      <SlideshowOutlined fontSize="large" />
+                      Video
+                    </IconButton>
+
+                    <IconButton
+                      onClick={() => {
+                        togglePopup("audio");
+                        setTips4(true);
+                      }}
+                      sx={editingButtonStyle}
+                    >
+                      <AudiotrackOutlined fontSize="large" />
+                      Audio
+                    </IconButton>
+
+                    <IconButton
+                      onClick={() => {
+                        togglePopup("geneAi");
+                      }}
+                      sx={editingButtonStyle}
+                    >
+                      <BlurOn fontSize="large" />
+                      GenAI
+                    </IconButton>
+                  </Box>
+                )}
+              </>
+            )}
         </Box>
 
         {/* Thumbnail gallery */}
@@ -999,7 +1031,7 @@ const WishCard = () => {
           <IconButton
             onClick={() => handleSlideChange("left")}
             sx={{
-              zIndex: 10,
+              zIndex: 100,
             }}
             aria-label="scroll thumbnails left"
           >
@@ -1015,7 +1047,7 @@ const WishCard = () => {
               scrollbarWidth: "none",
               "&::-webkit-scrollbar": { display: "none" },
               gap: 1,
-              px: 0.5,
+              px: { md: 0.5, sm: 0.5, xs: 0 },
               cursor: isThumbDragging.current ? "grabbing" : "grab",
               userSelect: "none",
               width: "auto",
@@ -1030,8 +1062,8 @@ const WishCard = () => {
                 key={index}
                 onClick={() => scrollToSlide(index)}
                 sx={{
-                  width: 70,
-                  height: 80,
+                  width: { md: 70, sm: 70, xs: 60 },
+                  height: { md: 80, sm: 80, xs: 60 },
                   bgcolor: "#ccc",
                   color: "#212121",
                   // color: index === activeIndex ? "white" : "black",

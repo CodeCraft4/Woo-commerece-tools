@@ -10,7 +10,8 @@ import {
   KeyboardArrowDown,
   Delete,
   FormatBoldOutlined,
-  Title, 
+  Title,
+  TextRotateVertical,
 } from "@mui/icons-material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { COLORS } from "../../../constant/color";
@@ -23,6 +24,7 @@ interface TextPopupProps {
   onShowFontSizePopup: () => void;
   onShowFontColorPopup: () => void;
   onShowFontFamilyPopup: () => void;
+  onSetLineHeightPopup: () => void;
   onChangeTextAlign: () => void;
   activeChildComponent: React.ReactNode | null;
   onAddTextToCanvas?: () => void;
@@ -45,6 +47,7 @@ const TextPopup = ({
   onShowFontSizePopup,
   onShowFontColorPopup,
   onShowFontFamilyPopup,
+  onSetLineHeightPopup,
   onChangeTextAlign,
   activeChildComponent,
   onAddTextToCanvas,
@@ -64,6 +67,8 @@ const TextPopup = ({
     setFontColor,
     setFontFamily,
     setVerticalAlign,
+    multipleTextValue,
+    showOneTextRightSideBox,
   } = useSlide2();
 
 
@@ -109,7 +114,7 @@ const TextPopup = ({
       }
     }
   };
-  
+
   // Function to toggle Font Weight (Bold) between 400 and 700
   const toggleFontWeight = () => {
     const currentWeight = selectedTextElement?.fontWeight || fontWeight;
@@ -156,16 +161,20 @@ const TextPopup = ({
     setSelectedTextId(null);
   };
 
+  const isLayoutUse = multipleTextValue || showOneTextRightSideBox
+
+
   return (
     <PopupWrapper
       title={"Text Editing"}
       onClose={onClose}
       sx={{
-        width: {md:500,sm:500,xs:'100%'},
-        mt:{md:0,sm:0,xs:4},
-        height: {md:600,sm:600,xs:500},
-        left: {md:'6%',sm:'6%',xs:10},
-        overflowY: "hidden",}}
+        width: { md: 500, sm: 250, xs: '95%' },
+        mt: { md: 0, sm: 0, xs: 0 },
+        height: { md: 600, sm: 600, xs: 500 },
+        left: { md: '9%', sm: '0%', xs: 0 },
+        overflowY: "hidden",
+      }}
     >
       {/* 1. MAIN ICON BAR (Visible if no child popup is active) */}
       <Box
@@ -190,7 +199,7 @@ const TextPopup = ({
         }}
       >
         {/* Add Text */}
-        <IconButton onClick={onAddTextToCanvas} sx={editingButtonStyle}>
+        <IconButton disabled={isLayoutUse} onClick={onAddTextToCanvas} sx={editingButtonStyle}>
           <Title fontSize="large" />
           <Typography variant="caption">Add</Typography>
         </IconButton>
@@ -230,9 +239,15 @@ const TextPopup = ({
           <Typography variant="caption">Align</Typography>
         </IconButton>
 
+        {/* Line Height */}
+        <IconButton disableRipple onClick={onSetLineHeightPopup} sx={editingButtonStyle} >
+          <TextRotateVertical fontSize="large" />
+          <Typography variant="caption">Line Height</Typography>
+        </IconButton>
+
         {/* Rotate */}
         <IconButton onClick={rotateText} sx={editingButtonStyle}
-        disabled={!selectedTextElement}>
+          disabled={!selectedTextElement}>
           <TextRotationAngleupOutlined fontSize="large" />
           <Typography variant="caption">Rotate</Typography>
         </IconButton>

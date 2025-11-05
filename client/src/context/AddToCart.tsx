@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 
- type Product = {
+type Product = {
   id?: number | string;
   img?: string;
   title?: string;
@@ -25,8 +25,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeFromCart = (id: string | number) => {
-  setCart((prevCart) => prevCart.filter((item) => item.id !== id));
-};
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  };
 
 
   const clearCart = () => {

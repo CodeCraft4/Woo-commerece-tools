@@ -385,6 +385,7 @@ export default function Header(props: Props) {
                   }}
                 >
                   {/* reminder drawer  */}
+
                   <RemindersDrawer />
                   {user ? (
                     <>
@@ -533,7 +534,7 @@ export default function Header(props: Props) {
             m: "auto",
             color: "white",
             p: 3,
-            width: { lg: "1360px", md: "100%", sm: "", xs: "auto" },
+            width: { lg: "1360px", md: "100%", sm: "100%", xs: "auto" },
           }}
           // onMouseLeave={handleMouseLeave}
         >

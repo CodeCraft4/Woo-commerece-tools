@@ -23,9 +23,9 @@ const Sticker1Popup = ({ onClose, activeIndex }: Sticker1PopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: 600,
-        mt:{md:0,sm:0,xs:4},
-        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 10 } : "16%",
+        height: { md: 600, sm: 600, xs: 450 },
+        mt: { md: 0, sm: 0, xs: 4 },
+        left: activeIndex === 0 ? { md: "13%", sm: "13%", xs: 0 } : "16%",
       }}
     >
       <Box
@@ -55,7 +55,7 @@ const Sticker1Popup = ({ onClose, activeIndex }: Sticker1PopupProps) => {
             key={stick.id}
             onClick={() => handleSelectSticker(stick)}
             sx={{
-              width: { md: "80px", sm: "80px", xs: "78px" },
+              width: { md: "80px", sm: "80px", xs: "70px" },
               height: "90px",
               borderRadius: 2,
               bgcolor: "rgba(233, 232, 232, 1)",

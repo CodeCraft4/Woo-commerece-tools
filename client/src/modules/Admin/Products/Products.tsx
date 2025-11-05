@@ -12,7 +12,6 @@ import {
   Paper,
 } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
-import OfferBanner from "./components/Banner/Banner";
 import { supabase } from "../../../supabase/supabase";
 import { COLORS } from "../../../constant/color";
 import useModal from "../../../hooks/useModal";
@@ -26,6 +25,9 @@ import toast from "react-hot-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ProductCard from "./components/ProductCard/ProductCard";
 import { useState, useMemo } from "react";
+import LandingButton from "../../../components/LandingButton/LandingButton";
+import { useNavigate } from "react-router-dom";
+import { ADMINS_DASHBOARD } from "../../../constant/route";
 
 type Card = {
   id: number;
@@ -68,6 +70,8 @@ const Products = () => {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid"); // 👈 view mode state
   const { open: isOpenDeleteModal, openModal, closeModal } = useModal();
+
+  const navigate = useNavigate();
 
   const queryClient = useQueryClient();
 
@@ -114,16 +118,64 @@ const Products = () => {
           // mt: 5,
         }}
       >
-        <Typography sx={{ fontSize: "25px" }}>PRODUCTS LIST</Typography>
+        <Typography sx={{ fontSize: "25px", fontWeight: "bold" }}>
+          PRODUCTS
+        </Typography>
 
+        <LandingButton
+          title="Add New Card"
+          width="200px"
+          personal
+          onClick={() => navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS)}
+        />
+      </Box>
+
+      {/* Tabs */}
+      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+            flexWrap: "wrap",
+            mt: 4,
+          }}
+        >
+          {TABS.map((tab, index) => (
+            <Box
+              key={tab.name}
+              onClick={() => setActiveTab(index)}
+              sx={{
+                px: { md: 3, sm: 3, xs: 1 },
+                py: { md: 1.5, sm: "", xs: 0.5 },
+                border: "1px solid black",
+                borderRadius: "5px",
+                cursor: "pointer",
+                transition: "all 0.3s ease-in-out",
+                backgroundColor: activeTab === index ? "black" : "transparent",
+                "&:hover": {
+                  backgroundColor: activeTab === index ? "black" : "#f0f0f0",
+                },
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: activeTab === index ? COLORS.white : COLORS.primary,
+                }}
+              >
+                {tab.name}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
         {/* View Mode Switch */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
             gap: 1,
-            border: "1px solid gray",
-            borderRadius: 50,
             p: 0.5,
           }}
         >
@@ -151,46 +203,6 @@ const Products = () => {
             <FormatListBulletedOutlined />
           </IconButton>
         </Box>
-      </Box>
-
-      {/* Tabs */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: "10px",
-          alignItems: "center",
-          flexWrap: "wrap",
-          mt: 4,
-        }}
-      >
-        {TABS.map((tab, index) => (
-          <Box
-            key={tab.name}
-            onClick={() => setActiveTab(index)}
-            sx={{
-              px: { md: 3, sm: 3, xs: 1 },
-              py: { md: 1.5, sm: "", xs: 0.5 },
-              border: "1px solid black",
-              borderRadius: "5px",
-              cursor: "pointer",
-              transition: "all 0.3s ease-in-out",
-              backgroundColor: activeTab === index ? "black" : "transparent",
-              "&:hover": {
-                backgroundColor: activeTab === index ? "black" : "#f0f0f0",
-              },
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: "14px",
-                fontWeight: 600,
-                color: activeTab === index ? COLORS.white : COLORS.primary,
-              }}
-            >
-              {tab.name}
-            </Typography>
-          </Box>
-        ))}
       </Box>
 
       {/* Main Content */}
@@ -240,7 +252,7 @@ const Products = () => {
               overflowY: "scroll",
               "&::-webkit-scrollbar": {
                 height: "6px",
-                width:'6px'
+                width: "6px",
               },
               "&::-webkit-scrollbar-track": {
                 backgroundColor: "#f1f1f1",
@@ -258,9 +270,6 @@ const Products = () => {
               >
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }} align="left">
-                    id
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="left">
                     Name
                   </TableCell>
                   <TableCell sx={{ fontWeight: 600 }} align="left">
@@ -277,8 +286,18 @@ const Products = () => {
               <TableBody>
                 {filteredCards.map((card: any) => (
                   <TableRow key={card.id} hover>
-                    <TableCell align="left">{card.id}.</TableCell>
-                    <TableCell align="left">{card.cardName}</TableCell>
+                    <TableCell
+                      align="left"
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <Box
+                        component={"img"}
+                        src={card.imageUrl || card.lastpageImageUrl}
+                        alignContent={"card img"}
+                        sx={{ width: 50, height: 50, objectFit: "cover" }}
+                      />
+                      {card.cardName}
+                    </TableCell>
                     <TableCell align="left">{card.cardCategory}</TableCell>
                     <TableCell align="left">£{card.actualPrice}</TableCell>
                     <TableCell align="center">£{card.salePrice}</TableCell>
