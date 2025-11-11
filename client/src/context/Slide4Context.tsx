@@ -222,6 +222,8 @@ interface Slide4ContextType {
   // Layout with uploaded images for preview
   layout4: any;
   setLayout4: React.Dispatch<React.SetStateAction<any>>;
+
+  resetSlide4State: () => void
 }
 
 const Slide4Context = createContext<Slide4ContextType | undefined>(undefined);
@@ -468,6 +470,105 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     setSelectedPreviewImage4,
   ]);
 
+  // ✅ Reset all context state to initial values
+  const resetSlide4State = () => {
+    setActiveIndex4(0);
+    setTitle4("Happy Birthday");
+    setActivePopup4(null);
+    setSelectedImage4([]);
+    setShowOneTextRightSideBox4(false);
+    setOneTextValue4("");
+    setMultipleTextValue4(false);
+    setSelectedLayout4("blank");
+    setSelectedVideoUrl4(null);
+    setSelectedAudioUrl4(null);
+    setSelectedAIimageUrl4(null);
+    setIsAIimage4(false);
+    setSelectedPreviewImage4(null);
+    setDraggableImages4([]);
+    setQrPosition4({
+      id: "qr1",
+      url: "",
+      x: 20,
+      y: 10,
+      width: 59,
+      height: 105,
+      rotation: 0,
+      zIndex: 1000,
+    });
+    setQrAudioPosition4({
+      id: "qr2",
+      url: "",
+      x: 20,
+      y: 10,
+      width: 59,
+      height: 105,
+      rotation: 0,
+      zIndex: 1000,
+    });
+    setAIImage4({
+      x: 30,
+      y: 30,
+      width: 300,
+      height: 400,
+    });
+    setFontSize4(20);
+    setFontWeight4(400);
+    setTextAlign4("start");
+    setVerticalAlign4("top");
+    setFontFamily4("Roboto");
+    setFontColor4("#000000");
+    setRotation4(0);
+    setTextElements4([]);
+    setSelectedTextId4(null);
+    setTexts4([
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+      },
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+      },
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+      },
+    ]);
+    setEditingIndex4(null);
+    setImages4([]);
+    setVideo4(null);
+    setAudio4(null);
+    setTips4(false);
+    setUpload4(false);
+    setDuration4(null);
+    setPoster4(null);
+    setTextPositions4([]);
+    setTextSizes4([]);
+    setImagePositions4({});
+    setImageSizes4({});
+    setIsSlideActive4(false);
+    setIsEditable4(true);
+    setSelectedStickers4([]);
+    setLineHeight4(1.5);
+    setLetterSpacing4(0);
+  };
+
   return (
     <Slide4Context.Provider
       value={{
@@ -567,7 +668,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         poster4,
         setPoster4,
 
-        
+
         lineHeight4,
         setLineHeight4,
         letterSpacing4,
@@ -582,7 +683,11 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         setVerticalAlign4,
         layout4,
         setLayout4,
+
         slide4DataStore,
+
+        // Reset all State
+        resetSlide4State
       }}
     >
       {children}

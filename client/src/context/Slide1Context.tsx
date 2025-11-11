@@ -221,7 +221,11 @@ interface Slide1ContextType {
   // Layout with uploaded images for preview
   layout1: any;
   setLayout1: React.Dispatch<React.SetStateAction<any>>;
+
+  // reset state
+  resetSlide1State: () => void;
 }
+
 
 const Slide1Context = createContext<Slide1ContextType | undefined>(undefined);
 
@@ -322,6 +326,8 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
     {
       value: "",
@@ -331,6 +337,8 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
     {
       value: "",
@@ -340,6 +348,8 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
   ]);
 
@@ -481,6 +491,113 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     setLetterSpacing1,
   ]);
 
+
+  // ✅ Reset all context state to initial values
+  const resetSlide1State = () => {
+    setActiveIndex1(0);
+    setTitle1("Happy Birthday");
+    setActivePopup1(null);
+    setSelectedImage1([]);
+    setShowOneTextRightSideBox1(false);
+    setOneTextValue1("");
+    setMultipleTextValue1(false);
+    setSelectedLayout1("blank");
+    setSelectedVideoUrl1(null);
+    setSelectedAudioUrl1(null);
+    setSelectedAIimageUrl1(null);
+    setIsAIimage(false);
+    setSelectedPreviewImage1(null);
+    setDraggableImages1([]);
+    setQrPosition1({
+      id: "qr1",
+      url: "",
+      x: 20,
+      y: 10,
+      width: 59,
+      height: 105,
+      rotation: 0,
+      zIndex: 1000,
+    });
+    setQrAudioPosition1({
+      id: "qr2",
+      url: "",
+      x: 20,
+      y: 10,
+      width: 59,
+      height: 105,
+      rotation: 0,
+      zIndex: 1000,
+    });
+    setAIImage1({
+      x: 30,
+      y: 30,
+      width: 300,
+      height: 400,
+    });
+    setFontSize1(20);
+    setFontWeight1(400);
+    setTextAlign1("start");
+    setVerticalAlign1("top");
+    setFontFamily1("Roboto");
+    setFontColor1("#000000");
+    setRotation1(0);
+    setTextElements1([]);
+    setSelectedTextId1(null);
+    setTexts1([
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+    ]);
+    setEditingIndex1(null);
+    setImages1([]);
+    setVideo1(null);
+    setAudio1(null);
+    setTips1(false);
+    setUpload1(false);
+    setDuration1(null);
+    setPoster1(null);
+    setTextPositions1([]);
+    setTextSizes1([]);
+    setImagePositions1({});
+    setImageSizes1({});
+    setIsSlideActive1(false);
+    setIsEditable1(true);
+    setSelectedStickers([]);
+    setLineHeight1(1.5);
+    setLetterSpacing1(0);
+    setLayout1(null);
+  };
+
   return (
     <Slide1Context.Provider
       value={{
@@ -593,6 +710,9 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
         setVerticalAlign1,
 
         slide1DataStore,
+
+        // All reset state
+        resetSlide1State,
 
         layout1,
         setLayout1,

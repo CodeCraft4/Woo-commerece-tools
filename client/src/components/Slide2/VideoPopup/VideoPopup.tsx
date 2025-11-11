@@ -8,13 +8,14 @@ import {
   PlayCircleOutline,
 } from "@mui/icons-material";
 import CustomButton from "../../CustomButton/CustomButton";
-import TipsVideo from "/assets/images/diy-tips.mp4";
+// import TipsVideo from "/assets/images/diy-tips.mp4";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../context/AuthContext";
 import { useSlide2 } from "../../../context/Slide2Context";
 import toast from "react-hot-toast";
 import { COLORS } from "../../../constant/color";
+import { handleAutoDeletedVideo } from "../../../lib/lib";
 
 interface VideoPopupProps {
   onClose: () => void;
@@ -37,8 +38,8 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
   } = useSlide2();
 
   const [loading, setLoading] = useState(false);
-  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [isDeleteMedia, setIsDeleteMedia] = useState('')
 
   const { user } = useAuth();
   const generateId = () => Date.now() + Math.random();
@@ -64,48 +65,35 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
   };
 
   // ✅ Save video URL to the user's "video" array in DB
-  const saveVideoUrlToDB = async (videoId: string, videoUrl: string) => {
-    if (!user?.id) {
-      console.error("❌ No authenticated user found");
+  const saveVideoUrlToDB = async (videoData: any) => {
+    if (!user?.id) return;
+
+    const { data: userData, error: fetchError } = await supabase
+      .from("Users")
+      .select("video")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (fetchError) {
+      console.error("❌ Error fetching user data:", fetchError);
       return;
     }
 
-    try {
-      const { data: userData, error: fetchError } = await supabase
-        .from("Users")
-        .select("video")
-        .eq("auth_id", user.id)
-        .single();
+    const updatedVideos = userData?.video
+      ? [...userData.video, videoData]
+      : [videoData];
 
-      console.log("📦 Current user data:", userData);
+    const { error: updateError } = await supabase
+      .from("Users")
+      .update({ video: updatedVideos })
+      .eq("auth_id", user.id);
 
-      if (fetchError) {
-        console.error("❌ Error fetching user data:", fetchError);
-        return;
-      }
-
-      const newVideo = { id: videoId, url: videoUrl };
-      const updatedVideos = userData?.video
-        ? [...userData.video, newVideo]
-        : [newVideo];
-
-      console.log("🆕 New video array:", updatedVideos);
-
-      const { error: updateError } = await supabase
-        .from("Users")
-        .update({ video: updatedVideos })
-        .eq("auth_id", user.id);
-
-      if (updateError) {
-        console.error("❌ Error updating user videos:", updateError);
-        return;
-      }
-
-      console.log("✅ Video URL saved successfully:", videoUrl);
-    } catch (err) {
-      console.error("❌ Error saving video to DB:", err);
+    if (updateError) {
+      console.error("❌ Error updating videos:", updateError);
+      return;
     }
   };
+
 
   // ✅ Upload video to Supabase Storage
   const handleVideoUpload = async () => {
@@ -128,6 +116,10 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
           .upload(filePath, file, {
             cacheControl: "3600",
             upsert: true,
+            metadata: {
+              user_id: user?.id,
+              created_at: new Date().toISOString(),
+            },
           });
 
         if (uploadError) {
@@ -139,31 +131,39 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
           .from("media")
           .getPublicUrl(filePath);
 
-        await saveVideoUrlToDB(videoId, publicData.publicUrl);
+        const metadata = {
+          id: videoId,
+          url: publicData.publicUrl,
+          name: file.name,
+          size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
+          duration: Math.floor(duration ?? 0) + "s",
+        };
+
+        await saveVideoUrlToDB(metadata);
 
         // Update qrPosition with the new video URL
         setQrPosition((prev) => ({
           ...prev,
           url: publicData.publicUrl,
-          zIndex: 1000, // Reset zIndex on new upload
+          zIndex: 1000,
         }));
+
+        toast.success("Your video uploaded successfully!");
+
+        handleAutoDeletedVideo(user?.id, videoId, fileName, fetchUserVideos, 7 * 24 * 60 * 60 * 1000, setIsDeleteMedia);
       }
 
-      toast.success("Your video uploaded successfully!");
-
-      // ✅ Refresh the list immediately after upload
       await fetchUserVideos();
-
       setVideo(null);
       setDuration(0);
       setUpload(true);
-      // onClose();
     } catch (err) {
       console.error("Error uploading videos:", err);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleVideoDelete = () => {
     setVideo(null);
@@ -242,14 +242,13 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
         width: { md: 300, sm: 300, xs: "95%" },
         height: { md: 600, sm: 600, xs: 450 },
         mt: { md: 0, sm: 0, xs: 0 },
-        overflowY: "scroll",
-        left: activeIndex === 1 ? { md: "19.5%", sm: "0%", xs: 0 } : "16%",
-        overflow: 'hidden',
+        left: activeIndex === 1 ? { md: "17%", sm: "0%", xs: 0 } : "16%",
+        overflowY: 'hidden',
       }}
     >
       {tips && (
-        <Box sx={{ height: "100%", overflow: "hidden" }}>
-          <Box
+        <Box sx={{ height: "100%", overflowY: "auto" }}>
+          {/* <Box
             sx={{
               height: 200,
               width: "100%",
@@ -265,7 +264,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
               muted
               style={{ width: "100%", height: "100%", }}
             />
-          </Box>
+          </Box> */}
           <Box p={2}>
             <Typography
               sx={{
@@ -364,7 +363,6 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
               {fileError && (
                 <Typography
                   sx={{
-                    color: "red",
                     fontSize: "13px",
                     mt: 1,
                     textAlign: "center",
@@ -385,7 +383,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                   <Box
                     mt={3}
                     sx={{
-                      height: "400px",
+                      height: { md: '400px', sm: '450px', xs: "200px" },
                       overflowY: "auto",
                       p: 1,
                       "&::-webkit-scrollbar": {
@@ -402,11 +400,22 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                       },
                     }}
                   >
-                    <Typography
-                      sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
-                    >
-                      Your Uploaded Videos:
-                    </Typography>
+                    {
+                      isDeleteMedia ? <Typography
+                        sx={{ fontSize: "14px", fontWeight: "bold", mb: 1, color: 'red', opacity: 0.5 }}
+                      >⏱️ Your videos is deleted after one week</Typography> : <Typography
+                        sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
+                      >
+                        Your Uploaded Videos:
+                        <br />
+                        <hr />
+                        <span style={{ fontSize: '14px', fontWeight: 500, }}>
+                          Double tap your video to
+                          load your qr code onto your card
+                        </span>
+                      </Typography>
+                    }
+
                     <Box
                       sx={{
                         display: "flex",
@@ -414,20 +423,18 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                         gap: 1,
                       }}
                     >
-                      {userVideos.map((v) => (
+                      {userVideos.map((v: any) => (
                         <Box
                           key={v.id}
                           onClick={() =>
-                            setSelectedVideoUrl((prev) =>
-                              prev === v.url ? null : v.url
-                            )
+                            setSelectedVideoUrl((prev) => (prev === v.url ? null : v.url))
                           }
                           sx={{
                             position: "relative",
                             border:
                               selectedVideoUrl === v.url
-                                ? "3px solid #3a7bd5"
-                                : "1px solid #ccc",
+                                ? `3px solid ${COLORS.primary}`
+                                : `1px solid ${COLORS.gray}`,
                             borderRadius: 2,
                             overflow: "hidden",
                             width: "100%",
@@ -435,105 +442,33 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                             opacity: selectedVideoUrl === v.url ? 1 : 0.9,
                             transition: "all 0.2s ease-in-out",
                             "&:hover": {
-                              borderColor: "#3a7bd5",
                               opacity: 1,
                             },
+                            p: 1,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
                           }}
                         >
-                          {/* 🎥 Video */}
-                          <video
-                            id={`video-${v.id}`}
-                            src={v.url}
-                            controls={playingVideoId ? true : false}
-                            style={{
-                              width: "100%",
-                              height: "150px",
-                              objectFit: "contain",
-                              // objectFit: "cover",
-                            }}
-                            onPlay={() => setPlayingVideoId(v.id)}
-                            onPause={() => setPlayingVideoId(null)}
-                            onEnded={() => setPlayingVideoId(null)}
-                          />
+                          {/* Video Info */}
+                          <Box sx={{ flex: 1 }}>
+                            <Typography sx={{ fontWeight: 600, color: "#333" }}>
+                              {v.name.slice(0, 15)}
+                            </Typography>
+                            <Typography sx={{ fontSize: "13px", color: "#777" }}>
+                              ⏱ {v.duration || "–"} &nbsp; • &nbsp; 💾 {v.size || "–"}
+                            </Typography>
+                          </Box>
 
-                          {/* ▶ Overlay Play Button (hidden when playing) */}
-                          {playingVideoId !== v.id && (
-                            <Box
-                              onClick={(e) => {
-                                e.stopPropagation(); // prevent parent onClick
-                                const video = document.getElementById(
-                                  `video-${v.id}`
-                                ) as HTMLVideoElement;
-                                if (video) {
-                                  // Pause all other videos
-                                  document
-                                    .querySelectorAll("video")
-                                    .forEach((vid) => {
-                                      if (vid !== video) vid.pause();
-                                    });
-
-                                  // Play/pause toggle
-                                  if (video.paused) {
-                                    video.play();
-                                  } else {
-                                    video.pause();
-                                  }
-                                }
-                              }}
-                              sx={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                bgcolor: "rgba(0, 0, 0, 0.3)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                transition: "all 0.3s ease",
-                                cursor: "pointer",
-                                "&:hover": {
-                                  bgcolor: "rgba(0, 0, 0, 0.4)",
-                                },
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  bgcolor: "#fff",
-                                  borderRadius: "50%",
-                                  width: 50,
-                                  height: 50,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  border: `3px solid ${COLORS.seconday}`,
-                                  outline: "2px solid white",
-                                }}
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  height="30"
-                                  viewBox="0 0 24 24"
-                                  width="30"
-                                  fill="#412485ff"
-                                >
-                                  <path d="M8 5v14l11-7z" />
-                                </svg>
-                              </Box>
-                            </Box>
-                          )}
-
-                          {/* 🗑 Delete Button */}
+                          {/* Delete Button */}
                           <IconButton
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteVideo(v.id);
                             }}
                             sx={{
-                              position: "absolute",
-                              top: 4,
-                              right: 4,
-                              bgcolor: "#fff",
+                              bgcolor: "#efefefff",
+                              border: '1px solid gray',
                               "&:hover": { bgcolor: "#f3f0f0ff", color: "red" },
                             }}
                           >
@@ -541,6 +476,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                           </IconButton>
                         </Box>
                       ))}
+
                     </Box>
                   </Box>
                 )}
@@ -549,15 +485,16 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
           )}
 
           {video && (
-            <Box sx={{ width: "100%", height: "200px", position: "relative" }}>
-              <video
+            <Box sx={{ width: "100%", height: { md: "500px", sm: "200px", xs: 300 }, position: "relative", overflowY: 'auto', }}>
+              <Box
+                component={'video'}
                 src={URL.createObjectURL(video[0])}
                 controls
                 autoPlay={false}
                 onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-                style={{
+                sx={{
                   width: "100%",
-                  height: "100%",
+                  height: { md: "200px", sm: 200, xs: 150 },
                   objectFit: "cover",
                   borderRadius: "8px",
                 }}
@@ -603,7 +540,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
 
               <Box
                 sx={{
-                  p: 3,
+                  p: {xl:3,lg:3,md:3,sm:3,xs:1},
                   mt: 1,
                   borderTop: "1px solid #d3d3d3ff",
                   borderBottom: "1px solid #d3d3d3ff",

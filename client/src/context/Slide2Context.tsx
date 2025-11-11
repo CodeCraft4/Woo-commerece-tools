@@ -231,6 +231,7 @@ interface Slide2ContextType {
   ) => void;
   updateSticker2: (index: number, data: Partial<StickerItem>) => void;
   removeSticker2: (index: number) => void;
+  resetSlide2State: () => void | any;
 }
 
 const Slide2Context = createContext<Slide2ContextType | undefined>(undefined);
@@ -268,8 +269,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
   const [qrPosition, setQrPosition] = useState<DraggableQR>({
     id: "qr1",
     url: "",
-    x: 20,
-    y: 10,
+    x: 0,
+    y: 0,
     width: 59,
     height: 105,
     rotation: 0,
@@ -279,8 +280,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
   const [qrAudioPosition, setQrAudioPosition] = useState<DraggableAudioQR>({
     id: "qr2",
     url: "",
-    x: 20,
-    y: 10,
+    x: 0,
+    y: 0,
     width: 59,
     height: 1055,
     rotation: 0,
@@ -324,6 +325,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
     {
       value: "",
@@ -333,6 +336,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
     {
       value: "",
@@ -342,6 +347,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
   ]);
 
@@ -476,6 +483,112 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     setLetterSpacing2,
   ]);
 
+  // ✅ Reset all context state to initial values
+  const resetSlide2State = () => {
+    setActiveIndex(0);
+    setTitle("Happy Birthday");
+    setActivePopup(null);
+    setSelectedImage([]);
+    setShowOneTextRightSideBox(false);
+    setOneTextValue("");
+    setMultipleTextValue(false);
+    setSelectedLayout("blank");
+    setSelectedVideoUrl(null);
+    setSelectedAudioUrl(null);
+    setSelectedAIimageUrl2(null);
+    setIsAIimage2(false);
+    setSelectedPreviewImage(null);
+    setDraggableImages([]);
+    setQrPosition({
+      id: "qr1",
+      url: "",
+      x: 20,
+      y: 10,
+      width: 59,
+      height: 105,
+      rotation: 0,
+      zIndex: 1000,
+    });
+    setQrAudioPosition({
+      id: "qr2",
+      url: "",
+      x: 20,
+      y: 10,
+      width: 59,
+      height: 105,
+      rotation: 0,
+      zIndex: 1000,
+    });
+    setAIImage2({
+      x: 30,
+      y: 30,
+      width: 300,
+      height: 400,
+    });
+    setFontSize(20);
+    setFontWeight(400);
+    setTextAlign("start");
+    setVerticalAlign("top");
+    setFontFamily("Roboto");
+    setFontColor("#000000");
+    setRotation(0);
+    setTextElements([]);
+    setSelectedTextId(null);
+    setTexts([
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+    ]);
+    setEditingIndex(null);
+    setImages([]);
+    setVideo(null);
+    setAudio(null);
+    setTips(false);
+    setUpload(false);
+    setDuration(null);
+    setPoster(null);
+    setTextPositions([]);
+    setTextSizes([]);
+    setImagePositions({});
+    setImageSizes({});
+    setIsSlideActive(false);
+    setIsEditable(true);
+    setSelectedStickers2([]);
+    setLineHeight2(1.5);
+    setLetterSpacing2(0);
+  };
+
+
   return (
     <Slide2Context.Provider
       value={{
@@ -608,6 +721,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         setVerticalAlign,
 
         slide2DataStore,
+        // Reset function
+        resetSlide2State
       }}
     >
       {children}

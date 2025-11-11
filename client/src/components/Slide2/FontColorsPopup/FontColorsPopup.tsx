@@ -61,6 +61,7 @@ const FontColorPopup = () => {
         width: {md:460,sm:230,xs:'100%'},
         height: {md:420,sm:420,xs:200},
         mt: {md:4,sm:4,xs:0},
+        overflowY:'auto'
       }}
     >
       <ChromePicker

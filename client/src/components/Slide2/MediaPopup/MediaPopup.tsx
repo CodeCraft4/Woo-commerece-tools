@@ -1,4 +1,3 @@
-// MediaPopup.tsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { useSlide2 } from "../../../context/Slide2Context";
@@ -14,6 +13,7 @@ import {
   PlayCircleOutline,
 } from "@mui/icons-material";
 import { COLORS } from "../../../constant/color";
+import { handleAutoDeletedAudio } from "../../../lib/lib";
 
 interface MediaPopupProps {
   onClose: () => void;
@@ -41,6 +41,7 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
   const [userAudios, setUserAudios] = useState<{ id: string; url: string }[]>(
     []
   );
+  const [isDeleteMedia, setIsDeleteMedia] = useState('')
 
   const generateId = () => Date.now() + Math.random();
 
@@ -123,31 +124,55 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
         const fileName = `${audioId}.${fileExt}`;
         const filePath = `audio/${fileName}`;
 
+        // 1️⃣ Upload audio file
         const { error: uploadError } = await supabase.storage
           .from("media")
-          .upload(filePath, file, { upsert: true });
+          .upload(filePath, file, {
+            upsert: true,
+            metadata: {
+              user_id: user?.id,
+              created_at: new Date().toISOString(),
+            },
+          });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Upload error:", uploadError.message);
+          continue;
+        }
 
+        // 2️⃣ Get public URL
         const { data: publicData } = supabase.storage
           .from("media")
           .getPublicUrl(filePath);
 
+        // 3️⃣ Save URL to DB
         await saveAudioUrlToDB(audioId, publicData.publicUrl);
         setSelectedAudioUrl(publicData.publicUrl);
+
+        // 4️⃣ Schedule auto-delete (2 min for testing or 1 week in production)
+        handleAutoDeletedAudio(
+          user?.id,
+          audioId,
+          fileName,
+          fetchUserAudios,
+          7 * 24 * 60 * 60 * 1000,
+          setIsDeleteMedia,
+        );
       }
 
       toast.success("Audio uploaded successfully!");
+      await fetchUserAudios();
+
       setAudio(null);
       setDuration(0);
       setUpload(true);
-      await fetchUserAudios();
     } catch (err) {
       console.error("Error uploading audio:", err);
     } finally {
       setLoading(false);
     }
   };
+
 
   // Delete from state
   const handleAudioDelete = () => {
@@ -216,15 +241,15 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: { md: 600, sm: 600, xs: 480 },
-        left: activeIndex === 1 ? { md: "19.5%", sm: "0%", xs: 0 } : "16%",
+        height: { md: 600, sm: 600, xs: 450 },
+        left: activeIndex === 1 ? { md: "17%", sm: "0%", xs: 0 } : "16%",
         mt: { md: 0, sm: 0, xs: 0 },
         overflowY: "hidden",
       }}
     >
       {tips && (
         <>
-          <Box
+          {/* <Box
             sx={{
               height: 200,
               width: "100%",
@@ -240,8 +265,8 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
               muted
               style={{ width: "100%", height: "100%" }}
             />
-          </Box>
-          <Box p={2}>
+          </Box> */}
+          <Box p={2} height={'100%'}>
             <Typography
               sx={{
                 fontSize: "23px",
@@ -304,7 +329,7 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
               <Box
                 component="input"
                 type="file"
-                accept=".mp3, .wav, .aiff, audio/mpeg, audio/wav, audio/aiff"
+                accept="audio/mpeg,audio/wav,audio/x-wav,audio/x-m4a,audio/aac,audio/*"
                 sx={{
                   position: "absolute",
                   width: "260px",
@@ -342,7 +367,7 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
                 <Box
                   mt={3}
                   sx={{
-                    height: "400px",
+                    height: { md: "400px", sm: "400px", xs: 150 },
                     overflowY: "auto",
                     p: 1,
                     "&::-webkit-scrollbar": {
@@ -359,11 +384,22 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
                     },
                   }}
                 >
-                  <Typography
-                    sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
-                  >
-                    Your Uploaded Audios:
-                  </Typography>
+                  {
+                    isDeleteMedia ? <Typography
+                      sx={{ fontSize: "14px", fontWeight: "bold", mb: 1, color: 'red', opacity: 0.5 }}
+                    >⏱️ Your videos is deleted after one week</Typography> : <Typography
+                      sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
+                    >
+                      Your Uploaded Audios:
+                      <br />
+                      <hr />
+                      <span style={{ fontSize: '14px', fontWeight: 500, }}>
+                        Double tap your video to
+                        load your qr code onto your card
+                      </span>
+                    </Typography>
+                  }
+
                   <Box
                     sx={{
                       display: "flex",
@@ -534,6 +570,7 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
           )}
         </Box>
       )}
+
     </PopupWrapper>
   );
 };

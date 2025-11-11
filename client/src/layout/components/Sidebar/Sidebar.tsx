@@ -6,6 +6,7 @@ import {
   ArrowForwardIos,
   AssessmentOutlined,
   FolderOutlined,
+  FormatListBulleted,
   HomeOutlined,
   LocalOfferOutlined,
   SettingsOutlined,
@@ -21,6 +22,11 @@ const Sidebar = () => {
       icon: <HomeOutlined />,
       title: "Dashboard",
       href: ADMINS_DASHBOARD.HOME,
+    },
+    {
+      icon: <FormatListBulleted />,
+      title: "Orders",
+      href: ADMINS_DASHBOARD.ORDERS_LIST,
     },
     {
       icon: <LocalOfferOutlined />,
@@ -76,7 +82,7 @@ const Sidebar = () => {
                 borderRadius: 6,
                 fontWeight: 600,
                 paddingLeft: 2,
-                fontSize:'12px',
+                fontSize: '12px',
                 textDecoration: "none",
                 color: isActive ? "#414040ff" : COLORS.white,
                 backgroundColor: isActive ? `${COLORS.white}` : "#1313137c",

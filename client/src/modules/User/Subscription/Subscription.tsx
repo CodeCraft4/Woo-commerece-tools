@@ -1,18 +1,20 @@
 import { Box, Container, Grid, Typography } from "@mui/material";
 import Applayout from "../../../layout/Applayout";
 import { useState } from "react";
-import CustomButton from "../../../components/CustomButton/CustomButton";
 import A4Img from "/assets/images/A4.png";
 import PrevewCardImg from "/assets/images/preview-card.png";
 import TableBgImg from "/assets/images/table.png";
+import LandingButton from "../../../components/LandingButton/LandingButton";
+import { loadStripe } from '@stripe/stripe-js';
+import toast from "react-hot-toast";
 
-// const stripePromise = loadStripe(
-//   "pk_test_51Qy8qWQOrHBOHXVwgcKXeKleaQbr43esHIWeeEuLCvE9SfmldVnMVYwnZVf72lHMKj6Hj6Pwh01ak5e7ZsTucB9I00xyfjVroR"
-// );
+const stripePromise = loadStripe(
+  "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK"
+);
 
 const Subscription = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>("standard");
-  // const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const plans = [
     {
@@ -31,27 +33,27 @@ const Subscription = () => {
     giant: { width: 250, height: 320 },
   };
 
-  // const handleStripeOrder = async (plan: any) => {
-  //   setLoading(true);
-  //   try {
-  //     const res = await fetch("https://cards-server-shahimad499-2660-imads-projects-8cd60545.vercel.app/create-checkout-session", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify(plan),
-  //     });
+  const handleStripeOrder = async (plan: any) => {
+    setLoading(true);
+    try {
+      const res = await fetch("https://tools-a4dx84k71-imads-projects-8cd60545.vercel.app/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(plan),
+      });
 
-  //     const { id } = await res.json();
+      const { id } = await res.json();
 
-  //     const stripe:any = await stripePromise;
-  //     await stripe.redirectToCheckout({ sessionId: id });
-
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("Payment failed!");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+      const stripe: any = await stripePromise;
+      toast.success("Navigate to Payment process");
+      await stripe.redirectToCheckout({ sessionId: id });
+    } catch (err) {
+      console.error(err);
+      toast.error("Payment failed!");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Applayout>
@@ -140,7 +142,7 @@ const Subscription = () => {
               <Box
                 sx={{
                   p: { md: 2, sm: 2, xs: "5px" },
-                  bgcolor: "#e6f1e9",
+                  bgcolor: "#b7f7f4ff",
                   borderRadius: 2,
                 }}
               >
@@ -155,9 +157,8 @@ const Subscription = () => {
                   onClick={() => setSelectedPlan(plan.id)}
                   sx={{
                     ...isActivePay,
-                    border: `3px solid ${
-                      selectedPlan === plan.id ? "#004099" : "transparent"
-                    }`,
+                    border: `3px solid ${selectedPlan === plan.id ? "#004099" : "transparent"
+                      }`,
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -205,16 +206,17 @@ const Subscription = () => {
               </Box>
 
               {/* Add to Pay button */}
-              <CustomButton
+              <LandingButton
                 title="Add to Pay"
                 width="100%"
-                // loading={loading}
-                //   onClick={() => {
-                //     const plan = plans.find((p) => p.id === selectedPlan);
-                //     if (plan) {
-                //       handleStripeOrder(plan);
-                //     }
-                //   }}
+                personal
+                loading={loading}
+                onClick={() => {
+                  const plan = plans.find((p) => p.id === selectedPlan);
+                  if (plan) {
+                    handleStripeOrder(plan);
+                  }
+                }}
               />
             </Grid>
           </Grid>
@@ -231,8 +233,8 @@ const isActivePay = {
   gap: "4px",
   justifyContent: "space-between",
   alignItems: "center",
-  bgcolor: "#e9fbffff",
-  p: { md: 1, sm: 1, xs: "2px" },
+  bgcolor: "#cdf0c06a",
+  p: "3px",
   borderRadius: 2,
   boxShadow: "3px 7px 8px #eff1f1ff",
 };

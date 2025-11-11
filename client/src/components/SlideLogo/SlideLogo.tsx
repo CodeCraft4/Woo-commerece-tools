@@ -165,11 +165,38 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
 
   // 👇 Auto-reset multipleTextValue when all multiple texts are deleted
   useEffect(() => {
-    if (multipleTextValue4 && texts4.length === 0) {
-      setMultipleTextValue4(true); // hide layout
+    // When user re-selects the multipleTextValue layout
+    if (multipleTextValue4) {
+      // If no texts currently exist, recreate the 3 default boxes
+      if (texts4.length === 0) {
+        const defaultTexts = Array(3)
+          .fill(null)
+          .map(() => ({
+            value: "",
+            fontSize: 16,
+            fontWeight: 400,
+            fontColor: "#000000",
+            fontFamily: "Roboto",
+            textAlign: "center",
+            verticalAlign: "center",
+            rotation: 0,
+            lineHeight: 1.5,
+            letterSpacing: 0
+          }));
+        setTexts4(defaultTexts);
+      }
     }
-  }, [texts4, multipleTextValue4]);
+  }, [multipleTextValue4]);
 
+  const handleDeleteBox = (index: number) => {
+    setTexts4((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (updated.length === 0) {
+        setMultipleTextValue4(false); // hide the layout
+      }
+      return updated;
+    });
+  };
   // ✅ Place this useEffect HERE (below your state definitions)
   useEffect(() => {
     if (editingIndex4 !== null && editingIndex4 !== undefined) {
@@ -261,6 +288,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
 
                   return (
                     <Rnd
+                    cancel=".no-drag"
                       key={textElement.id}
                       size={{
                         width: textElement.size.width,
@@ -331,6 +359,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                         {/* Close Button */}
                         <IconButton
                           size="small"
+                          className="no-drag"
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteTextElement(textElement.id);
@@ -355,6 +384,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                         <TextField
                           variant="standard"
                           value={textElement.value}
+                          className="no-drag"
                           placeholder="Add Text"
                           multiline
                           fullWidth
@@ -921,7 +951,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                       zIndex: 5,
                     }}
                     onClick={() =>
-                      setTexts4((prev) => prev.filter((_, i) => i !== index))
+                      handleDeleteBox(index)
                     }
                   >
                     <Close />
@@ -962,9 +992,8 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
                             color: textObj.fontColor4,
                             fontFamily: textObj.fontFamily4,
                             textAlign: textAlign4, // editing ke dauraan current selection
-                            lineHeight: lineHeight4,
-                            letterSpacing: letterSpacing4,
-
+                            lineHeight: textObj.lineHeight,
+                            letterSpacing: textObj.letterSpacing
                           },
                         },
                       }}

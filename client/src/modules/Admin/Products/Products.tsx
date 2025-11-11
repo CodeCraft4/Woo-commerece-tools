@@ -3,13 +3,6 @@ import {
   CircularProgress,
   IconButton,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
 } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
 import { supabase } from "../../../supabase/supabase";
@@ -25,9 +18,10 @@ import toast from "react-hot-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ProductCard from "./components/ProductCard/ProductCard";
 import { useState, useMemo } from "react";
-import LandingButton from "../../../components/LandingButton/LandingButton";
 import { useNavigate } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
+import TableList from "../../../components/TableList/TableList";
+import { DUMMY_ORDERS } from "../../../constant/data";
 
 type Card = {
   id: number;
@@ -105,31 +99,7 @@ const Products = () => {
   });
 
   return (
-    <DashboardLayout>
-      {/* <Typography sx={{ fontSize: "25px", fontWeight: 800 }}>OFFERS</Typography> */}
-      {/* <OfferBanner /> */}
-
-      {/* Header section */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          // mt: 5,
-        }}
-      >
-        <Typography sx={{ fontSize: "25px", fontWeight: "bold" }}>
-          PRODUCTS
-        </Typography>
-
-        <LandingButton
-          title="Add New Card"
-          width="200px"
-          personal
-          onClick={() => navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS)}
-        />
-      </Box>
-
+    <DashboardLayout title="Add Card" addBtn="Add Card" onClick={() => navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS)}>
       {/* Tabs */}
       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
         <Box
@@ -146,8 +116,8 @@ const Products = () => {
               key={tab.name}
               onClick={() => setActiveTab(index)}
               sx={{
-                px: { md: 3, sm: 3, xs: 1 },
-                py: { md: 1.5, sm: "", xs: 0.5 },
+                px: { md: 3, sm: 2, xs: 1 },
+                py: { md: 1, sm: 1, xs: 0.5 },
                 border: "1px solid black",
                 borderRadius: "5px",
                 cursor: "pointer",
@@ -180,24 +150,34 @@ const Products = () => {
           }}
         >
           <IconButton
+            disableRipple
             onClick={() => setViewMode("grid")}
             sx={{
-              color: viewMode === "grid" ? COLORS.seconday : "gray",
+              color: viewMode === "grid" ? COLORS.white : "gray",
               backgroundColor:
-                viewMode === "grid" ? "rgba(0,0,0,0.1)" : "transparent",
+                viewMode === "grid" ? COLORS.black : "transparent",
               borderRadius: "50%",
+              "&:hover": {
+                bgcolor: COLORS.gray,
+                color: COLORS.white
+              }
             }}
           >
             <GridViewOutlined />
           </IconButton>
 
           <IconButton
+            disableRipple
             onClick={() => setViewMode("list")}
             sx={{
-              color: viewMode === "list" ? COLORS.seconday : "gray",
+              color: viewMode === "list" ? COLORS.white : "gray",
               backgroundColor:
-                viewMode === "list" ? "rgba(0,0,0,0.1)" : "transparent",
+                viewMode === "list" ? COLORS.black : "transparent",
               borderRadius: "50%",
+              "&:hover": {
+                bgcolor: COLORS.gray,
+                color: COLORS.white
+              }
             }}
           >
             <FormatListBulletedOutlined />
@@ -243,69 +223,7 @@ const Products = () => {
           </Box>
         ) : (
           // 📋 LIST VIEW (Table)
-          <TableContainer
-            component={Paper}
-            sx={{
-              mt: 2,
-              boxShadow: "4px 7px 21px gray",
-              height: 600,
-              overflowY: "scroll",
-              "&::-webkit-scrollbar": {
-                height: "6px",
-                width: "6px",
-              },
-              "&::-webkit-scrollbar-track": {
-                backgroundColor: "#f1f1f1",
-                borderRadius: "20px",
-              },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: COLORS.primary,
-                borderRadius: "20px",
-              },
-            }}
-          >
-            <Table sx={{ width: "100%" }}>
-              <TableHead
-                sx={{ backgroundColor: "#f4f4f4", position: "sticky", top: 0 }}
-              >
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 600 }} align="left">
-                    Name
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="left">
-                    Category
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="left">
-                    ActualPrice
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="center">
-                    SalePrice
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredCards.map((card: any) => (
-                  <TableRow key={card.id} hover>
-                    <TableCell
-                      align="left"
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                    >
-                      <Box
-                        component={"img"}
-                        src={card.imageUrl || card.lastpageImageUrl}
-                        alignContent={"card img"}
-                        sx={{ width: 50, height: 50, objectFit: "cover" }}
-                      />
-                      {card.cardName}
-                    </TableCell>
-                    <TableCell align="left">{card.cardCategory}</TableCell>
-                    <TableCell align="left">£{card.actualPrice}</TableCell>
-                    <TableCell align="center">£{card.salePrice}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <TableList data={DUMMY_ORDERS} heading={['Orderss', 'Date', 'Cusotomers', 'Payment Status', 'Orders Status', 'Total']} />
         )}
       </Box>
 

@@ -5,8 +5,8 @@ import { GOOGLE_FONTS } from "../../../constant/data";
 import { useSlide2 } from "../../../context/Slide2Context";
 
 const FontFamilyPopup = () => {
-  const { 
-    fontFamily, 
+  const {
+    fontFamily,
     setFontFamily,
     textElements,
     setTextElements,
@@ -15,7 +15,7 @@ const FontFamilyPopup = () => {
 
   // Get the currently selected text element
   const selectedTextElement = textElements.find(text => text.id === selectedTextId);
-  
+
   // Use individual text font family or global default
   const currentFontFamily = selectedTextElement?.fontFamily || fontFamily;
 
@@ -27,9 +27,9 @@ const FontFamilyPopup = () => {
   const handleSelectFont = (fontName: string) => {
     // Update individual text element or global context
     if (selectedTextElement) {
-      setTextElements(prev => 
-        prev.map(text => 
-          text.id === selectedTextId 
+      setTextElements(prev =>
+        prev.map(text =>
+          text.id === selectedTextId
             ? { ...text, fontFamily: fontName }
             : text
         )
@@ -40,7 +40,7 @@ const FontFamilyPopup = () => {
         setFontFamily(fontName);
       }
     }
-    
+
     // Update local state for visual feedback (checkmark)
     setSelectedFont(fontName);
   };
@@ -58,8 +58,9 @@ const FontFamilyPopup = () => {
         gap: 1.5,
         mt: 2,
         overflowY: "auto",
-        width: {md:480,sm:230,xs:'100%'},
-        height: "430px",
+        width: { md: 480, sm: 230, xs: '100%' },
+        height: { md: "430px", sm: "430px", xs: 250 },
+
       }}
     >
       {GOOGLE_FONTS.map((fontName) => {

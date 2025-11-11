@@ -35,7 +35,6 @@ const Slide3 = () => {
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        backgroundColor: "#fff",
       }}
     >
       {selectedVideoUrl3 && (
@@ -206,7 +205,7 @@ const Slide3 = () => {
             key={index}
             sx={{
               position: "relative",
-              height: "175px", // ✅ match editable container height
+              height: { md: 210, sm: "175px", xs: "175px" }, // ✅ match editable container height
               width: "100%",
               mb: 2,
               display: "flex",
@@ -229,8 +228,8 @@ const Slide3 = () => {
                 fontWeight: e.fontWeight3,
                 color: e.fontColor3,
                 fontFamily: e.fontFamily3,
-                lineHeight: lineHeight3,
-                letterSpacing: letterSpacing3,
+                lineHeight: e.lineHeight,
+                letterSpacing: e.letterSpacing,
                 wordBreak: "break-word",
                 whiteSpace: "pre-line",
                 width: "100%",
@@ -257,34 +256,34 @@ const Slide3 = () => {
         ))}
 
       {/* 📝 Single Text Layout */}
-      {selectedLayout3 === "oneText" && (
+     {selectedLayout3 === "oneText" && (
         <Box
           sx={{
-            // position: "absolute",
             display: "flex",
-            alignItems:
-              verticalAlign3 === "top"
-                ? "flex-start"
-                : verticalAlign3 === "center"
-                  ? "center"
-                  : "flex-end",
+            flexDirection: "column",
             justifyContent:
               verticalAlign3 === "top"
                 ? "flex-start"
                 : verticalAlign3 === "center"
                   ? "center"
-                  : "flex-end",
+                  : "flex-end", 
+            alignItems:
+              textAlign3 === "start"
+                ? "flex-start"
+                : textAlign3 === "center"
+                  ? "center"
+                  : "flex-end", 
             height: "100%",
+            width: "100%",
             color: fontColor3,
-            fontFamily: fontFamily3,
-            fontSize: fontSize3,
-            fontWeight: fontWeight3,
-            textAlign: textAlign3,
             lineHeight: lineHeight3,
             letterSpacing: letterSpacing3,
+            fontFamily3,
+            fontSize3,
+            fontWeight3,
+            textAlign3, // ✅ still needed for multiline/inline text
             whiteSpace: "pre-wrap",
-            width: "100%",
-            p: 1
+            p: 1,
           }}
         >
           {oneTextValue3}
@@ -320,8 +319,6 @@ const Slide3 = () => {
               ))}</>
         )
       }
-
-
 
       {isAIimage3 && (
         <img

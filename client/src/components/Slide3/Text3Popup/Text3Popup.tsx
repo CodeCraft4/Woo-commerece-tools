@@ -178,7 +178,7 @@ const Text3Popup = ({
         width: { md: 500, sm: 250, xs: "95%" },
         mt: { md: 0, sm: 0, xs: 0 },
         height: { md: 600, sm: 600, xs: 500 },
-        left: { md: "23%", sm: "0%", xs: 0 },
+        left: { md: "12.5%", sm: "0%", xs: 0 },
         overflowY: "hidden",
       }}
     >

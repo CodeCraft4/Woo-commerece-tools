@@ -5,18 +5,23 @@ import CloseIcon from "@mui/icons-material/Close";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { COLORS } from "../constant/color";
 import DNavbar from "./components/DNavbar/DNavbar";
+import DHeader from "./components/DHeader/DHeader";
 
 type LayoutType = {
   children: React.ReactNode;
+  title?: string;
+  exportBtn?: string;
+  addBtn?: string;
+  onClick?: () => void;
 };
 
-const DashboardLayout = ({ children }: LayoutType) => {
+const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick }: LayoutType) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   return (
-    <Box sx={{height: "100vh", bgcolor: "#f9f9f9",overflow:'hidden' }}>
+    <Box sx={{ height: "100vh", bgcolor: "#f9f9f9", overflow: 'hidden' }}>
       <DNavbar />
       <Box display={"flex"} width={"100%"}>
         {/* Sidebar Container */}
@@ -32,7 +37,7 @@ const DashboardLayout = ({ children }: LayoutType) => {
             position: { xs: "fixed", sm: "relative" },
             top: 0,
             left: 0,
-            zIndex:{md:0,sm:0,xs:9999}
+            zIndex: { md: 0, sm: 0, xs: 9999 }
           }}
         >
           {/* Sidebar Header */}
@@ -68,7 +73,7 @@ const DashboardLayout = ({ children }: LayoutType) => {
             height: "100vh",
             width: "100%",
             overflowX: "hidden",
-            msOverflowY:'scroll'
+            msOverflowY: 'scroll'
           }}
         >
           {/* Mobile Toggle Button */}
@@ -89,7 +94,10 @@ const DashboardLayout = ({ children }: LayoutType) => {
           </Box>
 
           {/* Page Content */}
-          <Box sx={{ flex: 1, p: 1,mb:10 }}>{children}</Box>
+          <Box sx={{ flex: 1, p: 1, mb: 10 }}>
+            <DHeader title={title} exportBtn={exportBtn} addBtn={addBtn} onClick={onClick} />
+            {children}
+          </Box>
         </Box>
       </Box>
       {/* Overlay for mobile when sidebar is open */}

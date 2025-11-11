@@ -36,6 +36,7 @@ const Slide2 = () => {
         width: "100%",
         height: "100%",
         overflow: "hidden",
+        // backgroundColor: "#fff",
       }}
     >
       {selectedVideoUrl && (
@@ -206,8 +207,9 @@ const Slide2 = () => {
             key={index}
             sx={{
               position: "relative",
-              height: "175px", // ✅ match editable container height
+              height: { md: 210, sm: '175px', xs: '174px' },
               width: "100%",
+              bgcolor: 'red',
               mb: 2,
               display: "flex",
               justifyContent:
@@ -229,8 +231,8 @@ const Slide2 = () => {
                 fontWeight: e.fontWeight,
                 color: e.fontColor,
                 fontFamily: e.fontFamily,
-                lineHeight: lineHeight2,
-                letterSpacing: letterSpacing2,
+                lineHeight: e.lineHeight,
+                letterSpacing: e.letterSpacing,
                 wordBreak: "break-word",
                 whiteSpace: "pre-line",
                 width: "100%",
@@ -260,30 +262,31 @@ const Slide2 = () => {
       {selectedLayout === "oneText" && (
         <Box
           sx={{
-            // position: "absolute",
             display: "flex",
-            alignItems:
-              verticalAlign === "top"
-                ? "flex-start"
-                : verticalAlign === "center"
-                  ? "center"
-                  : "flex-end",
+            flexDirection: "column",
             justifyContent:
               verticalAlign === "top"
                 ? "flex-start"
                 : verticalAlign === "center"
                   ? "center"
-                  : "flex-end",
+                  : "flex-end", // ✅ controls vertical alignment
+            alignItems:
+              textAlign === "start"
+                ? "flex-start"
+                : textAlign === "center"
+                  ? "center"
+                  : "flex-end", // ✅ controls horizontal alignment
             height: "100%",
+            width: "100%",
             color: fontColor,
             lineHeight: lineHeight2,
             letterSpacing: letterSpacing2,
             fontFamily,
             fontSize,
             fontWeight,
-            textAlign,
+            textAlign, // ✅ still needed for multiline/inline text
             whiteSpace: "pre-wrap",
-            width: "100%",
+            p: 1,
           }}
         >
           {oneTextValue}

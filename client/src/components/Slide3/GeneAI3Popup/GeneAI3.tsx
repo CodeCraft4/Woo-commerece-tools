@@ -322,7 +322,7 @@ const GeneAI3Popup = (props: GeneAIType) => {
         width: { md: 350, sm: 300, xs: "95%" },
         height: { md: 600, sm: 600, xs: 450 },
         mt: { md: 0, sm: 0, xs: 0 },
-        left: { md: "31%", sm: "0%", xs: 0 },
+        left: { md: "20.5%", sm: "0%", xs: 0 },
         overflowY: "auto",
       }}
     >
@@ -330,7 +330,7 @@ const GeneAI3Popup = (props: GeneAIType) => {
 
       <Box
         sx={{
-          display: "flex",
+          display: { md: "flex", sm: "flex", xs: 'none' },
           flexDirection: "column",
           alignItems: "center",
         }}

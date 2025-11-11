@@ -10,6 +10,11 @@ import { USER_ROUTES } from "../../constant/route";
 import { useCartStore } from "../../stores";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import { useSlide2 } from "../../context/Slide2Context";
+import { useSlide3 } from "../../context/Slide3Context";
+import { useSlide4 } from "../../context/Slide4Context";
+import { useSlide1 } from "../../context/Slide1Context";
+import { COLORS } from "../../constant/color";
 
 const style = {
   position: "absolute",
@@ -63,6 +68,10 @@ type ProductsPopTypes = {
 const ProductPopup = (props: ProductsPopTypes) => {
   const { open, onClose, cate } = props;
   const [loading, setLoading] = useState(false);
+  const { resetSlide1State } = useSlide1()
+  const { resetSlide2State } = useSlide2()
+  const { resetSlide3State } = useSlide3()
+  const { resetSlide4State } = useSlide4()
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -75,6 +84,12 @@ const ProductPopup = (props: ProductsPopTypes) => {
   const handlePersonalize = () => {
     if (!cate) return;
     setLoading(true);
+    // ✅ Reset all context before navigating
+    // ✅ And add or personalize a new card.
+    resetSlide1State();
+    resetSlide2State();
+    resetSlide3State();
+    resetSlide4State();
 
     if (user) {
       setTimeout(() => {
@@ -202,7 +217,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
                     sx={{
                       ...isActivePay,
                       height: { md: 'auto', sm: 'auto', xs: '60px' },
-                      border: `3px solid ${selectedPlan === plan.id ? "#004099" : "transparent"
+                      border: `3px solid ${selectedPlan === plan.id ? COLORS.seconday : "transparent"
                         }`,
                       cursor: "pointer",
                     }}
@@ -229,13 +244,13 @@ const ProductPopup = (props: ProductsPopTypes) => {
                   <Typography
                     sx={{
                       ...isActivePay,
-                      bgcolor: "#ffd3db",
+                      bgcolor:  "#4d98a1ff",
                       fontSize: { md: "20px", sm: '16px', xs: '14px' },
-                      color: "#212121",
-                      p: 1,
+                      color: COLORS.white,
+                      p: 1.5,
                     }}
                   >
-                    {cate?.description}💫
+                    {cate?.description} 💫
                   </Typography>
                 </Box>
               </Box>
@@ -285,7 +300,7 @@ const isActivePay = {
   gap: "4px",
   justifyContent: "space-between",
   alignItems: "center",
-  bgcolor: "#e9fbffff",
+  bgcolor: "#cdf0c06a",
   p: "3px",
   borderRadius: 2,
   boxShadow: "3px 7px 8px #eff1f1ff",

@@ -14,8 +14,8 @@ type Card = {
   description: string;
   imageUrl?: string;
   created_at: string;
-  polygon_shape?:string;
-  lastpageImageUrl?:string;
+  polygon_shape?: string;
+  lastpageImageUrl?: string;
 };
 
 type Props = {
@@ -35,8 +35,8 @@ const ProductCard = (props: Props) => {
     <Box
       component={"div"}
       sx={{
-        width: {md:280,sm:280,xs:'100%'},
-        height: {md:400,sm:400,xs:280},
+        width: { md: 200, sm: 200, xs: '100%' },
+        height: { md: 250, sm: 250, xs: 280 },
         border: "1px solid #e0e0e0",
         borderRadius: 3,
         overflow: "hidden",
@@ -90,7 +90,7 @@ const ProductCard = (props: Props) => {
           }}
           onClick={() => onEdit && onEdit(data.id)}
         >
-          <Edit fontSize="large" />
+          <Edit fontSize="small" />
         </IconButton>
         <IconButton
           sx={{
@@ -100,7 +100,7 @@ const ProductCard = (props: Props) => {
           }}
           onClick={() => openDeleteModal && openDeleteModal(data.id)}
         >
-          <Delete fontSize="large" />
+          <Delete fontSize="small" />
         </IconButton>
       </Box>
     </Box>

@@ -81,42 +81,68 @@ const Footer = () => {
           <Box
             sx={{
               display: "flex",
-              gap: "20px",
+              gap: "10px",
               alignItems: "center",
               flexWrap: "wrap",
               mt: 3,
               mb: 3,
             }}
           >
-            <Box
-              component={"img"}
-              src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Ffacebook.jpg&w=96&q=75"
-              sx={{ width: "40px", height: "40px" }}
-            />
-            <Box
-              component={"img"}
-              src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Ftiktok.jpg&w=96&q=75"
-              sx={{ width: "40px", height: "40px" }}
-            />
-            <Box
-              component={"img"}
-              src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Finstagram.jpg&w=96&q=75"
-              sx={{ width: "40px", height: "40px" }}
-            />
-            <Box
-              component={"img"}
-              src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Ffooter%2Fyoutube.jpg&w=96&q=75"
-              sx={{ width: "40px", height: "40px" }}
-            />
-            <Box
-              component={"img"}
-              src="/assets/icons/DIYP.svg"
-              sx={{
-                width: "40px",
-                height: "40px",
-                borderRadius: 50,
-              }}
-            />
+            <a href="#">
+              <Box
+                component={"img"}
+                src="/assets/icons/facebook.svg"
+                sx={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: 50,
+                }}
+              />
+            </a>
+            <a href="#">
+              <Box
+                component={"img"}
+                src="/assets/icons/tiktok.svg"
+                sx={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: 50,
+                }}
+              />
+            </a>
+            <a href="#">
+              <Box
+                component={"img"}
+                src="/assets/icons/instagram.svg"
+                sx={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: 50,
+                }}
+              />
+            </a>
+            <a href="#">
+              <Box
+                component={"img"}
+                src="/assets/icons/youtube.svg"
+                sx={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: 50,
+                }}
+              />
+            </a>
+            <a href="#">
+              <Box
+                component={"img"}
+                src="/assets/icons/DIYP.svg"
+                sx={{
+                  width: "35px",
+                  height: "35px",
+                  borderRadius: 50,
+                }}
+              />
+            </a>
           </Box>
         </Box>
 
@@ -241,12 +267,12 @@ const Footer = () => {
             flexWrap: "wrap",
           }}
         >
-          {PAYMENT_CARD.map((e,i) => (
+          {PAYMENT_CARD.map((e, i) => (
             <a key={i} href={e.href}>
               <Box
                 component={"img"}
                 src={e.icon}
-                sx={{ cursor: "pointer", width: "45px", height: "30px" }}
+                sx={{ cursor: "pointer", width: "45px", height: "45px" }}
               />
             </a>
           ))}

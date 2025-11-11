@@ -227,12 +227,12 @@ const SlideCover = ({
   // Function to add new text element
   const addNewTextElement = () => {
     const newTextElement = createNewTextElement({
-      fontSize:16,
-      fontWeight:400,
-      fontColor:"#000000",
-      fontFamily:"Roboto",
-      textAlign:"center",
-      rotation:0,
+      fontSize: 16,
+      fontWeight: 400,
+      fontColor: "#000000",
+      fontFamily: "Roboto",
+      textAlign: "center",
+      rotation: 0,
       zIndex: textElements1.length + 1,
     });
     setTextElements1((prev) => [...prev, newTextElement]);
@@ -263,10 +263,38 @@ const SlideCover = ({
 
   // 👇 Auto-reset multipleTextValue when all multiple texts are deleted
   useEffect(() => {
-    if (multipleTextValue1 && texts1.length === 0) {
-      setMultipleTextValue1(true); // hide layout
+    // When user re-selects the multipleTextValue layout
+    if (multipleTextValue1) {
+      // If no texts currently exist, recreate the 3 default boxes
+      if (texts1.length === 0) {
+        const defaultTexts = Array(3)
+          .fill(null)
+          .map(() => ({
+            value: "",
+            fontSize: 16,
+            fontWeight: 400,
+            fontColor: "#000000",
+            fontFamily: "Roboto",
+            textAlign: "center",
+            verticalAlign: "center",
+            rotation: 0,
+            lineHeight: 1.5,
+            letterSpacing: 0
+          }));
+        setTexts1(defaultTexts);
+      }
     }
-  }, [texts1, multipleTextValue1]);
+  }, [multipleTextValue1]);
+
+  const handleDeleteBox = (index: number) => {
+    setTexts1((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (updated.length === 0) {
+        setMultipleTextValue1(false); // hide the layout
+      }
+      return updated;
+    });
+  };
 
   // ✅ Place this useEffect HERE (below your state definitions)
   useEffect(() => {
@@ -1202,9 +1230,7 @@ const SlideCover = ({
                       "&:hover": { bgcolor: "#f44336", color: "white" },
                       zIndex: 5,
                     }}
-                    onClick={() =>
-                      setTexts1((prev) => prev.filter((_, i) => i !== index))
-                    }
+                    onClick={() => handleDeleteBox(index)}
                   >
                     <Close />
                   </IconButton>
@@ -1242,8 +1268,8 @@ const SlideCover = ({
                             color: textObj.fontColor1,
                             fontFamily: textObj.fontFamily1,
                             textAlign: textAlign1,
-                            lineHeight: lineHeight1,
-                            letterSpacing: letterSpacing1,
+                            lineHeight: textObj.lineHeight,
+                            letterSpacing: textObj.letterSpacing,
                           },
                         },
                       }}
@@ -1287,6 +1313,8 @@ const SlideCover = ({
                           color: textObj.fontColor1,
                           fontFamily: textObj.fontFamily1,
                           textAlign: textObj.textAlign,
+                          lineHeight: textObj.lineHeight,
+                          letterSpacing: textObj.letterSpacing,
                           width: "100%",
                           height: "100%",
                           display: "flex",

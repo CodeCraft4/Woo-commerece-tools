@@ -1,14 +1,15 @@
 import { useRef, useState } from "react";
 import {
-  Add,
-  AutoFixHigh,
   ImageRounded,
-  Interests,
   FormatBold,
   FormatItalic,
   Check,
   Edit,
   Close,
+  CollectionsOutlined,
+  TextFieldsOutlined,
+  MoodOutlined,
+  CategoryOutlined,
 } from "@mui/icons-material";
 import {
   Box,
@@ -23,129 +24,31 @@ import { useNavigate } from "react-router-dom";
 import LandingButton from "../../../../../components/LandingButton/LandingButton";
 import { ADMINS_DASHBOARD } from "../../../../../constant/route";
 import { Rnd } from "react-rnd";
-import { GOOGLE_FONTS } from "../../../../../constant/data";
-
-// 🔸 Fully Expanded shapes list (CSS clip-paths)
-const shapes = [
-  { id: "square", label: "Square", path: "inset(0% 0% 0% 0%)" },
-  {
-    id: "triangle",
-    label: "Triangle",
-    path: "polygon(50% 0%, 0% 100%, 100% 100%)",
-  },
-  {
-    id: "trapezoid",
-    label: "Trapezoid",
-    path: "polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)",
-  },
-  {
-    id: "parallelogram",
-    label: "Parallelogram",
-    path: "polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)",
-  },
-  {
-    id: "rhombus",
-    label: "Rhombus",
-    path: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-  },
-  {
-    id: "pentagon",
-    label: "Pentagon",
-    path: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)",
-  },
-  {
-    id: "hexagon",
-    label: "Hexagon",
-    path: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
-  },
-  {
-    id: "heptagon",
-    label: "Heptagon",
-    path: "polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%)",
-  },
-  {
-    id: "octagon",
-    label: "Octagon",
-    path: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-  },
-  {
-    id: "nonagon",
-    label: "Nonagon",
-    path: "polygon(50% 0%, 85% 15%, 100% 45%, 90% 80%, 60% 100%, 40% 100%, 10% 80%, 0% 45%, 15% 15%)",
-  },
-  {
-    id: "decagon",
-    label: "Decagon",
-    path: "polygon(50% 0%, 80% 10%, 100% 35%, 100% 65%, 80% 90%, 50% 100%, 20% 90%, 0% 65%, 0% 35%, 20% 10%)",
-  },
-  {
-    id: "bevel",
-    label: "Bevel",
-    path: "polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%)",
-  },
-  {
-    id: "rabbet",
-    label: "Rabbet",
-    path: "polygon(20% 0%, 80% 0%, 80% 20%, 100% 20%, 100% 80%, 80% 80%, 80% 100%, 20% 100%, 20% 80%, 0% 80%, 0% 20%, 20% 20%)",
-  },
-  {
-    id: "star",
-    label: "Star",
-    path: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
-  },
-  {
-    id: "cross",
-    label: "Cross",
-    path: "polygon(35% 0%, 65% 0%, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0% 65%, 0% 35%, 35% 35%)",
-  },
-  {
-    id: "message",
-    label: "Message",
-    path: "polygon(0% 0%, 100% 0%, 100% 80%, 60% 80%, 50% 100%, 40% 80%, 0% 80%)",
-  },
-  {
-    id: "close",
-    label: "Close",
-    path: "polygon(20% 0%, 50% 30%, 80% 0%, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0% 80%, 30% 50%, 0% 20%)",
-  },
-  {
-    id: "frame",
-    label: "Frame",
-    path: "polygon(20% 0%, 80% 0%, 80% 20%, 100% 20%, 100% 80%, 80% 80%, 80% 100%, 20% 100%, 20% 80%, 0% 80%, 0% 20%, 20% 20%)",
-  },
-  {
-    id: "inset",
-    label: "Inset",
-    path: "polygon(10% 10%, 90% 10%, 90% 90%, 10% 90%)",
-  },
-  {
-    id: "custom-polygon",
-    label: "Custom Polygon",
-    path: "polygon(50% 0%, 100% 25%, 80% 100%, 20% 100%, 0% 25%)",
-  },
-  { id: "circle", label: "Circle", path: "circle(50% at 50% 50%)" },
-  { id: "ellipse", label: "Ellipse", path: "ellipse(45% 35% at 50% 50%)" },
-];
+import { GOOGLE_FONTS, STICKERS_DATA } from "../../../../../constant/data";
+import PopupWrapper from "../../../../../components/PopupWrapper/PopupWrapper";
+import { COLORS } from "../../../../../constant/color";
 
 type FirstSlideType = {
   firstSlide?: any;
 };
 
 const FirstSlide = (props: FirstSlideType) => {
-  const { firstSlide } = props;
+  const { } = props
+
+
+  const [showEmojiPopup, setShowEmojiPopup] = useState(false);
 
   const {
     selectedShapeImage,
     uploadedShapeImage,
-    setSelectedShapeImage,
-    setUploadedShapeImage,
     elements,
     setElements,
     textElements,
     setTextElements,
+    stickerElements,
+    setStickerElements,
   } = useCardEditor();
 
-  const [activeTab, setActiveTab] = useState<"shape" | "text">("shape");
   const navigate = useNavigate();
 
   // Store which element's file input is currently active
@@ -160,18 +63,6 @@ const FirstSlide = (props: FirstSlideType) => {
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
   // Dragging guard to avoid click firing after drag
   const draggingRef = useRef(false);
-
-  // ✅ Handle file upload for shape image
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setUploadedShapeImage(reader.result as string);
-      };
-      reader.readAsDataURL(file); // Convert image to base64
-    }
-  };
 
   // ✅ Add image box
   const handleAddImage = () => {
@@ -260,6 +151,21 @@ const FirstSlide = (props: FirstSlideType) => {
     e.target.value = ""; // Allow re-upload of the same file
   };
 
+  // ✅ Add sticker to canvas
+  const handleSelectSticker = (stickerPath: string) => {
+    const id = `sticker_${Date.now()}`;
+    const newSticker = {
+      id,
+      x: 80,
+      y: 80,
+      width: 100,
+      height: 100,
+      sticker: stickerPath,
+      zIndex: 2 + stickerElements.length,
+    };
+    setStickerElements((prev) => [...prev, newSticker]);
+  };
+
   return (
     <>
       <Box
@@ -287,33 +193,29 @@ const FirstSlide = (props: FirstSlideType) => {
           }}
         />
       </Box>
-      <Box
-        sx={{
-          display: { md: "flex", sm: "flex", xs: "block" },
-          gap: 2,
-          alignItems: "center",
-          width: "100%",
-          mb: 2,
-        }}
-      >
+
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
         {/* LEFT SIDE — Shape Preview or Banner */}
-        {activeTab === "text" ? (
+        <Box position={'relative'}>
           <Box
             component={"div"}
             sx={{
-              width: { md: "400px", sm: "400px", xs: "100%" },
-              height: { md: "600px", sm: "600px", xs: "400px" },
+              width: { md: "500px", sm: "400px", xs: "100%" },
+              height: { md: "700px", sm: "600px", xs: "400px" },
               borderRadius: "12px",
               boxShadow: "3px 5px 8px gray",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: activeTab === "text" ? "white" : "#e6e6e6ff",
+              justifyContent: 'white',
               position: "relative",
               overflow: "hidden",
               border: "1px solid lightgray",
               cursor: "pointer",
-              p: 1,
+              // p: 1,
             }}
           >
             {/* Top toolbar for selected text element */}
@@ -326,7 +228,7 @@ const FirstSlide = (props: FirstSlideType) => {
                   width: "100px",
                   display: "flex",
                   flexDirection: "column",
-                  height: {md:"60%",sm:"60%",xs:'100%'},
+                  height: { md: "60%", sm: "60%", xs: '100%' },
                   gap: 2,
                   alignItems: "center",
                   zIndex: 200,
@@ -500,12 +402,12 @@ const FirstSlide = (props: FirstSlideType) => {
                     prev.map((p) =>
                       p.id === el.id
                         ? {
-                            ...p,
-                            width: parseInt(ref.style.width, 10),
-                            height: parseInt(ref.style.height, 10),
-                            x: position.x,
-                            y: position.y,
-                          }
+                          ...p,
+                          width: parseInt(ref.style.width, 10),
+                          height: parseInt(ref.style.height, 10),
+                          x: position.x,
+                          y: position.y,
+                        }
                         : p
                     )
                   );
@@ -524,8 +426,8 @@ const FirstSlide = (props: FirstSlideType) => {
                 }}
                 resizeHandleStyles={{
                   bottomRight: {
-                    width: "10px",
-                    height: "10px",
+                    width: "15px",
+                    height: "15px",
                     background: "white",
                     border: "2px solid #1976d2",
                     borderRadius: "10%",
@@ -595,7 +497,7 @@ const FirstSlide = (props: FirstSlideType) => {
                       cursor: "pointer",
                     }}
                   >
-                    <ImageRounded sx={{ color: "gray", fontSize: 40 }} />
+                    <ImageRounded sx={{ color: "lightGray", fontSize: 40 }} />
                   </Box>
                 )}
               </Rnd>
@@ -752,262 +654,207 @@ const FirstSlide = (props: FirstSlideType) => {
                 </Box>
               </Rnd>
             ))}
-          </Box>
-        ) : (
-          <>
-            {/* HIDDEN INPUT FIELD */}
-            <input
-              id="uploadInput"
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleImageUpload}
-            />
 
-            {/* LEFT SIDE — Shape Preview or Banner */}
-            <Box
-              component={"div"}
-              sx={{
-                width: { md: "400px", sm: "400px", xs: "100%" },
-                height: { md: "600px", sm: "600px", xs: "400px" },
-                borderRadius: "12px",
-                boxShadow: "3px 5px 8px gray",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#e6e6e6ff",
-                position: "relative",
-                overflow: "hidden",
-                border: "1px solid lightgray",
-                cursor: "pointer",
-              }}
-              onClick={() => document.getElementById("uploadInput")?.click()}
+
+            {/* render Sticker */}
+            {stickerElements.map((st) => (
+              <Rnd
+                key={st.id}
+                default={{
+                  x: st.x,
+                  y: st.y,
+                  width: st.width,
+                  height: st.height,
+                }}
+                bounds="parent"
+                onDragStop={(_, d) =>
+                  setStickerElements((prev) =>
+                    prev.map((s) => (s.id === st.id ? { ...s, x: d.x, y: d.y } : s))
+                  )
+                }
+                onResizeStop={(_, __, ref, ___, pos) =>
+                  setStickerElements((prev) =>
+                    prev.map((s) =>
+                      s.id === st.id
+                        ? {
+                          ...s,
+                          width: parseInt(ref.style.width),
+                          height: parseInt(ref.style.height),
+                          x: pos.x,
+                          y: pos.y,
+                        }
+                        : s
+                    )
+                  )
+                }
+                onClick={() => {
+                  // optional: bring sticker to top when clicked
+                  setStickerElements((prev) =>
+                    prev.map((s) =>
+                      s.id === st.id
+                        ? { ...s, zIndex: prev.length + 2 }
+                        : s
+                    )
+                  );
+                }}
+                style={{
+                  borderRadius: 8,
+                  border:
+                    "2px solid #1976d2",
+                  position: "absolute",
+                  overflow: "hidden",
+                  zIndex: st.zIndex,
+                }}
+                resizeHandleStyles={{
+                  bottomRight: {
+                    width: "15px",
+                    height: "15px",
+                    background: "white",
+                    border: "2px solid #1976d2",
+                    borderRadius: "10%",
+                    right: "-5px",
+                    bottom: "-5px",
+                  },
+                }}
+              >
+                <Box sx={{ width: "100%", height: "100%", position: "relative" }}>
+                  <Box
+                    component="img"
+                    src={st.sticker}
+                    alt="sticker"
+                    sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                  <IconButton
+                    onClick={() =>
+                      setStickerElements((prev) => prev.filter((s) => s.id !== st.id))
+                    }
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      bgcolor: "black",
+                      color: "white",
+                      width: 24,
+                      height: 24,
+                      "&:hover": { bgcolor: "red" },
+                    }}
+                  >
+                    <Close fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Rnd>
+            ))}
+
+          </Box>
+          {/* Editor Element */}
+          <Box sx={{
+            position: 'absolute',
+            top: 0,
+            width: 60,
+            display: 'flex',
+            gap: 1,
+            borderBottom: '1px solid gray',
+            flexDirection: 'column',
+            height: '100%',
+            bgcolor: 'transparent',
+            right: -70,
+            boxShadow: 4,
+            borderRadius: 2
+          }}>
+            <IconButton
+              // sx={editingButtonStyle}
+              onClick={handleAddImage}
+              aria-label="Layout"
             >
-              {uploadedShapeImage || firstSlide?.cardImage ? (
-                <Box
-                  component="img"
-                  src={uploadedShapeImage || firstSlide?.cardImage}
-                  alt="Uploaded Preview"
+              <CollectionsOutlined fontSize="large" />
+            </IconButton>
+            <IconButton
+              // sx={editingButtonStyle}
+              onClick={handleAddText}
+            >
+              <TextFieldsOutlined fontSize="large" />
+
+            </IconButton>
+            <IconButton
+              // sx={editingButtonStyle}
+              onClick={() => setShowEmojiPopup(true)}
+            >
+              <MoodOutlined fontSize="large" />
+            </IconButton>
+            <IconButton
+            // sx={editingButtonStyle}
+            //  onClick={() => togglePopup("layout")}
+            >
+              <CategoryOutlined fontSize="large" />
+            </IconButton>
+          </Box>
+          <Box sx={{ position: "absolute", top: 0, right: 110 }}>
+            {
+              showEmojiPopup && (
+                <PopupWrapper
+                  title="Choose Emoji"
+                  open={showEmojiPopup}
+                  onClose={() => setShowEmojiPopup(false)}
                   sx={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    clipPath:
-                      shapes.find((s) => s.path === selectedShapeImage)?.path ||
-                      "none",
-                    borderRadius: "12px",
-                    transition: "0.3s ease",
-                  }}
-                />
-              ) : (
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#777",
-                    textAlign: "center",
+                    height: "700px",
+                    width: 200,
                   }}
                 >
                   <Box
-                    component="img"
-                    src="/assets/icons/gallery.png"
-                    alt="Upload"
                     sx={{
-                      width: 120,
-                      height: 120,
-                      opacity: 0.6,
+                      mt: 2,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 1,
+                      overflowY: "auto",
+                      "&::-webkit-scrollbar": {
+                        height: "6px",
+                        width: "5px",
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        backgroundColor: "#f1f1f1",
+                        borderRadius: "20px",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        backgroundColor: COLORS.primary,
+                        borderRadius: "20px",
+                      },
+                      height: 500,
                     }}
-                  />
-                  <Typography sx={{ fontSize: "18px", fontWeight: 500 }}>
-                    Upload Image
-                  </Typography>
-                  <Typography sx={{ fontSize: "13px", color: "#999" }}>
-                    Click to choose a file
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </>
-        )}
-
-        {/* RIGHT SIDE — Tabs and Content */}
-        <Box
-          sx={{
-            width: { md: "75%", sm: "60%", xs: "100%" },
-            height: { md: "600px", sm: "600px", xs: "400px" },
-            borderRadius: "12px",
-            border: "1px solid lightgray",
-            display: "flex",
-            flexDirection: "column",
-            mt: { md: 0, sm: 0, xs: 3 },
-          }}
-        >
-          {/* Tabs */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-around",
-              p: 1,
-              borderBottom: "1px solid gray",
-            }}
-          >
-            <Box
-              component="button"
-              onClick={() => setActiveTab("shape")}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              <Interests
-                sx={{ color: activeTab === "shape" ? "orange" : "gray" }}
-                fontSize="large"
-              />
-              <Typography
-                variant="body2"
-                sx={{ color: activeTab === "shape" ? "orange" : "gray" }}
-              >
-                Shape
-              </Typography>
-            </Box>
-
-            <Box
-              component="button"
-              onClick={() => setActiveTab("text")}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              <AutoFixHigh
-                sx={{ color: activeTab === "text" ? "orange" : "gray" }}
-                fontSize="large"
-              />
-              <Typography
-                variant="body2"
-                sx={{ color: activeTab === "text" ? "orange" : "gray" }}
-              >
-                Layout
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Tab Content */}
-          <Box
-            sx={{ p: { md: 1, sm: 1, xs: "4px" }, flex: 1, overflowY: "auto" }}
-          >
-            {activeTab === "shape" && (
-              <>
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                  }}
-                >
-                  {shapes.map((shape) => (
-                    <Box
-                      key={shape.id}
-                      onClick={() => setSelectedShapeImage(shape.path)}
-                      sx={{
-                        width: { md: 160, sm: 160, xs: 90 },
-                        height: { md: 150, sm: 150, xs: 100 },
-                        border: "1px solid lightgray",
-                        borderRadius: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        flexDirection: "column",
-                        cursor: "pointer",
-                      }}
-                    >
+                  >
+                    {STICKERS_DATA.map((stick) => (
                       <Box
+                        key={stick.id}
+                        onClick={() => handleSelectSticker(stick.sticker)}
                         sx={{
-                          width: { md: "80px", sm: "80px", xs: "50%" },
-                          height: { md: "80px", sm: "80px", xs: "50%" },
-                          margin: "auto",
-                          clipPath: shape.path,
-                          backgroundColor:
-                            selectedShapeImage === shape.path
-                              ? "orange"
-                              : "#9b7d7dff",
-                          transition: "0.3s",
-                          "&:hover": { backgroundColor: "orange" },
-                        }}
-                      />
-                      <Typography
-                        align="center"
-                        sx={{
-                          mt: 1,
-                          fontSize: { md: "auto", sm: "auto", xs: "14px" },
-                          color:
-                            selectedShapeImage === shape.path
-                              ? "orange"
-                              : "#9b7d7dff",
+                          width: { md: "70px", sm: "70px", xs: "70px" },
+                          height: "70px",
+                          borderRadius: 2,
+                          bgcolor: "rgba(233, 232, 232, 1)",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          color: "white",
+                          userSelect: "none",
                         }}
                       >
-                        {shape.label}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </>
-            )}
-
-            {activeTab === "text" && (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  width: "100%",
-                  gap:{md: 2,sm: 2,xs:1},
-                }}
-              >
-                <Box
-                  onClick={handleAddImage}
-                  sx={{
-                    width: { md: 200, sm: 200, xs: "140px" },
-                    height: 100,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    border: "1px solid gray",
-                    borderRadius: 2,
-                    color: "gray",
-                    cursor: "pointer",
-                  }}
-                >
-                  <Add fontSize="large" />
-                  Add Image
-                </Box>
-                <Box
-                  onClick={handleAddText}
-                  sx={{
-                    width: { md: 200, sm: 200, xs: "140px" },
-                    height: 100,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    border: "1px solid gray",
-                    borderRadius: 2,
-                    color: "gray",
-                    cursor: "pointer",
-                  }}
-                >
-                  <Add fontSize="large" />
-                  Add Text
-                </Box>
-              </Box>
-            )}
+                        <Box
+                          component={"img"}
+                          src={stick.sticker}
+                          sx={{ width: "100%", height: "auto" }}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                </PopupWrapper>
+              )
+            }
           </Box>
+
         </Box>
-      </Box>
+
+      </Box >
+
     </>
   );
 };

@@ -179,15 +179,27 @@ export default function Header(props: Props) {
                   width: "100%",
                 }}
               >
-                <IconButton
-                  color="inherit"
-                  aria-label="open drawer"
-                  edge="start"
-                  onClick={handleDrawerToggle}
-                  sx={{ mr: 2, color: COLORS.black }}
-                >
-                  <MenuIcon fontSize="large" />
-                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <IconButton
+                    color="inherit"
+                    aria-label="open drawer"
+                    edge="start"
+                    onClick={handleDrawerToggle}
+                    sx={{ color: COLORS.black, mt: -2 }}
+                  >
+                    <MenuIcon fontSize="large" />
+                  </IconButton>
+                  <a href="/">
+                    <Box
+                      component={"img"}
+                      src={LOGO}
+                      alt="LOGO"
+                      width={150}
+                      height={50}
+                    />
+                  </a>
+
+                </Box>
 
                 <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                   {user ? (
@@ -536,7 +548,7 @@ export default function Header(props: Props) {
             p: 3,
             width: { lg: "1360px", md: "100%", sm: "100%", xs: "auto" },
           }}
-          // onMouseLeave={handleMouseLeave}
+        // onMouseLeave={handleMouseLeave}
         >
           {navLinks.map((item) => (
             <ListItem
