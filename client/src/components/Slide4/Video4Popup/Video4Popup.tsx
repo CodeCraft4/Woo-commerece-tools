@@ -243,7 +243,7 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 280, xs: "95%" },
-        height: {md:600,sm:600,xs:480},
+        height: { md: 600, sm: 600, xs: 480 },
         left: { md: "58%", sm: "0%", xs: 0 },
         mt: { md: 0, sm: 0, xs: 0 },
         overflow: "hidden",
@@ -457,24 +457,19 @@ const Video4Popup = ({ onClose }: Video4PopupProps) => {
                         {playingVideoId !== v.id && (
                           <Box
                             onClick={(e) => {
-                              e.stopPropagation(); // prevent parent onClick
-                              const video = document.getElementById(
-                                `video-${v.id}`
-                              ) as HTMLVideoElement;
+                              e.stopPropagation();
+                              setSelectedVideoUrl4((prev) => (prev === v.url ? null : v.url));
+                            }}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation(); // prevent parent click
+                              const video = document.getElementById(`video-${v.id}`) as HTMLVideoElement;
                               if (video) {
                                 // Pause all other videos
-                                document
-                                  .querySelectorAll("video")
-                                  .forEach((vid) => {
-                                    if (vid !== video) vid.pause();
-                                  });
-
-                                // Play/pause toggle
-                                if (video.paused) {
-                                  video.play();
-                                } else {
-                                  video.pause();
-                                }
+                                document.querySelectorAll("video").forEach((vid) => {
+                                  if (vid !== video) vid.pause();
+                                });
+                                // Play this one
+                                video.play();
                               }
                             }}
                             sx={{

@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
 import TotalProductChart from "./components/TotalProductChart/TotalProductChart";
 import OrderChart from "./components/OrderChart/OrderChart";
@@ -7,9 +7,7 @@ import VisitorMiniChart from "./components/VisitorBarChart/VisitorBarChart";
 
 const DashboardHome = () => {
   return (
-    <DashboardLayout>
-      <Typography sx={{ fontSize: "25px" }}>Analytics Overview</Typography>
-      <br />
+    <DashboardLayout title="Analytice Overview">
       <Box
         sx={{
           display: { md: "flex", sm: "flex", xs: "block" },

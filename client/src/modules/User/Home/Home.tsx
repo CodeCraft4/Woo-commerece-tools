@@ -9,14 +9,8 @@ const Home = () => {
     <Applayout>
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "center",
-          height: "80vh",
-          alignItems: "center",
-          m: "auto",
-          gap: "10px",
-          flexWrap: "wrap",
-        }}
+          height: {md: "93.7vh", sm: "93.7vh", xs: '83vh' },
+          }}
       >
         <WishCard />
       </Box>

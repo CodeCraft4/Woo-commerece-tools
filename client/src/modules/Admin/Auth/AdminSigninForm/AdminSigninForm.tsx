@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import React from "react";
 import { ADMINS_DASHBOARD } from "../../../../constant/route";
 import { useAdmin } from "../../../../context/AdminContext";
+import { COLORS } from "../../../../constant/color";
 
 type FormValue = {
   email: string;
@@ -43,13 +44,14 @@ const AdminSigninForm = () => {
         width: 500,
         p: 3,
         borderRadius: 3,
-        textAlign: "start",
+        textAlign: "center",
+        bgcolor:COLORS.white,
       }}
     >
       <Typography sx={{ fontSize: "45px", fontWeight: 700 }}>
         Sign In
       </Typography>
-      <Typography sx={{ fontSize: "15px", fontWeight: 400 }}>
+      <Typography sx={{ fontSize: "15px", fontWeight: 400, color: "gray" }}>
         This is only working for admin email & password
       </Typography>
 

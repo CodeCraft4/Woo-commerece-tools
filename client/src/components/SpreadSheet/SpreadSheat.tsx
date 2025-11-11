@@ -95,6 +95,7 @@ const SlideSpread = ({
     removeSticker2,
     aimage2,
     setAIImage2,
+    setSelectedLayout,
 
     lineHeight2,
     letterSpacing2
@@ -169,10 +170,43 @@ const SlideSpread = ({
 
   // 👇 Auto-reset multipleTextValue when all multiple texts are deleted
   useEffect(() => {
-    if (multipleTextValue && texts.length === 0) {
-      setMultipleTextValue(true); // hide layout
+    // When user re-selects the multipleTextValue layout
+    if (multipleTextValue) {
+      // If no texts currently exist, recreate the 3 default boxes
+      if (texts.length === 0) {
+        const defaultTexts = Array(3)
+          .fill(null)
+          .map(() => ({
+            value: "",
+            fontSize: 16,
+            fontWeight: 400,
+            fontColor: "#000000",
+            fontFamily: "Roboto",
+            textAlign: "center",
+            verticalAlign: "center",
+            rotation: 0,
+            lineHeight: 1.5,
+            letterSpacing: 0
+          }));
+        setTexts(defaultTexts);
+      }
     }
-  }, [texts, multipleTextValue]);
+  }, [multipleTextValue]);
+
+  const handleDeleteBox = (index: number) => {
+    setTexts((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+
+      // ✅ If all boxes are deleted → reset layout
+      if (updated.length === 0) {
+        setMultipleTextValue(false);
+        setSelectedLayout("blank");
+      }
+
+      return updated;
+    });
+  };
+
 
   // ✅ Place this useEffect HERE (below your state definitions)
   useEffect(() => {
@@ -250,7 +284,6 @@ const SlideSpread = ({
 
           {
             multipleTextValue || showOneTextRightSideBox ? null : (
-
               <>
                 {textElements.map((textElement) => {
                   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -270,6 +303,7 @@ const SlideSpread = ({
 
                   return (
                     <Rnd
+                      cancel=".no-drag"
                       key={textElement.id}
                       size={{
                         width: textElement.size.width,
@@ -340,6 +374,7 @@ const SlideSpread = ({
                         {/* Close Button */}
                         <IconButton
                           size="small"
+                          className="no-drag"
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteTextElement(textElement.id);
@@ -364,6 +399,7 @@ const SlideSpread = ({
                         <TextField
                           variant="standard"
                           value={textElement.value}
+                          className="no-drag"
                           placeholder="Add Text"
                           multiline
                           fullWidth
@@ -410,12 +446,13 @@ const SlideSpread = ({
           {selectedVideoUrl && (
             <Rnd
               cancel=".no-drag"
+              position={{ x: qrPosition.x, y: qrPosition.y }}
               onDragStop={(_, d) =>
                 setQrPosition((prev) => ({
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrPosition.zIndex, // Bring to front on drag
+                  zIndex: qrPosition.zIndex,
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -436,12 +473,11 @@ const SlideSpread = ({
               }}
             >
               <motion.div
-                key={selectedVideoUrl} // ✅ unique key triggers re-animation on change
-                initial={{ opacity: 0, x: 100 }} // start off-screen (right)
-                animate={{ opacity: 1, x: 0 }} // slide in
-                exit={{ opacity: 0, x: -100 }} // slide out left
+                key={selectedVideoUrl}
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
-              // style={{ position: "absolute", width: "100%" }}
               >
                 <Box
                   sx={{
@@ -473,7 +509,7 @@ const SlideSpread = ({
                       top: 59,
                       height: 10,
                       width: 10,
-                      left: 55,
+                      left: { md: 55, sm: 55, xs: 55 },
                       borderRadius: 2,
                     }}
                   >
@@ -523,6 +559,7 @@ const SlideSpread = ({
           {selectedAudioUrl && (
             <Rnd
               cancel=".no-drag"
+              position={{ x: qrAudioPosition.x, y: qrAudioPosition.y }}
               onDragStop={(_, d) =>
                 setQrAudioPosition((prev) => ({
                   ...prev,
@@ -586,7 +623,7 @@ const SlideSpread = ({
                       top: 62,
                       height: 10,
                       width: 10,
-                      left: 62,
+                      left: { md: 62, sm: 62, xs: 55 },
                       borderRadius: 2,
                     }}
                   >
@@ -802,7 +839,7 @@ const SlideSpread = ({
                 alignItems: "center",
                 justifyContent: "center",
                 height: "100%",
-                width: { md: "370px", sm: "370px", xs: "100%" },
+                width: { md: "470px", sm: "370px", xs: "100%" },
                 border: "3px dashed #3a7bd5",
                 bgcolor: "#6183cc36",
                 position: "relative",
@@ -825,9 +862,9 @@ const SlideSpread = ({
                   zIndex: 5,
                 }}
                 onClick={() => {
-                  setOneTextValue("");
                   if (typeof setShowOneTextRightSideBox === "function") {
                     setShowOneTextRightSideBox(false);
+                    setSelectedLayout("blank");
                   }
                 }}
               >
@@ -877,8 +914,8 @@ const SlideSpread = ({
           {multipleTextValue && (
             <Box
               sx={{
-                height: "97%",
-                width: { md: "375px", sm: "375px", xs: "90%" },
+                height: "98%",
+                width: { md: "475px", sm: "375px", xs: "90%" },
                 borderRadius: "6px",
                 p: 1,
                 position: "absolute",
@@ -892,7 +929,7 @@ const SlideSpread = ({
                   key={index}
                   sx={{
                     position: "relative",
-                    height: "175px",
+                    height: "210px",
                     width: "100%",
                     mb: 2,
                     border: "3px dashed #3a7bd5",
@@ -921,9 +958,7 @@ const SlideSpread = ({
                       "&:hover": { bgcolor: "#f44336", color: "white" },
                       zIndex: 5,
                     }}
-                    onClick={() =>
-                      setTexts((prev) => prev.filter((_, i) => i !== index))
-                    }
+                    onClick={() => handleDeleteBox(index)}
                   >
                     <Close />
                   </IconButton>
@@ -961,8 +996,8 @@ const SlideSpread = ({
                             color: textObj.fontColor,
                             fontFamily: textObj.fontFamily,
                             textAlign: textAlign,
-                            lineHeight: lineHeight2,
-                            letterSpacing: letterSpacing2
+                            lineHeight: textObj.lineHeight,
+                            letterSpacing: textObj.letterSpacing,
                           },
                         },
                       }}
@@ -1006,8 +1041,8 @@ const SlideSpread = ({
                           color: textObj.fontColor,
                           fontFamily: textObj.fontFamily,
                           textAlign: textObj.textAlign,
-                          lineHeight: lineHeight2,
-                          letterSpacing: letterSpacing2,
+                          lineHeight: textObj.lineHeight,
+                          letterSpacing: textObj.letterSpacing,
                           width: "100%",
                           height: "100%",
                           display: "flex",

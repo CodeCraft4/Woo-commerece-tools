@@ -1,9 +1,17 @@
 /* Book */
 .book {
-  width: 400px;
-  height: 600px;
+  width: 500px;
+  height: 700px;
   position: relative;
   transition: transform 0.5s;
+}
+
+.book-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  width: 1000px;
 }
 
 .paper {
@@ -17,8 +25,8 @@
 
 .front {
   backface-visibility: hidden;
-  border-left: 6px solid #002c0f;
-  border-radius: 10px;
+  border-left: 10px solid #8d6da1;
+  border-radius: 14px;
 }
 
 .front,
@@ -40,7 +48,6 @@
 .front {
   z-index: 1;
 }
-
 .back {
   z-index: 0;
 }
@@ -52,7 +59,6 @@
   text-align: center;
   border-radius: 10px;
   border: 1px solid #dbdbdb;
-  /* box-shadow: 3px 4px 28px #dbdbdb; */
 }
 
 .back-content {
@@ -69,72 +75,46 @@
 #p1 {
   z-index: 3;
 }
-
 #p2 {
   z-index: 2;
 }
-
 #p3 {
   z-index: 1;
-}
-
-/* Customization */
-.book-title {
-  font-size: 3em;
-  margin-bottom: 40px;
-}
-
-.cover-img {
-  width: 380px;
-  height: 400px;
-  object-fit: cover;
 }
 
 /* Tablets (≤ 768px) */
 @media (max-width: 768px) {
   .book {
-    width: 300px;
-    height: 420px;
-  }
-
-  .cover-img {
-    width: 280px;
-    height: 320px;
-  }
-
-  i {
-    font-size: 3em;
+    width: 410px;
+    height: 600px;
   }
 }
 
-/* Mobile (≤ 480px) */
+/* Mobile (≤ 480px) — single slide carousel */
 @media (max-width: 480px) {
-  .book {
-    width: 350px;
-    height: 500px;
-  }
-
-
-  .book-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden; /* ✅ show only one card in view */
-  }
-
-  .paper {
+  .front-content,
+  .back-content {
     width: 100%;
     height: 100%;
   }
 
-  .front-content,
-  .back-content {
-    width: 200%;
-    height: 100%;
+  .book {
+    display: none;
+  } /* hide 3D book on mobile */
+  .mobile-only {
+    width: 400px;
+  }
+  .mobile-slide {
+    width: 400px;
+    height: 600px;
+    border-radius: 15px;
+    border: 1px solid #dbdbdb;
+    overflow: hidden; /* show only active slide */
+    /* subtle transition for content swap */
+    transition: transform 0.3s ease, opacity 0.3s ease;
   }
 
-  /* Optional: shrink button size on mobile */
-  button i {
-    font-size: 2.5em;
+  .book-container {
+    width: 400px;
   }
 }

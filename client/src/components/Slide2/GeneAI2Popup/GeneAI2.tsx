@@ -290,7 +290,6 @@ const GeneAI2Popup = (props: GeneAIType) => {
 
       const result = await model.generateContent(
         `Create a greeting card design concept for: "${prompt}".
-        
         Provide:
         1. Color palette (suggest 2-3 hex color codes)
         2. Design theme and style
@@ -321,16 +320,15 @@ const GeneAI2Popup = (props: GeneAIType) => {
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
         height: { md: 600, sm: 600, xs: 450 },
-        left: { md: "19.5%", sm: "0%", xs: 0 },
-        mt: { md: 0, sm: 0, xs: 0 },
-        overflowY:'hidden'
+        left: { md: "17%", sm: "0%", xs: 0 },
+        overflowY: 'hidden'
       }}
     >
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
       <Box
         sx={{
-          display: "flex",
+          display: { md: "flex", sm: "flex", xs: 'none' },
           flexDirection: "column",
           alignItems: "center",
         }}

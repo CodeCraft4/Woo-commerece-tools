@@ -23,9 +23,9 @@ const StickerPopup = ({ onClose }: Sticker1PopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: 600,
+        height: { md: 600, sm: 600, xs: 450 },
         mt: { md: 0, sm: 0, xs: 0 },
-        left: { md: "19.5%", sm: "0%", xs: 0 },
+        left: { md: "17%", sm: "0%", xs: 0 },
       }}
     >
       <Box

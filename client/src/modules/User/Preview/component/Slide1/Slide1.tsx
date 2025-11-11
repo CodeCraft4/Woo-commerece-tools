@@ -36,7 +36,6 @@ const Slide1 = () => {
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        backgroundColor: "#fff",
       }}
     >
 
@@ -339,8 +338,8 @@ const Slide1 = () => {
                       : "center",
                 borderRadius: "6px",
                 transition: "all 0.2s ease",
-                lineHeight: lineHeight1,
-                letterSpacing: letterSpacing1,
+                lineHeight: e.lineHeight,
+                letterSpacing: e.letterSpacing,
               }}
             >
               {e.value?.length === 0 ? (
@@ -423,8 +422,6 @@ const Slide1 = () => {
               ))}</>
         )
       }
-
-
 
       {isAIimage && (
         <img

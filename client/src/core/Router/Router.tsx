@@ -18,6 +18,8 @@ import AdminRoute from "../../hoc/SecureRoute";
 import AdminEditor from "../../modules/Admin/AdminEditor/AdminEditor";
 import Reports from "../../modules/Admin/Reports/Reports";
 import Categories from "../../modules/Admin/Categories/Categories";
+import Orders from "../../modules/Admin/Orders/Orders";
+import AddCategories from "../../modules/Admin/AddCategories/AddCategories";
 
 const Router = () => {
   return (
@@ -40,6 +42,22 @@ const Router = () => {
         element={
           <AdminRoute>
             <DashboardHome />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.ORDERS_LIST}
+        element={
+          <AdminRoute>
+            <Orders />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path={`${ADMINS_DASHBOARD.ADD_CATEGORY}/:categories`}
+        element={
+          <AdminRoute>
+            <AddCategories />
           </AdminRoute>
         }
       />

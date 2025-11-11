@@ -93,6 +93,7 @@ const SpreadRightSide = ({
     updateSticker3,
     removeSticker3,
     aimage3,
+    setSelectedLayout3,
     setAIImage3,
 
     lineHeight3,
@@ -132,12 +133,12 @@ const SpreadRightSide = ({
   // Function to add new text element
   const addNewTextElement = () => {
     const newTextElement = createNewTextElement3({
-       fontSize:16,
-      fontWeight:400,
-      fontColor:"#000000",
-      fontFamily:"Roboto",
-      textAlign:"center",
-      rotation:0,
+      fontSize: 16,
+      fontWeight: 400,
+      fontColor: "#000000",
+      fontFamily: "Roboto",
+      textAlign: "center",
+      rotation: 0,
       zIndex: textElements3.length + 1,
     });
     setTextElements3((prev: any) => [...prev, newTextElement]);
@@ -168,10 +169,42 @@ const SpreadRightSide = ({
 
   // 👇 Auto-reset multipleTextValue when all multiple texts are deleted
   useEffect(() => {
-    if (multipleTextValue3 && texts3.length === 0) {
-      setMultipleTextValue3(true); // hide layout
+    // When user re-selects the multipleTextValue layout
+    if (multipleTextValue3) {
+      // If no texts currently exist, recreate the 3 default boxes
+      if (texts3.length === 0) {
+        const defaultTexts = Array(3)
+          .fill(null)
+          .map(() => ({
+            value: "",
+            fontSize: 16,
+            fontWeight: 400,
+            fontColor: "#000000",
+            fontFamily: "Roboto",
+            textAlign: "center",
+            verticalAlign: "center",
+            rotation: 0,
+            lineHeight: 1.5,
+            letterSpacing: 0
+          }));
+        setTexts3(defaultTexts);
+      }
     }
-  }, [texts3, multipleTextValue3]);
+  }, [multipleTextValue3]);
+
+const handleDeleteBox = (index: number) => {
+  setTexts3((prev) => {
+    const updated = prev.filter((_, i) => i !== index);
+
+    // ✅ If all boxes are deleted → reset layout
+    if (updated.length === 0) {
+      setMultipleTextValue3(false);
+      setSelectedLayout3("blank");
+    }
+
+    return updated;
+  });
+};
 
   // ✅ Place this useEffect HERE (below your state definitions)
   useEffect(() => {
@@ -266,6 +299,7 @@ const SpreadRightSide = ({
 
                   return (
                     <Rnd
+                      cancel=".no-drag"
                       key={textElement.id}
                       size={{
                         width: textElement.size.width,
@@ -336,6 +370,7 @@ const SpreadRightSide = ({
                         {/* Close Button */}
                         <IconButton
                           size="small"
+                          className="no-drag"
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteTextElement(textElement.id);
@@ -359,6 +394,7 @@ const SpreadRightSide = ({
                         {/* Editable Text */}
                         <TextField
                           variant="standard"
+                          className="no-drag"
                           value={textElement.value}
                           placeholder="Add Text"
                           multiline
@@ -405,9 +441,10 @@ const SpreadRightSide = ({
             )
           }
 
-
           {selectedVideoUrl3 && (
             <Rnd
+              cancel=".no-drag"
+              position={{ x: qrPosition3.x, y: qrPosition3.y }}
               onDragStop={(_, d) =>
                 setQrPosition3((prev) => ({
                   ...prev,
@@ -471,7 +508,7 @@ const SpreadRightSide = ({
                       top: 59,
                       height: 10,
                       width: 10,
-                      left: 55,
+                      left: { md: 55, sm: 55, xs: 55 },
                       borderRadius: 2,
                     }}
                   >
@@ -500,13 +537,20 @@ const SpreadRightSide = ({
                     </Typography>
                   </a>
                   <IconButton
-                    onClick={() => setSelectedVideoUrl3(null)}
+                    className="no-drag"
+                    onClick={(e) => {
+                      e.stopPropagation(); // ✅ Prevent parent drag/touch interception
+                      setSelectedVideoUrl3(null);
+                    }}
                     sx={{
                       position: "absolute",
                       top: 0,
                       right: 0,
                       bgcolor: COLORS.black,
                       color: COLORS.white,
+                      zIndex: 9999, // ✅ Make sure it's above other layers
+                      pointerEvents: "auto", // ✅ Ensure it's clickable on touch devices
+                      touchAction: "manipulation", // ✅ Allow touch tap
                       "&:hover": { bgcolor: "red" },
                     }}
                   >
@@ -519,6 +563,8 @@ const SpreadRightSide = ({
 
           {selectedAudioUrl3 && (
             <Rnd
+              cancel=".no-drag"
+              position={{ x: qrAudioPosition3.x, y: qrAudioPosition3.y }}
               onDragStop={(_, d) =>
                 setQrAudioPosition3((prev) => ({
                   ...prev,
@@ -546,7 +592,7 @@ const SpreadRightSide = ({
               }}
             >
               <motion.div
-                key={selectedVideoUrl3} // ✅ unique key triggers re-animation on change
+                key={selectedAudioUrl3} // ✅ unique key triggers re-animation on change
                 initial={{ opacity: 0, x: 100 }} // start off-screen (right)
                 animate={{ opacity: 1, x: 0 }} // slide in
                 exit={{ opacity: 0, x: -100 }} // slide out left
@@ -583,7 +629,7 @@ const SpreadRightSide = ({
                       top: 62,
                       height: 10,
                       width: 10,
-                      left: 62,
+                      left: { md: 62, sm: 62, xs: 55 },
                       borderRadius: 2,
                     }}
                   >
@@ -616,6 +662,7 @@ const SpreadRightSide = ({
                   </a>
                   <IconButton
                     onClick={() => setSelectedAudioUrl3(null)}
+                    className="no-drag"
                     sx={{
                       position: "absolute",
                       top: 0,
@@ -798,7 +845,7 @@ const SpreadRightSide = ({
                 alignItems: "center",
                 justifyContent: "center",
                 height: "97%",
-                width: { md: "370px", sm: "370px", xs: "90%" },
+                width: { md: "470px", sm: "370px", xs: "90%" },
                 border: "3px dashed #3a7bd5",
                 position: "absolute",
                 bgcolor: "#6183cc36",
@@ -825,6 +872,7 @@ const SpreadRightSide = ({
                   setOneTextValue3("");
                   if (typeof setShowOneTextRightSideBox3 === "function") {
                     setShowOneTextRightSideBox3(false);
+                    setSelectedLayout3("blank");
                   }
                 }}
               >
@@ -881,8 +929,8 @@ const SpreadRightSide = ({
           {multipleTextValue3 && (
             <Box
               sx={{
-                height: "97%",
-                width: { md: "375px", sm: "375px", xs: "90%" },
+                height: "98%",
+                width: { md: "475px", sm: "375px", xs: "90%" },
                 borderRadius: "6px",
                 p: 1,
                 position: "absolute",
@@ -896,7 +944,7 @@ const SpreadRightSide = ({
                   key={index}
                   sx={{
                     position: "relative",
-                    height: "175px",
+                    height: "210px",
                     width: "100%",
                     mb: 2,
                     border: "3px dashed #3a7bd5",
@@ -926,7 +974,7 @@ const SpreadRightSide = ({
                       zIndex: 5,
                     }}
                     onClick={() =>
-                      setTexts3((prev) => prev.filter((_, i) => i !== index))
+                      handleDeleteBox(index)
                     }
                   >
                     <Close />
@@ -967,8 +1015,8 @@ const SpreadRightSide = ({
                             color: textObj.fontColor3,
                             fontFamily: textObj.fontFamily3,
                             textAlign: textAlign3,
-                            lineHeight: lineHeight3,
-                            letterSpacing: letterSpacing3
+                            lineHeight: textObj.lineHeight,
+                            letterSpacing: textObj.letterSpacing
                           },
                         },
                       }}
@@ -1012,8 +1060,8 @@ const SpreadRightSide = ({
                           color: textObj.fontColor3,
                           fontFamily: textObj.fontFamily3,
                           textAlign: textObj.textAlign,
-                          lineHeight: lineHeight3,
-                          letterSpacing: letterSpacing3,
+                          lineHeight: textObj.lineHeight,
+                          letterSpacing: textObj.letterSpacing,
                           width: "100%",
                           height: "100%",
                           display: "flex",

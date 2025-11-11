@@ -212,10 +212,10 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
       title="Photos"
       onClose={onClose}
       sx={{
-        width: {md:300,sm:300,xs:'95%'},
-        height: 600,
-        left:{md: "33.5%",sm: "0%",xs:0},
-        mt:{md:0,sm:0,xs:0},
+        width: { md: 300, sm: 300, xs: '95%' },
+        height: { md: 600, sm: 600, xs: 450 },
+        left: { md: "23%", sm: "0%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 0 },
         zIndex: 99,
       }}
     >
@@ -258,8 +258,8 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
           accept="image/png, image/jpeg, image/heic"
           sx={{
             position: "absolute",
-            width: "115px",
-            height: "115px",
+            width: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
+            height: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
             bgcolor: "red",
             opacity: 0,
             cursor: "pointer",
@@ -274,8 +274,8 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
         {/* Upload box */}
         <Box
           sx={{
-            width: "115px",
-            height: "115px",
+            width: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
+            height: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
             borderRadius: "5px",
             border: `2px solid ${loading ? "#855833ff" : "#3a7bd5"} `,
             display: "flex",
@@ -306,11 +306,11 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
                   imgs.map((img) =>
                     img.id === id
                       ? {
-                          ...img,
-                          zIndex: !isSelected
-                            ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1
-                            : img.zIndex, // keep current zIndex when unselecting
-                        }
+                        ...img,
+                        zIndex: !isSelected
+                          ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1
+                          : img.zIndex, // keep current zIndex when unselecting
+                      }
                       : img
                   )
                 );
@@ -322,11 +322,10 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
               })
             }
             sx={{
-              width: 115,
-              height: 115,
-              border: `2px solid ${
-                selectedImg3?.includes(id) ? "#3a7bd5" : "#bd7082ff"
-              }`,
+              width: { lg: "115px", md: "115px", sm: "115px", xs: '95px' },
+              height: { lg: "115px", md: "115px", sm: "115px", xs: '95px' },
+              border: `2px solid ${selectedImg3?.includes(id) ? "#3a7bd5" : "#bd7082ff"
+                }`,
               borderRadius: 2,
               position: "relative",
               cursor: "pointer",

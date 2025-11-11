@@ -73,6 +73,7 @@ import LineHeight1Popup from "../Slide1/LineHeight1Popup/LineHeight1Popup";
 import LineHeight2Popup from "../Slide2/LineHeight2Popup/LineHeight2Popup";
 import LineHeight4Popup from "../Slide4/LineHeight4Popup/LineHeight4Popup";
 import LineHeight3Popup from "../Slide3/LineHeight3Popup/LineHeight3Popup";
+import { COLORS } from "../../constant/color";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -325,6 +326,8 @@ const WishCard = () => {
           textAlign: "center",
           userSelect: "none",
           position: "relative",
+          height: '100%',
+          p: 1
         }}
       >
         {/* Main box */}
@@ -335,10 +338,11 @@ const WishCard = () => {
             scrollbarWidth: "none",
             "&::-webkit-scrollbar": { display: "none" },
             gap: 10,
-            px: 1,
+            px: { md: 1, sm: 1, xs: 0 },
             py: { md: 5, sm: 5, xs: 1 },
             scrollSnapType: "x mandatory",
             scrollBehavior: "smooth",
+            width: '100%',
           }}
           ref={mainRef}
           onMouseDown={onMainMouseDown}
@@ -352,8 +356,8 @@ const WishCard = () => {
                 key={e.id}
                 sx={{
                   flex: "0 0 auto",
-                  width: { md: 400, sm: 400, xs: "100%" },
-                  height: { md: 600, sm: 600, xs: "600px" },
+                  width: { md: 500, sm: 400, xs: "100%" },
+                  height: { md: 700, sm: 600, xs: 600 },
                   ml: index === 0 ? { md: 80, sm: 23, xs: 0 } : 0,
                   borderRadius: 2,
                   mt: { md: 0, sm: 0, xs: 0 },
@@ -597,81 +601,91 @@ const WishCard = () => {
             </>
           )}
 
-          {activeIndex === 3 && (
-            <>
-              {activePopup === "layout" && (
-                <Layout4Popup
-                  onClose={() => setActivePopup(null)}
-                  activeIndex={activeIndex}
-                />
-              )}
+          {
+            layout1 &&
+            (
+              (!layout1.elements || layout1.elements.length === 0) &&
+              (!layout1.textElements || layout1.textElements.length === 0)
+            ) && (
+              <>
+                {activeIndex === 3 && (
+                  <>
+                    {activePopup === "layout" && (
+                      <Layout4Popup
+                        onClose={() => setActivePopup(null)}
+                        activeIndex={activeIndex}
+                      />
+                    )}
 
-              {activePopup === "text" && (
-                <Text4Popup
-                  onClose={() => setActivePopup(null)}
-                  onShowFontSizePopup={() =>
-                    setActiveTextSlideLastChild("size")
-                  }
-                  onShowFontColorPopup={() =>
-                    setActiveTextSlideLastChild("color")
-                  }
-                  onShowFontFamilyPopup={() =>
-                    setActiveTextSlideLastChild("family")
-                  }
-                  onChangeTextAlign={() =>
-                    setActiveTextSlideLastChild("textAlign")
-                  }
+                    {activePopup === "text" && (
+                      <Text4Popup
+                        onClose={() => setActivePopup(null)}
+                        onShowFontSizePopup={() =>
+                          setActiveTextSlideLastChild("size")
+                        }
+                        onShowFontColorPopup={() =>
+                          setActiveTextSlideLastChild("color")
+                        }
+                        onShowFontFamilyPopup={() =>
+                          setActiveTextSlideLastChild("family")
+                        }
+                        onChangeTextAlign={() =>
+                          setActiveTextSlideLastChild("textAlign")
+                        }
 
-                  onSetLineHeightPopup={() =>
-                    setActiveTextSlideLastChild("lineHeight")
-                  }
-                  activeChildComponent={renderActiveTextSlideLastChild()}
-                  onAddTextToCanvas={() =>
-                    setAddTextCountLast((prev) => prev + 1)
-                  }
-                  activeIndex={activeIndex}
-                />
-              )}
+                        onSetLineHeightPopup={() =>
+                          setActiveTextSlideLastChild("lineHeight")
+                        }
+                        activeChildComponent={renderActiveTextSlideLastChild()}
+                        onAddTextToCanvas={() =>
+                          setAddTextCountLast((prev) => prev + 1)
+                        }
+                        activeIndex={activeIndex}
+                      />
+                    )}
 
-              {activePopup === "photo" && (
-                <Photo4Popup
-                  onClose={() => setActivePopup(null)}
-                  activeIndex={activeIndex}
-                />
-              )}
+                    {activePopup === "photo" && (
+                      <Photo4Popup
+                        onClose={() => setActivePopup(null)}
+                        activeIndex={activeIndex}
+                      />
+                    )}
 
-              {activePopup === "sticker" && (
-                <Sticker4Popup
-                  onClose={() => setActivePopup(null)}
-                  activeIndex={activeIndex}
-                />
-              )}
+                    {activePopup === "sticker" && (
+                      <Sticker4Popup
+                        onClose={() => setActivePopup(null)}
+                        activeIndex={activeIndex}
+                      />
+                    )}
 
-              {activePopup === "video" && (
-                <Video4Popup
-                  onClose={() => setActivePopup(null)}
-                  activeIndex={activeIndex}
-                />
-              )}
+                    {activePopup === "video" && (
+                      <Video4Popup
+                        onClose={() => setActivePopup(null)}
+                        activeIndex={activeIndex}
+                      />
+                    )}
 
-              {activePopup === "audio" && (
-                <Media4Popup
-                  onClose={() => {
-                    setActivePopup(null);
-                  }}
-                  mediaType="audio"
-                  activeIndex={activeIndex}
-                />
-              )}
+                    {activePopup === "audio" && (
+                      <Media4Popup
+                        onClose={() => {
+                          setActivePopup(null);
+                        }}
+                        mediaType="audio"
+                        activeIndex={activeIndex}
+                      />
+                    )}
 
-              {activePopup === "geneAi" && (
-                <GeneAI4Popup
-                  onClose={() => setActivePopup(null)}
-                  activeIndex={activeIndex}
-                />
-              )}
-            </>
-          )}
+                    {activePopup === "geneAi" && (
+                      <GeneAI4Popup
+                        onClose={() => setActivePopup(null)}
+                        activeIndex={activeIndex}
+                      />
+                    )}
+                  </>
+                )}</>
+            )
+          }
+
 
           {/* Editing Toolbar 
           {/* 1st Card */}
@@ -698,6 +712,18 @@ const WishCard = () => {
                       left: { md: "29.5%", sm: "14%", xs: 10 },
                       zIndex: { md: 10, sm: 10, xs: 99999 },
                       boxShadow: 3,
+                      "&::-webkit-scrollbar": {
+                        height: "6px",
+                        width: '5px'
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        backgroundColor: "#ca1111ff",
+                        borderRadius: "20px",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        backgroundColor: COLORS.primary,
+                        borderRadius: "20px",
+                      },
                     }}
                   >
                     <IconButton
@@ -779,10 +805,28 @@ const WishCard = () => {
                 overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
                 position: "absolute",
-                top: { md: 40, sm: 40, xs: '100%' },
-                left: { md: "35.5%", sm: "14%", xs: 10 },
+                top: { md: 50, sm: 50, xs: '100%' },
+                left: {
+                  xs: 10,
+                  sm: "14%",
+                  md: "18%",
+                  lg: "27%",
+                  xl: "33%",
+                },
                 zIndex: { md: 10, sm: 10, xs: 99999 },
                 boxShadow: 3,
+                "&::-webkit-scrollbar": {
+                  height: "6px",
+                  width: '5px'
+                },
+                "&::-webkit-scrollbar-track": {
+                  backgroundColor: "#f1f1f1ff",
+                  borderRadius: "20px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: COLORS.primary,
+                  borderRadius: "20px",
+                },
               }}
             >
               <IconButton
@@ -862,10 +906,22 @@ const WishCard = () => {
                 overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
                 position: "absolute",
-                top: { md: 40, sm: 40, xs: '100%' },
-                left: { md: "49.4%", sm: "14%", xs: 10 },
+                top: { md: 50, sm: 50, xs: '100%' },
+                left: { xl: "39%", lg: '27%', md: "18%", sm: "14%", xs: 10 },
                 zIndex: { md: 10, sm: 10, xs: 99999 },
                 boxShadow: 3,
+                "&::-webkit-scrollbar": {
+                  height: "6px",
+                  width: '5px'
+                },
+                "&::-webkit-scrollbar-track": {
+                  backgroundColor: "#f1f1f1ff",
+                  borderRadius: "20px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: COLORS.primary,
+                  borderRadius: "20px",
+                },
               }}
             >
               <IconButton
@@ -955,6 +1011,18 @@ const WishCard = () => {
                       right: { md: "22%", sm: "54%", xs: 10 },
                       zIndex: { md: 10, sm: 10, xs: 99999 },
                       boxShadow: 3,
+                      "&::-webkit-scrollbar": {
+                        height: "6px",
+                        width: '5px'
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        backgroundColor: "#f1f1f1ff",
+                        borderRadius: "20px",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        backgroundColor: COLORS.primary,
+                        borderRadius: "20px",
+                      },
                     }}
                   >
                     <IconButton sx={editingButtonStyle} onClick={() => togglePopup("layout")}>
@@ -1022,9 +1090,11 @@ const WishCard = () => {
             justifyContent: "center",
             gap: 1,
             position: "relative",
+            bottom: { md: 20, sm: 20, xs: -10 },
+            width: '100%',
             userSelect: "none",
-            background: "white",
-            height: 100,
+            background: "transparent",
+            zIndex: 22,
           }}
         >
           {/* Prev button */}
@@ -1081,6 +1151,7 @@ const WishCard = () => {
                   alignItems: "center",
                   userSelect: "none",
                   fontSize: "15px",
+                  borderRadius: 2
                 }}
               >
                 {e.label}

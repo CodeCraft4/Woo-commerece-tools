@@ -355,8 +355,6 @@ const handleImageUpload = (file: File) => {
     }
   };
 
-
-
   const previewRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -376,14 +374,13 @@ const handleImageUpload = (file: File) => {
         <Box
           ref={previewRef}
           sx={{
-            width: { md: "400px",sm:'400px',xs:'100%' },
-            height: {md:"600px",sm:"600px",xs:400},
+            width: { md: "500px",sm:'400px',xs:'100%' },
+            height: {md:"700px",sm:"600px",xs:400},
             borderRadius: "12px",
             boxShadow: "3px 5px 8px gray",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#e6e6e6ff",
             position: "relative",
             overflow: "hidden",
             border: `1px solid ${

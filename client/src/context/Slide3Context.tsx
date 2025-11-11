@@ -205,6 +205,8 @@ interface Slide3ContextType {
   ) => void;
   updateSticker3: (index: number, data: Partial<StickerItem>) => void;
   removeSticker3: (index: number) => void;
+  resetSlide3State: () => void | any;
+
 }
 
 const Slide3Context = createContext<Slide3ContextType | undefined>(undefined);
@@ -252,8 +254,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   const [qrPosition3, setQrPosition3] = useState<DraggableQR>({
     id: "qr1",
     url: "",
-    x: 20,
-    y: 10,
+    x: 0,
+    y: 0,
     width: 59,
     height: 105,
     rotation: 0,
@@ -262,8 +264,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   const [qrAudioPosition3, setQrAudioPosition3] = useState<DraggableQR>({
     id: "qr2",
     url: "",
-    x: 20,
-    y: 10,
+    x: 0,
+    y: 0,
     width: 59,
     height: 105,
     rotation: 0,
@@ -305,6 +307,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
     {
       value: "",
@@ -314,6 +318,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
     {
       value: "",
@@ -323,6 +329,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
   ]);
 
@@ -446,6 +454,111 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     setSelectedPreviewImage3,
   ]);
 
+  // ✅ Reset all context state to initial values
+  const resetSlide3State = () => {
+    setActiveIndex3(0);
+    setTitle3("Happy Birthday");
+    setActivePopup3(null);
+    setSelectedImage3([]);
+    setShowOneTextRightSideBox3(false);
+    setOneTextValue3("");
+    setMultipleTextValue3(false);
+    setSelectedLayout3("blank");
+    setSelectedVideoUrl3(null);
+    setSelectedAudioUrl3(null);
+    setSelectedAIimageUrl3(null);
+    setIsAIimage3(false);
+    setSelectedPreviewImage3(null);
+    setDraggableImages3([]);
+    setQrPosition3({
+      id: "qr1",
+      url: "",
+      x: 20,
+      y: 10,
+      width: 59,
+      height: 105,
+      rotation: 0,
+      zIndex: 1000,
+    });
+    setQrAudioPosition3({
+      id: "qr2",
+      url: "",
+      x: 20,
+      y: 10,
+      width: 59,
+      height: 105,
+      rotation: 0,
+      zIndex: 1000,
+    });
+    setAIImage3({
+      x: 30,
+      y: 30,
+      width: 300,
+      height: 400,
+    });
+    setFontSize3(20);
+    setFontWeight3(400);
+    setTextAlign3("start");
+    setVerticalAlign3("top");
+    setFontFamily3("Roboto");
+    setFontColor3("#000000");
+    setRotation3(0);
+    setTextElements3([]);
+    setSelectedTextId3(null);
+    setTexts3([
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+         lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+         lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+      {
+        value: "",
+        fontSize: 20,
+        fontWeight: 400,
+        fontColor: "#000000",
+        fontFamily: "Roboto",
+        verticalAlign: "center",
+        textAlign: "center",
+         lineHeight: 1.5,
+        letterSpacing: 0,
+      },
+    ]);
+    setEditingIndex3(null);
+    setImages3([]);
+    setVideo3(null);
+    setAudio3(null);
+    setTips3(false);
+    setUpload3(false);
+    setDuration3(null);
+    setPoster3(null);
+    setTextPositions3([]);
+    setTextSizes3([]);
+    setImagePositions3({});
+    setImageSizes3({});
+    setIsSlideActive3(false);
+    setIsEditable3(true);
+    setSelectedStickers3([]);
+    setLineHeight3(1.5);
+    setLetterSpacing3(0);
+  };
+
   return (
     <Slide3Context.Provider
       value={{
@@ -561,6 +674,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         setVerticalAlign3,
 
         slide3DataStore3,
+        // reset All State
+        resetSlide3State
       }}
     >
       {children}

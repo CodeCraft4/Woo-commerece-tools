@@ -8,9 +8,12 @@ const AdminSignIn = () => {
         height: "100vh",
         width: "100%",
         display: { md: "flex", sm: "flex", xs: "100%" },
+        position: "relative",
+        justifyContent: "center",
+        alignItems: "center",
+        bgcolor: "#999999ff",
       }}
     >
-      <Box>
         <Box
           component={"img"}
           src="/assets/images/animated-banner.jpg"
@@ -18,11 +21,13 @@ const AdminSignIn = () => {
             width: "100%",
             height: { md: "100vh", sm: "100vh", xs: "auto" },
             objectFit: "cover",
+            filter:'brightness(50%)'
           }}
         />
-      </Box>
       <Box
         sx={{
+          position: "absolute",
+          top: 0,
           display: "flex",
           justifyContent: "center",
           alignItems: "center",

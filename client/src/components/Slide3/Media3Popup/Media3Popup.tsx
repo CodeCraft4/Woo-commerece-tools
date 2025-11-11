@@ -14,6 +14,7 @@ import {
 } from "@mui/icons-material";
 import { COLORS } from "../../../constant/color";
 import { useSlide3 } from "../../../context/Slide3Context";
+import { handleAutoDeletedAudio } from "../../../lib/lib";
 
 interface Media3PopupProps {
   onClose: () => void;
@@ -41,44 +42,45 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
   const [userAudios, setUserAudios] = useState<{ id: string; url: string }[]>(
     []
   );
+  const [isDeleteMedia, setIsDeleteMedia] = useState('')
 
   const generateId = () => Date.now() + Math.random();
 
   // Handle audio file selection
-   const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-     const files = e.target.files;
-     if (!files) return;
-   
-     // Allowed extensions
-     const allowedExtensions = ["mp3", "wav", "aiff", "aac", "m4a"];
-   
-     const validFiles = Array.from(files).filter((file) => {
-       const fileSizeMB = file.size / (1024 * 1024);
-       const ext = file.name.split(".").pop()?.toLowerCase();
-   
-       // ✅ Check file type
-       if (!ext || !allowedExtensions.includes(ext)) {
-         alert(`❌ ${file.name} is not a supported audio format.`);
-         return false;
-       }
-   
-       // ✅ Check file size (max 50MB)
-       if (fileSizeMB > 50) {
-         alert(`❌ ${file.name} is too large (max 50MB).`);
-         return false;
-       }
-   
-       return true;
-     });
-   
-     if (validFiles.length === 0) {
-       e.target.value = ""; // clear invalid input
-       return;
-     }
-   
-     // ✅ Set valid audio files
-     setAudio3(validFiles);
-   };
+  const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // Allowed extensions
+    const allowedExtensions = ["mp3", "wav", "aiff", "aac", "m4a"];
+
+    const validFiles = Array.from(files).filter((file) => {
+      const fileSizeMB = file.size / (1024 * 1024);
+      const ext = file.name.split(".").pop()?.toLowerCase();
+
+      // ✅ Check file type
+      if (!ext || !allowedExtensions.includes(ext)) {
+        alert(`❌ ${file.name} is not a supported audio format.`);
+        return false;
+      }
+
+      // ✅ Check file size (max 50MB)
+      if (fileSizeMB > 50) {
+        alert(`❌ ${file.name} is too large (max 50MB).`);
+        return false;
+      }
+
+      return true;
+    });
+
+    if (validFiles.length === 0) {
+      e.target.value = ""; // clear invalid input
+      return;
+    }
+
+    // ✅ Set valid audio files
+    setAudio3(validFiles);
+  };
 
   // Save audio URL to DB
   const saveAudioUrlToDB = async (audioId: string, audioUrl: string) => {
@@ -122,25 +124,48 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
         const fileName = `${audioId}.${fileExt}`;
         const filePath = `audio/${fileName}`;
 
+        // 1️⃣ Upload audio file
         const { error: uploadError } = await supabase.storage
           .from("media")
-          .upload(filePath, file, { upsert: true });
+          .upload(filePath, file, {
+            upsert: true,
+            metadata: {
+              user_id: user?.id,
+              created_at: new Date().toISOString(),
+            },
+          });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Upload error:", uploadError.message);
+          continue;
+        }
 
+        // 2️⃣ Get public URL
         const { data: publicData } = supabase.storage
           .from("media")
           .getPublicUrl(filePath);
 
+        // 3️⃣ Save URL to DB
         await saveAudioUrlToDB(audioId, publicData.publicUrl);
         setSelectedAudioUrl3(publicData.publicUrl);
+
+        // 4️⃣ Schedule auto-delete (2 min for testing or 1 week in production)
+        handleAutoDeletedAudio(
+          user?.id,
+          audioId,
+          fileName,
+          fetchUserAudios,
+          7 * 24 * 60 * 60 * 1000,
+          setIsDeleteMedia,
+        );
       }
 
       toast.success("Audio uploaded successfully!");
+      await fetchUserAudios();
+
       setAudio3(null);
       setDuration3(0);
       setUpload3(true);
-      await fetchUserAudios();
     } catch (err) {
       console.error("Error uploading audio:", err);
     } finally {
@@ -217,9 +242,9 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: { md: 600, sm: 600, xs: 540 },
-        left: { md: "33.5%", sm: "0%", xs: 0 },
-        mt:{md:0,sm:0,xs:4},
+        height: { md: 600, sm: 600, xs: 450 },
+        left: { md: "23%", sm: "0%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 0 },
         overflow: "hidden",
       }}
     >
@@ -234,18 +259,18 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
               display: { md: 'flex', sm: 'flex', xs: 'none' }
             }}
           >
-            <video
+            {/* <video
               src={"/assets/images/diy-tips.mp4"}
               autoPlay
               loop
               muted
               style={{ width: "100%", height: "100%" }}
-            />
+            /> */}
           </Box>
-          <Box p={2}>
+          <Box p={2} height={'100%'}>
             <Typography
               sx={{
-                fontSize: {md:"23px",sm:"23px",xs:'20px'},
+                fontSize: { md: "23px", sm: "23px", xs: '20px' },
                 fontWeight: "bold",
                 color: "#363636ff",
                 textAlign: "center",
@@ -343,7 +368,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
                 <Box
                   mt={3}
                   sx={{
-                    height: "400px",
+                    height: { md: "400px", sm: "400px", xs: 150 },
                     overflowY: "auto",
                     p: 1,
                     "&::-webkit-scrollbar": {
@@ -360,11 +385,21 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
                     },
                   }}
                 >
-                  <Typography
-                    sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
-                  >
-                    Your Uploaded Audios:
-                  </Typography>
+                  {
+                    isDeleteMedia ? <Typography
+                      sx={{ fontSize: "14px", fontWeight: "bold", mb: 1, color: 'red', opacity: 0.5 }}
+                    >⏱️ Your videos is deleted after one week</Typography> :  <Typography
+                        sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
+                      >
+                        Your Uploaded Audios:
+                        <br />
+                        <hr />
+                        <span style={{ fontSize: '14px', fontWeight: 500, }}>
+                          Double tap your video to
+                          load your qr code onto your card
+                        </span>
+                      </Typography>
+                  }
                   <Box
                     sx={{
                       display: "flex",
@@ -429,7 +464,6 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
             <Box
               sx={{
                 width: "100%",
-                height: isVideo ? 200 : "auto",
                 position: "relative",
               }}
             >

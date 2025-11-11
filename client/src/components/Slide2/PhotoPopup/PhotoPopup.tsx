@@ -7,6 +7,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useSlide2 } from "../../../context/Slide2Context";
 import toast from "react-hot-toast";
 import { COLORS } from "../../../constant/color";
+import { handleAutoDeletedImage } from "../../../lib/lib";
 
 interface PhotoPopupProps {
   onClose: () => void;
@@ -94,6 +95,7 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
       }
 
       toast.success("✅ Image saved to your account!");
+
     } catch (err) {
       console.error("Error saving image to DB:", err);
       toast.error("Database save failed.");
@@ -111,14 +113,11 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
       const url = await uploadToSupabase(file, fileName);
 
       if (url) {
-        // Store in local state with fileName for deletion
-        setImages((prev: any) => [
-          ...prev,
-          { id: imageId, src: url, fileName },
-        ]);
-
-        // Save to DB with only id and url
+        setImages((prev: any) => [...prev, { id: imageId, src: url, fileName }]);
         await saveImageUrlToDB(imageId, url);
+
+        // 🧪 Auto-delete after 2 minutes (testing)
+        handleAutoDeletedImage(user?.id, imageId, fileName, fetchUserImages, 7 * 24 * 60 * 60 * 1000);
       }
     }
 
@@ -210,11 +209,11 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
     <PopupWrapper
       title="Photos"
       onClose={onClose}
-       sx={{
-        width: {md:300,sm:300,xs:'95%'},
-        height: {md:600,sm:600,xs:500},
-        mt:{md:0,sm:0,xs:0},
-        left: activeIndex === 1 ? {md:"19.5%",sm:'0%',xs:0} : "17%",
+      sx={{
+        width: { md: 300, sm: 300, xs: '95%' },
+        height: { md: 600, sm: 600, xs: 450 },
+        mt: { md: 0, sm: 0, xs: 0 },
+        left: activeIndex === 1 ? { md: "17%", sm: '0%', xs: 0 } : "17%",
         zIndex: 99,
       }}
     >
@@ -239,7 +238,7 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
           height: "auto",
           "&::-webkit-scrollbar": {
             height: "6px",
-            width:'5px'
+            width: '5px'
           },
           "&::-webkit-scrollbar-track": {
             backgroundColor: "#f1f1f1",
@@ -257,8 +256,8 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
           accept="image/png, image/jpeg, image/heic"
           sx={{
             position: "absolute",
-            width: "115px",
-            height: "115px",
+            width: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
+            height: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
             bgcolor: "red",
             opacity: 0,
             cursor: "pointer",
@@ -273,8 +272,8 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
         {/* Upload box */}
         <Box
           sx={{
-            width: "115px",
-            height: "115px",
+            width: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
+            height: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
             borderRadius: "5px",
             border: `2px solid ${loading ? "#855833ff" : "#3a7bd5"} `,
             display: "flex",
@@ -305,11 +304,11 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
                   imgs.map((img) =>
                     img.id === id
                       ? {
-                          ...img,
-                          zIndex: !isSelected
-                            ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1
-                            : img.zIndex, // keep current zIndex when unselecting
-                        }
+                        ...img,
+                        zIndex: !isSelected
+                          ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1
+                          : img.zIndex, // keep current zIndex when unselecting
+                      }
                       : img
                   )
                 );
@@ -321,11 +320,10 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
               })
             }
             sx={{
-              width: 115,
-              height: 115,
-              border: `2px solid ${
-                selectedImg?.includes(id) ? "#3a7bd5" : "#bd7082ff"
-              }`,
+              width: { lg: "115px", md: "115px", sm: "115px", xs: '95px' },
+              height: { lg: "115px", md: "115px", sm: "115px", xs: '95px' },
+              border: `2px solid ${selectedImg?.includes(id) ? "#3a7bd5" : "#bd7082ff"
+                }`,
               borderRadius: 2,
               position: "relative",
               cursor: "pointer",

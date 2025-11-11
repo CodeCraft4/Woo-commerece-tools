@@ -455,23 +455,19 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
                           <Box
                             onClick={(e) => {
                               e.stopPropagation(); // prevent parent onClick
-                              const video = document.getElementById(
-                                `video-${v.id}`
-                              ) as HTMLVideoElement;
+                              // Single click → select video (not play)
+                              setSelectedVideoUrl1((prev) => (prev === v.url ? null : v.url));
+                            }}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation(); // prevent parent click
+                              const video = document.getElementById(`video-${v.id}`) as HTMLVideoElement;
                               if (video) {
                                 // Pause all other videos
-                                document
-                                  .querySelectorAll("video")
-                                  .forEach((vid) => {
-                                    if (vid !== video) vid.pause();
-                                  });
-
-                                // Play/pause toggle
-                                if (video.paused) {
-                                  video.play();
-                                } else {
-                                  video.pause();
-                                }
+                                document.querySelectorAll("video").forEach((vid) => {
+                                  if (vid !== video) vid.pause();
+                                });
+                                // Play this one
+                                video.play();
                               }
                             }}
                             sx={{
@@ -501,7 +497,7 @@ const Video1Popup = ({ onClose, activeIndex }: Video1PopupProps) => {
                                 alignItems: "center",
                                 justifyContent: "center",
                                 border: `3px solid ${COLORS.seconday}`,
-                                outline: '2px solid white'
+                                outline: "2px solid white",
                               }}
                             >
                               <svg

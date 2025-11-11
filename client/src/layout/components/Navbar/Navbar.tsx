@@ -3,7 +3,7 @@ import { USER_ROUTES } from "../../../constant/route";
 import { useNavigate } from "react-router-dom";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
-import { Drafts } from "@mui/icons-material";
+import { Drafts, KeyboardArrowLeft } from "@mui/icons-material";
 import LandingButton from './../../../components/LandingButton/LandingButton';
 
 const Navbar = () => {
@@ -23,16 +23,17 @@ const Navbar = () => {
         sx={{
           bgcolor: "white",
           color: "black",
-          p:0,
+          p: 0,
+          height: 60
         }}
-        elevation={2}
+        elevation={4}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography
-            sx={{ color: "blue", textDecoration: "underline",cursor:'pointer',fontWeight:'bold' }}
+            sx={{ color: "blue", textDecoration: "underline", cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}
             onClick={isDraftModalOpen}
           >
-            Exit
+            <KeyboardArrowLeft />   Exit
           </Typography>
 
           {pathname ? (
@@ -60,7 +61,7 @@ const Navbar = () => {
           btnText="Draft Card"
           title="Is your card save in the draft"
           onClick={() => navigate("/")}
-          icon={<Drafts/>}
+          icon={<Drafts />}
         />
       )}
     </Box>

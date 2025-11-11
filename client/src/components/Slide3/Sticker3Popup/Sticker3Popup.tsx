@@ -23,9 +23,9 @@ const Sticker3Popup = ({ onClose }: Sticker3PopupProps) => {
       onClose={onClose}
       sx={{
         width: { md: 300, sm: 300, xs: "95%" },
-        height: 600,
-        left: { md: "33.5%", sm: "0%", xs: 0 },
-        mt: { md: 0, sm: 0, xs: 4 },
+        height: { md: 600, sm: 600, xs: 450 },
+        left: { md: "23%", sm: "0%", xs: 0 },
+        mt: { md: 0, sm: 0, xs: 0 },
         zIndex: 99,
       }}
     >
@@ -56,7 +56,7 @@ const Sticker3Popup = ({ onClose }: Sticker3PopupProps) => {
             key={stick.id}
             onClick={() => handleSelectSticker(stick)} // ✅ handle click
             sx={{
-              width: {md:"80px",sm:"80px",xs:'70px'},
+              width: { md: "80px", sm: "80px", xs: '70px' },
               height: "90px",
               borderRadius: 2,
               bgcolor: "rgba(233, 232, 232, 3)",

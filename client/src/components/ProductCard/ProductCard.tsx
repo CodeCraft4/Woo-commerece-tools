@@ -21,14 +21,14 @@ const ProductCard = (props: ProductTypes) => {
           ? { md: "100%", sm: "100%", xs: "100%" }
           : { md: "182px", sm: "125px", xs: "157px" },
         height: tabsSlider
-          ? {lg:'250px', md: "250px", sm: "240px", xs: "370px" }
+          ? { lg: '250px', md: "250px", sm: "240px", xs: "370px" }
           : { md: "270px", sm: "180px", xs: "225px" },
         borderRadius: 3,
         bgcolor: COLORS.white,
         border: tabsSlider ? `1px solid lightGray` : `4px solid ${borderColor}`,
         cursor: "pointer",
-        justifyContent:'center',
-        display:'flex',
+        justifyContent: 'center',
+        display: 'flex',
         mx: "auto",
       }}
     >
@@ -41,7 +41,7 @@ const ProductCard = (props: ProductTypes) => {
             ? { md: "100%", sm: "100%", xs: "100%" }
             : { md: "175px", sm: "120px", xs: "150px" },
           height: "100%",
-          objectFit:"cover",
+          objectFit: { md: "cover", sm: "cover", xs: 'fill' },
           borderRadius: 2,
         }}
       />

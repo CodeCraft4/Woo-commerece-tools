@@ -64,7 +64,7 @@ const FontFamily1Popup = () => {
         mt: 2,
         overflowY: "auto",
         width: {md:480,sm:230,xs:'100%'},
-        height: "430px",
+        height: {md:"430px",sm:"430px",xs:300},
       }}
     >
       {GOOGLE_FONTS.map((fontName) => {

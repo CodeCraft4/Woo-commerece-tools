@@ -34,6 +34,16 @@ type TextElementType = {
   fontFamily?: string;
   color?: string;
 };
+// ✅ NEW Sticker type
+type StickerType = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  sticker: string;
+    zIndex: number; 
+};
 
 type AdminCardEditorContextType = {
   formData: FormDataType | null;
@@ -46,7 +56,9 @@ type AdminCardEditorContextType = {
   setElements: React.Dispatch<React.SetStateAction<ElementType[]>>;
   textElements: TextElementType[];
   setTextElements: React.Dispatch<React.SetStateAction<TextElementType[]>>;
-  resetEditor?:any
+  stickerElements: StickerType[]; // ✅ new
+  setStickerElements: React.Dispatch<React.SetStateAction<StickerType[]>>; // ✅ new
+  resetEditor?: any
 };
 
 const AdminCardEditorContext = createContext<AdminCardEditorContextType | undefined>(
@@ -59,8 +71,9 @@ export const AdminCardEditorProvider = ({ children }: { children: React.ReactNod
   const [uploadedShapeImage, setUploadedShapeImage] = useState<string | null>(null);
   const [elements, setElements] = useState<ElementType[]>([]);
   const [textElements, setTextElements] = useState<TextElementType[]>([]);
+  const [stickerElements, setStickerElements] = useState<StickerType[]>([]); // ✅ new
 
-  
+
   // ✅ Add a reset function
   const resetEditor = () => {
     setElements([]);
@@ -83,6 +96,8 @@ export const AdminCardEditorProvider = ({ children }: { children: React.ReactNod
         setElements,
         textElements,
         setTextElements,
+        stickerElements, // ✅
+        setStickerElements, // ✅
         resetEditor
       }}
     >
