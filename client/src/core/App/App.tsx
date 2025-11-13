@@ -1,6 +1,6 @@
 import React from "react";
 import Router from "../Router/Router";
-import { WishCardProvider } from "../../context/WishCardContext";
+// import { WishCardProvider } from "../../context/WishCardContext";
 import { ThemeProvider } from "@emotion/react";
 import theme from "../../style/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -40,7 +40,6 @@ const App = () => {
         <ThemeProvider theme={theme}>
           <AuthProvider>
             <CartProvider>
-              <WishCardProvider>
                 {/* Fist Slide */}
                 <Slide1Provider>
                   {/* Second Slide */}
@@ -94,7 +93,6 @@ const App = () => {
                     },
                   }}
                 />
-              </WishCardProvider>
             </CartProvider>
           </AuthProvider>
         </ThemeProvider>

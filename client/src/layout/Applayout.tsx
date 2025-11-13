@@ -8,7 +8,7 @@ type Props = {
 const Applayout = ({ children }: Props) => {
   
   return (
-    <Box>
+    <Box height={'100dvh'}>
       <Navbar />
       {children}
     </Box>

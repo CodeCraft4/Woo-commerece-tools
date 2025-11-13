@@ -2,11 +2,11 @@ import { Box, Typography, IconButton } from "@mui/material";
 import { ControlPoint, Delete, Check } from "@mui/icons-material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { useEffect, useState } from "react";
-import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../context/AuthContext";
-import toast from "react-hot-toast";
 import { COLORS } from "../../../constant/color";
 import { useSlide3 } from "../../../context/Slide3Context";
+import { supabase } from "../../../supabase/supabase";
+import toast from "react-hot-toast";
 
 interface Photo3PopupProps {
   onClose: () => void;

@@ -264,6 +264,7 @@ const SlideSpread = ({
             zIndex: 10,
             p: 2,
             position: "relative",
+            height:'100vh',
             opacity: isSlideActive ? 1 : 0.6,
             pointerEvents: isSlideActive ? "auto" : "none",
             "&::after": !isSlideActive
@@ -286,8 +287,9 @@ const SlideSpread = ({
             multipleTextValue || showOneTextRightSideBox ? null : (
               <>
                 {textElements.map((textElement) => {
-                  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-                  // Fallbacks to avoid undefined alignment
+                  const isMobile =
+                    typeof window !== "undefined" && window.innerWidth < 768;
+
                   const hAlign =
                     textElement.textAlign === "top"
                       ? "flex-start"
@@ -301,10 +303,18 @@ const SlideSpread = ({
                         ? "flex-end"
                         : "center";
 
+                  let touchStartTime = 0;
+                  let lastTap = 0;
+
                   return (
                     <Rnd
-                      cancel=".no-drag"
                       key={textElement.id}
+                      cancel=".no-drag"
+                      dragHandleClassName="drag-area"
+                      enableUserSelectHack={false}
+                      enableResizing={{
+                        bottomRight: true,
+                      }}
                       size={{
                         width: textElement.size.width,
                         height: textElement.size.height,
@@ -314,30 +324,44 @@ const SlideSpread = ({
                         y: textElement.position.y,
                       }}
                       bounds="parent"
-                      enableResizing={{
-                        bottomRight: true,
-                      }}
-                      resizeHandleStyles={{
-                        bottomRight: {
-                          width: isMobile ? "20px" : "12px",
-                          height: isMobile ? "20px" : "12px",
-                          background: "white",
-                          border: "2px solid #1976d2",
-                          borderRadius: "3px",
-                          right: isMobile ? "-10px" : "-6px",
-                          bottom: isMobile ? "-10px" : "-6px",
-                          cursor: "se-resize",
-                          zIndex: 10,
-                        },
-                      }}
                       style={{
+                        transform: `rotate(${textElement.rotation || 0}deg)`,
                         zIndex: textElement.zIndex,
                         display: "flex",
                         alignItems: vAlign,
                         justifyContent: hAlign,
-                        border: "1px dashed #4a7bd5",
                         touchAction: "none",
                         transition: "border 0.2s ease",
+                      }}
+                      onTouchStart={() => {
+                        touchStartTime = Date.now();
+                      }}
+                      onTouchEnd={() => {
+                        const now = Date.now();
+                        const timeSince = now - lastTap;
+                        const touchDuration = now - touchStartTime;
+
+                        if (touchDuration < 200) {
+                          if (timeSince < 300) {
+                            // Double tap = edit
+                            setSelectedTextId(textElement.id);
+                            updateTextElement(textElement.id, { isEditing: true });
+                          } else {
+                            // Single tap = select
+                            setSelectedTextId(textElement.id);
+                            updateTextElement(textElement.id, { isEditing: false });
+                          }
+                        }
+                        lastTap = now;
+                      }}
+                      onMouseDown={() => {
+                        // Desktop: select on click
+                        setSelectedTextId(textElement.id);
+                      }}
+                      onClick={() => {
+                        // Desktop: edit on double-click
+                        setSelectedTextId(textElement.id);
+                        updateTextElement(textElement.id, { isEditing: true });
                       }}
                       onDragStop={(_, d) => {
                         updateTextElement(textElement.id, {
@@ -355,23 +379,29 @@ const SlideSpread = ({
                           zIndex: 2001,
                         });
                       }}
+                      resizeHandleStyles={{
+                        bottomRight: {
+                          width: isMobile ? "20px" : "12px",
+                          height: isMobile ? "20px" : "12px",
+                          background: "white",
+                          border: "2px solid #1976d2",
+                          borderRadius: "3px",
+                          right: isMobile ? "-10px" : "-6px",
+                          bottom: isMobile ? "-10px" : "-6px",
+                          cursor: "se-resize",
+                          zIndex: 999,
+                          touchAction: "none",
+                        },
+                      }}
                     >
                       <Box
-                        onDoubleClick={() =>
-                          updateTextElement(textElement.id, { isEditing: true })
-                        }
                         sx={{
                           position: "relative",
                           width: "100%",
                           height: "100%",
-                          display: "flex",
-                          alignItems: vAlign,
-                          justifyContent: hAlign,
-                          touchAction: "manipulation",
-                          cursor: textElement.isEditing ? "text" : "move",
                         }}
                       >
-                        {/* Close Button */}
+                        {/* ✅ Close Button */}
                         <IconButton
                           size="small"
                           className="no-drag"
@@ -385,64 +415,123 @@ const SlideSpread = ({
                             right: -10,
                             bgcolor: "#1976d2",
                             color: "white",
-                            width: isMobile ? 28 : 20,
-                            height: isMobile ? 28 : 20,
+                            width: isMobile ? 26 : 20,
+                            height: isMobile ? 26 : 20,
                             "&:hover": { bgcolor: "#f44336" },
-                            zIndex: 9999,
+                            zIndex: 3000,
                             pointerEvents: "auto",
+                            touchAction: "auto",
                           }}
                         >
                           <Close fontSize="small" />
                         </IconButton>
 
-                        {/* Editable Text */}
-                        <TextField
-                          variant="standard"
-                          value={textElement.value}
+                        {/* rotation Btn */}
+                        <IconButton
+                          size="small"
                           className="no-drag"
-                          placeholder="Add Text"
-                          multiline
-                          fullWidth
-                          tabIndex={0}
-                          autoFocus={textElement.isEditing}
-                          InputProps={{
-                            readOnly: !textElement.isEditing,
-                            disableUnderline: true,
-                            style: {
-                              fontSize: textElement.fontSize,
-                              fontWeight: textElement.fontWeight,
-                              color: textElement.fontColor,
-                              fontFamily: textElement.fontFamily,
-                              transform: `rotate(${textElement.rotation}deg)`,
-                              padding: 0,
-                              width: "100%",
-                              height: "100%",
-                              cursor: textElement.isEditing ? "text" : "pointer",
-                              backgroundColor: "transparent",
-                              display: "flex",
-                              alignItems: vAlign,
-                              justifyContent: hAlign,
-                            },
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateTextElement(textElement.id, {
+                              rotation: (textElement.rotation || 0) + 30,
+                            });
                           }}
-                          onChange={(e) =>
-                            updateTextElement(textElement.id, { value: e.target.value })
-                          }
-                          onFocus={() => updateTextElement(textElement.id, { isEditing: true })}
-                          onBlur={() => updateTextElement(textElement.id, { isEditing: false })}
                           sx={{
-                            "& .MuiInputBase-input": {
-                              overflowY: "auto",
-                              textAlign: textElement.textAlign || "center",
-                            },
+                            position: "absolute",
+                            top: -10,
+                            left: -10,
+                            bgcolor: "#1976d2",
+                            color: "white",
+                            width: isMobile ? 26 : 20,
+                            height: isMobile ? 26 : 20,
+                            "&:hover": { bgcolor: "#f44336" },
+                            zIndex: 3000,
                             pointerEvents: "auto",
+                            touchAction: "auto",
                           }}
-                        />
+                        >
+                          <Forward30 fontSize={isMobile ? "medium" : "small"} />
+                        </IconButton>
+                        <Box
+                          className="drag-area"
+                          sx={{
+                            position: "relative",
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: vAlign,
+                            justifyContent: hAlign,
+                            cursor: textElement.isEditing ? "text" : "move",
+                            userSelect: "none",
+                            touchAction: "none",
+                            transform: `rotate(${textElement.rotation || 0}deg)`,
+                            border:
+                              textElement.id === selectedTextId
+                                ? "2px solid #1976d2"
+                                : "1px dashed #4a7bd5",
+                          }}
+                        >
+                          {/* ✅ Editable Text */}
+                          <TextField
+                            variant="standard"
+                            value={textElement.value}
+                            className="no-drag"
+                            placeholder="Add Text"
+                            multiline
+                            fullWidth
+                            tabIndex={0}
+                            autoFocus={textElement.id === selectedTextId ? true : false}
+                            InputProps={{
+                              readOnly: !textElement.isEditing,
+                              disableUnderline: true,
+                              style: {
+                                fontSize: textElement.fontSize,
+                                fontWeight: textElement.fontWeight,
+                                color: textElement.fontColor || "#000",
+                                fontFamily: textElement.fontFamily || "Arial",
+                                // transform: `rotate(${textElement.rotation || 0}deg)`,
+                                lineHeight: textElement.lineHeight || 1.4,
+                                letterSpacing: textElement.letterSpacing
+                                  ? `${textElement.letterSpacing}px`
+                                  : "0px",
+                                padding: 0,
+                                width: "100%",
+                                display: "flex",
+                                alignItems: vAlign,
+                                justifyContent: hAlign,
+                                cursor: textElement.isEditing ? "text" : "pointer",
+                                transition: "all 0.2s ease",
+                              },
+                            }}
+                            onChange={(e) =>
+                              updateTextElement(textElement.id, { value: e.target.value })
+                            }
+                            onFocus={(e) => {
+                              e.stopPropagation();
+                              updateTextElement(textElement.id, { isEditing: true });
+                            }}
+                            onBlur={(e) => {
+                              e.stopPropagation();
+                              updateTextElement(textElement.id, { isEditing: false });
+                            }}
+                            sx={{
+                              "& .MuiInputBase-input": {
+                                overflowY: "auto",
+                                textAlign: textElement.textAlign || "center",
+                              },
+                              pointerEvents: textElement.isEditing ? "auto" : "none",
+                            }}
+                          />
+                        </Box>
+
                       </Box>
                     </Rnd>
                   );
-                })}</>
+                })}
+              </>
             )
           }
+
           {selectedVideoUrl && (
             <Rnd
               cancel=".no-drag"
@@ -497,7 +586,7 @@ const SlideSpread = ({
                     component={"img"}
                     src="/assets/images/video-qr-tips.png"
                     sx={{
-                      width: "100%",
+                      width: '100%',
                       height: 200,
                       position: "relative",
                       pointerEvents: "none",
@@ -506,10 +595,10 @@ const SlideSpread = ({
                   <Box
                     sx={{
                       position: "absolute",
-                      top: 59,
+                      top: 55,
                       height: 10,
                       width: 10,
-                      left: { md: 55, sm: 55, xs: 55 },
+                      left: { md: 7, sm: 7, xs: 5 },
                       borderRadius: 2,
                     }}
                   >
@@ -523,7 +612,7 @@ const SlideSpread = ({
                       sx={{
                         position: "absolute",
                         top: 80,
-                        right: 25,
+                        right: 5,
                         zIndex: 99,
                         color: "black",
                         fontSize: "10px",
@@ -565,7 +654,7 @@ const SlideSpread = ({
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrAudioPosition.zIndex, // Bring to front on drag
+                  zIndex: qrAudioPosition.zIndex,
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -575,7 +664,7 @@ const SlideSpread = ({
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrAudioPosition.zIndex, // Bring to front on resize
+                  zIndex: qrAudioPosition.zIndex,
                 }));
               }}
               bounds="parent"
@@ -620,10 +709,10 @@ const SlideSpread = ({
                   <Box
                     sx={{
                       position: "absolute",
-                      top: 62,
+                      top: 55,
                       height: 10,
                       width: 10,
-                      left: { md: 62, sm: 62, xs: 55 },
+                      left: { md: 7, sm: 7, xs: 5 },
                       borderRadius: 2,
                     }}
                   >
@@ -640,7 +729,7 @@ const SlideSpread = ({
                       sx={{
                         position: "absolute",
                         top: 78,
-                        right: 25,
+                        right: 10,
                         zIndex: 99,
                         color: "black",
                         fontSize: "10px",
@@ -1302,91 +1391,10 @@ const SlideSpread = ({
             );
           })}
 
-
-          {/* default image popup */}
-          {/* <Rnd
-            bounds="parent"
-            enableResizing={{
-              bottomRight: true,
-            }}
-            resizeHandleStyles={{
-              bottomRight: {
-                width: "10px",
-                height: "10px",
-                background: "white",
-                border: "2px solid #1976d2",
-                borderRadius: "10%",
-                right: "-5px",
-                bottom: "-5px",
-              },
-            }}
-            style={{
-              position: "absolute",
-            }}
-            default={{
-              x: 180,
-              y: 400,
-              width: 200,
-              height: 180,
-            }}
-          >
-            <Box
-              sx={{
-                position: "relative",
-                width: "100%",
-                height: "100%",
-                borderRadius: "6px",
-                overflow: "hidden",
-                border: "1px dashed #1976d2",
-              }}
-            >
-              <Box
-                component="img"
-                src="/assets/images/animated-banner.jpg"
-                alt="Sticker"
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "4px",
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#090155ff",
-                  background: "rgba(26, 26, 26, 0.14)",
-                  pointerEvents: "auto",
-                  zIndex: 2,
-                }}
-              >
-                <IconButton onClick={() => togglePopup("photo")}>
-                  <AddCircleOutline sx={{ color: "black", fontSize: "35px" }} />
-                </IconButton>
-                <Typography
-                  sx={{
-                    fontSize: "14px",
-                    fontWeight: 600,
-                  }}
-                >
-                  Add Photo
-                </Typography>
-              </Box>
-            </Box>
-          </Rnd> */}
         </Box>
-      )}
-    </Box>
+      )
+      }
+    </Box >
   );
 };
 

@@ -192,19 +192,19 @@ const SpreadRightSide = ({
     }
   }, [multipleTextValue3]);
 
-const handleDeleteBox = (index: number) => {
-  setTexts3((prev) => {
-    const updated = prev.filter((_, i) => i !== index);
+  const handleDeleteBox = (index: number) => {
+    setTexts3((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
 
-    // ✅ If all boxes are deleted → reset layout
-    if (updated.length === 0) {
-      setMultipleTextValue3(false);
-      setSelectedLayout3("blank");
-    }
+      // ✅ If all boxes are deleted → reset layout
+      if (updated.length === 0) {
+        setMultipleTextValue3(false);
+        setSelectedLayout3("blank");
+      }
 
-    return updated;
-  });
-};
+      return updated;
+    });
+  };
 
   // ✅ Place this useEffect HERE (below your state definitions)
   useEffect(() => {
@@ -260,6 +260,7 @@ const handleDeleteBox = (index: number) => {
             zIndex: 10,
             p: 2,
             position: "relative",
+            height:'100vh',
             opacity: isSlideActive3 ? 1 : 0.6,
             pointerEvents: isSlideActive3 ? "auto" : "none",
             "&::after": !isSlideActive3
@@ -282,8 +283,9 @@ const handleDeleteBox = (index: number) => {
             multipleTextValue3 || showOneTextRightSideBox3 ? null : (
               <>
                 {textElements3.map((textElement) => {
-                  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-                  // Fallbacks to avoid undefined alignment
+                  const isMobile =
+                    typeof window !== "undefined" && window.innerWidth < 768;
+
                   const hAlign =
                     textElement.textAlign === "top"
                       ? "flex-start"
@@ -297,10 +299,18 @@ const handleDeleteBox = (index: number) => {
                         ? "flex-end"
                         : "center";
 
+                  let touchStartTime = 0;
+                  let lastTap = 0;
+
                   return (
                     <Rnd
-                      cancel=".no-drag"
                       key={textElement.id}
+                      cancel=".no-drag"
+                      dragHandleClassName="drag-area"
+                      enableUserSelectHack={false}
+                      enableResizing={{
+                        bottomRight: true,
+                      }}
                       size={{
                         width: textElement.size.width,
                         height: textElement.size.height,
@@ -310,30 +320,44 @@ const handleDeleteBox = (index: number) => {
                         y: textElement.position.y,
                       }}
                       bounds="parent"
-                      enableResizing={{
-                        bottomRight: true,
-                      }}
-                      resizeHandleStyles={{
-                        bottomRight: {
-                          width: isMobile ? "20px" : "12px",
-                          height: isMobile ? "20px" : "12px",
-                          background: "white",
-                          border: "2px solid #1976d2",
-                          borderRadius: "3px",
-                          right: isMobile ? "-10px" : "-6px",
-                          bottom: isMobile ? "-10px" : "-6px",
-                          cursor: "se-resize",
-                          zIndex: 10,
-                        },
-                      }}
                       style={{
+                        transform: `rotate(${textElement.rotation || 0}deg)`,
                         zIndex: textElement.zIndex,
                         display: "flex",
-                        alignItems: vAlign, // ✅ vertical alignment applied here
-                        justifyContent: hAlign, // ✅ horizontal alignment applied here
-                        border: "1px dashed #4a7bd5",
+                        alignItems: vAlign,
+                        justifyContent: hAlign,
                         touchAction: "none",
                         transition: "border 0.2s ease",
+                      }}
+                      onTouchStart={() => {
+                        touchStartTime = Date.now();
+                      }}
+                      onTouchEnd={() => {
+                        const now = Date.now();
+                        const timeSince = now - lastTap;
+                        const touchDuration = now - touchStartTime;
+
+                        if (touchDuration < 200) {
+                          if (timeSince < 300) {
+                            // Double tap = edit
+                            setSelectedTextId3(textElement.id);
+                            updateTextElement(textElement.id, { isEditing: true });
+                          } else {
+                            // Single tap = select
+                            setSelectedTextId3(textElement.id);
+                            updateTextElement(textElement.id, { isEditing: false });
+                          }
+                        }
+                        lastTap = now;
+                      }}
+                      onMouseDown={() => {
+                        // Desktop: select on click
+                        setSelectedTextId3(textElement.id);
+                      }}
+                      onClick={() => {
+                        // Desktop: edit on double-click
+                        setSelectedTextId3(textElement.id);
+                        updateTextElement(textElement.id, { isEditing: true });
                       }}
                       onDragStop={(_, d) => {
                         updateTextElement(textElement.id, {
@@ -351,23 +375,29 @@ const handleDeleteBox = (index: number) => {
                           zIndex: 2001,
                         });
                       }}
+                      resizeHandleStyles={{
+                        bottomRight: {
+                          width: isMobile ? "20px" : "12px",
+                          height: isMobile ? "20px" : "12px",
+                          background: "white",
+                          border: "2px solid #1976d2",
+                          borderRadius: "3px",
+                          right: isMobile ? "-10px" : "-6px",
+                          bottom: isMobile ? "-10px" : "-6px",
+                          cursor: "se-resize",
+                          zIndex: 999,
+                          touchAction: "none",
+                        },
+                      }}
                     >
                       <Box
-                        onDoubleClick={() =>
-                          updateTextElement(textElement.id, { isEditing: true })
-                        }
                         sx={{
                           position: "relative",
                           width: "100%",
                           height: "100%",
-                          display: "flex",
-                          alignItems: vAlign, // ✅ vertical alignment
-                          justifyContent: hAlign, // ✅ horizontal alignment
-                          touchAction: "manipulation",
-                          cursor: textElement.isEditing ? "text" : "move",
                         }}
                       >
-                        {/* Close Button */}
+                        {/* ✅ Close Button */}
                         <IconButton
                           size="small"
                           className="no-drag"
@@ -381,63 +411,120 @@ const handleDeleteBox = (index: number) => {
                             right: -10,
                             bgcolor: "#1976d2",
                             color: "white",
-                            width: isMobile ? 28 : 20,
-                            height: isMobile ? 28 : 20,
+                            width: isMobile ? 26 : 20,
+                            height: isMobile ? 26 : 20,
                             "&:hover": { bgcolor: "#f44336" },
-                            zIndex: 9999,
+                            zIndex: 3000,
                             pointerEvents: "auto",
+                            touchAction: "auto",
                           }}
                         >
                           <Close fontSize="small" />
                         </IconButton>
 
-                        {/* Editable Text */}
-                        <TextField
-                          variant="standard"
+                        {/* rotation Btn */}
+                        <IconButton
+                          size="small"
                           className="no-drag"
-                          value={textElement.value}
-                          placeholder="Add Text"
-                          multiline
-                          fullWidth
-                          tabIndex={0}
-                          autoFocus={textElement.isEditing}
-                          InputProps={{
-                            readOnly: !textElement.isEditing,
-                            disableUnderline: true,
-                            style: {
-                              fontSize: textElement.fontSize,
-                              fontWeight: textElement.fontWeight,
-                              color: textElement.fontColor,
-                              fontFamily: textElement.fontFamily,
-                              // textAlign: textElement.textAlign || "top", // ✅ horizontal alignment in text
-                              transform: `rotate(${textElement.rotation}deg)`,
-                              padding: 0,
-                              width: "100%",
-                              height: "100%",
-                              cursor: textElement.isEditing ? "text" : "pointer",
-                              backgroundColor: "transparent",
-                              display: "flex",
-                              alignItems: vAlign, // ✅ vertical alignment even inside input
-                              justifyContent: hAlign,
-                            },
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateTextElement(textElement.id, {
+                              rotation: (textElement.rotation || 0) + 30,
+                            });
                           }}
-                          onChange={(e) =>
-                            updateTextElement(textElement.id, { value: e.target.value })
-                          }
-                          onFocus={() => updateTextElement(textElement.id, { isEditing: true })}
-                          onBlur={() => updateTextElement(textElement.id, { isEditing: false })}
                           sx={{
-                            "& .MuiInputBase-input": {
-                              overflowY: "auto",
-                              textAlign: textElement.textAlign || "center",
-                            },
+                            position: "absolute",
+                            top: -10,
+                            left: -10,
+                            bgcolor: "#1976d2",
+                            color: "white",
+                            width: isMobile ? 26 : 20,
+                            height: isMobile ? 26 : 20,
+                            "&:hover": { bgcolor: "#f44336" },
+                            zIndex: 3000,
                             pointerEvents: "auto",
+                            touchAction: "auto",
                           }}
-                        />
+                        >
+                          <Forward30 fontSize={isMobile ? "medium" : "small"} />
+                        </IconButton>
+                        <Box
+                          className="drag-area"
+                          sx={{
+                            position: "relative",
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: vAlign,
+                            justifyContent: hAlign,
+                            cursor: textElement.isEditing ? "text" : "move",
+                            userSelect: "none",
+                            touchAction: "none",
+                            transform: `rotate(${textElement.rotation || 0}deg)`,
+                            border:
+                              textElement.id === selectedTextId3
+                                ? "2px solid #1976d2"
+                                : "1px dashed #4a7bd5",
+                          }}
+                        >
+                          {/* ✅ Editable Text */}
+                          <TextField
+                            variant="standard"
+                            value={textElement.value}
+                            className="no-drag"
+                            placeholder="Add Text"
+                            multiline
+                            fullWidth
+                            tabIndex={0}
+                            autoFocus={textElement.id === selectedTextId3 ? true : false}
+                            InputProps={{
+                              readOnly: !textElement.isEditing,
+                              disableUnderline: true,
+                              style: {
+                                fontSize: textElement.fontSize,
+                                fontWeight: textElement.fontWeight,
+                                color: textElement.fontColor || "#000",
+                                fontFamily: textElement.fontFamily || "Arial",
+                                // transform: `rotate(${textElement.rotation || 0}deg)`,
+                                lineHeight: textElement.lineHeight || 1.4,
+                                letterSpacing: textElement.letterSpacing
+                                  ? `${textElement.letterSpacing}px`
+                                  : "0px",
+                                padding: 0,
+                                width: "100%",
+                                display: "flex",
+                                alignItems: vAlign,
+                                justifyContent: hAlign,
+                                cursor: textElement.isEditing ? "text" : "pointer",
+                                transition: "all 0.2s ease",
+                              },
+                            }}
+                            onChange={(e) =>
+                              updateTextElement(textElement.id, { value: e.target.value })
+                            }
+                            onFocus={(e) => {
+                              e.stopPropagation();
+                              updateTextElement(textElement.id, { isEditing: true });
+                            }}
+                            onBlur={(e) => {
+                              e.stopPropagation();
+                              updateTextElement(textElement.id, { isEditing: false });
+                            }}
+                            sx={{
+                              "& .MuiInputBase-input": {
+                                overflowY: "auto",
+                                textAlign: textElement.textAlign || "center",
+                              },
+                              pointerEvents: textElement.isEditing ? "auto" : "none",
+                            }}
+                          />
+                        </Box>
                       </Box>
+
                     </Rnd>
                   );
-                })}</>
+                })}
+              </>
             )
           }
 
@@ -450,7 +537,7 @@ const handleDeleteBox = (index: number) => {
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrPosition3.zIndex, // Bring to front on drag
+                  zIndex: qrPosition3.zIndex,
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -505,10 +592,10 @@ const handleDeleteBox = (index: number) => {
                   <Box
                     sx={{
                       position: "absolute",
-                      top: 59,
+                      top: 55,
                       height: 10,
                       width: 10,
-                      left: { md: 55, sm: 55, xs: 55 },
+                      left: { md: 6, sm: 6, xs: 5 },
                       borderRadius: 2,
                     }}
                   >
@@ -522,7 +609,7 @@ const handleDeleteBox = (index: number) => {
                       sx={{
                         position: "absolute",
                         top: 80,
-                        right: 25,
+                        right: 15,
                         zIndex: 9999,
                         color: "black",
                         fontSize: "10px",
@@ -626,10 +713,10 @@ const handleDeleteBox = (index: number) => {
                   <Box
                     sx={{
                       position: "absolute",
-                      top: 62,
+                      top: 55,
                       height: 10,
                       width: 10,
-                      left: { md: 62, sm: 62, xs: 55 },
+                      left: { md: 6, sm: 6, xs: 5 },
                       borderRadius: 2,
                     }}
                   >
@@ -646,7 +733,7 @@ const handleDeleteBox = (index: number) => {
                       sx={{
                         position: "absolute",
                         top: 78,
-                        right: 25,
+                        right: 15,
                         zIndex: 9999,
                         color: "black",
                         fontSize: "10px",

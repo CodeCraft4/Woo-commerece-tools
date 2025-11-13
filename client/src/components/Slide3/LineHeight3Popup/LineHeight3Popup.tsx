@@ -12,6 +12,7 @@ const LineHeight3Popup = () => {
     letterSpacing3,
     setLetterSpacing3,
     selectedTextId3,
+    textElements3,
     setTextElements3,
   } = useSlide3();
 
@@ -42,6 +43,9 @@ const LineHeight3Popup = () => {
 
   // ✅ Active text only used when multipleTextValue is true
   const activeText = multipleTextValue3 && editingIndex3 !== null ? texts3[editingIndex3] : null;
+  const selectedText3 = !multipleTextValue3 && selectedTextId3
+    ? textElements3.find((t) => t.id === selectedTextId3)
+    : null;
 
   return (
     <Box  sx={{
@@ -52,13 +56,15 @@ const LineHeight3Popup = () => {
       <Typography fontWeight="bold" mb={1}>
         Line Height
       </Typography>
-      <Slider
-        value={multipleTextValue3 ? activeText?.lineHeight ?? 1.5 : lineHeight3}
+     <Slider
+        value={multipleTextValue3
+          ? activeText?.lineHeight ?? 1.5
+          : selectedText3?.lineHeight?? lineHeight3}
         min={0.8}
         max={3}
         step={0.1}
         onChange={(_, val) => updateTextProperty("lineHeight", Number(val))}
-        sx={{ color: "#1976d3" }}
+        sx={{ color: "#1976d2" }}
       />
       <Typography fontSize={14} mb={3}>
         {multipleTextValue3
@@ -72,13 +78,15 @@ const LineHeight3Popup = () => {
       <Typography fontWeight="bold" mb={1}>
         Letter Spacing
       </Typography>
-      <Slider
-        value={multipleTextValue3 ? activeText?.letterSpacing ?? 0 : letterSpacing3}
+     <Slider
+        value={multipleTextValue3
+          ? activeText?.letterSpacing ?? 0
+          : selectedText3?.letterSpacing ?? letterSpacing3}
         min={-2}
         max={10}
         step={0.5}
         onChange={(_, val) => updateTextProperty("letterSpacing", Number(val))}
-        sx={{ color: "#1976d3" }}
+        sx={{ color: "#1976d2" }}
       />
       <Typography fontSize={14}>
         {multipleTextValue3

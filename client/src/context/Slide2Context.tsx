@@ -36,6 +36,8 @@ interface TextElement {
   position: Position;
   size: Size;
   isEditing?: boolean;
+  lineHeight?: number,
+  letterSpacing?: number,
   verticalAlign?: "top" | "center" | "bottom";
 }
 
@@ -271,7 +273,7 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 0,
     y: 0,
-    width: 59,
+    width: 70,
     height: 105,
     rotation: 0,
     zIndex: 1000,
@@ -282,8 +284,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 0,
     y: 0,
-    width: 59,
-    height: 1055,
+    width: 70,
+    height: 105,
     rotation: 0,
     zIndex: 1000,
   });
@@ -423,68 +425,12 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  // ✅ LOG ALL CHANGES LIVE
-  useEffect(() => {
-    setSlide2DataStore([
-      activeIndex,
-      title,
-      selectedLayout,
-      oneTextValue,
-      multipleTextValue,
-      textElements,
-      texts,
-      fontSize,
-      fontWeight,
-      fontColor,
-      fontFamily,
-      textAlign,
-      verticalAlign,
-      rotation,
-      images,
-      imagePositions,
-      imageSizes,
-      video,
-      audio,
-      duration,
-      poster,
-      isSlideActive,
-      selectedPreviewImage,
-      setSelectedPreviewImage,
-    ]);
-  }, [
-    activeIndex,
-    title,
-    selectedLayout,
-    oneTextValue,
-    multipleTextValue,
-    textElements,
-    texts,
-    fontSize,
-    fontWeight,
-    fontColor,
-    fontFamily,
-    textAlign,
-    verticalAlign,
-    rotation,
-    images,
-    imagePositions,
-    imageSizes,
-    video,
-    audio,
-    duration,
-    poster,
-    isSlideActive,
-    selectedPreviewImage,
-    setSelectedPreviewImage,
-
-    lineHeight2,
-    setLineHeight2,
-    letterSpacing2,
-    setLetterSpacing2,
-  ]);
-
   // ✅ Reset all context state to initial values
   const resetSlide2State = () => {
+    // 🧹 Clear persisted local storage
+    clearSlide2LocalData();
+
+    // Base states
     setActiveIndex(0);
     setTitle("Happy Birthday");
     setActivePopup(null);
@@ -492,13 +438,23 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     setShowOneTextRightSideBox(false);
     setOneTextValue("");
     setMultipleTextValue(false);
+
+    // Layout & selections
     setSelectedLayout("blank");
     setSelectedVideoUrl(null);
     setSelectedAudioUrl(null);
     setSelectedAIimageUrl2(null);
     setIsAIimage2(false);
     setSelectedPreviewImage(null);
+
+    // Images & draggable
+    setImages([]);
     setDraggableImages([]);
+
+    // Stickers
+    setSelectedStickers2([]);
+
+    // QR positions
     setQrPosition({
       id: "qr1",
       url: "",
@@ -509,6 +465,7 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       rotation: 0,
       zIndex: 1000,
     });
+
     setQrAudioPosition({
       id: "qr2",
       url: "",
@@ -519,12 +476,16 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       rotation: 0,
       zIndex: 1000,
     });
+
+    // AI image position
     setAIImage2({
       x: 30,
       y: 30,
       width: 300,
       height: 400,
     });
+
+    // Fonts & text defaults
     setFontSize(20);
     setFontWeight(400);
     setTextAlign("start");
@@ -532,6 +493,10 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     setFontFamily("Roboto");
     setFontColor("#000000");
     setRotation(0);
+    setLineHeight2(1.5)
+    setLetterSpacing2(0)
+
+    // Text elements
     setTextElements([]);
     setSelectedTextId(null);
     setTexts([
@@ -569,25 +534,153 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         letterSpacing: 0,
       },
     ]);
+
+    // Misc editing states
     setEditingIndex(null);
-    setImages([]);
-    setVideo(null);
-    setAudio(null);
     setTips(false);
     setUpload(false);
     setDuration(null);
     setPoster(null);
+
+    // Position & size data
     setTextPositions([]);
     setTextSizes([]);
     setImagePositions({});
     setImageSizes({});
+
+    // Video / audio files
+    setVideo(null);
+    setAudio(null);
+
+    // Slide states
     setIsSlideActive(false);
     setIsEditable(true);
-    setSelectedStickers2([]);
+
+    // Typography adjustments
     setLineHeight2(1.5);
     setLetterSpacing2(0);
+
+    // Clear data store snapshot
+    setSlide2DataStore([]);
   };
 
+  // Passed value to storing and state recognizing.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("slide2_state");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        if (parsed.textElements) setTextElements(parsed.textElements);
+        if (parsed.draggableImages) setDraggableImages(parsed.draggableImages);
+        if (parsed.images) setImages(parsed.images);
+        if (parsed.selectedImg) setSelectedImage(parsed.selectedImg);
+        if (parsed.selectedVideoUrl) setSelectedVideoUrl(parsed.selectedVideoUrl);
+        if (parsed.selectedAudioUrl) setSelectedAudioUrl(parsed.selectedAudioUrl);
+        if (parsed.selectedLayout) setSelectedLayout(parsed.selectedLayout);
+        if (parsed.oneTextValue) setOneTextValue(parsed.oneTextValue);
+        if (parsed.showOneTextRightSideBox) setShowOneTextRightSideBox(parsed.showOneTextRightSideBox);
+        if (parsed.multipleTextValue)
+          setMultipleTextValue(parsed.multipleTextValue);
+        if (parsed.selectedStickers2)
+          setSelectedStickers2(parsed.selectedStickers2);
+        if (parsed.qrPosition) setQrPosition(parsed.qrPosition);
+        if (parsed.qrAudioPosition) setQrAudioPosition(parsed.qrAudioPosition);
+        if (parsed.aimage2) setAIImage2(parsed.aimage2);
+        if (typeof parsed.isAIimage2 === "boolean") setIsAIimage2(parsed.isAIimage2);
+        if (parsed.selectedAIimageUrl2)
+          setSelectedAIimageUrl2(parsed.selectedAIimageUrl2);
+
+        if (parsed.fontSize) setFontSize(parsed.fontSize);
+        if (parsed.fontWeight) setFontWeight(parsed.fontWeight);
+        if (parsed.fontFamily) setFontFamily(parsed.fontFamily);
+        if (parsed.fontColor) setFontColor(parsed.fontColor);
+        if (parsed.textAlign) setTextAlign(parsed.textAlign);
+        if (parsed.verticalAlign) setVerticalAlign(parsed.verticalAlign);
+        if (parsed.letterSpacing !== undefined) setLetterSpacing2(parsed.letterSpacing);
+        if (parsed.lineHeight !== undefined) setLineHeight2(parsed.lineHeight);
+        if (parsed.rotation !== undefined) setRotation(parsed.rotation);
+
+      }
+    } catch (error) {
+      console.error("❌ Error restoring slide2_state:", error);
+    }
+  }, []);
+
+  // --- 💾 Auto-save changes ---
+  useEffect(() => {
+    const stateToSave = {
+      textElements,
+      draggableImages,
+      images,
+      selectedImg,
+      selectedVideoUrl,
+      selectedAudioUrl,
+      selectedLayout,
+      oneTextValue,
+      multipleTextValue,
+      showOneTextRightSideBox,
+      selectedStickers2,
+      qrPosition,
+      qrAudioPosition,
+      aimage2,
+      isAIimage2,
+      selectedAIimageUrl2,
+
+      fontSize,
+      fontWeight,
+      fontFamily,
+      fontColor,
+      textAlign,
+      verticalAlign,
+      letterSpacing2,
+      lineHeight2,
+      rotation,
+    };
+
+    try {
+      localStorage.setItem("slide2_state", JSON.stringify(stateToSave));
+    } catch (error) {
+      console.error("❌ Error saving slide2_state:", error);
+    }
+  }, [
+    textElements,
+    draggableImages,
+    images,
+    selectedImg,
+    selectedVideoUrl,
+    selectedAudioUrl,
+    selectedLayout,
+    oneTextValue,
+    multipleTextValue,
+    selectedStickers2,
+    qrPosition,
+    qrAudioPosition,
+    aimage2,
+    isAIimage2,
+    selectedAIimageUrl2,
+    showOneTextRightSideBox,
+
+    fontSize,
+    fontWeight,
+    fontFamily,
+    fontColor,
+    textAlign,
+    verticalAlign,
+    letterSpacing2,
+    lineHeight2,
+    rotation,
+  ]);
+
+  // --- 🧹 Clear localStorage ---
+  const clearSlide2LocalData = () => {
+    try {
+      localStorage.removeItem("slide2_state");
+      console.log("🧹 Cleared Slide2 saved state");
+    } catch (error) {
+      console.error("Error clearing slide2_state:", error);
+    }
+  };
 
   return (
     <Slide2Context.Provider

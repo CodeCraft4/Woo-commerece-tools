@@ -46,7 +46,7 @@ const AdvertisementCard = (props: AdvertiseTypes) => {
           </Typography>
         )}
         <br />
-        <LandingButton title="Shop Now" width="120px" bgblack />
+        <LandingButton title="Shop Now" width="120px" bgblack active />
       </Box>
       <Box
         sx={{

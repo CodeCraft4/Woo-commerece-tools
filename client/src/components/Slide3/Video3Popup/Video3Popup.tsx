@@ -95,6 +95,8 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
   };
 
   // ✅ Upload video to Supabase Storage
+
+
   const handleVideoUpload = async () => {
     if (!video3 || video3.length === 0) {
       alert("No video selected");
@@ -533,8 +535,8 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
 
               <Box
                 sx={{
-                  p:{xl: 3,lg: 3,md: 3,sm: 3,xs:1},
-                  mt: {xl:1,lg:1,md:1,sm:1,xs:0},
+                  p: { xl: 3, lg: 3, md: 3, sm: 3, xs: 1 },
+                  mt: { xl: 1, lg: 1, md: 1, sm: 1, xs: 0 },
                   borderTop: "1px solid #d3d3d3ff",
                   borderBottom: "1px solid #d3d3d3ff",
                   display: "flex",

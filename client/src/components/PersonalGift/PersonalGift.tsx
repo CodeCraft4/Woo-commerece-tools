@@ -75,7 +75,7 @@ const PersonalGift = () => {
             mt: 2,
           }}
         >
-          <LandingButton title="For Her" width="225px" personal bgblack />
+          <LandingButton title="For Her" width="225px" personal active />
           <LandingButton title="For Him" width="225px" personal bgblack />
           <LandingButton title="Birthday" width="225px" personal bgblack />
           <LandingButton title="Shop All Gift" width="225px" personal bgblack />

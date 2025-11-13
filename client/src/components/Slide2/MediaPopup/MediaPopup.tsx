@@ -438,7 +438,7 @@ const MediaPopup = ({ onClose, mediaType, activeIndex }: MediaPopupProps) => {
                         <audio
                           src={a.url}
                           controls
-                          style={{ width: "100%", height: "40px" }}
+                          style={{ width: "100%", height: "30px" }}
                         />
                         <IconButton
                           onClick={() => handleDeleteAudio(a.id)}

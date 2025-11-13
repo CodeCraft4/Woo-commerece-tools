@@ -36,6 +36,8 @@ interface TextElement {
   position: Position;
   size: Size;
   isEditing?: boolean;
+  lineHeight?: number,
+  letterSpacing?: number,
   verticalAlign?: "top" | "center" | "bottom";
 }
 
@@ -256,7 +258,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 0,
     y: 0,
-    width: 59,
+    width: 70,
     height: 105,
     rotation: 0,
     zIndex: 1000,
@@ -266,7 +268,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     url: "",
     x: 0,
     y: 0,
-    width: 59,
+    width: 70,
     height: 105,
     rotation: 0,
     zIndex: 1000,
@@ -401,61 +403,12 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  // ✅ LOG ALL CHANGES LIVE
-  useEffect(() => {
-    setSlide3DataStore3([
-      activeIndex3,
-      title3,
-      selectedLayout3,
-      oneTextValue3,
-      multipleTextValue3,
-      textElements3,
-      texts3,
-      fontSize3,
-      fontWeight3,
-      fontColor3,
-      fontFamily3,
-      textAlign3,
-      verticalAlign3,
-      rotation3,
-      images3,
-      imagePositions3,
-      imageSizes3,
-      video3,
-      duration3,
-      poster3,
-      isSlideActive3,
-      selectedPreviewImage3,
-      setSelectedPreviewImage3,
-    ]);
-  }, [
-    activeIndex3,
-    title3,
-    selectedLayout3,
-    oneTextValue3,
-    multipleTextValue3,
-    textElements3,
-    texts3,
-    fontSize3,
-    fontWeight3,
-    fontColor3,
-    fontFamily3,
-    textAlign3,
-    verticalAlign3,
-    rotation3,
-    images3,
-    imagePositions3,
-    imageSizes3,
-    video3,
-    duration3,
-    poster3,
-    isSlideActive3,
-    selectedPreviewImage3,
-    setSelectedPreviewImage3,
-  ]);
-
   // ✅ Reset all context state to initial values
   const resetSlide3State = () => {
+    // 🧹 Clear persisted local storage
+    clearSlide3LocalData();
+
+    // Base states
     setActiveIndex3(0);
     setTitle3("Happy Birthday");
     setActivePopup3(null);
@@ -463,13 +416,23 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     setShowOneTextRightSideBox3(false);
     setOneTextValue3("");
     setMultipleTextValue3(false);
+
+    // Layout & selections
     setSelectedLayout3("blank");
     setSelectedVideoUrl3(null);
     setSelectedAudioUrl3(null);
     setSelectedAIimageUrl3(null);
     setIsAIimage3(false);
     setSelectedPreviewImage3(null);
+
+    // Images & draggable
+    setImages3([]);
     setDraggableImages3([]);
+
+    // Stickers
+    setSelectedStickers3([]);
+
+    // QR positions
     setQrPosition3({
       id: "qr1",
       url: "",
@@ -480,6 +443,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       rotation: 0,
       zIndex: 1000,
     });
+
     setQrAudioPosition3({
       id: "qr2",
       url: "",
@@ -490,12 +454,16 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       rotation: 0,
       zIndex: 1000,
     });
+
+    // AI image position
     setAIImage3({
       x: 30,
       y: 30,
       width: 300,
       height: 400,
     });
+
+    // Fonts & text defaults
     setFontSize3(20);
     setFontWeight3(400);
     setTextAlign3("start");
@@ -503,6 +471,10 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     setFontFamily3("Roboto");
     setFontColor3("#000000");
     setRotation3(0);
+    setLineHeight3(1.5)
+    setLetterSpacing3(0)
+
+    // Text elements
     setTextElements3([]);
     setSelectedTextId3(null);
     setTexts3([
@@ -514,7 +486,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         fontFamily: "Roboto",
         verticalAlign: "center",
         textAlign: "center",
-         lineHeight: 1.5,
+        lineHeight: 1.5,
         letterSpacing: 0,
       },
       {
@@ -525,7 +497,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         fontFamily: "Roboto",
         verticalAlign: "center",
         textAlign: "center",
-         lineHeight: 1.5,
+        lineHeight: 1.5,
         letterSpacing: 0,
       },
       {
@@ -536,27 +508,155 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         fontFamily: "Roboto",
         verticalAlign: "center",
         textAlign: "center",
-         lineHeight: 1.5,
+        lineHeight: 1.5,
         letterSpacing: 0,
       },
     ]);
+
+    // Misc editing states
     setEditingIndex3(null);
-    setImages3([]);
-    setVideo3(null);
-    setAudio3(null);
     setTips3(false);
     setUpload3(false);
     setDuration3(null);
     setPoster3(null);
+
+    // Position & size data
     setTextPositions3([]);
     setTextSizes3([]);
     setImagePositions3({});
     setImageSizes3({});
+
+    // Video / audio files
+    setVideo3(null);
+    setAudio3(null);
+
+    // Slide states
     setIsSlideActive3(false);
     setIsEditable3(true);
-    setSelectedStickers3([]);
+
+    // Typography adjustments
     setLineHeight3(1.5);
     setLetterSpacing3(0);
+
+    // Clear data store snapshot
+    setSlide3DataStore3([]);
+  };
+
+
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("slide3_state");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        if (parsed.textElements3) setTextElements3(parsed.textElements3);
+        if (parsed.draggableImages3) setDraggableImages3(parsed.draggableImages3);
+        if (parsed.images3) setImages3(parsed.images3);
+        if (parsed.selectedImg3) setSelectedImage3(parsed.selectedImg3);
+        if (parsed.selectedVideoUrl3) setSelectedVideoUrl3(parsed.selectedVideoUrl3);
+        if (parsed.selectedAudioUrl3) setSelectedAudioUrl3(parsed.selectedAudioUrl3);
+        if (parsed.selectedLayout3) setSelectedLayout3(parsed.selectedLayout3);
+        if (parsed.oneTextValue3) setOneTextValue3(parsed.oneTextValue3);
+        if (parsed.showOneTextRightSideBox3) setShowOneTextRightSideBox3(parsed.showOneTextRightSideBox3);
+        if (parsed.multipleTextValue3)
+          setMultipleTextValue3(parsed.multipleTextValue3);
+        if (parsed.selectedStickers3)
+          setSelectedStickers3(parsed.selectedStickers3);
+        if (parsed.qrPosition3) setQrPosition3(parsed.qrPosition3);
+        if (parsed.qrAudioPosition3) setQrAudioPosition3(parsed.qrAudioPosition3);
+        if (parsed.aimage2) setAIImage3(parsed.aimage2);
+        if (typeof parsed.isAIimage3 === "boolean") setIsAIimage3(parsed.isAIimage3);
+        if (parsed.selectedAIimageUrl3)
+          setSelectedAIimageUrl3(parsed.selectedAIimageUrl3);
+
+        if (parsed.fontSize3) setFontSize3(parsed.fontSize3);
+        if (parsed.fontWeight3) setFontWeight3(parsed.fontWeight3);
+        if (parsed.fontFamily3) setFontFamily3(parsed.fontFamily3);
+        if (parsed.fontColor3) setFontColor3(parsed.fontColor3);
+        if (parsed.textAlign3) setTextAlign3(parsed.textAlign3);
+        if (parsed.verticalAlign3) setVerticalAlign3(parsed.verticalAlign3);
+        if (parsed.letterSpacing3 !== undefined) setLetterSpacing3(parsed.letterSpacing3);
+        if (parsed.lineHeight3 !== undefined) setLineHeight3(parsed.lineHeight3);
+        if (parsed.rotation3 !== undefined) setRotation3(parsed.rotation3);
+
+      }
+    } catch (error) {
+      console.error("❌ Error restoring slide3_state:", error);
+    }
+  }, []);
+
+  // --- 💾 Auto-save changes ---
+  useEffect(() => {
+    const stateToSave = {
+      textElements3,
+      draggableImages3,
+      images3,
+      selectedImg3,
+      selectedVideoUrl3,
+      selectedAudioUrl3,
+      selectedLayout3,
+      oneTextValue3,
+      multipleTextValue3,
+      selectedStickers3,
+      qrPosition3,
+      qrAudioPosition3,
+      aimage3,
+      isAIimage3,
+      selectedAIimageUrl3,
+      showOneTextRightSideBox3,
+
+      fontSize3,
+      fontWeight3,
+      fontFamily3,
+      fontColor3,
+      textAlign3,
+      verticalAlign3,
+      letterSpacing3,
+      lineHeight3,
+      rotation3,
+    };
+
+    try {
+      localStorage.setItem("slide3_state", JSON.stringify(stateToSave));
+    } catch (error) {
+      console.error("❌ Error saving slide3_state:", error);
+    }
+  }, [
+    textElements3,
+    draggableImages3,
+    images3,
+    selectedImg3,
+    selectedVideoUrl3,
+    selectedAudioUrl3,
+    selectedLayout3,
+    oneTextValue3,
+    multipleTextValue3,
+    selectedStickers3,
+    qrPosition3,
+    qrAudioPosition3,
+    aimage3,
+    isAIimage3,
+    selectedAIimageUrl3,
+    showOneTextRightSideBox3,
+    fontSize3,
+    fontWeight3,
+    fontFamily3,
+    fontColor3,
+    textAlign3,
+    verticalAlign3,
+    letterSpacing3,
+    lineHeight3,
+    rotation3,
+  ]);
+
+  // --- 🧹 Clear localStorage ---
+  const clearSlide3LocalData = () => {
+    try {
+      localStorage.removeItem("slide3_state");
+    } catch (error) {
+      console.error("Error clearing slide3_state:", error);
+    }
   };
 
   return (

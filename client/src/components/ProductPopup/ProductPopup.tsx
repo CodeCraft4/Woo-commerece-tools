@@ -51,6 +51,7 @@ export type CategoryType = {
   cardCategory?: string;
   actualPrice?: number | string | any;
   lastpageImageUrl?: string;
+  cover_screenshot?: string;
   polygonLayout?: {
     elements?: LayoutElement[];
     textElements?: LayoutElement[];
@@ -84,7 +85,6 @@ const ProductPopup = (props: ProductsPopTypes) => {
   const handlePersonalize = () => {
     if (!cate) return;
     setLoading(true);
-    // ✅ Reset all context before navigating
     // ✅ And add or personalize a new card.
     resetSlide1State();
     resetSlide2State();
@@ -180,7 +180,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
             >
               <Box
                 component="img"
-                src={cate?.imageUrl || cate?.lastpageImageUrl || cate?.poster}
+                src={cate?.imageUrl || cate?.lastpageImageUrl || cate?.poster || cate?.cover_screenshot}
                 onClick={handleToggleZoom}
                 sx={{
                   width: "100%",
@@ -244,7 +244,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
                   <Typography
                     sx={{
                       ...isActivePay,
-                      bgcolor:  "#4d98a1ff",
+                      bgcolor: "#4d98a1ff",
                       fontSize: { md: "20px", sm: '16px', xs: '14px' },
                       color: COLORS.white,
                       p: 1.5,
