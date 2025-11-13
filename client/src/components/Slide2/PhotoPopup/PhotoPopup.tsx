@@ -2,12 +2,12 @@ import { Box, Typography, IconButton } from "@mui/material";
 import { ControlPoint, Delete, Check } from "@mui/icons-material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { useEffect, useState } from "react";
-import { supabase } from "../../../supabase/supabase";
 import { useAuth } from "../../../context/AuthContext";
 import { useSlide2 } from "../../../context/Slide2Context";
-import toast from "react-hot-toast";
 import { COLORS } from "../../../constant/color";
 import { handleAutoDeletedImage } from "../../../lib/lib";
+import { supabase } from "../../../supabase/supabase";
+import toast from "react-hot-toast";
 
 interface PhotoPopupProps {
   onClose: () => void;
@@ -15,6 +15,7 @@ interface PhotoPopupProps {
 }
 
 const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
+
   const {
     images,
     setSelectedImage,
@@ -22,12 +23,14 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
     setImages,
     setDraggableImages,
   } = useSlide2();
+  
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth();
 
   const generateId: any = () => Date.now() + Math.random();
 
+  // ---------------------------changes--------------
   const uploadToSupabase = async (file: File, fileName: string) => {
     setLoading(true);
 
@@ -58,6 +61,7 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
     }
   };
 
+  // -------------------------------------changes-----------------
   // ✅ Save image URL to the user's images array in DB (only id and url)
   const saveImageUrlToDB = async (imageId: string, imageUrl: string) => {
     if (!user?.id) {
@@ -124,6 +128,7 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
     e.target.value = null;
   };
 
+  // -----------------------changes-------------------------
   const handleDelete = async (id: any) => {
     const imgToDelete: any = images.find((img) => img.id === id);
     if (!imgToDelete) return;
@@ -158,7 +163,9 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
     }
   };
 
-  // 🔹 Fetch all images from Supabase when user is available
+
+  // ---------------------------------changes----------------
+  // Fetch all images from Db
   const fetchUserImages = async () => {
     if (!user?.id) return;
 
@@ -196,7 +203,7 @@ const PhotoPopup = ({ onClose, activeIndex }: PhotoPopupProps) => {
 
     const fetchData = async () => {
       try {
-        await fetchUserImages(); // ✅ await allowed here
+        await fetchUserImages();
       } catch (error) {
         console.error("❌ Error fetching user images:", error);
       }

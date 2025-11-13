@@ -1,35 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, IconButton, TextField, Typography } from "@mui/material";
+import { Box, TextField } from "@mui/material";
 import {
-  Close,
   Edit,
-  Forward10,
-  Forward30,
-  TitleOutlined,
   UploadFileRounded,
 } from "@mui/icons-material";
-import QrGenerator from "../QR-code/Qrcode";
-import { Rnd } from "react-rnd";
-import { COLORS } from "../../constant/color";
 import { useSlide1 } from "../../context/Slide1Context";
 import { useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
-// Helper function to create a new text element
-const createNewTextElement = (defaults: any) => ({
-  id: `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-  value: "",
-  fontSize: defaults.fontSize || 16,
-  fontWeight: defaults.fontWeight || 400,
-  fontColor: defaults.fontColor || "#000000",
-  fontFamily: defaults.fontFamily || "Roboto",
-  textAlign: defaults.textAlign || "center",
-  verticalAlign: defaults.verticalAlign || "center",
-  rotation: defaults.rotation || 0,
-  zIndex: defaults.zIndex || 1,
-  position: { x: 50 + Math.random() * 50, y: 50 + Math.random() * 50 },
-  size: { width: 200, height: 40 },
-  isEditing: false,
-});
 interface SlideCoverProps {
   textAlign?: "start" | "center" | "end";
   rotation?: number;
@@ -38,70 +14,48 @@ interface SlideCoverProps {
   activeIndex?: number;
   addTextRight?: number;
   rightBox?: boolean;
+  isCaptureMode?: boolean
 }
 
 const SlideCover = ({
   activeIndex,
-  addTextRight,
   togglePopup,
   rightBox,
+  isCaptureMode
 }: SlideCoverProps) => {
+
+
+  const coverRef = useRef<HTMLDivElement>(null);
+
+
   const {
     images1,
-    selectedImg1,
-    setSelectedImage1,
-    showOneTextRightSideBox1,
-    oneTextValue1,
-    setOneTextValue1,
     multipleTextValue1,
     texts1,
     editingIndex1,
-    setEditingIndex1,
     fontSize1,
     fontWeight1,
     fontColor1,
     textAlign1,
     verticalAlign1,
-    rotation1,
     setTexts1,
-    setShowOneTextRightSideBox1,
     fontFamily1,
-    // New individual text management
-    textElements1,
-    setTextElements1,
-    selectedTextId1,
-    setSelectedTextId1,
-    setMultipleTextValue1,
+    // textElements1,
+    // setTextElements1,
     isSlideActive1,
     setFontSize1,
     setFontColor1,
     setFontWeight1,
     setFontFamily1,
-    setTextAlign1,
-    setVerticalAlign1,
     selectedVideoUrl1,
-    setSelectedVideoUrl1,
     selectedAudioUrl1,
-    setSelectedAudioUrl1,
-    draggableImages1,
     setDraggableImages1,
-    qrPosition1,
     setQrPosition1,
-    qrAudioPosition1,
     setQrAudioPosition1,
-    isAIimage,
-    setIsAIimage,
-    selectedAIimageUrl1,
-    selectedStickers,
-    updateSticker,
-    removeSticker,
-    aimage1,
-    setAIImage1,
     layout1,
     setLayout1,
-
-    lineHeight1,
-    letterSpacing1,
+    // lineHeight1,
+    // letterSpacing1,
   } = useSlide1();
 
   const location = useLocation();
@@ -224,43 +178,6 @@ const SlideCover = ({
     }
   }, [images1, setDraggableImages1]);
 
-  // Function to add new text element
-  const addNewTextElement = () => {
-    const newTextElement = createNewTextElement({
-      fontSize: 16,
-      fontWeight: 400,
-      fontColor: "#000000",
-      fontFamily: "Roboto",
-      textAlign: "center",
-      rotation: 0,
-      zIndex: textElements1.length + 1,
-    });
-    setTextElements1((prev) => [...prev, newTextElement]);
-    setSelectedTextId1(newTextElement.id);
-  };
-
-  // Add Texts in screen
-  useEffect(() => {
-    if (addTextRight) {
-      addNewTextElement();
-    }
-  }, [addTextRight, addTextRight]);
-
-  // Function to update individual text element
-  const updateTextElement = (id: string, updates: Partial<any>) => {
-    setTextElements1((prev) =>
-      prev.map((text) => (text.id === id ? { ...text, ...updates } : text))
-    );
-  };
-
-  // Function to delete text element
-  const deleteTextElement = (id: string) => {
-    setTextElements1((prev) => prev.filter((text) => text.id !== id));
-    if (selectedTextId1 === id) {
-      setSelectedTextId1(null);
-    }
-  };
-
   // 👇 Auto-reset multipleTextValue when all multiple texts are deleted
   useEffect(() => {
     // When user re-selects the multipleTextValue layout
@@ -285,16 +202,6 @@ const SlideCover = ({
       }
     }
   }, [multipleTextValue1]);
-
-  const handleDeleteBox = (index: number) => {
-    setTexts1((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      if (updated.length === 0) {
-        setMultipleTextValue1(false); // hide the layout
-      }
-      return updated;
-    });
-  };
 
   // ✅ Place this useEffect HERE (below your state definitions)
   useEffect(() => {
@@ -345,6 +252,8 @@ const SlideCover = ({
 
   return (
     <Box
+      ref={coverRef}
+      id="slide-cover-capture"
       sx={{
         display: "flex",
         width: "100%",
@@ -360,7 +269,8 @@ const SlideCover = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            opacity: isSlideActive1 ? 1 : 0.6,
+            height:'100vh',
+            opacity: isCaptureMode ? 1 : isSlideActive1 ? 1 : 0.6,
             pointerEvents: isSlideActive1 ? "auto" : "none",
             "&::after": !isSlideActive1
               ? {
@@ -377,6 +287,7 @@ const SlideCover = ({
               : {},
           }}
         >
+
           {layout1 && (
             <Box sx={{ width: "100%", height: "100%" }}>
               {/* Hidden file input */}
@@ -405,7 +316,7 @@ const SlideCover = ({
                   {/* Image */}
                   <Box
                     component="img"
-                    src={el.src} // This src now comes from layout1
+                    src={el.src}
                     sx={{
                       width: "100%",
                       height: "100%",
@@ -459,13 +370,13 @@ const SlideCover = ({
                         ? "flex-start"
                         : te.verticalAlign === "bottom"
                           ? "flex-end"
-                          : "center",  // ✅ vertical alignment
+                          : "center",
                     justifyContent:
                       te.textAlign === "left"
                         ? "flex-start"
                         : te.textAlign === "right"
                           ? "flex-end"
-                          : "center", // ✅ horizontal alignment
+                          : "center",
                     outline: editingIndex === index ? "1px dashed #1976d2" : "none",
                     borderRadius: "4px",
                     backgroundColor:
@@ -481,6 +392,8 @@ const SlideCover = ({
                     value={te.text || ""}
                     onFocus={() => handleTextFocus(index, te)}
                     onChange={(e) => handleTextChange(e.target.value, index)}
+                    // -------------------Changes.-----------------
+                    // onBlur={() => setEditingIndex(null)}
                     inputProps={{
                       style: {
                         fontSize: editingIndex === index && fontSize1 ? fontSize1 : te.fontSize,
@@ -541,12 +454,11 @@ const SlideCover = ({
             </Box>
           )}
 
-          {
+          {/* {
             multipleTextValue1 || showOneTextRightSideBox1 ? null : (
               <>
                 {textElements1.map((textElement) => {
                   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-                  // Fallbacks to avoid undefined alignment
                   const hAlign =
                     textElement.textAlign === "top"
                       ? "flex-start"
@@ -591,8 +503,8 @@ const SlideCover = ({
                       style={{
                         zIndex: textElement.zIndex,
                         display: "flex",
-                        alignItems: vAlign, // ✅ vertical alignment applied here
-                        justifyContent: hAlign, // ✅ horizontal alignment applied here
+                        alignItems: vAlign, 
+                        justifyContent: hAlign, 
                         border: "1px dashed #4a7bd5",
                         touchAction: "none",
                         transition: "border 0.2s ease",
@@ -623,13 +535,12 @@ const SlideCover = ({
                           width: "100%",
                           height: "100%",
                           display: "flex",
-                          alignItems: vAlign, // ✅ vertical alignment
-                          justifyContent: hAlign, // ✅ horizontal alignment
+                          alignItems: vAlign, 
+                          justifyContent: hAlign, 
                           touchAction: "manipulation",
                           cursor: textElement.isEditing ? "text" : "move",
                         }}
                       >
-                        {/* Close Button */}
                         <IconButton
                           size="small"
                           onClick={(e) => {
@@ -652,7 +563,6 @@ const SlideCover = ({
                           <Close fontSize="small" />
                         </IconButton>
 
-                        {/* Editable Text */}
                         <TextField
                           variant="standard"
                           value={textElement.value}
@@ -669,7 +579,6 @@ const SlideCover = ({
                               fontWeight: textElement.fontWeight,
                               color: textElement.fontColor,
                               fontFamily: textElement.fontFamily,
-                              // textAlign: textElement.textAlign || "top", // ✅ horizontal alignment in text
                               transform: `rotate(${textElement.rotation}deg)`,
                               padding: 0,
                               width: "100%",
@@ -677,7 +586,7 @@ const SlideCover = ({
                               cursor: textElement.isEditing ? "text" : "pointer",
                               backgroundColor: "transparent",
                               display: "flex",
-                              alignItems: vAlign, // ✅ vertical alignment even inside input
+                              alignItems: vAlign, 
                               justifyContent: hAlign,
                             },
                           }}
@@ -699,9 +608,9 @@ const SlideCover = ({
                   );
                 })}</>
             )
-          }
+          } */}
 
-          {selectedVideoUrl1 && (
+          {/* {selectedVideoUrl1 && (
             <Rnd
               cancel=".no-drag"
               onDragStop={(_, d) =>
@@ -728,12 +637,11 @@ const SlideCover = ({
               }}
             >
               <motion.div
-                key={selectedVideoUrl1} // ✅ unique key triggers re-animation on change
-                initial={{ opacity: 0, x: 100 }} // start off-screen (right)
-                animate={{ opacity: 1, x: 0 }} // slide in
-                exit={{ opacity: 0, x: -100 }} // slide out left
+                key={selectedVideoUrl1} 
+                initial={{ opacity: 0, x: 100 }} 
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }} 
                 transition={{ duration: 0.5, ease: "easeInOut" }}
-              // style={{ position: "absolute", width: "100%" }}
               >
                 <Box
                   sx={{
@@ -810,9 +718,9 @@ const SlideCover = ({
                 </Box>
               </motion.div>
             </Rnd>
-          )}
+          )} */}
 
-          {selectedAudioUrl1 && (
+          {/* {selectedAudioUrl1 && (
             <Rnd
               cancel=".no-drag"
               onDragStop={(_, d) =>
@@ -820,7 +728,7 @@ const SlideCover = ({
                   ...prev,
                   x: d.x,
                   y: d.y,
-                  zIndex: qrAudioPosition1.zIndex, // Bring to front on drag
+                  zIndex: qrAudioPosition1.zIndex, 
                 }))
               }
               onResizeStop={(_, __, ref, ___, position) => {
@@ -830,7 +738,7 @@ const SlideCover = ({
                   height: parseInt(ref.style.height),
                   x: position.x,
                   y: position.y,
-                  zIndex: qrAudioPosition1.zIndex, // Bring to front on resize
+                  zIndex: qrAudioPosition1.zIndex,
                 }));
               }}
               bounds="parent"
@@ -850,12 +758,11 @@ const SlideCover = ({
               }}
             >
               <motion.div
-                key={selectedVideoUrl1} // ✅ unique key triggers re-animation on change
-                initial={{ opacity: 0, x: 100 }} // start off-screen (right)
-                animate={{ opacity: 1, x: 0 }} // slide in
-                exit={{ opacity: 0, x: -100 }} // slide out left
+                key={selectedVideoUrl1} 
+                initial={{ opacity: 0, x: 100 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                exit={{ opacity: 0, x: -100 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
-              // style={{ position: "absolute", width: "100%" }}
               >
                 <Box
                   sx={{
@@ -935,9 +842,9 @@ const SlideCover = ({
                 </Box>
               </motion.div>
             </Rnd>
-          )}
+          )} */}
 
-          {draggableImages1
+          {/* {draggableImages1
             .filter((img: any) => selectedImg1.includes(img.id))
             .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
             .map(({ id, src, x, y, width, height, zIndex, rotation = 0 }: any) => {
@@ -950,8 +857,8 @@ const SlideCover = ({
                   size={{ width, height }}
                   position={{ x, y }}
                   bounds="parent"
-                  enableUserSelectHack={false} // ✅ allow touches to propagate
-                  cancel=".non-draggable" // ✅ prevents RND drag from hijacking taps on buttons
+                  enableUserSelectHack={false} 
+                  cancel=".non-draggable" 
                   onDragStop={(_, d) => {
                     setDraggableImages1((prev) =>
                       prev.map((img) =>
@@ -1006,7 +913,6 @@ const SlideCover = ({
                       justifyContent: "center",
                     }}
                   >
-                    {/* rotated image */}
                     <Box
                       sx={{
                         width: "100%",
@@ -1029,9 +935,8 @@ const SlideCover = ({
                       />
                     </Box>
 
-                    {/* Rotate button */}
                     <Box
-                      className="non-draggable" // ✅ ensures RND doesn’t hijack
+                      className="non-draggable" 
                       onClick={(e) => {
                         e.stopPropagation();
                         setDraggableImages1((prev) =>
@@ -1063,7 +968,6 @@ const SlideCover = ({
                       <Forward30 fontSize={isMobile ? "medium" : "small"} />
                     </Box>
 
-                    {/* Close button */}
                     <Box
                       className="non-draggable"
                       onClick={(e) => {
@@ -1093,7 +997,8 @@ const SlideCover = ({
                   </Box>
                 </Rnd>
               );
-            })}
+            })} */}
+          {/*             
 
           {showOneTextRightSideBox1 && (
             <Box
@@ -1397,7 +1302,6 @@ const SlideCover = ({
                 justifyContent: "stretch",
               }}
             >
-              {/* ✅ Ensure the container fills RND box */}
               <Box
                 sx={{
                   position: "relative",
@@ -1406,7 +1310,6 @@ const SlideCover = ({
                   display: "flex",
                 }}
               >
-                {/* ✅ Make image fill fully */}
                 <Box
                   component="img"
                   src={`${selectedAIimageUrl1}`}
@@ -1420,7 +1323,6 @@ const SlideCover = ({
                   }}
                 />
 
-                {/* Close button */}
                 <IconButton
                   onClick={() => setIsAIimage?.(false)}
                   className="no-drag"
@@ -1499,7 +1401,6 @@ const SlideCover = ({
                     height: "100%",
                   }}
                 >
-                  {/* Sticker image */}
                   <Box
                     component="img"
                     src={sticker.sticker}
@@ -1514,7 +1415,6 @@ const SlideCover = ({
                     }}
                   />
 
-                  {/* Close Button */}
                   <IconButton
                     className="non-draggable" // ✅ prevent drag capture
                     size="small"
@@ -1541,7 +1441,6 @@ const SlideCover = ({
                     <Close fontSize={isMobile ? "medium" : "small"} />
                   </IconButton>
 
-                  {/* Rotate Button */}
                   <IconButton
                     className="non-draggable"
                     size="small"
@@ -1573,6 +1472,8 @@ const SlideCover = ({
               </Rnd>
             );
           })}
+ */}
+
         </Box>
       )}
     </Box>

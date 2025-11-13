@@ -244,13 +244,12 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
         width: { md: 300, sm: 300, xs: "95%" },
         height: { md: 600, sm: 600, xs: 450 },
         left: { md: "23%", sm: "0%", xs: 0 },
-        mt: { md: 0, sm: 0, xs: 0 },
         overflow: "hidden",
       }}
     >
       {tips3 && (
         <>
-          <Box
+          {/* <Box
             sx={{
               height: 200,
               width: "100%",
@@ -259,14 +258,14 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
               display: { md: 'flex', sm: 'flex', xs: 'none' }
             }}
           >
-            {/* <video
+            <video
               src={"/assets/images/diy-tips.mp4"}
               autoPlay
               loop
               muted
               style={{ width: "100%", height: "100%" }}
-            /> */}
-          </Box>
+            />
+          </Box> */}
           <Box p={2} height={'100%'}>
             <Typography
               sx={{
@@ -438,7 +437,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
                         <audio
                           src={a.url}
                           controls
-                          style={{ width: "100%", height: "40px" }}
+                          style={{ width: "100%", height: "30px" }}
                         />
                         <IconButton
                           onClick={() => handleDeleteAudio(a.id)}

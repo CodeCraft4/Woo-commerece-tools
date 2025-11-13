@@ -121,6 +121,7 @@ const TextPopup = ({
     const newWeight = currentWeight === 700 ? 400 : 700;
     updateTextProperty('fontWeight', newWeight);
   };
+  
   // Text Rotation
   const rotateText = () => {
     const currentRotation = selectedTextElement?.rotation || rotation;

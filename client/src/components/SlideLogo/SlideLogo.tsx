@@ -250,6 +250,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
             zIndex: 10,
             p: 1,
             position: "relative",
+            height: '100vh',
             opacity: isSlideActive4 ? 1 : 0.6,
             pointerEvents: isSlideActive4 ? "auto" : "none",
             "&::after": !isSlideActive4
@@ -288,7 +289,7 @@ const SlideLogo = ({ activeIndex, addTextRight, rightBox }: SlideLogoProps) => {
 
                   return (
                     <Rnd
-                    cancel=".no-drag"
+                      cancel=".no-drag"
                       key={textElement.id}
                       size={{
                         width: textElement.size.width,

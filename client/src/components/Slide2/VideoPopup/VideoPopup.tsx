@@ -64,6 +64,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
     setVideo(validFiles); // store as an array
   };
 
+  // -----------------------------chanages---------------------------
   // ✅ Save video URL to the user's "video" array in DB
   const saveVideoUrlToDB = async (videoData: any) => {
     if (!user?.id) return;
@@ -95,6 +96,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
   };
 
 
+  // --------------------Changes =========================
   // ✅ Upload video to Supabase Storage
   const handleVideoUpload = async () => {
     if (!video || video.length === 0) {
@@ -173,6 +175,8 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
     []
   );
 
+
+  // ------------------------------------changes-----------------------------------
   // ✅ Fetch user videos
   const fetchUserVideos = async () => {
     if (!user?.id) return;
@@ -209,6 +213,8 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
     loadVideos();
   }, [user, selectedVideoUrl]);
 
+
+  // --------------------Chanages------------------------------------
   // Delete....
   const handleDeleteVideo = async (videoId: string) => {
     if (!user?.id) return;
@@ -455,7 +461,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
                             <Typography sx={{ fontWeight: 600, color: "#333" }}>
                               {v.name.slice(0, 15)}
                             </Typography>
-                            <Typography sx={{ fontSize: "13px", color: "#777" }}>
+                            <Typography sx={{ fontSize: "13px", color: "#575656ff" }}>
                               ⏱ {v.duration || "–"} &nbsp; • &nbsp; 💾 {v.size || "–"}
                             </Typography>
                           </Box>
@@ -540,7 +546,7 @@ const VideoPopup = ({ onClose, activeIndex }: VideoPopupProps) => {
 
               <Box
                 sx={{
-                  p: {xl:3,lg:3,md:3,sm:3,xs:1},
+                  p: { xl: 3, lg: 3, md: 3, sm: 3, xs: 1 },
                   mt: 1,
                   borderTop: "1px solid #d3d3d3ff",
                   borderBottom: "1px solid #d3d3d3ff",

@@ -32,9 +32,10 @@ const Slide3 = () => {
     <Box
       sx={{
         position: "relative",
-        width: "100%",
+        width: 485,
         height: "100%",
         overflow: "hidden",
+        borderRadius: 2,
       }}
     >
       {selectedVideoUrl3 && (
@@ -43,8 +44,8 @@ const Slide3 = () => {
             position: "absolute", // use absolute like Rnd
             top: qrPosition3.y,
             left: qrPosition3.x,
-            width: "100%",
-            height: 180,
+            width: 300,       // ✅ match the image width
+            height: 200,
             display: "flex",
             justifyContent: "center",
             alignItems: "flex-end",
@@ -57,9 +58,9 @@ const Slide3 = () => {
             component="img"
             src="/assets/images/video-qr-tips.png"
             sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
+              width: 300,       // ✅ match the image width
+              height: 200,
+              objectFit: "fill",
               borderRadius: "6px",
             }}
           />
@@ -68,16 +69,16 @@ const Slide3 = () => {
           <Box
             sx={{
               position: "absolute",
-              top: 49,
+              top: 50,
               height: 10,
               width: 15,
-              left: 58,
+              left: { md: 2, sm: 27, xs: 25 },
               borderRadius: 2,
             }}
           >
             <QrGenerator
               url={qrPosition3.url || selectedVideoUrl3}
-              size={Math.min(qrPosition3.width, qrPosition3.height)}
+              size={Math.min(68, 75)}
             />
           </Box>
 
@@ -90,8 +91,8 @@ const Slide3 = () => {
             <Typography
               sx={{
                 position: "absolute",
-                top: 71,
-                right: 25,
+                top: 78,
+                right: { md: 0, sm: 30, xs: 30 },
                 zIndex: 99,
                 color: "black",
                 fontSize: "10px",
@@ -100,20 +101,20 @@ const Slide3 = () => {
                 "&:hover": { textDecoration: "underline" },
               }}
             >
-              {`${selectedVideoUrl3.slice(0, 20)}.....`}
+              {`${selectedVideoUrl3?.slice(0, 20)}.....`}
             </Typography>
           </a>
         </Box>
       )}
 
       {selectedAudioUrl3 && (
-        <Box
+      <Box
           sx={{
             position: "absolute", // use absolute like Rnd
             top: qrAudioPosition3.y,
             left: qrAudioPosition3.x,
-            width: "100%",
-            height: 190,
+            width: 300,       // ✅ match the image width
+            height: 200,
             display: "flex",
             justifyContent: "center",
             alignItems: "flex-end",
@@ -124,11 +125,11 @@ const Slide3 = () => {
           {/* Background Image */}
           <Box
             component="img"
-            src="/assets/images/audio-qr-tips.png"
+            src="/assets/images/video-qr-tips.png"
             sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
+              width: 300,       // ✅ match the image width
+              height: 200,
+              objectFit: "fill",
               borderRadius: "6px",
             }}
           />
@@ -137,16 +138,16 @@ const Slide3 = () => {
           <Box
             sx={{
               position: "absolute",
-              top: 57,
+              top: 50,
               height: 10,
               width: 15,
-              left: 65,
+              left: { md: 2, sm: 27, xs: 25 },
               borderRadius: 2,
             }}
           >
             <QrGenerator
               url={qrAudioPosition3.url || selectedAudioUrl3}
-              size={Math.min(qrAudioPosition3.width, qrAudioPosition3.height)}
+              size={Math.min(68, 75)}
             />
           </Box>
 
@@ -159,8 +160,8 @@ const Slide3 = () => {
             <Typography
               sx={{
                 position: "absolute",
-                top: 71,
-                right: 25,
+                top: 78,
+                right: { md: 0, sm: 30, xs: 30 },
                 zIndex: 99,
                 color: "black",
                 fontSize: "10px",
@@ -169,7 +170,7 @@ const Slide3 = () => {
                 "&:hover": { textDecoration: "underline" },
               }}
             >
-              {`${selectedAudioUrl3.slice(0, 20)}.....`}
+              {`${selectedAudioUrl3?.slice(0, 20)}.....`}
             </Typography>
           </a>
         </Box>
@@ -256,7 +257,7 @@ const Slide3 = () => {
         ))}
 
       {/* 📝 Single Text Layout */}
-     {selectedLayout3 === "oneText" && (
+      {selectedLayout3 === "oneText" && (
         <Box
           sx={{
             display: "flex",
@@ -266,13 +267,13 @@ const Slide3 = () => {
                 ? "flex-start"
                 : verticalAlign3 === "center"
                   ? "center"
-                  : "flex-end", 
+                  : "flex-end",
             alignItems:
               textAlign3 === "start"
                 ? "flex-start"
                 : textAlign3 === "center"
                   ? "center"
-                  : "flex-end", 
+                  : "flex-end",
             height: "100%",
             width: "100%",
             color: fontColor3,
@@ -303,18 +304,24 @@ const Slide3 = () => {
                     fontFamily: e.fontFamily,
                     fontWeight: e.fontWeight,
                     textAlign: e.textAlign || "center",
-                    position: "absolute", // Use absolute positioning
-                    left: e.position.x, // X position
-                    top: e.position.y, // Y position
-                    width: e.size.width, // Width from size object
-                    height: e.size.height, // Height from size object
-                    zIndex: e.zIndex, // Apply zIndex
-                    transform: `rotate(${e.rotation}deg)`, // Apply rotation
+                    position: "absolute",
+                    left: e.position.x,
+                    top: e.position.y,
+                    width: e.size.width,
+                    height: e.size.height,
+                    display: "flex",
+                    zIndex: e.zIndex,
+                    lineHeight: e.lineHeight ?? 1.5,
+                    letterSpacing: `${e.letterSpacing ?? 0}px`,
+                    transform: `rotate(${e.rotation}deg)`,
+                    justifyContent: e.textAlign ?? "center",
+                    alignItems: e.verticalAlign ?? "top",
                     padding: "5px",
-                    boxSizing: "border-box",
+                    whiteSpace: "pre-line", // ⭐ FIX: Show line breaks
+                    cursor: "text",
                   }}
                 >
-                  {e.value} {/* Display the text value */}
+                  {e.value}
                 </Typography>
               ))}</>
         )

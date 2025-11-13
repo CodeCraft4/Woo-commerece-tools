@@ -6,13 +6,14 @@ const LineHeight2Popup = () => {
     texts,
     setTexts,
     editingIndex,
-    multipleTextValue,   // ✅ Add this from context
+    multipleTextValue,
     lineHeight2,
     setLineHeight2,
     letterSpacing2,
     setLetterSpacing2,
     selectedTextId,
     setTextElements,
+    textElements,
   } = useSlide2();
 
   // ✅ If multipleText layout is active, use per-index logic
@@ -42,6 +43,9 @@ const LineHeight2Popup = () => {
 
   // ✅ Active text only used when multipleTextValue is true
   const activeText = multipleTextValue && editingIndex !== null ? texts[editingIndex] : null;
+  const selectedText = !multipleTextValue && selectedTextId
+    ? textElements.find((t) => t.id === selectedTextId)
+    : null;
 
   return (
     <Box sx={{
@@ -53,7 +57,9 @@ const LineHeight2Popup = () => {
         Line Height
       </Typography>
       <Slider
-        value={multipleTextValue ? activeText?.lineHeight ?? 1.5 : lineHeight2}
+        value={multipleTextValue
+          ? activeText?.lineHeight ?? 1.5
+          : selectedText?.lineHeight ?? lineHeight2}
         min={0.8}
         max={3}
         step={0.1}
@@ -73,13 +79,16 @@ const LineHeight2Popup = () => {
         Letter Spacing
       </Typography>
       <Slider
-        value={multipleTextValue ? activeText?.letterSpacing ?? 0 : letterSpacing2}
+        value={multipleTextValue
+          ? activeText?.letterSpacing ?? 0
+          : selectedText?.letterSpacing ?? letterSpacing2}
         min={-2}
         max={10}
         step={0.5}
         onChange={(_, val) => updateTextProperty("letterSpacing", Number(val))}
         sx={{ color: "#1976d2" }}
       />
+
       <Typography fontSize={14}>
         {multipleTextValue
           ? `${activeText?.letterSpacing ?? 0}px`

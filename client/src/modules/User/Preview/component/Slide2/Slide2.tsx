@@ -33,19 +33,19 @@ const Slide2 = () => {
     <Box
       sx={{
         position: "relative",
-        width: "100%",
+        width: 485,
         height: "100%",
         overflow: "hidden",
-        // backgroundColor: "#fff",
+        borderRadius: 2,
       }}
     >
       {selectedVideoUrl && (
         <Box
           sx={{
-            position: "absolute", // use absolute like Rnd
+            position: "absolute",
             top: qrPosition.y,
             left: qrPosition.x,
-            width: "100%",
+            width: 400,
             height: 180,
             display: "flex",
             justifyContent: "center",
@@ -59,9 +59,9 @@ const Slide2 = () => {
             component="img"
             src="/assets/images/video-qr-tips.png"
             sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
+              width: 350,
+              height: 200,
+              objectFit: "fill",
               borderRadius: "6px",
             }}
           />
@@ -70,16 +70,16 @@ const Slide2 = () => {
           <Box
             sx={{
               position: "absolute",
-              top: 49,
+              top: { md: 33, sm: 33, xs: 33 },
               height: 10,
               width: 15,
-              left: 58,
+              left: { md: 28, sm: 32, xs: 27 },
               borderRadius: 2,
             }}
           >
             <QrGenerator
               url={qrPosition.url || selectedVideoUrl}
-              size={Math.min(qrPosition.width, qrPosition.height)}
+              size={Math.min(68, 70)}
             />
           </Box>
 
@@ -92,8 +92,8 @@ const Slide2 = () => {
             <Typography
               sx={{
                 position: "absolute",
-                top: 71,
-                right: 25,
+                top: 60,
+                right: { md: 40, sm: 40, xs: 30 },
                 zIndex: 99,
                 color: "black",
                 fontSize: "10px",
@@ -111,11 +111,11 @@ const Slide2 = () => {
       {selectedAudioUrl && (
         <Box
           sx={{
-            position: "absolute", // use absolute like Rnd
+            position: "absolute",
             top: qrAudioPosition.y,
             left: qrAudioPosition.x,
-            width: "100%",
-            height: 190,
+            width: 400,
+            height: 180,
             display: "flex",
             justifyContent: "center",
             alignItems: "flex-end",
@@ -128,9 +128,9 @@ const Slide2 = () => {
             component="img"
             src="/assets/images/audio-qr-tips.png"
             sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
+              width: 350,
+              height: 200,
+              objectFit: "fill",
               borderRadius: "6px",
             }}
           />
@@ -139,16 +139,16 @@ const Slide2 = () => {
           <Box
             sx={{
               position: "absolute",
-              top: 57,
+              top: { md: 33, sm: 33, xs: 33 },
               height: 10,
               width: 15,
-              left: 65,
+              left: { md: 28, sm: 32, xs: 27 },
               borderRadius: 2,
             }}
           >
             <QrGenerator
               url={qrAudioPosition.url || selectedAudioUrl}
-              size={Math.min(qrAudioPosition.width, qrAudioPosition.height)}
+              size={Math.min(68, 70)}
             />
           </Box>
 
@@ -161,8 +161,8 @@ const Slide2 = () => {
             <Typography
               sx={{
                 position: "absolute",
-                top: 71,
-                right: 25,
+                top: 60,
+                right: { md: 40, sm: 40, xs: 30 },
                 zIndex: 99,
                 color: "black",
                 fontSize: "10px",
@@ -209,7 +209,6 @@ const Slide2 = () => {
               position: "relative",
               height: { md: 210, sm: '175px', xs: '174px' },
               width: "100%",
-              bgcolor: 'red',
               mb: 2,
               display: "flex",
               justifyContent:
@@ -300,24 +299,31 @@ const Slide2 = () => {
               textElements.map((e) => (
                 <Typography
                   key={e.id}
+                  // onClick={() => updateTextElement(e.id, { isEditing: true })}
                   sx={{
                     fontSize: e.fontSize,
                     color: e.fontColor,
                     fontFamily: e.fontFamily,
                     fontWeight: e.fontWeight,
                     textAlign: e.textAlign || "center",
-                    position: "absolute", // Use absolute positioning
-                    left: e.position.x, // X position
-                    top: e.position.y, // Y position
-                    width: e.size.width, // Width from size object
-                    height: e.size.height, // Height from size object
-                    zIndex: e.zIndex, // Apply zIndex
-                    transform: `rotate(${e.rotation}deg)`, // Apply rotation
+                    position: "absolute",
+                    left: e.position.x,
+                    top: e.position.y,
+                    width: e.size.width,
+                    height: e.size.height,
+                    display: "flex",
+                    zIndex: e.zIndex,
+                    lineHeight: e.lineHeight ?? 1.5,
+                    letterSpacing: `${e.letterSpacing ?? 0}px`,
+                    transform: `rotate(${e.rotation}deg)`,
+                    justifyContent: e.textAlign ?? "center",
+                    alignItems: e.verticalAlign ?? "top",
                     padding: "5px",
-                    boxSizing: "border-box",
+                    whiteSpace: "pre-line", // ⭐ FIX: Show line breaks
+                    cursor: "text",
                   }}
                 >
-                  {e.value} {/* Display the text value */}
+                  {e.value}
                 </Typography>
               ))}</>
         )

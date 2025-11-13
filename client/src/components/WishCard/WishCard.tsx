@@ -327,7 +327,7 @@ const WishCard = () => {
           userSelect: "none",
           position: "relative",
           height: '100%',
-          p: 1
+          // p: 1
         }}
       >
         {/* Main box */}
@@ -377,6 +377,7 @@ const WishCard = () => {
                     activeIndex={index}
                     addTextRight={addTextCountFirst}
                     rightBox={true}
+                    isCaptureMode={true}
                   />
                 ) : e.id === 2 ? (
                   <SlideSpread

@@ -37,7 +37,7 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
   const { data: birthdayCards, isLoading } = useQuery({
     queryKey: ["birthdayCards"],
     queryFn: fetchAllCardsFromDB,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,

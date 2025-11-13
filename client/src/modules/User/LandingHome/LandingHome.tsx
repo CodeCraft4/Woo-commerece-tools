@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import CategoryCard from "../../../components/CategoryCard/CategoryCard";
 import MainLayout from "../../../layout/MainLayout";
 import { CATEGORIES_DATA } from "../../../constant/data";
@@ -14,6 +14,12 @@ import Description from "../../../components/Description/Description";
 import { COLORS } from "../../../constant/color";
 import { useQuery } from "@tanstack/react-query";
 import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
+import LandingButton from "../../../components/LandingButton/LandingButton";
+import { useEffect, useState } from "react";
+import useModal from "../../../hooks/useModal";
+import ProductPopup from "../../../components/ProductPopup/ProductPopup";
+import { supabase } from "../../../supabase/supabase";
+import { useAuth } from "../../../context/AuthContext";
 
 const AdverstisementCard = [
   {
@@ -37,6 +43,7 @@ const AdverstisementCard = [
 ];
 
 const LandingHome = () => {
+  const { user } = useAuth()
   const fetchMockCategories = async () => {
     return new Promise<typeof CATEGORIES_DATA>((resolve) => {
       resolve(CATEGORIES_DATA);
@@ -46,7 +53,50 @@ const LandingHome = () => {
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchMockCategories,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
   });
+
+
+
+  const [draftData, setDraftData] = useState<any>(null);
+  const {
+    open: isOpenDetailModal,
+    openModal: openDetailModal,
+    closeModal,
+  } = useModal();
+  const [selectedCate, setSelectedCate] = useState<any>(null);
+
+  // Fetch all Draft
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchDrafts = async () => {
+      const { data, error } = await supabase
+        .from("draft") // ✅ correct table name
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      console.log(data, '-----draft....')
+      if (error) {
+        console.error("❌ Error fetching drafts:", error.message);
+      } else {
+        console.log("✅ Drafts fetched:", data);
+        setDraftData(data);
+      }
+    };
+
+    fetchDrafts();
+  }, [user]);
+
+  // ✅ Handle click on draft card
+  const handleOpenDraft = (draft: any) => {
+    setSelectedCate(draft);
+    openDetailModal();
+  };
 
   return (
     <MainLayout>
@@ -156,6 +206,7 @@ const LandingHome = () => {
           </Box>
         </Box>
 
+
         {/* Birthday Slider CArd */}
         <BirthdaySlider
           title="Make it a Birthday to Remember!..."
@@ -164,6 +215,72 @@ const LandingHome = () => {
 
         {/* VIP Funkey just for offer */}
         <VIPFunky />
+
+
+        {/* Draft..Card  */}
+        {draftData &&
+          <Box sx={{ p: 2, borderRadius: 2 }}>
+            {/* Header */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 2,
+              }}
+            >
+              <Typography sx={{ fontSize: 25, fontWeight: "bold" }}>Draft</Typography>
+              <LandingButton title="See All" personal width="140px" />
+            </Box>
+
+            {/* Draft Card */}
+            {/* // ✅ Show all drafts */}
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+              {draftData?.map((e: any) => (
+                <Box
+                  key={e.id}
+                  sx={{
+                    width: 200,
+                    height: 280,
+                    border: "1px solid gray",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    cursor: "pointer",
+                  }}
+                >
+                  {e.cover_screenshot ? (
+                    <Box
+                      component="img"
+                      src={e.cover_screenshot}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: 2,
+                      }}
+                      onClick={() => handleOpenDraft(e)}
+                    />
+                  ) : (
+                    <Typography sx={{ color: "gray", mt: 4, textAlign: "center" }}>
+                      No image
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+            </Box>
+
+            {isOpenDetailModal && selectedCate && (
+              <ProductPopup
+                open={isOpenDetailModal}
+                onClose={closeModal}
+                cate={selectedCate}
+              />
+            )}
+
+
+          </Box>
+        }
+
 
         {/* Basket Slider Cards */}
         <BasketSlider
