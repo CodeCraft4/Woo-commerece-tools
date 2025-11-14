@@ -299,7 +299,7 @@ const Navbar = () => {
           }}
         >
           <CircularProgress color="inherit" />
-          <Typography>Saving your draft...</Typography>
+          {/* <Typography>Saving your draft...</Typography> */}
         </Backdrop>
       )}
 
@@ -308,7 +308,7 @@ const Navbar = () => {
           open={isDraftModal}
           onCloseModal={isCloseDraftModal}
           btnText={loadingDrafts ? "Saving..." : "Save Draft"}
-          title="Are you Sure to want exit your draft?"
+          title="Are you Sure to want save your card in Draft?"
           onClick={handleDraftConfirm}
           icon={<Drafts />}
         />

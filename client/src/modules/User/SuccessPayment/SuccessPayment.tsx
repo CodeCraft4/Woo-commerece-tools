@@ -1,17 +1,39 @@
 import { useEffect } from "react";
 import { Check } from "@mui/icons-material";
 import { Box, IconButton, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
+import toast from "react-hot-toast";
 
 const SuccessPayment = () => {
-  const navigate = useNavigate();
+
+   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const sessionId = searchParams.get("session_id");
+
+    if (sessionId) {
+      fetch("http://localhost:5000/send-pdf-after-success", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      })
+        .then(() => {
+          toast.success(
+            "Payment Successful! Your personalised PDF has been emailed to you."
+          );
+        })
+        .catch(() => {
+          toast.error("Payment succeeded but PDF could not be sent.");
+        });
+    }
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       navigate(USER_ROUTES.SUBSCRIPTION);
     }, 4000);
-
     return () => clearTimeout(timer);
   }, [navigate]);
 
