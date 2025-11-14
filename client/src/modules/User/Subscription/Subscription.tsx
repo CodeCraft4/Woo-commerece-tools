@@ -10,13 +10,13 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
 
 const stripePromise = loadStripe(
-  "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK");
+  "pk_test_51Qy8qWQOrHBOHXVwgcKXeKleaQbr43esHIWeeEuLCvE9SfmldVnMVYwnZVf72lHMKj6Hj6Pwh01ak5e7ZsTucB9I00xyfjVroR");
 
 const Subscription = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>("standard");
   const [loading, setLoading] = useState(false);
 
-  const {user} = useAuth()
+  const { user } = useAuth()
 
 
   const plans = [
@@ -39,18 +39,18 @@ const Subscription = () => {
   const handleStripeOrder = async (plan: any) => {
     setLoading(true);
     try {
-     const res = await fetch("https://tools-ashen-rho.vercel.app/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: plan.title,
-        price: plan.price,
-        user: {
-          email: user?.email,
-          name: user?.user_metadata?.full_name || "Guest",
-        },
-      }),
-    });
+      const res = await fetch("https://tools-ashen-rho.vercel.app/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: plan.title,
+          price: plan.price,
+          user: {
+            email: user?.email,
+            name: user?.user_metadata?.full_name || "Guest",
+          },
+        }),
+      });
 
       const { id } = await res.json();
 
