@@ -14,7 +14,7 @@ const SuccessPayment = () => {
     const sessionId = searchParams.get("session_id");
 
     if (sessionId) {
-      fetch("http://localhost:5000/send-pdf-after-success", {
+      fetch("https://tools-a4dx84k71-imads-projects-8cd60545.vercel.app/send-pdf-after-success", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId }),

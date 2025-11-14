@@ -39,7 +39,7 @@ const Subscription = () => {
   const handleStripeOrder = async (plan: any) => {
     setLoading(true);
     try {
-     const res = await fetch("http://localhost:5000/create-checkout-session", {
+     const res = await fetch("https://tools-a4dx84k71-imads-projects-8cd60545.vercel.app/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
