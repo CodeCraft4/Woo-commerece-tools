@@ -7,14 +7,14 @@ import toast from "react-hot-toast";
 
 const SuccessPayment = () => {
 
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
 
     if (sessionId) {
-      fetch("https://tools-a4dx84k71-imads-projects-8cd60545.vercel.app/send-pdf-after-success", {
+      fetch("https://tools-ashen-rho.vercel.app/send-pdf-after-success", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId }),

@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
 
 const stripePromise = loadStripe(
-  "pk_test_51Qy8qWQOrHBOHXVwgcKXeKleaQbr43esHIWeeEuLCvE9SfmldVnMVYwnZVf72lHMKj6Hj6Pwh01ak5e7ZsTucB9I00xyfjVroR");
+  "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK");
 
 const Subscription = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>("standard");
@@ -39,7 +39,7 @@ const Subscription = () => {
   const handleStripeOrder = async (plan: any) => {
     setLoading(true);
     try {
-     const res = await fetch("https://tools-a4dx84k71-imads-projects-8cd60545.vercel.app/create-checkout-session", {
+     const res = await fetch("https://tools-ashen-rho.vercel.app/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
