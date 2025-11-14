@@ -36,8 +36,8 @@ app.post("/create-checkout-session", async (req, res) => {
         },
       ],
       success_url:
-        "http://localhost:5173/success-payment?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: "http://localhost:5173/subscription",
+        "https://diypersonalisation.com/success-payment?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: "https://diypersonalisation.com/subscription",
     });
 
     return res.json({ id: session.id });
