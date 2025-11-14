@@ -319,6 +319,7 @@ const WishCard = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
+      {/* One Box for Tools */}
       <Box
         sx={{
           maxWidth: "100%",
@@ -331,6 +332,7 @@ const WishCard = () => {
         }}
       >
         {/* Main box */}
+        {/* Inside this Box the card and toolbar */}
         <Box
           sx={{
             display: "flex",
@@ -1171,6 +1173,7 @@ const WishCard = () => {
             <ArrowForwardIos sx={{ color: "#212121" }} />
           </IconButton>
         </Box>
+        
       </Box>
       <GlobalWatermark />
     </DndProvider>

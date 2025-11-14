@@ -307,7 +307,7 @@ const handleImageUpload = (file: File) => {
         actualPrice: Number(data.actualPrice),
         salePrice: Number(data.salePrice) || null,
         description: data.description,
-        imageUrl: finalImage || null,
+        imageUrl: capturedImageUrl || initialElements[initialElements.length - 1]?.src || null,
         polygon_shape: selectedShapeImage || data.polygon_shape || null,
         polygonLayout: layoutData, // Store the layout data directly as JSON
          lastpageImageUrl: capturedImageUrl || initialElements[initialElements.length - 1]?.src || null,

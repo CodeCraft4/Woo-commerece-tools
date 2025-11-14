@@ -6,11 +6,16 @@ type Props = {
 };
 
 const Applayout = ({ children }: Props) => {
-  
+
   return (
-    <Box height={'100dvh'}>
+    <Box sx={{
+      height: "100vh",
+    }}
+    >
       <Navbar />
-      {children}
+      <Box component="main">
+        {children}
+      </Box>
     </Box>
   );
 };

@@ -80,7 +80,6 @@ const LandingHome = () => {
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      console.log(data, '-----draft....')
       if (error) {
         console.error("❌ Error fetching drafts:", error.message);
       } else {
@@ -218,7 +217,7 @@ const LandingHome = () => {
 
 
         {/* Draft..Card  */}
-        {draftData &&
+        {draftData?.length > 0 &&
           <Box sx={{ p: 2, borderRadius: 2 }}>
             {/* Header */}
             <Box
