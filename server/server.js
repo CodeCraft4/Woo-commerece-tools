@@ -10,7 +10,7 @@ app.use(express.json());
 
 // Stripe secret key
 const stripe = new Stripe(
-  "sk_test_51S5Pnw6w4VLajVLTYqgBZ2IMU8Zr3xtVSwCzm0u5oHFqWwHnrl3jEZqT5DM3LlIno6DbF2VjpvHlCo6N81uWoPI800VA0yZrm3"
+  "sk_test_51Qy8qWQOrHBOHXVwnCXKHV8Gn7YC5gCHDcNHIofLAcwOACPIT9u0NzPp98WYPwKxhlsyqIick2jxwEoMhzmSsjzi00fLOBTyAB"
 );
 
 // ----------------------------------------------------------------------
