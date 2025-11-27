@@ -96,6 +96,9 @@ const SpreadRightSide = ({
     setSelectedLayout3,
     setAIImage3,
 
+    setImageFilter3,
+    setActiveFilterImageId3,
+
     lineHeight3,
     letterSpacing3
   } = useSlide3();
@@ -260,7 +263,7 @@ const SpreadRightSide = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height:'100vh',
+            height: '100vh',
             opacity: isSlideActive3 ? 1 : 0.6,
             pointerEvents: isSlideActive3 ? "auto" : "none",
             "&::after": !isSlideActive3
@@ -465,6 +468,7 @@ const SpreadRightSide = ({
                               textElement.id === selectedTextId3
                                 ? "2px solid #1976d2"
                                 : "1px dashed #4a7bd5",
+                            zIndex: textElement.zIndex
                           }}
                         >
                           {/* ✅ Editable Text */}
@@ -768,8 +772,8 @@ const SpreadRightSide = ({
 
           {draggableImages3
             .filter((img: any) => selectedImg3.includes(img.id))
-            .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
-            .map(({ id, src, x, y, width, height, zIndex, rotation = 0 }: any) => {
+            // .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
+            .map(({ id, src, x, y, width, height, zIndex, rotation = 0, filter }: any) => {
               const isMobile =
                 typeof window !== "undefined" && window.innerWidth < 768;
 
@@ -779,8 +783,8 @@ const SpreadRightSide = ({
                   size={{ width, height }}
                   position={{ x, y }}
                   bounds="parent"
-                  enableUserSelectHack={false} // ✅ allow touches to propagate
-                  cancel=".non-draggable" // ✅ prevents RND drag from hijacking taps on buttons
+                  enableUserSelectHack={false}
+                  cancel=".non-draggable"
                   onDragStop={(_, d) => {
                     setDraggableImages3((prev) =>
                       prev.map((img) =>
@@ -854,6 +858,8 @@ const SpreadRightSide = ({
                           pointerEvents: "none",
                           border: "2px solid #1976d2",
                           objectFit: "fill",
+                          filter: filter || "none",
+                          zIndex: zIndex
                         }}
                       />
                     </Box>
@@ -895,9 +901,23 @@ const SpreadRightSide = ({
                     {/* Close button */}
                     <Box
                       className="non-draggable"
-                      onClick={(e) => {
+                     onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedImage3((prev) => prev.filter((i) => i !== id));
+
+                        // REMOVE image from selected
+                       setSelectedImage3(prev => prev.filter(i => i !== id));
+                       setDraggableImages3(prev => prev.filter(img => img.id !== id));
+
+                        // RESET filter to original
+                        setDraggableImages3(prev =>
+                          prev.map(img =>
+                            img.id === id ? { ...img, filter: "none" } : img
+                          )
+                        );
+
+                        setActiveFilterImageId3(null);
+                        // CLOSE filter panel
+                        setImageFilter3(false);
                       }}
                       sx={{
                         position: "absolute",
@@ -931,7 +951,7 @@ const SpreadRightSide = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                height: "97%",
+                height: { md: "675px", sm: "575px", xs: '575px' },
                 width: { md: "470px", sm: "370px", xs: "90%" },
                 border: "3px dashed #3a7bd5",
                 position: "absolute",
@@ -1031,7 +1051,7 @@ const SpreadRightSide = ({
                   key={index}
                   sx={{
                     position: "relative",
-                    height: "210px",
+                    height: { md: "210px", sm: "180px", xs: '180px' },
                     width: "100%",
                     mb: 2,
                     border: "3px dashed #3a7bd5",

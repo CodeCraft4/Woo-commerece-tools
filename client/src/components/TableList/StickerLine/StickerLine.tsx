@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material'
-import { COLORS } from '../../constant/color'
+import { COLORS } from '../../../constant/color'
 
 const StickerLine = () => {
   return (

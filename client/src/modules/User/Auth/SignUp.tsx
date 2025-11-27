@@ -4,8 +4,8 @@ import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useAuthStore } from "../../../stores";
 import toast from "react-hot-toast";
+import { useAuth } from "../../../context/AuthContext";
 
 type SignUpForm = {
   fullName: string;
@@ -17,7 +17,7 @@ type SignUpForm = {
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { signUp } = useAuthStore();
+  const { signUp } = useAuth();
 
   const {
     register,
@@ -41,7 +41,7 @@ const SignUp = () => {
       toast.success("Account created successfully!");
       navigate(USER_ROUTES.SIGNIN);
     } catch (err: any) {
-      toast.error("❌ Signup error:", err.message);
+      toast.error(err.message);
     }
   };
 
@@ -86,8 +86,8 @@ const SignUp = () => {
         <Box
           sx={{
             width: { md: 500, sm: 400, xs: "100%" },
-            height:{md:'auto',sm:'90vh',xs:'80vh'},
-            overflow:{md:'hidden',sm:'scroll',xs:'scroll'},
+            height: { md: 'auto', sm: '90vh', xs: '80vh' },
+            overflow: { md: 'hidden', sm: 'scroll', xs: 'scroll' },
             p: 3,
             borderRadius: 3,
             bgcolor: "rgba(255,255,255,0.9)",
@@ -95,11 +95,11 @@ const SignUp = () => {
             textAlign: "center",
           }}
         >
-          <Typography sx={{ fontSize: {md:"35px",sm:"35px",xs:22}, fontWeight: 700 }}>
+          <Typography sx={{ fontSize: { md: "35px", sm: "35px", xs: 22 }, fontWeight: 700 }}>
             Sign Up
           </Typography>
           {/* Your inputs & buttons go here */}
-          <Box mt={{md:5,sm:5,xs:2}}>
+          <Box mt={{ md: 5, sm: 5, xs: 2 }}>
             <CustomInput
               label="Full Name"
               placeholder="Enter your Full Name"

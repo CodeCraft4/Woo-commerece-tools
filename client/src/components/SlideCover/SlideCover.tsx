@@ -269,7 +269,7 @@ const SlideCover = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height:'100vh',
+            height: '100vh',
             opacity: isCaptureMode ? 1 : isSlideActive1 ? 1 : 0.6,
             pointerEvents: isSlideActive1 ? "auto" : "none",
             "&::after": !isSlideActive1
@@ -300,7 +300,7 @@ const SlideCover = ({
               />
 
               {/* Render Images from layout1 */}
-              {layout1.elements.map((el: any, index: number) => (
+              {layout1.elements?.map((el: any, index: number) => (
                 <Box
                   key={el.id}
                   sx={{
@@ -322,7 +322,7 @@ const SlideCover = ({
                       height: "100%",
                       objectFit: "cover",
                       borderRadius: 1,
-                      filter: "brightness(70%)",
+                      filter: "brightness(85%)",
                     }}
                   />
 
@@ -351,6 +351,34 @@ const SlideCover = ({
                   >
                     <UploadFileRounded sx={{ color: "white" }} />
                   </Box>
+                </Box>
+              ))}
+
+              {layout1.stickers?.map((el: any) => (
+                <Box
+                  key={el.id}
+                  sx={{
+                    position: "absolute",
+                    left: el.x,
+                    top: el.y,
+
+                    borderRadius: 1,
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Image */}
+                  <Box
+                    component="img"
+                    src={el.sticker}
+                    sx={{
+                      width: el.width,
+                      height: el.height,
+                      objectFit: "contain",
+                      borderRadius: 1,
+                      filter: "brightness(70%)",
+                      zIndex: el.zIndex
+                    }}
+                  />
                 </Box>
               ))}
 

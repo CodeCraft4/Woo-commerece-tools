@@ -9,12 +9,13 @@ type ButtonTypes = {
   loading?: boolean;
   personal?: boolean;
   bgblack?: boolean;
-  type?:'button' | 'submit' | 'reset';
-  active?:boolean
+  type?: 'button' | 'submit' | 'reset';
+  active?: boolean,
+  advertisement?: boolean
 };
 
 const LandingButton = (props: ButtonTypes) => {
-  const { title, personal, onClick, width, variant, loading, bgblack,type ,active} =
+  const { title, personal, onClick, width, variant, loading, bgblack, type, active, advertisement } =
     props || {};
 
   return (
@@ -29,12 +30,12 @@ const LandingButton = (props: ButtonTypes) => {
           bgcolor: variant
             ? "transparent"
             : bgblack
-            ? COLORS.gray : active ? COLORS.primary
-            : COLORS.black,
+              ? COLORS.white : advertisement ? COLORS.white : active ? COLORS.primary
+                : COLORS.black,
           borderRadius: personal ? 1 : "3px",
           fontWeight: 600,
           mb: { md: 0, sm: 0, xs: 1 },
-          color: variant || bgblack ? COLORS.black : COLORS.white,
+          color: variant || bgblack || advertisement ? COLORS.black : COLORS.white,
           textTransform: "none",
           px: 2,
           opacity: 0.8,
@@ -42,7 +43,7 @@ const LandingButton = (props: ButtonTypes) => {
           width: { md: width ? width : "auto", sm: "auto", xs: "100%" },
           border: variant ? `1px solid ${COLORS.primary}` : 0,
           "&:hover": {
-            bgcolor: bgblack ? COLORS.white : variant ? "transparent" : COLORS.primary,
+            bgcolor: bgblack ? COLORS.primary : variant || advertisement ? "transparent" : COLORS.primary,
           },
         }}
       >

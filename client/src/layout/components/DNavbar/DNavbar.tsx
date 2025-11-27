@@ -63,7 +63,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     transition: theme.transitions.create("width"),
     width: "100%",
     flex: 1,
-    fontSize:'12px',
+    fontSize: '12px',
     color: COLORS.white,
     "&::placeholder": {
       color: "#fff", // placeholder color to white
@@ -107,6 +107,7 @@ const DNavbar = () => {
       sx={{
         backgroundColor: "#160215ff", // black background
         boxShadow: "none",
+        display: { md: 'flex', sm: 'flex', xs: 'none' }
       }}
     >
       <Toolbar
@@ -150,7 +151,7 @@ const DNavbar = () => {
           </IconButton>
 
           <Avatar sx={{ bgcolor: COLORS.primary, width: 30, height: 30 }}>A</Avatar>
-          <Typography sx={{ color: "#fff",fontSize:'12px' }}>
+          <Typography sx={{ color: "#fff", fontSize: '12px' }}>
             Admin123
           </Typography>
           <IconButton onClick={handleMenu} sx={{ color: "#fff" }}>
@@ -162,16 +163,16 @@ const DNavbar = () => {
             open={Boolean(anchorEl)}
             onClose={handleClose}
             PaperProps={{
-              sx: { mt: 1, minWidth: 150,ml:-2 },
+              sx: { mt: 1, minWidth: 150, ml: -2 },
             }}
           >
             <MenuItem onClick={() => navigate(ADMINS_DASHBOARD.SETTINGS)}>
-              <PersonOutline/> Profile
+              <PersonOutline /> Profile
             </MenuItem>
             <MenuItem onClick={() => navigate(ADMINS_DASHBOARD.SETTINGS)}>
-              <SettingsOutlined/> Settings
+              <SettingsOutlined /> Settings
             </MenuItem>
-            <MenuItem onClick={openLogoutModal} sx={{color:'#e91d1dff'}}> <LogoutOutlined/> Logout</MenuItem>
+            <MenuItem onClick={openLogoutModal} sx={{ color: '#e91d1dff' }}> <LogoutOutlined /> Logout</MenuItem>
           </Menu>
         </Box>
       </Toolbar>

@@ -42,13 +42,16 @@ interface TextElement {
 }
 
 interface DraggableImage {
-  id: string;
+  id: string | any;
   src: string;
+  originalSrc?: string | any;
   x: number;
   y: number;
   width: number;
   height: number;
   rotation: number;
+  zIndex?: number;
+  filter?: string;
 }
 
 interface DraggableQR {
@@ -97,7 +100,7 @@ interface Slide2ContextType {
   setTitle: React.Dispatch<React.SetStateAction<string>>;
   activePopup: string | null;
   setActivePopup: React.Dispatch<React.SetStateAction<string | null>>;
-  selectedImg: number[];
+  selectedImg: number[] | any;
   setSelectedImage: React.Dispatch<React.SetStateAction<number[]>>;
   showOneTextRightSideBox: boolean;
   setShowOneTextRightSideBox: React.Dispatch<React.SetStateAction<boolean>>;
@@ -194,6 +197,13 @@ interface Slide2ContextType {
 
   draggableImages: DraggableImage[];
   setDraggableImages: React.Dispatch<React.SetStateAction<DraggableImage[]>>;
+  imageFilter?: boolean,
+  setImageFilter?: any,
+  imageSketch?: boolean,
+  setImageSketch?: any,
+
+  activeFilterImageId?: string | null | any,
+  setActiveFilterImageId?: any
 
   qrPosition: DraggableQR;
   setQrPosition: React.Dispatch<React.SetStateAction<DraggableQR>>;
@@ -266,6 +276,12 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
   // Image Resizing.
   const [draggableImages, setDraggableImages] = useState<DraggableImage[]>([]);
+  const [imageFilter, setImageFilter] = useState(false)
+  const [imageSketch, setImageSketch] = useState(false)
+  const [activeFilterImageId, setActiveFilterImageId] = useState<string | null>(null);
+
+
+
 
   // QR Resizing and Moving
   const [qrPosition, setQrPosition] = useState<DraggableQR>({
@@ -804,6 +820,12 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         setIsAIimage2,
         setSelectedAIimageUrl2,
         selectedAIimageUrl2,
+        setImageFilter,
+        imageFilter,
+        setImageSketch,
+        imageSketch,
+        activeFilterImageId,
+        setActiveFilterImageId,
 
         // Slide state management
         isSlideActive,

@@ -20,6 +20,11 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
     selectedImg3,
     setImages3,
     setDraggableImages3,
+    imageFilter3,
+    setImageFilter3,
+    setActiveFilterImageId3,
+    draggableImages3,
+    activeFilterImageId3,
   } = useSlide3();
 
   const [loading, setLoading] = useState(false);
@@ -207,6 +212,75 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
     fetchData();
   }, [user, images3]);
 
+  const filters = [
+    { name: "None", css: "none" },
+    { name: "Brightness", css: "brightness(150%)" },
+    { name: "Contrast", css: "contrast(180%)" },
+    { name: "Grayscale", css: "grayscale(100%)" },
+    { name: "Sepia", css: "sepia(100%)" },
+    { name: "Invert", css: "invert(100%)" },
+    { name: "Blur", css: "blur(3px)" },
+  ];
+
+  const applyFilter = (filterCss: string) => {
+    setDraggableImages3(prev =>
+      prev.map(img =>
+        img.id === activeFilterImageId3  // 👈 ONLY 1 image gets filter!
+          ? { ...img, filter: filterCss }
+          : img
+      )
+    );
+  };
+
+
+  if (imageFilter3) {
+    const selectedImage = draggableImages3.find(img => selectedImg3.includes(img.id));
+
+    const previewImg = selectedImage?.src ||
+      "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400";
+
+    return (
+      <PopupWrapper
+        title="Image Filter"
+        onClose={() => setImageFilter3(false)}
+        sx={{
+          width: { md: 300, sm: 300, xs: '95%' },
+          height: { md: 600, sm: 600, xs: 450 },
+          left: { md: "23%", sm: "0%", xs: 0 },
+          zIndex: 99,
+        }}
+      >
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+          {filters.map((f) => (
+            <Box
+              key={f.name}
+              onClick={() => applyFilter(f.css)}
+              sx={{
+                width: 120,
+                height: 100,
+                borderRadius: 2,
+                border: "2px solid #3a7bd5",
+                cursor: "pointer",
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                component="img"
+                src={previewImg}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  filter: f.css,
+                }}
+              />
+            </Box>
+          ))}
+        </Box>
+      </PopupWrapper>
+    );
+  }
+
   return (
     <PopupWrapper
       title="Photos"
@@ -298,10 +372,15 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
         {images3.map(({ id, src }) => (
           <Box
             key={id}
-            onClick={() =>
+            onClick={() => {
               setSelectedImage3((prev: any) => {
                 const isSelected = prev.includes(id);
-                // Increment zIndex only if selecting a new image
+
+                // When user selects an image → set active filter image
+                if (!isSelected) {
+                  setActiveFilterImageId3(id);
+                }
+                // zIndex update...
                 setDraggableImages3((imgs: any[]) =>
                   imgs.map((img) =>
                     img.id === id
@@ -309,7 +388,7 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
                         ...img,
                         zIndex: !isSelected
                           ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1
-                          : img.zIndex, // keep current zIndex when unselecting
+                          : img.zIndex,
                       }
                       : img
                   )
@@ -318,9 +397,10 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
                 const updated = isSelected
                   ? prev.filter((i: any) => i !== id)
                   : [...prev, id];
+
                 return updated;
-              })
-            }
+              });
+            }}
             sx={{
               width: { lg: "115px", md: "115px", sm: "115px", xs: '95px' },
               height: { lg: "115px", md: "115px", sm: "115px", xs: '95px' },

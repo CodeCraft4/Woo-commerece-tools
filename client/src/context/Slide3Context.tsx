@@ -42,13 +42,15 @@ interface TextElement {
 }
 
 interface DraggableImage {
-  id: string;
+  id: string | any;
   src: string;
   x: number;
   y: number;
   width: number;
   height: number;
   rotation: number;
+  zIndex?: number;
+  filter?: string
 }
 interface DraggableQR {
   id: string;
@@ -146,6 +148,11 @@ interface Slide3ContextType {
   setImages3: React.Dispatch<
     React.SetStateAction<{ id: number; src: string }[]>
   >;
+
+  imageFilter3?: boolean,
+  setImageFilter3?: any,
+
+
   video3: File[] | null;
   setVideo3: React.Dispatch<React.SetStateAction<File[] | null>>;
   audio3: File[] | null;
@@ -191,6 +198,9 @@ interface Slide3ContextType {
   setPoster3: React.Dispatch<React.SetStateAction<string | null>>;
   selectedVideoUrl3: string | null;
   setSelectedVideoUrl3: React.Dispatch<React.SetStateAction<string | null>>;
+
+  activeFilterImageId3?: string | null | any,
+  setActiveFilterImageId3?: any
 
   // Slide state management
   isSlideActive3: boolean;
@@ -251,6 +261,10 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   const [draggableImages3, setDraggableImages3] = useState<DraggableImage[]>(
     []
   );
+  const [imageFilter3, setImageFilter3] = useState(false)
+  const [activeFilterImageId3, setActiveFilterImageId3] = useState<string | null>(null);
+
+
 
   // QR Resizing and Moving
   const [qrPosition3, setQrPosition3] = useState<DraggableQR>({
@@ -726,6 +740,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
 
         aimage3,
         setAIImage3,
+        activeFilterImageId3,
+        setActiveFilterImageId3,
 
         tips3,
         setTips3,
@@ -764,6 +780,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         setImageSizes3,
         poster3,
         setPoster3,
+        setImageFilter3,
+        imageFilter3,
 
         // Slide state management
         isSlideActive3,

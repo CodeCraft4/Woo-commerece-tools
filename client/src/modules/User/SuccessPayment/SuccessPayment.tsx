@@ -9,24 +9,31 @@ const SuccessPayment = () => {
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
+  console.log(localStorage.getItem("selectedSize"), 'size')
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
+    let raw = sessionStorage.getItem("slides");
+    let slides = null;
+
+    if (raw && raw !== "undefined") {
+      slides = JSON.parse(raw);
+    }
 
     if (sessionId) {
-      fetch("https://tools-ashen-rho.vercel.app/send-pdf-after-success", {
+      // fetch("https://diypersonalisationserver-production.up.railway.app/send-pdf-after-success", {
+      fetch("http://localhost:5000/send-pdf-after-success", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({
+          sessionId,
+          cardSize: localStorage.getItem("selectedSize"),
+          slides,
+        }),
       })
         .then(() => {
-          toast.success(
-            "Payment Successful! Your personalised PDF has been emailed to you."
-          );
+          toast.success("Payment Successful! PDF sent to your email!");
         })
-        .catch(() => {
-          toast.error("Payment succeeded but PDF could not be sent.");
-        });
+        .catch(() => toast.error("Payment succeeded but PDF could not be sent."));
     }
   }, []);
 

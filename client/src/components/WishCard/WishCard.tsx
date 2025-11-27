@@ -74,6 +74,8 @@ import LineHeight2Popup from "../Slide2/LineHeight2Popup/LineHeight2Popup";
 import LineHeight4Popup from "../Slide4/LineHeight4Popup/LineHeight4Popup";
 import LineHeight3Popup from "../Slide3/LineHeight3Popup/LineHeight3Popup";
 import { COLORS } from "../../constant/color";
+import ImageAdjustment from "../Slide2/ImageAdjustment/ImageAdjustment";
+import ImageAdjustment3Popup from "../Slide3/ImageAdjustment3Popup/ImageAdjustment3Poup";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -503,7 +505,13 @@ const WishCard = () => {
                   activeIndex={activeIndex}
                 />
               )}
-
+              {activePopup === "photo" && (
+                <ImageAdjustment
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                // togglePopup={togglePopup("photo")}
+                />
+              )}
               {activePopup === "sticker" && (
                 <StickerPopup
                   onClose={() => setActivePopup(null)}
@@ -568,6 +576,14 @@ const WishCard = () => {
                 <Photo3Popup
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "photo" && (
+                <ImageAdjustment3Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                // togglePopup={togglePopup("photo")}
                 />
               )}
 
@@ -1173,7 +1189,7 @@ const WishCard = () => {
             <ArrowForwardIos sx={{ color: "#212121" }} />
           </IconButton>
         </Box>
-        
+
       </Box>
       <GlobalWatermark />
     </DndProvider>

@@ -9,7 +9,6 @@ import {
   CollectionsOutlined,
   TextFieldsOutlined,
   MoodOutlined,
-  CategoryOutlined,
 } from "@mui/icons-material";
 import {
   Box,
@@ -166,6 +165,9 @@ const FirstSlide = (props: FirstSlideType) => {
     setStickerElements((prev) => [...prev, newSticker]);
   };
 
+  const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
+
+
   return (
     <>
       <Box
@@ -198,172 +200,26 @@ const FirstSlide = (props: FirstSlideType) => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'relative'
       }}>
         {/* LEFT SIDE — Shape Preview or Banner */}
         <Box position={'relative'}>
           <Box
             component={"div"}
             sx={{
-              width: { md: "500px", sm: "400px", xs: "100%" },
-              height: { md: "700px", sm: "600px", xs: "400px" },
+              width: { md: "500px", sm: '400px', xs: '100%' },
+              height: { md: "700px", sm: "600px", xs: 400 },
               borderRadius: "12px",
               boxShadow: "3px 5px 8px gray",
               display: "flex",
               alignItems: "center",
-              justifyContent: 'white',
+              justifyContent: "center",
               position: "relative",
               overflow: "hidden",
-              border: "1px solid lightgray",
+              border: `1px solid lightGray`,
               cursor: "pointer",
-              // p: 1,
             }}
           >
-            {/* Top toolbar for selected text element */}
-            {selectedTextId && (
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  right: 0,
-                  width: "100px",
-                  display: "flex",
-                  flexDirection: "column",
-                  height: { md: "60%", sm: "60%", xs: '100%' },
-                  gap: 2,
-                  alignItems: "center",
-                  zIndex: 200,
-                  bgcolor: "rgba(255,255,255)",
-                  borderRadius: 1,
-                  p: 2,
-                }}
-              >
-                <IconButton
-                  size="small"
-                  onClick={() =>
-                    updateTextElement(selectedTextId, {
-                      bold: !textElements.find((t) => t.id === selectedTextId)
-                        ?.bold,
-                    })
-                  }
-                >
-                  <FormatBold />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() =>
-                    updateTextElement(selectedTextId, {
-                      italic: !textElements.find((t) => t.id === selectedTextId)
-                        ?.italic,
-                    })
-                  }
-                >
-                  <FormatItalic />
-                </IconButton>
-
-                {/* Font size input */}
-                <TextField
-                  size="small"
-                  type="number"
-                  variant="standard"
-                  value={
-                    textElements.find((t) => t.id === selectedTextId)
-                      ?.fontSize || 20
-                  }
-                  onChange={(e) =>
-                    updateTextElement(selectedTextId, {
-                      fontSize: Number(e.target.value || 20),
-                    })
-                  }
-                  sx={{ width: 70 }}
-                  inputProps={{ min: 8, max: 200 }}
-                  label="Size"
-                />
-
-                <Select
-                  size="small"
-                  value={
-                    textElements
-                      .find((t) => t.id === selectedTextId)
-                      ?.fontFamily?.slice(0, 4) || "Arial"
-                  }
-                  onChange={(e) =>
-                    updateTextElement(selectedTextId, {
-                      fontFamily: String(e.target.value),
-                    })
-                  }
-                  displayEmpty
-                  sx={{ minWidth: 60 }}
-                  renderValue={(v) => (v ? String(v) : "Family")}
-                >
-                  {/* Default / fallback option */}
-                  <MenuItem value="Arial">Arial</MenuItem>
-
-                  {/* Load Google font list */}
-                  {GOOGLE_FONTS.map((f) => (
-                    <MenuItem key={f} value={f} style={{ fontFamily: f }}>
-                      {f}
-                    </MenuItem>
-                  ))}
-                </Select>
-
-                <Box
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: "50%",
-                    bgcolor:
-                      textElements.find((t) => t.id === selectedTextId)
-                        ?.color || "#000000",
-                    cursor: "pointer",
-                    border: "2px solid #ccc",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    position: "relative",
-                  }}
-                  onClick={() =>
-                    document.getElementById("hiddenColorInput")?.click()
-                  }
-                >
-                  <input
-                    id="hiddenColorInput"
-                    type="color"
-                    value={
-                      textElements.find((t) => t.id === selectedTextId)
-                        ?.color || "#000000"
-                    }
-                    onChange={(e) =>
-                      updateTextElement(selectedTextId, {
-                        color: e.target.value,
-                      })
-                    }
-                    style={{
-                      opacity: 0,
-                      width: 0,
-                      height: 0,
-                      position: "absolute",
-                    }}
-                  />
-                </Box>
-
-                <Box sx={{ flex: 1 }} />
-                <IconButton
-                  size="small"
-                  sx={{
-                    bgcolor: "green",
-                    color: "white",
-                    "&:hover": {
-                      bgcolor: "#212121",
-                    },
-                  }}
-                  onClick={() => {
-                    setSelectedTextId(null);
-                  }}
-                >
-                  <Check fontSize="large" />
-                </IconButton>
-              </Box>
-            )}
             {/* File input for canvas elements */}
             <input
               type="file"
@@ -415,25 +271,28 @@ const FirstSlide = (props: FirstSlideType) => {
                 }}
                 style={{
                   borderRadius: 8,
-                  backgroundColor: el.src ? "transparent" : "lightGray",
-                  border:
-                    selectedElementId === el.id
-                      ? "2px solid #1976d2"
-                      : "1px solid rgba(0,0,0,0.2)",
                   position: "absolute",
-                  zIndex: selectedElementId === el.id ? 40 : 30,
-                  overflow: "hidden",
+                  overflow: "visible",
+                  border: '1px solid #1976d2'
                 }}
                 resizeHandleStyles={{
                   bottomRight: {
-                    width: "15px",
-                    height: "15px",
+                    width: "18px",
+                    height: "18px",
                     background: "white",
-                    border: "2px solid #1976d2",
-                    borderRadius: "10%",
-                    right: "-5px",
-                    bottom: "-5px",
+                    border: "1px solid #1976d2",
+                    borderRadius: "4px",
+                    right: "-7px",
+                    bottom: "-7px",
+                    cursor: "nwse-resize",
                   },
+                }}
+                enableResizing={{
+                  top: false,
+                  right: false,
+                  left: false,
+                  bottom: false,
+                  bottomRight: true, // ONLY resize from bottom right
                 }}
                 onClick={(e: any) => {
                   e.stopPropagation();
@@ -530,25 +389,34 @@ const FirstSlide = (props: FirstSlideType) => {
                 }}
                 style={{
                   borderRadius: 8,
-                  backgroundColor: "transparent",
+                  position: "absolute",
+                  overflow: "visible",
+                  zIndex: selectedTextId === t.id ? 50 : 30,
                   border:
                     selectedTextId === t.id
                       ? "2px solid #1976d2"
                       : "1px solid rgba(0,0,0,0.06)",
-                  position: "absolute",
-                  zIndex: selectedTextId === t.id ? 50 : 30,
-                  overflow: "hidden",
                 }}
                 resizeHandleStyles={{
                   bottomRight: {
-                    width: "10px",
-                    height: "10px",
+                    width: "18px",
+                    height: "18px",
                     background: "white",
-                    borderRadius: "10%",
-                    right: "-5px",
-                    bottom: "-5px",
+                    border: "1px solid #1976d2",
+                    borderRadius: "4px",
+                    right: "-7px",
+                    bottom: "-7px",
+                    cursor: "nwse-resize",
                   },
                 }}
+                enableResizing={{
+                  top: false,
+                  right: false,
+                  left: false,
+                  bottom: false,
+                  bottomRight: true, // ONLY resize from bottom right
+                }}
+                onC
                 onClick={() => {
                   if (draggingRef.current) return;
                   setSelectedTextId(t.id);
@@ -563,7 +431,7 @@ const FirstSlide = (props: FirstSlideType) => {
                     alignItems: "center",
                     justifyContent: "center",
                     p: 1,
-                    bgcolor: selectedTextId === t.id ? "white" : "transparent",
+                    // bgcolor: selectedTextId === t.id ? "white" : "transparent",
                   }}
                 >
                   {selectedTextId === t.id ? (
@@ -656,7 +524,7 @@ const FirstSlide = (props: FirstSlideType) => {
             ))}
 
 
-            {/* render Sticker */}
+            {/* Render Sticker Elements */}
             {stickerElements.map((st) => (
               <Rnd
                 key={st.id}
@@ -667,12 +535,17 @@ const FirstSlide = (props: FirstSlideType) => {
                   height: st.height,
                 }}
                 bounds="parent"
-                onDragStop={(_, d) =>
+                // onDragStart={() => (draggingRef.current = true)}
+                onDragStop={(_, d) => {
                   setStickerElements((prev) =>
-                    prev.map((s) => (s.id === st.id ? { ...s, x: d.x, y: d.y } : s))
-                  )
-                }
-                onResizeStop={(_, __, ref, ___, pos) =>
+                    prev.map((s) =>
+                      s.id === st.id ? { ...s, x: d.x, y: d.y } : s
+                    )
+                  );
+                  setTimeout(() => (draggingRef.current = false), 50);
+                }}
+                onResizeStart={() => (draggingRef.current = true)}
+                onResizeStop={(_, __, ref, ___, pos) => {
                   setStickerElements((prev) =>
                     prev.map((s) =>
                       s.id === st.id
@@ -685,14 +558,21 @@ const FirstSlide = (props: FirstSlideType) => {
                         }
                         : s
                     )
-                  )
-                }
-                onClick={() => {
-                  // optional: bring sticker to top when clicked
+                  );
+                  setTimeout(() => (draggingRef.current = false), 50);
+                }}
+                onClick={(e: any) => {
+                  e.stopPropagation();
+                  if (draggingRef.current) return;
+
+                  // 🔥 Mark this sticker as selected
+                  setSelectedStickerId(st.id);
+
+                  // 🔥 Bring selected sticker to front
                   setStickerElements((prev) =>
                     prev.map((s) =>
                       s.id === st.id
-                        ? { ...s, zIndex: prev.length + 2 }
+                        ? { ...s, zIndex: prev.length + 50 }
                         : s
                     )
                   );
@@ -700,157 +580,338 @@ const FirstSlide = (props: FirstSlideType) => {
                 style={{
                   borderRadius: 8,
                   border:
-                    "2px solid #1976d2",
+                    selectedStickerId === st.id
+                      ? "2px solid #1976d2"
+                      : "1px solid rgba(0,0,0,0.1)",
                   position: "absolute",
-                  overflow: "hidden",
+                  overflow: "visible",
                   zIndex: st.zIndex,
                 }}
                 resizeHandleStyles={{
                   bottomRight: {
-                    width: "15px",
-                    height: "15px",
+                    width: "18px",
+                    height: "18px",
                     background: "white",
                     border: "2px solid #1976d2",
-                    borderRadius: "10%",
-                    right: "-5px",
-                    bottom: "-5px",
+                    borderRadius: "4px",
+                    right: "-7px",
+                    bottom: "-7px",
+                    cursor: "nwse-resize",
                   },
+                }}
+                enableResizing={{
+                  top: false,
+                  right: false,
+                  left: false,
+                  bottom: false,
+                  bottomRight: true, // ONLY resize from bottom right
                 }}
               >
                 <Box sx={{ width: "100%", height: "100%", position: "relative" }}>
+                  {/* Sticker Image */}
                   <Box
                     component="img"
                     src={st.sticker}
                     alt="sticker"
-                    sx={{ width: "100%", height: "100%", objectFit: "contain" }}
-                  />
-                  <IconButton
-                    onClick={() =>
-                      setStickerElements((prev) => prev.filter((s) => s.id !== st.id))
-                    }
                     sx={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      bgcolor: "black",
-                      color: "white",
-                      width: 24,
-                      height: 24,
-                      "&:hover": { bgcolor: "red" },
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      pointerEvents: "none",
                     }}
-                  >
-                    <Close fontSize="small" />
-                  </IconButton>
+                  />
+
+                  {/* Delete Button — Only shown when selected */}
+                  {selectedStickerId === st.id && (
+                    <IconButton
+                      onClick={() =>
+                        setStickerElements((prev) => prev.filter((s) => s.id !== st.id))
+                      }
+                      sx={{
+                        position: "absolute",
+                        top: -12,
+                        right: -12,
+                        bgcolor: "black",
+                        color: "white",
+                        width: 28,
+                        height: 28,
+                        zIndex: 99,
+                        "&:hover": { bgcolor: "red" },
+                      }}
+                    >
+                      <Close fontSize="small" />
+                    </IconButton>
+                  )}
                 </Box>
               </Rnd>
             ))}
 
-          </Box>
-          {/* Editor Element */}
-          <Box sx={{
-            position: 'absolute',
-            top: 0,
-            width: 60,
-            display: 'flex',
-            gap: 1,
-            borderBottom: '1px solid gray',
-            flexDirection: 'column',
-            height: '100%',
-            bgcolor: 'transparent',
-            right: -70,
-            boxShadow: 4,
-            borderRadius: 2
-          }}>
-            <IconButton
-              // sx={editingButtonStyle}
-              onClick={handleAddImage}
-              aria-label="Layout"
-            >
-              <CollectionsOutlined fontSize="large" />
-            </IconButton>
-            <IconButton
-              // sx={editingButtonStyle}
-              onClick={handleAddText}
-            >
-              <TextFieldsOutlined fontSize="large" />
 
-            </IconButton>
-            <IconButton
-              // sx={editingButtonStyle}
-              onClick={() => setShowEmojiPopup(true)}
-            >
-              <MoodOutlined fontSize="large" />
-            </IconButton>
-            <IconButton
-            // sx={editingButtonStyle}
-            //  onClick={() => togglePopup("layout")}
-            >
-              <CategoryOutlined fontSize="large" />
-            </IconButton>
           </Box>
-          <Box sx={{ position: "absolute", top: 0, right: 110 }}>
-            {
-              showEmojiPopup && (
-                <PopupWrapper
-                  title="Choose Emoji"
-                  open={showEmojiPopup}
-                  onClose={() => setShowEmojiPopup(false)}
+
+          {/* Editor Element */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              right: -80,
+              width: 70,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",   // <—— MAGIC LINE (centers top section)
+              alignItems: "center",
+              py: 2,
+              bgcolor: "rgba(255,255,255,0.9)",
+              borderRadius: 2,
+              boxShadow: "0px 4px 20px rgba(0,0,0,0.15)",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            {/* TOP SECTION — add image, text, emoji */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1.5,
+                alignItems: "center",
+              }}
+            >
+              <IconButton onClick={handleAddImage}>
+                <CollectionsOutlined fontSize="large" />
+              </IconButton>
+
+              <IconButton onClick={handleAddText}>
+                <TextFieldsOutlined fontSize="large" />
+              </IconButton>
+
+              <IconButton onClick={() => setShowEmojiPopup(true)}>
+                <MoodOutlined fontSize="large" />
+              </IconButton>
+            </Box>
+
+            {/* MIDDLE — Text formatting tools */}
+            {selectedTextId && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                  alignItems: "center",
+                  width: "100%",
+                  py: 1,
+                  px: 1,
+                }}
+              >
+                <IconButton
+                  onClick={() =>
+                    updateTextElement(selectedTextId, {
+                      bold: !textElements.find((t) => t.id === selectedTextId)?.bold,
+                    })
+                  }
+                >
+                  <FormatBold />
+                </IconButton>
+
+                <IconButton
+                  onClick={() =>
+                    updateTextElement(selectedTextId, {
+                      italic: !textElements.find((t) => t.id === selectedTextId)?.italic,
+                    })
+                  }
+                >
+                  <FormatItalic />
+                </IconButton>
+
+                {/* Font Size Input */}
+                <TextField
+                  type="number"
+                  variant="standard"
+                  value={textElements.find((t) => t.id === selectedTextId)?.fontSize || 20}
+                  onChange={(e) =>
+                    updateTextElement(selectedTextId, {
+                      fontSize: Number(e.target.value || 20),
+                    })
+                  }
+                  InputProps={{ disableUnderline: true }}
                   sx={{
-                    height: "700px",
-                    width: 200,
+                    width: 60,
+                    textAlign: "center",
+
+                    "& .MuiInputBase-root": {
+                      padding: 0,
+                      textAlign: "center",
+                    },
+
+                    "& input": {
+                      textAlign: "center",
+                      border: "none",
+                      outline: "none",
+                      fontSize: 14,
+                      fontWeight: 500,
+                    },
+                  }}
+                />
+
+                {/* Font Family Selector */}
+                <Select
+                  value={
+                    textElements.find((t) => t.id === selectedTextId)?.fontFamily ||
+                    "Arial"
+                  }
+                  onChange={(e) =>
+                    updateTextElement(selectedTextId, {
+                      fontFamily: String(e.target.value),
+                    })
+                  }
+                  variant="standard"
+                  inputProps={{ disableUnderline: true }}
+                  sx={{
+                    width: 60,
+                    textAlign: "center",
+                    fontSize: 12,
+                    fontFamily:
+                      textElements.find((t) => t.id === selectedTextId)?.fontFamily ||
+                      "Arial",
+
+                    "& .MuiInputBase-input": {
+                      textAlign: "center",
+                    },
+
+                    "& .MuiInput-underline:before": { borderBottom: "none" },
+                    "& .MuiInput-underline:after": { borderBottom: "none" },
                   }}
                 >
-                  <Box
-                    sx={{
-                      mt: 2,
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 1,
-                      overflowY: "auto",
-                      "&::-webkit-scrollbar": {
-                        height: "6px",
-                        width: "5px",
-                      },
-                      "&::-webkit-scrollbar-track": {
-                        backgroundColor: "#f1f1f1",
-                        borderRadius: "20px",
-                      },
-                      "&::-webkit-scrollbar-thumb": {
-                        backgroundColor: COLORS.primary,
-                        borderRadius: "20px",
-                      },
-                      height: 500,
+                  <MenuItem value="Arial" sx={{ fontFamily: "Arial" }}>
+                    Arial
+                  </MenuItem>
+
+                  {GOOGLE_FONTS.map((font) => (
+                    <MenuItem key={font} value={font} sx={{ fontFamily: font }}>
+                      {font}
+                    </MenuItem>
+                  ))}
+                </Select>
+
+                {/* Color Picker */}
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    bgcolor:
+                      textElements.find((t) => t.id === selectedTextId)?.color ||
+                      "#000000",
+                    cursor: "pointer",
+                    border: "2px solid #ccc",
+                    position: "relative",
+                  }}
+                  onClick={() => document.getElementById("hiddenColorInput")?.click()}
+                >
+                  <input
+                    id="hiddenColorInput"
+                    type="color"
+                    value={
+                      textElements.find((t) => t.id === selectedTextId)?.color ||
+                      "#000000"
+                    }
+                    onChange={(e) =>
+                      updateTextElement(selectedTextId, { color: e.target.value })
+                    }
+                    style={{
+                      opacity: 0,
+                      position: "absolute",
+                      width: 0,
+                      height: 0,
                     }}
-                  >
-                    {STICKERS_DATA.map((stick) => (
-                      <Box
-                        key={stick.id}
-                        onClick={() => handleSelectSticker(stick.sticker)}
-                        sx={{
-                          width: { md: "70px", sm: "70px", xs: "70px" },
-                          height: "70px",
-                          borderRadius: 2,
-                          bgcolor: "rgba(233, 232, 232, 1)",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          color: "white",
-                          userSelect: "none",
-                        }}
-                      >
-                        <Box
-                          component={"img"}
-                          src={stick.sticker}
-                          sx={{ width: "100%", height: "auto" }}
-                        />
-                      </Box>
-                    ))}
-                  </Box>
-                </PopupWrapper>
-              )
-            }
+                  />
+                </Box>
+              </Box>
+            )}
+
+            {/* BOTTOM — Accept / Done Button */}
+            {selectedTextId && (
+              <IconButton
+                sx={{
+                  bgcolor: "green",
+                  color: "#fff",
+                  width: 50,
+                  height: 50,
+                  "&:hover": { bgcolor: "darkgreen" },
+                  mb: 1,
+                }}
+                onClick={() => setSelectedTextId(null)}
+              >
+                <Check />
+              </IconButton>
+            )}
+
           </Box>
 
+        </Box>
+
+        <Box sx={{ position: "absolute", top: 0, right: 10 }}>
+          {
+            showEmojiPopup && (
+              <PopupWrapper
+                title="Choose Emoji"
+                open={showEmojiPopup}
+                onClose={() => setShowEmojiPopup(false)}
+                sx={{
+                  height: "auto",
+                  width: 300,
+                  left: 240
+                }}
+              >
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 1,
+                    overflowY: "auto",
+                    "&::-webkit-scrollbar": {
+                      height: "6px",
+                      width: "5px",
+                    },
+                    "&::-webkit-scrollbar-track": {
+                      backgroundColor: "#f1f1f1",
+                      borderRadius: "20px",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor: COLORS.primary,
+                      borderRadius: "20px",
+                    },
+                    height: 500,
+                  }}
+                >
+                  {STICKERS_DATA.map((stick) => (
+                    <Box
+                      key={stick.id}
+                      onClick={() => handleSelectSticker(stick.sticker)}
+                      sx={{
+                        width: { md: "80px", sm: "70px", xs: "70px" },
+                        height: "70px",
+                        borderRadius: 2,
+                        bgcolor: "rgba(233, 232, 232, 1)",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "white",
+                        userSelect: "none",
+                      }}
+                    >
+                      <Box
+                        component={"img"}
+                        src={stick.sticker}
+                        sx={{ width: "100%", height: "auto" }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </PopupWrapper>
+            )
+          }
         </Box>
 
       </Box >

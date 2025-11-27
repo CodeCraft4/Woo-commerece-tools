@@ -1,6 +1,6 @@
 // src/features/PreviewCard/PreviewBookCard.tsx
-import { useMemo, useState } from "react";
-import { Box, IconButton, useMediaQuery } from "@mui/material";
+import { useMemo, useRef, useState } from "react";
+import { Box, Button, IconButton, Typography, useMediaQuery } from "@mui/material";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import "./card.css";
 import GlobalWatermark from "../../../../../components/GlobalWatermark/GlobalWatermark";
@@ -8,12 +8,17 @@ import Slide1 from "../Slide1/Slide1";
 import Slide2 from "../Slide2/Slide2";
 import Slide3 from "../Slide3/Slide3";
 import Slide4 from "../Slide4/Slide4";
+import { useNavigate } from "react-router-dom";
+import { USER_ROUTES } from "../../../../../constant/route";
+import { toPng } from "html-to-image";
 
 const PreviewBookCard = () => {
   // currentLocation is 1..(numOfPapers+1) for the flip-book
   const [currentLocation, setCurrentLocation] = useState(1);
   // single index for mobile 1..4
   const [mobileIndex, setMobileIndex] = useState(1);
+  const navigate = useNavigate()
+
 
   const isMobile = useMediaQuery("(max-width:480px)");
 
@@ -47,87 +52,165 @@ const PreviewBookCard = () => {
   const isPrevDisabled = isMobile ? mobileIndex === 1 : currentLocation === 1;
   const isNextDisabled = isMobile ? mobileIndex === slides.length : currentLocation === maxLocation;
 
+
+  const slideRefs: any = {
+    s1: useRef(null),
+    s2: useRef(null),
+    s3: useRef(null),
+    s4: useRef(null),
+  };
+
+  const [slideImages, setSlideImages] = useState({
+    slide1: "",
+    slide2: "",
+    slide3: "",
+    slide4: "",
+  });
+
+  console.log(slideImages, '--')
+
+ const captureSlides = async () => {
+  const results: any = {};
+
+  // 1️⃣ Disable transform ONLY on slide sections
+  const slidesForCapture = document.querySelectorAll(".capture-slide");
+  slidesForCapture.forEach((el) => {
+    el.classList.add("capture-no-transform");
+  });
+
+  // 2️⃣ Capture each slide
+  for (let key of ["s1", "s2", "s3", "s4"]) {
+    const node = slideRefs[key].current;
+    if (!node) continue;
+
+    const dataUrl = await toPng(node, {
+      cacheBust: true,
+      pixelRatio: 2,
+    });
+
+    results[key.replace("s", "slide")] = dataUrl;
+  }
+
+  // 3️⃣ Restore transforms
+  slidesForCapture.forEach((el) => {
+    el.classList.remove("capture-no-transform");
+  });
+
+  setSlideImages(results);
+  return results;
+};
+
+
+
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", m: "auto", flexDirection: "column"}}>
-      {/* MOBILE: one slide at a time */}
-      {isMobile ? (
-        <div className="book-container mobile-only">
-          <div className="mobile-slide" aria-live="polite">
-            {slides[mobileIndex - 1]}
-          </div>
-        </div>
-      ) : (
-        // DESKTOP/TABLET: 3D flip-book
-        <div className="book-container">
-          <div
-            id="book"
-            className="book"
-            style={{
-              transform: getBookTransform(),
-              transition: "transform 0.5s ease",
+    <>
+      {/* Header */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", p: 2 }}>
+        <Typography sx={{ fontSize: "30px", fontFamily: "cursive" }}>
+          Preview
+        </Typography>
+        <Box sx={{ display: "flex", gap: 3 }}>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              const slidesCaptured = await captureSlides();
+              sessionStorage.setItem("slides", JSON.stringify(slidesCaptured));
+              navigate(USER_ROUTES.SUBSCRIPTION);
             }}
-          >
-            {/* Paper 1 */}
-            <div id="p1" className={`paper ${currentLocation > 1 ? "flipped" : ""}`} style={{ zIndex: currentLocation > 1 ? 1 : 2 }}>
-              <div className="front">
-                <div id="sf1" className="front-content">
-                  <Slide1 />
-                </div>
-              </div>
-              <div className="back">
-                <div id="b1" className="back-content">
-                  <Slide2 />
-                </div>
-              </div>
-            </div>
 
-            {/* Paper 2 */}
-            <div id="p2" className={`paper ${currentLocation > 2 ? "flipped" : ""}`} style={{ zIndex: currentLocation > 2 ? 2 : 1 }}>
-              <div className="front">
-                <div id="f2" className="front-content">
-                  <Slide3 />
-                </div>
-              </div>
-              <div className="back">
-                <div id="b2" className="back-content">
-                  <Slide4 />
-                </div>
-              </div>
+          >
+            Download
+          </Button>
+        </Box>
+      </Box>
+
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", m: "auto", flexDirection: "column" }}>
+        {/* MOBILE: one slide at a time */}
+        {isMobile ? (
+          <div className="book-container mobile-only">
+            <div className="mobile-slide" aria-live="polite">
+              {slides[mobileIndex - 1]}
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          // DESKTOP/TABLET: 3D flip-book
+          <div className="book-container">
+            <div id="book" className="book"
+              style={{
+                transform: getBookTransform(),
+                transition: "transform 0.5s ease",
+              }}
+            >
 
-      {/* Controls */}
-      <Box sx={{ display: "flex", gap: "10px", alignItems: "center", mt: 3 }}>
-        <IconButton
-          id="prev-btn"
-          onClick={goPrevPage}
-          disabled={isPrevDisabled}
-          sx={{
-            ...changeModuleBtn,
-            border: `${isPrevDisabled ? "1px solid gray" : "1px solid #8D6DA1"}`,
-          }}
-          aria-label="Previous page"
-        >
-          <KeyboardArrowLeft fontSize="large" />
-        </IconButton>
+              {/* Paper 1 */}
+              <div id="p1" className={`paper ${currentLocation > 1 ? "flipped" : ""}`}
+                style={{ zIndex: currentLocation > 1 ? 1 : 2 }}
+              >
+                <div className="front">
+                  <div className="front-content capture-slide" id="sf1" ref={slideRefs.s1}>
+                    <Slide1 />
+                  </div>
+                </div>
+                <div className="back">
+                  <div className="back-content capture-slide" id="b1" ref={slideRefs.s2}>
+                    <Slide2 />
+                  </div>
+                </div>
+              </div>
 
-        <IconButton
-          id="next-btn"
-          onClick={goNextPage}
-          disabled={isNextDisabled}
-          sx={{
-            ...changeModuleBtn,
-            border: `${isNextDisabled ? "1px solid gray" : "1px solid #8D6DA1"}`,
-          }}
-          aria-label="Next page"
-        >
-          <KeyboardArrowRight fontSize="large" />
-        </IconButton>
+              {/* Paper 2 */}
+              <div id="p2" className={`paper ${currentLocation > 2 ? "flipped" : ""}`}
+                style={{ zIndex: currentLocation > 2 ? 2 : 1 }}
+              >
+                <div className="front">
+                  <div className="front-content capture-slide" id="f2" ref={slideRefs.s3}>
+                    <Slide3 />
+                  </div>
+                </div>
+                <div className="back">
+                  <div className="back-content capture-slide" id="b2" ref={slideRefs.s4}>
+                    <Slide4 />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        )}
+
+        {/* Controls */}
+        <Box sx={{ display: "flex", gap: "10px", alignItems: "center", mt: 3 }}>
+          <IconButton
+            id="prev-btn"
+            onClick={goPrevPage}
+            disabled={isPrevDisabled}
+            sx={{
+              ...changeModuleBtn,
+              border: `${isPrevDisabled ? "1px solid gray" : "1px solid #8D6DA1"}`,
+            }}
+            aria-label="Previous page"
+          >
+            <KeyboardArrowLeft fontSize="large" />
+          </IconButton>
+
+          <IconButton
+            id="next-btn"
+            onClick={goNextPage}
+            disabled={isNextDisabled}
+            sx={{
+              ...changeModuleBtn,
+              border: `${isNextDisabled ? "1px solid gray" : "1px solid #8D6DA1"}`,
+            }}
+            aria-label="Next page"
+          >
+            <KeyboardArrowRight fontSize="large" />
+          </IconButton>
+        </Box>
+        <GlobalWatermark />
       </Box>
-      <GlobalWatermark />
-    </Box>
+    </>
+
   );
 };
 

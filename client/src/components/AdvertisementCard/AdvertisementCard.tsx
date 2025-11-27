@@ -41,12 +41,12 @@ const AdvertisementCard = (props: AdvertiseTypes) => {
           {title}
         </Typography>
         {price && (
-          <Typography sx={{ fontSize: {md:"14px",sm:'13px',xs:'auto'}, fontWeight: 200 }}>
+          <Typography sx={{ fontSize: { md: "14px", sm: '13px', xs: 'auto' }, fontWeight: 200 }}>
             {price}
           </Typography>
         )}
         <br />
-        <LandingButton title="Shop Now" width="120px" bgblack active />
+        <LandingButton title="Shop Now" width="120px" advertisement />
       </Box>
       <Box
         sx={{

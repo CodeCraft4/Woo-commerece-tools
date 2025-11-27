@@ -1,8 +1,11 @@
 import { Box, List, ListItem, Typography } from "@mui/material";
 import { COLORS } from "../../../constant/color";
 import { FooterLinks, PAYMENT_CARD } from "../../../constant/data";
+import { useAuth } from "../../../context/AuthContext";
+import { USER_ROUTES } from './../../../constant/route';
 
 const Footer = () => {
+  const { user } = useAuth()
   return (
     <Box
       sx={{
@@ -49,7 +52,7 @@ const Footer = () => {
                   }}
                 >
                   <a
-                    href={link.path}
+                    href={!user ? USER_ROUTES.SIGNIN : link.path}
                     style={{ textDecoration: "none", color: COLORS.black }}
                   >
                     {link.name}

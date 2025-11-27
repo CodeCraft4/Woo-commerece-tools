@@ -24,6 +24,8 @@ import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { useAuth } from "../../../context/AuthContext";
 import RemindersDrawer from "../../../components/RemindersDrawer/RemindersDrawer";
+// import { useQuery } from "@tanstack/react-query";
+// import { fetchAllCategoriesFromDB } from "../../../source/source";
 
 interface Props {
   window?: () => Window;
@@ -68,6 +70,17 @@ export default function Header(props: Props) {
   const [search, setSearch] = React.useState("");
   const [hoveredMenuItem, setHoveredMenuItem] =
     React.useState<MegaMenuKeys | null>(null);
+
+  // const { data: navCategories } = useQuery({
+  //   queryKey: ["navCategories"],
+  //   queryFn: fetchAllCategoriesFromDB,
+  //   staleTime: 1000 * 60 * 60 * 24,
+  //   gcTime: 1000 * 60 * 60 * 24,
+  //   refetchOnWindowFocus: false,
+  //   refetchOnReconnect: false,
+  //   refetchOnMount: false,
+  // });
+
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
