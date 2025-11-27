@@ -266,24 +266,24 @@ export const FooterLinks = [
         path: "#",
       },
       {
-        name: "Dalivery Information",
+        name: "Delivery Information",
         path: "#",
       },
       {
         name: "FAQ",
         path: "#",
       },
-      {
-        name: "DIY VIP FAQs",
-        path: "#",
-      },
+      // {
+      //   name: "DIY VIP FAQs",
+      //   path: "#",
+      // },
       {
         name: "Creators",
         path: "#",
       },
       {
-        name: "Coockies Settings",
-        path: "#",
+        name: "DIY Community Hub",
+        path: "/community-hub",
       },
     ],
   },
@@ -292,14 +292,18 @@ export const FooterLinks = [
     links: [
       {
         name: "Blogs",
+        path: "/blogs",
+      },
+      {
+        name: "Sustainability",
+        path: "/sustainability",
+      },
+      {
+        name: "Career",
         path: "#",
       },
       {
-        name: "Carrer",
-        path: "#",
-      },
-      {
-        name: "Coockies",
+        name: "Cookies",
         path: "#",
       },
     ],
@@ -965,7 +969,6 @@ export const DUMMY_CATEGORIES = [
   },
 ];
 
-
 // Images Shape
 export const SHAPES = [
   { id: "square", label: "Square", path: "inset(0% 0% 0% 0%)" },
@@ -1066,4 +1069,113 @@ export const SHAPES = [
   },
   { id: "circle", label: "Circle", path: "circle(50% at 50% 50%)" },
   { id: "ellipse", label: "Ellipse", path: "ellipse(45% 35% at 50% 50%)" },
+];
+
+// Blogs Data
+export const BLOGS_DATA = [
+  {
+    id: 1,
+    poster: "/assets/images/thanks.jpg",
+    title: "Thanks by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours and embroidered with cute-as-can-be patterns, these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 2,
+    poster: "/assets/images/Valentine.jpg",
+    title: "Valentine Day",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIy Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours and embroidered with cute-as-can-be patterns, these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 3,
+    poster: "/assets/images/Wedding.jpg",
+    title: "Hip Hip Hooray! Its our Wedding",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours and embroidered with cute-as-can-be patterns, these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 4,
+    poster: "/assets/images/PersonlisedImg.jpg",
+    title: "Personalised our Card by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature  .`,
+  },
+  {
+    id: 5,
+    poster: "/assets/images/Graduation.jpg",
+    title: "Graduation by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours and embroidered. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 6,
+    poster: "/assets/images/Christmas.jpg",
+    title: "Christmas Day Let Do celeberate!",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours and embroidered with cute-as-can-be patterns, these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 7,
+    poster: "/assets/images/Calendar.jpg",
+    title: "Calendar by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours and embroidered with cute-as-can-be patterns, these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 8,
+    poster: "/assets/images/fathersday.jpg",
+    title: "Fathers Day by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation! We’ve hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 9,
+    poster: "/assets/images/personlised.jpg",
+    title: "Thanks by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation! We’ve partnered with high-street favourite NEXT to bring you a brand-new usively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 10,
+    poster: "/assets/images/bear.png",
+    title: "Bears by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation! We’ve partnered with high-street favourite NEXT to bring you a brand-new  on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and high-quality picks. Designed in their signature bright colours and embroidered with cute-as-can-be patterns, these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 11,
+    poster: "/assets/images/Anniversary.jpg",
+    title: "Just Enjoy your Anniversary!",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours and embroidered with cute-as-can-be patterns, these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 12,
+    poster: "/assets/images/banner2.jpg",
+    title: "Our Banner by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright.`,
+  },
+  {
+    id: 13,
+    poster: "/assets/images/DIYChristmas.jpg",
+    title: "DIY Personalisation Chritsmas!",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation!`,
+    description2: `From cuddly comforters and cosy shawls to playful hooded towels and charming keepsake boxes, JoJo Maman Bébé’s gift range is bursting with thoughtful, high-quality picks. Designed in their signature bright colours and embroidered with cute-as-can-be patterns, these timeless treasures are as practical as they are precious. Prices start from just £12, so there’s something for every moment and every budget.`,
+  },
+  {
+    id: 14,
+    poster: "/assets/images/ThankYou.jpg",
+    title: "Thanks You by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello to Next Flowers by DIY Personalisation! We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and .`,
+  },
+  {
+    id: 15,
+    poster: "/assets/images/Valentine.jpg",
+    title: "Valentine by DIYPersonalisation",
+    description1: `We’ve got something extra lovely blooming… say hello We’ve partnered with high-street favourite NEXT to bring you a brand-new collection of premium hand-tied bouquets, available exclusively on DIY Personalisation.`,
+    description2: `From cuddly comforters and cosy shawls.`,
+  },
 ];

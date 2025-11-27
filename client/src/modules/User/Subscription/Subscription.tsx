@@ -18,7 +18,6 @@ const Subscription = () => {
 
   const { user } = useAuth()
 
-
   const plans = [
     {
       id: "standard",
@@ -39,7 +38,8 @@ const Subscription = () => {
   const handleStripeOrder = async (plan: any) => {
     setLoading(true);
     try {
-      const res = await fetch("https://tools-ashen-rho.vercel.app/create-checkout-session", {
+      // const res = await fetch("https://diypersonalisationserver-production.up.railway.app/create-checkout-session", {
+      const res = await fetch("http://localhost:5000/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -58,7 +58,6 @@ const Subscription = () => {
       toast.success("Navigate to Payment process");
       await stripe.redirectToCheckout({ sessionId: id });
     } catch (err) {
-      console.error(err);
       toast.error("Payment failed!");
     } finally {
       setLoading(false);
@@ -224,6 +223,7 @@ const Subscription = () => {
                 onClick={() => {
                   const plan = plans.find((p) => p.id === selectedPlan);
                   if (plan) {
+                    localStorage.setItem("selectedSize", plan.id);
                     handleStripeOrder(plan);
                   }
                 }}

@@ -1,4 +1,3 @@
-"use client";
 import { Box } from "@mui/material";
 import { useForm } from "react-hook-form";
 import LandingButton from "../../../../../components/LandingButton/LandingButton";
@@ -7,7 +6,7 @@ import { useState } from "react";
 import { BorderColorRounded } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { supabase } from "../../../../../supabase/supabase";
-import { useAdminStore } from "../../../../../stores";
+import { useAdmin } from "../../../../../context/AdminContext";
 
 type FormValue = {
   role?: string;
@@ -25,7 +24,7 @@ const SettingForm = () => {
     },
   });
 
-  const { admin } = useAdminStore();
+  const { admin } = useAdmin();
 
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState<string>("/assets/icons/administrater.png");
@@ -94,7 +93,7 @@ const SettingForm = () => {
           <Box
             sx={{
               width: { md: "50%", sm: "50%", xs: "100%" },
-              p:{md: 3,sm:3,xs:0},
+              p: { md: 3, sm: 3, xs: 0 },
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -104,8 +103,8 @@ const SettingForm = () => {
           >
             <Box
               sx={{
-                width: {md:350,sm:350,xs:250},
-                height: {md:350,sm:350,xs:250},
+                width: { md: 350, sm: 350, xs: 250 },
+                height: { md: 350, sm: 350, xs: 250 },
                 borderRadius: "50%",
                 overflow: "hidden",
                 border: "3px solid #ff4d00",
@@ -172,7 +171,7 @@ const SettingForm = () => {
           <Box
             sx={{
               width: { md: "50%", sm: "50%", xs: "100%" },
-              p: {md:3,sm:3,xs:0},
+              p: { md: 3, sm: 3, xs: 0 },
             }}
           >
             <CustomInput

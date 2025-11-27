@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import CategoryCard from "../../../components/CategoryCard/CategoryCard";
 import MainLayout from "../../../layout/MainLayout";
 import { CATEGORIES_DATA } from "../../../constant/data";
@@ -14,12 +14,6 @@ import Description from "../../../components/Description/Description";
 import { COLORS } from "../../../constant/color";
 import { useQuery } from "@tanstack/react-query";
 import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
-import LandingButton from "../../../components/LandingButton/LandingButton";
-import { useEffect, useState } from "react";
-import useModal from "../../../hooks/useModal";
-import ProductPopup from "../../../components/ProductPopup/ProductPopup";
-import { supabase } from "../../../supabase/supabase";
-import { useAuth } from "../../../context/AuthContext";
 
 const AdverstisementCard = [
   {
@@ -36,14 +30,14 @@ const AdverstisementCard = [
   },
   {
     title: "Anniversary Gift",
-    price: "",
+    price: "price £12",
     poster: "assets/images/Anniversary.jpg",
     bgcolor: COLORS.green,
   },
 ];
 
 const LandingHome = () => {
-  const { user } = useAuth()
+  // const { user } = useAuth()
   const fetchMockCategories = async () => {
     return new Promise<typeof CATEGORIES_DATA>((resolve) => {
       resolve(CATEGORIES_DATA);
@@ -62,40 +56,57 @@ const LandingHome = () => {
 
 
 
-  const [draftData, setDraftData] = useState<any>(null);
-  const {
-    open: isOpenDetailModal,
-    openModal: openDetailModal,
-    closeModal,
-  } = useModal();
-  const [selectedCate, setSelectedCate] = useState<any>(null);
+  // const [draftData, setDraftData] = useState<any>(null);
+  // const {
+  //   open: isOpenDetailModal,
+  //   openModal: openDetailModal,
+  //   closeModal,
+  // } = useModal();
+  // const [selectedCate, setSelectedCate] = useState<any>(null);
 
   // Fetch all Draft
-  useEffect(() => {
-    if (!user) return;
+  // useEffect(() => {
+  //   if (!user) return;
 
-    const fetchDrafts = async () => {
-      const { data, error } = await supabase
-        .from("draft") // ✅ correct table name
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.error("❌ Error fetching drafts:", error.message);
-      } else {
-        console.log("✅ Drafts fetched:", data);
-        setDraftData(data);
-      }
-    };
+  //   const fetchDrafts = async () => {
+  //     const { data, error } = await supabase
+  //       .from("draft") // ✅ correct table name
+  //       .select("*")
+  //       .eq("user_id", user.id)
+  //       .order("created_at", { ascending: false });
+  //     if (error) {
+  //       console.error("❌ Error fetching drafts:", error.message);
+  //     } else {
+  //       setDraftData(data);
+  //     }
+  //   };
 
-    fetchDrafts();
-  }, [user]);
+  //   fetchDrafts();
+  // }, [user]);
 
   // ✅ Handle click on draft card
-  const handleOpenDraft = (draft: any) => {
-    setSelectedCate(draft);
-    openDetailModal();
-  };
+  // const handleOpenDraft = (draft: any) => {
+  //   setSelectedCate(draft);
+  //   openDetailModal();
+  // };
+
+  // const handleDelete = async (id: number) => {
+  //   if (!confirm("Are you sure you want to delete this?")) return;
+
+  //   const { error } = await supabase.from("drafts").delete().eq("id", id);
+
+  //   if (error) {
+  //     console.error("Delete failed:", error);
+  //     alert("Failed to delete item");
+  //     return;
+  //   }
+
+  //   // Remove locally
+  //   setDraftData((prev: any[]) => prev.filter((item) => item.id !== id));
+
+  //   alert("Deleted successfully!");
+  // };
+
 
   return (
     <MainLayout>
@@ -217,9 +228,8 @@ const LandingHome = () => {
 
 
         {/* Draft..Card  */}
-        {draftData?.length > 0 &&
+        {/* {draftData?.length > 0 &&
           <Box sx={{ p: 2, borderRadius: 2 }}>
-            {/* Header */}
             <Box
               sx={{
                 display: "flex",
@@ -232,8 +242,6 @@ const LandingHome = () => {
               <LandingButton title="See All" personal width="140px" />
             </Box>
 
-            {/* Draft Card */}
-            {/* // ✅ Show all drafts */}
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
               {draftData?.map((e: any) => (
                 <Box
@@ -244,7 +252,12 @@ const LandingHome = () => {
                     border: "1px solid gray",
                     borderRadius: 2,
                     overflow: "hidden",
+                    position: "relative",
                     cursor: "pointer",
+
+                    "&:hover .overlay": {
+                      opacity: 1,
+                    },
                   }}
                 >
                   {e.cover_screenshot ? (
@@ -257,14 +270,54 @@ const LandingHome = () => {
                         objectFit: "cover",
                         borderRadius: 2,
                       }}
-                      onClick={() => handleOpenDraft(e)}
                     />
                   ) : (
                     <Typography sx={{ color: "gray", mt: 4, textAlign: "center" }}>
                       No image
                     </Typography>
                   )}
+
+                  <Box
+                    className="overlay"
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      bgcolor: "rgba(0, 0, 0, 0.6)",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      gap: 2,
+                      opacity: 0,
+                      transition: "opacity 0.3s ease-in-out",
+                    }}
+                  >
+                    <IconButton
+                      sx={{
+                        bgcolor: "white",
+                        color: "black",
+                        "&:hover": { bgcolor: "#f0f0f0" },
+                      }}
+                      onClick={() => handleOpenDraft(e)} // your edit popup handler
+                    >
+                      <Edit fontSize="small" />
+                    </IconButton>
+
+                    <IconButton
+                      sx={{
+                        bgcolor: "white",
+                        color: "red",
+                        "&:hover": { bgcolor: "#ffe5e5" },
+                      }}
+                      onClick={() => handleDelete(e.id)} // delete handler
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </Box>
+
               ))}
             </Box>
 
@@ -275,10 +328,8 @@ const LandingHome = () => {
                 cate={selectedCate}
               />
             )}
-
-
           </Box>
-        }
+        } */}
 
 
         {/* Basket Slider Cards */}

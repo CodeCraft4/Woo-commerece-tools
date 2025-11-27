@@ -1,10 +1,12 @@
 import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
 import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../../../../constant/color";
+import { useEffect, useState } from "react";
+import { fetchCardCount } from "../../../../../source/source";
 
 // --- Mock Data ---
 const productData = [
-  { name: "M", value: 1500 },
+  { name: "M", value: 100 },
   { name: "T", value: 3000 },
   { name: "W", value: 5000 },
   { name: "Th", value: 3500 },
@@ -35,7 +37,6 @@ const MinimalGradientAreaChart = ({
         tickLine={false}
         axisLine={false}
         tick={{ stroke: "rgba(255,255,255,0.3)", fontSize: 10 }}
-        // Hide actual text labels as per the original design (only showing subtle vertical ticks)
         tickFormatter={() => ""}
       />
       <Area
@@ -52,11 +53,26 @@ const MinimalGradientAreaChart = ({
 
 // --- Total Product Chart (Pink/Red Gradient Card) ---
 const TotalProductChart = () => {
+
+  const [cardCount, setCardCount] = useState(0);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const count: any = await fetchCardCount();
+        setCardCount(count);
+      } catch (err) {
+        console.error("Error fetching cards count:", err);
+      }
+    };
+
+    loadCount();
+  }, []);
   return (
     <Box
       sx={{
         flex: "1 1 300px",
-        maxWidth: { md: 250, sm: 300, xs: "100%" },
+        maxWidth: { md: '100%', sm: '100%', xs: "100%" },
         minWidth: 300,
         mb: { md: 0, sm: 0, xs: 1 },
       }}
@@ -66,7 +82,7 @@ const TotalProductChart = () => {
           position: "relative",
           p: 3,
           color: "white",
-          height: { md: 160, sm: 200, xs: 180 },
+          height: { md: 200, sm: 200, xs: 180 },
           boxShadow: 8,
           borderRadius: 4,
           background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.seconday} 100%)`,
@@ -119,14 +135,14 @@ const TotalProductChart = () => {
               fontWeight="bold"
               sx={{ my: 1, fontSize: "2rem" }}
             >
-              20,149
+              0{cardCount?.toLocaleString()}
             </Typography>
             <Typography
               variant="body2"
               fontWeight="semibold"
               sx={{ opacity: 0.8, color: COLORS.white }}
             >
-              +2% LAST WEEK
+              ALL TIMES PRODUCTS
             </Typography>
           </Box>
         </Box>

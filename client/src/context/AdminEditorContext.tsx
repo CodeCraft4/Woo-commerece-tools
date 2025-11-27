@@ -42,7 +42,7 @@ type StickerType = {
   width: number;
   height: number;
   sticker: string;
-    zIndex: number; 
+  zIndex: number;
 };
 
 type AdminCardEditorContextType = {
@@ -55,6 +55,10 @@ type AdminCardEditorContextType = {
   elements: ElementType[];
   setElements: React.Dispatch<React.SetStateAction<ElementType[]>>;
   textElements: TextElementType[];
+  lastSlideImage: string | null;
+  setLastSlideImage: React.Dispatch<React.SetStateAction<string | null>>;
+  lastSlideMessage: string;
+  setLastSlideMessage: React.Dispatch<React.SetStateAction<string>>;
   setTextElements: React.Dispatch<React.SetStateAction<TextElementType[]>>;
   stickerElements: StickerType[]; // ✅ new
   setStickerElements: React.Dispatch<React.SetStateAction<StickerType[]>>; // ✅ new
@@ -71,7 +75,9 @@ export const AdminCardEditorProvider = ({ children }: { children: React.ReactNod
   const [uploadedShapeImage, setUploadedShapeImage] = useState<string | null>(null);
   const [elements, setElements] = useState<ElementType[]>([]);
   const [textElements, setTextElements] = useState<TextElementType[]>([]);
-  const [stickerElements, setStickerElements] = useState<StickerType[]>([]); // ✅ new
+  const [stickerElements, setStickerElements] = useState<StickerType[]>([]);
+  const [lastSlideImage, setLastSlideImage] = useState<string | null>(null);
+  const [lastSlideMessage, setLastSlideMessage] = useState<string>("");
 
 
   // ✅ Add a reset function
@@ -81,6 +87,9 @@ export const AdminCardEditorProvider = ({ children }: { children: React.ReactNod
     setUploadedShapeImage(null);
     setSelectedShapeImage(null);
     setFormData(null);
+    setLastSlideImage(null);
+    setLastSlideMessage("");
+
   };
 
   return (
@@ -98,6 +107,10 @@ export const AdminCardEditorProvider = ({ children }: { children: React.ReactNod
         setTextElements,
         stickerElements, // ✅
         setStickerElements, // ✅
+        lastSlideImage,
+        setLastSlideImage,
+        lastSlideMessage,
+        setLastSlideMessage,
         resetEditor
       }}
     >

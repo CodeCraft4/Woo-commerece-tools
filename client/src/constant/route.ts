@@ -1,8 +1,12 @@
 export const USER_ROUTES = {
   HOME: "/home",
   PREVIEW: "/preview",
+  OUR_BLOGS: "/blogs",
+  OUR_BLOGS_DETAILS: "/blogs-details",
+  OUR_SUSTAIANIBILITY: "/sustainability",
   VIEW_ALL: "/view-all",
   ADD_TO_CART: "add-to-cart",
+  COMMUNITY_HUB: "/community-hub",
   SUBSCRIPTION: "/subscription",
   SUCCESS_PAY: "/success-payment",
   SIGNIN: "/signin",
@@ -18,6 +22,9 @@ export const ADMINS_DASHBOARD = {
   ADD_CATEGORY: "/add-categories",
   ADMIN_EDITOR: "/admin-editor",
   ADMIN_CATEGORIES: "/admin-category",
+  ADMIN_BLOGS: "/admin-blogs",
+  ADMIN_COMMUNITY_HUB: "/admin-community-hub",
+  ADD_COMMUNITY_HUB_POST: "/add-community-hub-post",
   ADMIN_REPORTS: "/admin-reports",
   SETTINGS: "/setting",
 };

@@ -61,7 +61,7 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Logging in admin:", email);
 
       // Hardcoded admin (optional)
-      if (email === "admin123@gmail.com" && password === "Admin123@") {
+      if (email === "moazam@mtlondon.tech" && password === "Admin123@") {
         const fakeAdmin: Admin = {
           id: "local-admin",
           role: "superadmin",

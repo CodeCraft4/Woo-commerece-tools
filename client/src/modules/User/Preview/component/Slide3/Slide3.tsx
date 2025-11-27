@@ -108,7 +108,7 @@ const Slide3 = () => {
       )}
 
       {selectedAudioUrl3 && (
-      <Box
+        <Box
           sx={{
             position: "absolute", // use absolute like Rnd
             top: qrAudioPosition3.y,
@@ -179,23 +179,24 @@ const Slide3 = () => {
       {/* 🖼️ Only selected images */}
       {draggableImages3
         .filter((img: any) => selectedImg3?.includes(img.id))
-        .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
+        // .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
         .map((img: any) => (
           <Box
             key={img.id}
             component="img"
             src={img.src}
             sx={{
-              position: "absolute", // ✅ critical for proper placement
+              position: "absolute",
               width: img.width,
               height: img.height,
               left: img.x,
               top: img.y,
-              transform: `rotate(${img.rotation || 0}deg)`, // ✅ rotation applied
-              transformOrigin: "center center", // ✅ rotate around middle
+              transform: `rotate(${img.rotation || 0}deg)`,
+              transformOrigin: "center center",
               borderRadius: 2,
               objectFit: "cover",
               zIndex: img.zIndex || 1,
+              filter: img.filter
             }}
           />
         ))}
@@ -279,10 +280,10 @@ const Slide3 = () => {
             color: fontColor3,
             lineHeight: lineHeight3,
             letterSpacing: letterSpacing3,
-            fontFamily3,
-            fontSize3,
-            fontWeight3,
-            textAlign3, // ✅ still needed for multiline/inline text
+            fontFamily: fontFamily3,
+            fontSize: fontSize3,
+            fontWeight: fontWeight3,
+            textAlign: textAlign3, // ✅ still needed for multiline/inline text
             whiteSpace: "pre-wrap",
             p: 1,
           }}

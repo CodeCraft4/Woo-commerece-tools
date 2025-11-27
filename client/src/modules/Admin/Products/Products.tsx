@@ -11,7 +11,6 @@ import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import {
   Delete,
-  FormatListBulletedOutlined,
   GridViewOutlined,
 } from "@mui/icons-material";
 import toast from "react-hot-toast";
@@ -20,8 +19,6 @@ import ProductCard from "./components/ProductCard/ProductCard";
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
-import TableList from "../../../components/TableList/TableList";
-import { DUMMY_ORDERS } from "../../../constant/data";
 
 type Card = {
   id: number;
@@ -166,7 +163,7 @@ const Products = () => {
             <GridViewOutlined />
           </IconButton>
 
-          <IconButton
+          {/* <IconButton
             disableRipple
             onClick={() => setViewMode("list")}
             sx={{
@@ -181,7 +178,7 @@ const Products = () => {
             }}
           >
             <FormatListBulletedOutlined />
-          </IconButton>
+          </IconButton> */}
         </Box>
       </Box>
 
@@ -223,7 +220,9 @@ const Products = () => {
           </Box>
         ) : (
           // 📋 LIST VIEW (Table)
-          <TableList data={DUMMY_ORDERS} heading={['Orderss', 'Date', 'Cusotomers', 'Payment Status', 'Orders Status', 'Total']} />
+          <>
+            {/*  <TableList data={filteredCards} heading={['Orderss', 'Date', 'Cusotomers', 'Payment Status', 'Orders Status', 'Total']} /> */}
+          </>
         )}
       </Box>
 

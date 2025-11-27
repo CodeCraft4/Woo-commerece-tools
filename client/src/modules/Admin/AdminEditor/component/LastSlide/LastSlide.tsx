@@ -1,24 +1,27 @@
+import { useRef } from "react";
 import { Box, Typography, TextField } from "@mui/material";
 import ImageIcon from "@mui/icons-material/Image";
-import { useRef, useState } from "react";
 import LandingButton from "../../../../../components/LandingButton/LandingButton";
+import { useCardEditor } from "../../../../../context/AdminEditorContext";
+import { useNavigate } from "react-router-dom";
+import { ADMINS_DASHBOARD } from "../../../../../constant/route";
 
 const LastSlide = () => {
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const { lastSlideImage, setLastSlideImage, lastSlideMessage, setLastSlideMessage } = useCardEditor();
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const navigate = useNavigate()
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        console.log("Image loaded:", reader.result);
-        setUploadedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+    if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLastSlideImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
   return (
     <Box>
       <Box
@@ -32,7 +35,7 @@ const LastSlide = () => {
         <Typography sx={{ fontSize: "25px" }}>Last Slide</Typography>
         <LandingButton
           title="Save Changes"
-          // onClick={() => navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS)}
+          onClick={() => navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS)}
         />
       </Box>
       <Box
@@ -82,15 +85,15 @@ const LastSlide = () => {
               onChange={handleImageUpload}
             />
 
-            {uploadedImage ? (
+            {lastSlideImage ? (
               <Box
                 component="img"
-                src={uploadedImage}
+                src={`${lastSlideImage}`}
                 alt="Uploaded"
                 sx={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "cover",
+                  objectFit: "contain",
                   display: "block",
                 }}
               />
@@ -109,6 +112,8 @@ const LastSlide = () => {
               fullWidth
               multiline
               rows={2}
+              value={lastSlideMessage}
+              onChange={(e) => setLastSlideMessage(e.target.value)}
             />
           </Box>
         </Box>

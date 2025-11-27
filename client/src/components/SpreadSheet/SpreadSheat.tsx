@@ -97,6 +97,9 @@ const SlideSpread = ({
     setAIImage2,
     setSelectedLayout,
 
+    setImageFilter,
+    setActiveFilterImageId,
+
     lineHeight2,
     letterSpacing2
   } = useSlide2();
@@ -264,7 +267,7 @@ const SlideSpread = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height:'100vh',
+            height: '100vh',
             opacity: isSlideActive ? 1 : 0.6,
             pointerEvents: isSlideActive ? "auto" : "none",
             "&::after": !isSlideActive
@@ -469,6 +472,7 @@ const SlideSpread = ({
                               textElement.id === selectedTextId
                                 ? "2px solid #1976d2"
                                 : "1px dashed #4a7bd5",
+                            zIndex: textElement.zIndex
                           }}
                         >
                           {/* ✅ Editable Text */}
@@ -764,8 +768,8 @@ const SlideSpread = ({
 
           {draggableImages
             .filter((img: any) => selectedImg.includes(img.id))
-            .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
-            .map(({ id, src, x, y, width, height, zIndex, rotation = 0 }: any) => {
+            // .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
+            .map(({ id, src, x, y, width, height, zIndex, rotation = 0, filter }: any) => {
               const isMobile =
                 typeof window !== "undefined" && window.innerWidth < 768;
 
@@ -775,8 +779,8 @@ const SlideSpread = ({
                   size={{ width, height }}
                   position={{ x, y }}
                   bounds="parent"
-                  enableUserSelectHack={false} // ✅ allow touches to propagate
-                  cancel=".non-draggable" // ✅ prevents RND drag from hijacking taps on buttons
+                  enableUserSelectHack={false}
+                  cancel=".non-draggable"
                   onDragStop={(_, d) => {
                     setDraggableImages((prev) =>
                       prev.map((img) =>
@@ -850,13 +854,15 @@ const SlideSpread = ({
                           pointerEvents: "none",
                           border: "2px solid #1976d2",
                           objectFit: "fill",
+                          filter: filter || "none",
+                          zIndex: zIndex || 1
                         }}
                       />
                     </Box>
 
                     {/* Rotate button */}
                     <Box
-                      className="non-draggable" // ✅ ensures RND doesn’t hijack
+                      className="non-draggable"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDraggableImages((prev) =>
@@ -893,7 +899,21 @@ const SlideSpread = ({
                       className="non-draggable"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedImage((prev) => prev.filter((i) => i !== id));
+
+                        // REMOVE image from selected
+                       setSelectedImage(prev => prev.filter(i => i !== id));
+                       setDraggableImages(prev => prev.filter(img => img.id !== id));
+
+                        // RESET filter to original
+                        setDraggableImages(prev =>
+                          prev.map(img =>
+                            img.id === id ? { ...img, filter: "none" } : img
+                          )
+                        );
+
+                        setActiveFilterImageId(null);
+                        // CLOSE filter panel
+                        setImageFilter(false);
                       }}
                       sx={{
                         position: "absolute",
@@ -927,7 +947,7 @@ const SlideSpread = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                height: "100%",
+                height: { md: "675px", sm: "575px", xs: '575px' },
                 width: { md: "470px", sm: "370px", xs: "100%" },
                 border: "3px dashed #3a7bd5",
                 bgcolor: "#6183cc36",
@@ -1018,7 +1038,7 @@ const SlideSpread = ({
                   key={index}
                   sx={{
                     position: "relative",
-                    height: "210px",
+                    height: { md: "210px", sm: "180px", xs: '180px' },
                     width: "100%",
                     mb: 2,
                     border: "3px dashed #3a7bd5",

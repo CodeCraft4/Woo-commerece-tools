@@ -53,6 +53,18 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick }: Layout
                 textAlign: "start",
                 height: "calc(100vh - 100px)",
                 overflowY: "auto",
+                "&::-webkit-scrollbar": {
+                  height: "6px",
+                  width:'4px',
+                },
+                "&::-webkit-scrollbar-track": {
+                  backgroundColor: "#f1f1f1",
+                  borderRadius: "20px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: COLORS.primary,
+                  borderRadius: "20px",
+                },
                 p: 2,
               }}
             >
@@ -68,7 +80,7 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick }: Layout
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            p: { md: "20px", sm: "20px", xs: "10px" },
+            p: { md: "20px", sm: "20px", xs: "0px" },
             overflowY: "auto",
             height: "100vh",
             width: "100%",

@@ -9,6 +9,8 @@ import {
   FormatListBulleted,
   HomeOutlined,
   LocalOfferOutlined,
+  NewspaperOutlined,
+  PeopleOutline,
   SettingsOutlined,
 } from "@mui/icons-material";
 import { COLORS } from "../../../constant/color";
@@ -42,6 +44,16 @@ const Sidebar = () => {
       icon: <AddShoppingCart />,
       title: "Add Products",
       href: ADMINS_DASHBOARD.ADD_NEW_CARDS,
+    },
+    {
+      icon: <NewspaperOutlined />,
+      title: "Our Blogs",
+      href: ADMINS_DASHBOARD.ADMIN_BLOGS,
+    },
+    {
+      icon: <PeopleOutline />,
+      title: "Community Hub",
+      href: ADMINS_DASHBOARD.ADMIN_COMMUNITY_HUB,
     },
     {
       icon: <AssessmentOutlined />,

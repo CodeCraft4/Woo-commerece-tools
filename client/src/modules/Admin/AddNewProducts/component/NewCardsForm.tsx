@@ -151,6 +151,7 @@ const NewCardsForm = (props: Props) => {
     textElements,
     setFormData,
     resetEditor,
+    stickerElements,
   } = useCardEditor();
 
   const [image, setImage] = useState<string | null>(null);
@@ -200,13 +201,13 @@ const NewCardsForm = (props: Props) => {
     !uploadedShapeImage &&
     initialElements.length === 0;
 
-const handleImageUpload = (file: File) => {
-  if (!file) return;
-  setLoading(true);
-  const previewUrl = URL.createObjectURL(file);
-  setImage(previewUrl);
-  setLoading(false);
-};
+  const handleImageUpload = (file: File) => {
+    if (!file) return;
+    setLoading(true);
+    const previewUrl = URL.createObjectURL(file);
+    setImage(previewUrl);
+    setLoading(false);
+  };
 
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -234,8 +235,8 @@ const handleImageUpload = (file: File) => {
         elements.length > 0
           ? "isMultipleLayout"
           : selectedShapeImage
-          ? "isShapeLayout"
-          : null,
+            ? "isShapeLayout"
+            : null,
     });
 
     navigate(ADMINS_DASHBOARD.ADMIN_EDITOR, {
@@ -251,8 +252,8 @@ const handleImageUpload = (file: File) => {
   };
 
   const onSubmit = async (data: FormValue) => {
-    const finalImage = image || editProduct?.imageUrl || uploadedShapeImage;
-    if (!finalImage && initialElements.length === 0) {
+    const finalImage = image || editProduct?.imageUrl || uploadedShapeImage || stickerElements;
+    if (!finalImage && initialElements.length === 0 || stickerElements.length === 0) {
       toast.error("Please upload at least one card image!");
       return;
     }
@@ -261,19 +262,19 @@ const handleImageUpload = (file: File) => {
       setLoading(true);
 
       // ✅ Capture screenshot of the card preview
-    let capturedImageUrl = null;
-    if (previewRef.current) {
-      try {
-        const dataUrl = await htmlToImage.toPng(previewRef.current, {
-          quality: 0.95,
-          cacheBust: true,
-        });
-        capturedImageUrl = dataUrl;
-        console.log("✅ Card captured image URL:", dataUrl);
-      } catch (err) {
-        console.warn("⚠️ Failed to capture image:", err);
+      let capturedImageUrl = null;
+      if (previewRef.current) {
+        try {
+          const dataUrl = await htmlToImage.toPng(previewRef.current, {
+            quality: 0.95,
+            cacheBust: true,
+          });
+          capturedImageUrl = dataUrl;
+          console.log("✅ Card captured image URL:", dataUrl);
+        } catch (err) {
+          console.warn("⚠️ Failed to capture image:", err);
+        }
       }
-    }
 
       // Prepare layout data as an object of elements and textElements
       const layoutData = {
@@ -298,6 +299,15 @@ const handleImageUpload = (file: File) => {
           fontFamily: te.fontFamily,
           color: te.color,
         })),
+        stickers: stickerElements.map((st) => ({
+          id: st.id,
+          sticker: st.sticker,
+          x: st.x,
+          y: st.y,
+          width: st.width,
+          height: st.height,
+          zIndex: st.zIndex
+        }))
       };
 
       const cardPayload = {
@@ -310,10 +320,10 @@ const handleImageUpload = (file: File) => {
         imageUrl: capturedImageUrl || initialElements[initialElements.length - 1]?.src || null,
         polygon_shape: selectedShapeImage || data.polygon_shape || null,
         polygonLayout: layoutData, // Store the layout data directly as JSON
-         lastpageImageUrl: capturedImageUrl || initialElements[initialElements.length - 1]?.src || null,
+        lastpageImageUrl: capturedImageUrl || initialElements[initialElements.length - 1]?.src || null,
         lastMessage:
           initialTextElements[initialTextElements.length - 1]?.text ||
-          "Happy Birthday",
+          "",
       };
 
       if (editProduct) {
@@ -330,15 +340,16 @@ const handleImageUpload = (file: File) => {
       }
 
       setImage(null);
-      reset();
-      // Optionally reset context
-      resetEditor()
+
     } catch (err: any) {
       console.error("Error saving card:", err);
       toast.error("Failed to save card: " + err.message);
     } finally {
       setLoading(false);
     }
+    reset();
+    // Optionally reset context
+    resetEditor()
   };
 
   // Combine react-hook-form ref and fileInputRef
@@ -358,10 +369,10 @@ const handleImageUpload = (file: File) => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   return (
-    <Box sx={{ px: {md:3,sm:3,xs:0} }}>
+    <Box>
       <Box
         sx={{
-          display: {md:"flex",sm:"flex",xs:'block'},
+          display: { md: "flex", sm: "flex", xs: 'block' },
           gap: "20px",
           justifyContent: "center",
           width: "100%",
@@ -374,8 +385,8 @@ const handleImageUpload = (file: File) => {
         <Box
           ref={previewRef}
           sx={{
-            width: { md: "500px",sm:'400px',xs:'100%' },
-            height: {md:"700px",sm:"600px",xs:400},
+            width: { md: "500px", sm: '400px', xs: '100%' },
+            height: { md: "700px", sm: "600px", xs: 400 },
             borderRadius: "12px",
             boxShadow: "3px 5px 8px gray",
             display: "flex",
@@ -383,9 +394,8 @@ const handleImageUpload = (file: File) => {
             justifyContent: "center",
             position: "relative",
             overflow: "hidden",
-            border: `1px solid ${
-              isImageMissing && errors.cardImage ? "red" : "lightgray"
-            }`,
+            border: `1px solid ${isImageMissing && errors.cardImage ? "red" : "lightgray"
+              }`,
             cursor: "pointer",
           }}
           onDrop={handleDrop}
@@ -399,7 +409,7 @@ const handleImageUpload = (file: File) => {
             accept="image/*"
             {...register("cardImage", {
               required:
-                !editProduct && initialElements.length === 0
+                !editProduct && initialElements.length === 0 || stickerElements.length === 0
                   ? "Card image is required"
                   : false,
               onChange: handleFileSelect,
@@ -407,8 +417,8 @@ const handleImageUpload = (file: File) => {
             ref={(e) => setInputRef(e, register("cardImage").ref)}
           />
 
-          {initialElements.length > 0 || initialTextElements.length > 0 ? (
-            <>
+          {initialElements.length > 0 || initialTextElements.length > 0 || stickerElements.length > 0 ? (
+            <Box sx={{ width: '100%', height: '100%' }}>
               {/* Render Images */}
               {initialElements.map((el: any) => (
                 <Box
@@ -455,7 +465,24 @@ const handleImageUpload = (file: File) => {
                   {te.text || "Text"}
                 </Typography>
               ))}
-            </>
+
+              {stickerElements.map((st) => (
+                <Box key={st.id} sx={{ width: st.width, height: st.height, position: "absolute", left: st.x, top: st.y, zIndex: st.zIndex }}>
+                  {/* Sticker Image */}
+                  <Box
+                    component="img"
+                    src={st.sticker}
+                    alt="sticker"
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      pointerEvents: "none",
+                    }}
+                  />
+                </Box>
+              ))}
+            </Box>
           ) : uploadedShapeImage || image || editProduct?.imageUrl ? (
             <Box
               component="img"
@@ -509,7 +536,7 @@ const handleImageUpload = (file: File) => {
         {/* Right Side - Form */}
         <Box
           component="form"
-          sx={{ width: { md: "600px",sm:"600px",xs:'100%'},mt:{md:0,sm:0,xs:3} }}
+          sx={{ width: { md: "500px", sm: "500px", xs: '100%' }, mt: { md: 0, sm: 0, xs: 3 } }}
           onSubmit={handleSubmit(onSubmit)}
         >
           <CustomInput
@@ -618,6 +645,8 @@ const handleImageUpload = (file: File) => {
             />
           </Box>
         </Box>
+
+
       </Box>
     </Box>
   );

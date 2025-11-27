@@ -3,8 +3,8 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useEffect, useState } from "react";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
-import StickerLine from "../components/StickerLine/StickerLine";
 import { COLORS } from "../constant/color";
+import StickerLine from "../components/TableList/StickerLine/StickerLine";
 
 type Props = {
   children: React.ReactNode;
@@ -48,8 +48,8 @@ const MainLayout = ({ children }: Props) => {
             bottom: 20,
             right: 20,
             backgroundColor: COLORS.white,
-            border:`2px solid ${COLORS.seconday}`,
-            outline:`1px solid ${COLORS.white}`,
+            border: `2px solid ${COLORS.seconday}`,
+            outline: `1px solid ${COLORS.white}`,
             color: "black",
             borderRadius: "50%",
             boxShadow: 8,

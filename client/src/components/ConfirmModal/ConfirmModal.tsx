@@ -14,7 +14,7 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: {md:500,sm:500,xs:'95%'},
+  width: { md: 500, sm: 500, xs: '95%' },
   bgcolor: "background.paper",
   boxShadow: 24,
   borderRadius: "8px",
@@ -97,7 +97,7 @@ const ConfirmModal = (props: ModalType) => {
           <Box
             sx={{
               display: "flex",
-              gap: {md:"20px",sm:"20px",xs:'10px'},
+              gap: { md: "20px", sm: "20px", xs: '10px' },
               alignItems: "center",
               justifyContent: "center",
               m: "auto",

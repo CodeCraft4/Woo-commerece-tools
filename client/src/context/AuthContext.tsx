@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               "",
             email: authUser.email,
             phone: authUser.user_metadata?.phone || null,
-            password: null, // optional — don’t store plain passwords!
+            password: null, 
           },
         ]);
       }
@@ -137,6 +137,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
     if (error) throw error;
 
+
     const authUser = data.user;
     if (authUser) {
       await upsertUser(authUser);
@@ -156,7 +157,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       options: {
         redirectTo,
         queryParams: {
-          prompt: "select_account", 
+          prompt: "select_account",
         },
       },
     });

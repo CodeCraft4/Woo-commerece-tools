@@ -250,8 +250,8 @@ const Navbar = () => {
     <Box>
       <AppBar
         position="relative"
-        sx={{ bgcolor: "white", color: "black", height: 60 }}
-        elevation={4}
+        sx={{ bgcolor: "white", color: "black", height: 'auto', borderBottom: `1px solid lightGray`, left: 0, top: 0, width: '100%' }}
+        elevation={0}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography

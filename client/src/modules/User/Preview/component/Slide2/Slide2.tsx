@@ -180,23 +180,24 @@ const Slide2 = () => {
       {/* 🖼️ Only selected images */}
       {draggableImages
         .filter((img: any) => selectedImg?.includes(img.id))
-        .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
+        // .sort((a: any, b: any) => (a.zIndex || 0) - (b.zIndex || 0))
         .map((img: any) => (
           <Box
             key={img.id}
             component="img"
             src={img.src}
             sx={{
-              position: "absolute", // ✅ critical for proper placement
+              position: "absolute",
               width: img.width,
               height: img.height,
               left: img.x,
               top: img.y,
-              transform: `rotate(${img.rotation || 0}deg)`, // ✅ rotation applied
-              transformOrigin: "center center", // ✅ rotate around middle
+              transform: `rotate(${img.rotation || 0}deg)`,
+              transformOrigin: "center center",
               borderRadius: 2,
               objectFit: "cover",
               zIndex: img.zIndex || 1,
+              filter: img.filter
             }}
           />
         ))}
@@ -280,10 +281,10 @@ const Slide2 = () => {
             color: fontColor,
             lineHeight: lineHeight2,
             letterSpacing: letterSpacing2,
-            fontFamily,
-            fontSize,
-            fontWeight,
-            textAlign, // ✅ still needed for multiline/inline text
+            fontFamily: fontFamily,
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            textAlign: textAlign, // ✅ still needed for multiline/inline text
             whiteSpace: "pre-wrap",
             p: 1,
           }}

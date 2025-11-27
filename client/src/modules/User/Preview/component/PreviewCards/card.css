@@ -29,6 +29,14 @@
   border-radius: 14px;
 }
 
+/* Disable ALL transforms for capture */
+.capture-no-transform {
+  transform: none !important;
+  perspective: none !important;
+  backface-visibility: visible !important;
+}
+
+
 .front,
 .back {
   position: absolute;

@@ -1,6 +1,8 @@
 import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
 import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../../../../constant/color";
+import { useEffect, useState } from "react";
+import { fetchOrderCount } from "../../../../../source/source";
 
 const orderData = [
   { name: "M", value: 200 },
@@ -51,17 +53,28 @@ const MinimalGradientAreaChart = ({
 
 // --- Order Chart (Purple/Violet Gradient Card) ---
 const OrderChart = () => {
+
+  const [orderCount, setOrderCount] = useState(0);
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      const count: any = await fetchOrderCount();
+      setOrderCount(count);
+    };
+    loadOrders();
+  }, []);
+
   return (
-    <Box sx={{ flex: "1 1 300px", maxWidth: 250, minWidth: 300 }}>
+    <Box sx={{ flex: "1 1 300px", width: '100%' }}>
       <Box
         sx={{
           position: "relative",
           p: 3,
           color: "white",
-          height: { md: 160, sm: 200, xs: 180 },
+          height: { md: 200, sm: 200, xs: 180 },
           boxShadow: 8,
           borderRadius: 4,
-          mb:{md:0,sm:0,xs:2},
+          mb: { md: 0, sm: 0, xs: 2 },
           background: `linear-gradient(135deg, ${COLORS.green} 0%, ${COLORS.primary} 100%)`,
           overflow: "hidden",
         }}
@@ -113,14 +126,14 @@ const OrderChart = () => {
               fontWeight="bold"
               sx={{ my: 1, fontSize: "2rem" }}
             >
-              50,229
+              0{orderCount.toLocaleString()}
             </Typography>
             <Typography
               variant="body2"
               fontWeight="semibold"
               sx={{ opacity: 0.8, color: COLORS.white }}
             >
-              +2% LAST WEEK
+              ALL TIMES ORDERS
             </Typography>
           </Box>
         </Box>
