@@ -13,10 +13,25 @@ body {
   overflow-x: hidden;
 }
 
+.App {
+  font-family: sans-serif;
+  text-align: center;
+}
+
 
 .panning-img {
   animation: panLeftRight 10s infinite linear;
 }
+
+.controls {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-evenly;
+  position: absolute;
+  bottom: 50px;
+  width: 100%;
+}
+
 
 @media (min-width: 768px) {
   .panning-img {

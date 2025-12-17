@@ -7,23 +7,23 @@ const AdminSignIn = () => {
       sx={{
         height: "100vh",
         width: "100%",
-        display: { md: "flex", sm: "flex", xs: "100%" },
+        display: 'flex',
         position: "relative",
         justifyContent: "center",
         alignItems: "center",
         bgcolor: "#999999ff",
       }}
     >
-        <Box
-          component={"img"}
-          src="/assets/images/animated-banner.jpg"
-          sx={{
-            width: "100%",
-            height: { md: "100vh", sm: "100vh", xs: "auto" },
-            objectFit: "cover",
-            filter:'brightness(50%)'
-          }}
-        />
+      <Box
+        component={"img"}
+        src="/assets/images/animated-banner.jpg"
+        sx={{
+          width: "100%",
+          height: "100vh",
+          objectFit: "cover",
+          filter: 'brightness(50%)'
+        }}
+      />
       <Box
         sx={{
           position: "absolute",
@@ -32,7 +32,7 @@ const AdminSignIn = () => {
           justifyContent: "center",
           alignItems: "center",
           height: { md: "100vh", sm: "100vh", xs: "auto" },
-          width: { md: "50%", sm: "50%", xs: "100%" },
+          width: { md: "50%", sm: "50%", xs: "95%" },
         }}
       >
         <AdminSigninForm />

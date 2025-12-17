@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { COLORS } from "../../constant/color";
+// import { COLORS } from "../../constant/color";
 
 type ProductTypes = {
   poster: string;
@@ -24,7 +24,7 @@ const ProductCard = (props: ProductTypes) => {
           ? { lg: '250px', md: "250px", sm: "240px", xs: "370px" }
           : { md: "270px", sm: "180px", xs: "225px" },
         borderRadius: 3,
-        bgcolor: COLORS.white,
+        // bgcolor: COLORS.white,
         border: tabsSlider ? `1px solid lightGray` : `4px solid ${borderColor}`,
         cursor: "pointer",
         justifyContent: 'center',

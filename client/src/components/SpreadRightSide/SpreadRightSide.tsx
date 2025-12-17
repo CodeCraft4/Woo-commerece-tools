@@ -31,7 +31,7 @@ const createNewTextElement3 = (defaults: any) => ({
 interface SpreadRightSideProps {
   textAlign?: "start" | "center" | "end";
   rotation?: number;
-  togglePopup: (name: string | null) => void;
+  togglePopup?: (name: string | null) => void;
   activePopup?: string | null;
   activeIndex?: number;
   addTextRight?: number;

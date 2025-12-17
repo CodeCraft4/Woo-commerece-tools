@@ -32,19 +32,18 @@ const Orders = () => {
         loadOrders();
     }, []);
 
-    console.log(orders, '--0-0')
 
     return (
         <DashboardLayout title='Orders' exportBtn='Export File'>
             <TableList
                 data={orders}
                 heading={[
-                    "Orders Id",
+                    "OrdersId",
                     "Name",
                     'Email',
-                    "Payment Status",
-                    "Date & Time",
-                    "Order Status",
+                    "Payment_Status",
+                    "Date/Time",
+                    "Order_Status",
                     "Total",
                 ]}
             />

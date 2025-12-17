@@ -1,126 +1,188 @@
+
 import {
-    Box,
-    Typography,
-    Select,
-    MenuItem,
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  CircularProgress,
 } from "@mui/material";
 import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from "recharts";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAllUsersFromDB } from "../../../../../source/source";
 
-const data = [
-    { name: "Dec", returning: 530, new: 100 },
-    { name: "Nov", returning: 420, new: 140 },
-    { name: "Oct", returning: 410, new: 250 },
-    { name: "Sep", returning: 430, new: 190 },
-    { name: "Aug", returning: 420, new: 120 },
-    { name: "Jul", returning: 400, new: 180 },
-    { name: "Jun", returning: 350, new: 260 },
-    { name: "May", returning: 460, new: 200 },
-    { name: "Apr", returning: 430, new: 270 },
-    { name: "Mar", returning: 340, new: 150 },
-    { name: "Feb", returning: 380, new: 260 },
-    { name: "Jan", returning: 450, new: 320 },
-];
+// ----- Types -----
+type UserRow = { id: string | number; created_at: string };
 
+// ----- Date helpers -----
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
+const addMonths = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+
+function formatMonthLabel(d: Date) {
+  return d.toLocaleString(undefined, { month: "short" });
+}
+function formatDayLabel(d: Date) {
+  return d.toLocaleString(undefined, { month: "short", day: "2-digit" });
+}
+
+type RangeKey = "week" | "m3" | "m6" | "m12";
+
+function buildBuckets(range: RangeKey) {
+  const today = startOfDay(new Date());
+  if (range === "week") {
+    // Last 7 days inclusive
+    const buckets: Date[] = [];
+    for (let i = 6; i >= 0; i--) buckets.push(addDays(today, -i));
+    return { granularity: "day" as const, dates: buckets };
+  }
+
+  const months =
+    range === "m3" ? 3 :
+      range === "m6" ? 6 :
+        12;
+
+  const firstMonth = startOfMonth(addMonths(today, -(months - 1)));
+  const buckets: Date[] = [];
+  for (let i = 0; i < months; i++) buckets.push(addMonths(firstMonth, i));
+  return { granularity: "month" as const, dates: buckets };
+}
+
+function inSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+}
+function inSameMonth(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth();
+}
+
+// ----- Transform users -> chart series -----
+function makeSeries(users: UserRow[], range: RangeKey) {
+  const { granularity, dates } = buildBuckets(range);
+  const parsed = users
+    .map(u => ({ ...u, d: new Date(u.created_at) }))
+    .filter(u => !isNaN(u.d.getTime()))
+    .sort((a, b) => a.d.getTime() - b.d.getTime());
+
+  // Precompute cumulative signups up to each date
+  const signupTimes = parsed.map(u => u.d.getTime());
+
+  const series = dates.map((bucketDate, _) => {
+    // new signups in bucket
+    const newCount = parsed.reduce((acc, u) => {
+      if (granularity === "day") return acc + (inSameDay(u.d, bucketDate) ? 1 : 0);
+      return acc + (inSameMonth(u.d, bucketDate) ? 1 : 0);
+    }, 0);
+
+    // returning = cumulative before the bucket start
+    let cutoff: Date;
+    if (granularity === "day") {
+      cutoff = addDays(bucketDate, 0); // start of that day (already startOfDay)
+    } else {
+      cutoff = startOfMonth(bucketDate);
+    }
+    const returning = signupTimes.filter(t => t < cutoff.getTime()).length;
+
+    const name = granularity === "day" ? formatDayLabel(bucketDate) : formatMonthLabel(bucketDate);
+    return { name, returning, new: newCount };
+  });
+
+  return series;
+}
+
+// ----- Component -----
 const UsersChart = () => {
-    return (
-        <Box
-            sx={{
-                bgcolor: "#eeeeee96",
-                borderRadius: 3,
-                p: 3,
-                width: "100%",
-                height: 420,
-                boxShadow:9
-            }}
+  const [range, setRange] = useState<RangeKey>("m12");
+
+  const { data: users = [], isLoading, isError } = useQuery<UserRow[]>({
+    queryKey: ["users", "authenticated"],
+    queryFn: fetchAllUsersFromDB,
+    staleTime: 60_000,
+  });
+
+  const data = useMemo(() => makeSeries(users, range), [users, range]);
+
+  return (
+    <Box
+      sx={{
+        background: "linear-gradient(190deg, rgba(0,0,0,0.9), rgba(1,52,61,0.9))",
+        borderRadius: 3,
+        p: 3,
+        width: { md: "49%", sm: "100%", xs: "100%" },
+        height: 400,
+        boxShadow: 2,
+      }}
+    >
+      {/* Header */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: "orange" }}>
+          Customer Growth
+        </Typography>
+
+        <Select
+          size="small"
+          value={range}
+          onChange={(e) => setRange(e.target.value as RangeKey)}
+          sx={{
+            fontSize: 14,
+            bgcolor: "#fff",
+            borderRadius: 2,
+            border: "1px solid gray",
+            "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+          }}
         >
-            {/* Header */}
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 2,
-                }}
-            >
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Customer Growth
-                </Typography>
+          <MenuItem value="week">Last Week</MenuItem>
+          <MenuItem value="m3">Last 3 Months</MenuItem>
+          <MenuItem value="m6">Last 6 Months</MenuItem>
+          <MenuItem value="m12">Last 12 Months</MenuItem>
+        </Select>
+      </Box>
 
-                <Select
-                    size="small"
-                    defaultValue="12"
-                    sx={{
-                        fontSize: 14,
-                        bgcolor: "#fff",
-                        borderRadius: 2,
-                        "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                >
-                    <MenuItem value="6">Last 6 Months</MenuItem>
-                    <MenuItem value="12">Last 12 Months</MenuItem>
-                </Select>
-            </Box>
-
-            {/* Chart */}
-            <ResponsiveContainer width="100%" height="90%">
-                <BarChart
-                    data={data}
-                    margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
-                >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#555", fontSize: 12, dy: 8 }}
-                        interval={0}
-                    />
-                    <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#555", fontSize: 12 }}
-                    />
-                    <Tooltip
-                        cursor={{ fill: "rgba(0,0,0,0.03)" }}
-                        contentStyle={{
-                            borderRadius: 10,
-                            backgroundColor: "#fff",
-                            border: "1px solid #eee",
-                        }}
-                    />
-                    <Legend
-                        verticalAlign="top"
-                        align="left"
-                        iconType="circle"
-                        iconSize={10}
-                        wrapperStyle={{ top: -5, fontWeight: 500 }}
-                    />
-                    <Bar
-                        dataKey="returning"
-                        name="Returning customers"
-                        fill="#d8e0edff"
-                        barSize={18}
-                    />
-                    <Bar
-                        dataKey="new"
-                        name="New customers"
-                        fill="#c66beaff"
-                        barSize={18}
-                        radius={[10, 10, 0, 0]}
-                    />
-                </BarChart>
-            </ResponsiveContainer>
+      {/* States */}
+      {isLoading ? (
+        <Box sx={{ height: "90%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <CircularProgress />
         </Box>
-    );
+      ) : isError ? (
+        <Box sx={{ height: "90%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Typography color="error">Failed to load users</Typography>
+        </Box>
+      ) : (
+        <ResponsiveContainer width="100%" height="90%">
+          <BarChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="name"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#bbb", fontSize: 12, dy: 8 }}
+              interval={0}
+            />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#bbb", fontSize: 12 }} />
+            <Tooltip
+              cursor={{ fill: "rgba(0,0,0,0.03)" }}
+              contentStyle={{ borderRadius: 10, backgroundColor: "#fff", border: "1px solid #eee" }}
+            />
+            <Legend verticalAlign="top" align="left" iconType="circle" iconSize={10} wrapperStyle={{ top: -5, fontWeight: 500 }} />
+            <Bar dataKey="returning" name="Returning customers" fill="#d8e0edff" barSize={18} />
+            <Bar dataKey="new" name="New customers" fill="#c66beaff" barSize={18} radius={[10, 10, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </Box>
+  );
 };
 
 export default UsersChart;

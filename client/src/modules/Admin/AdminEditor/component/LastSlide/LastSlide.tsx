@@ -1,121 +1,81 @@
 import { useRef } from "react";
-import { Box, Typography, TextField } from "@mui/material";
-import ImageIcon from "@mui/icons-material/Image";
-import LandingButton from "../../../../../components/LandingButton/LandingButton";
-import { useCardEditor } from "../../../../../context/AdminEditorContext";
+import { Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useCardEditor } from "../../../../../context/AdminEditorContext";
+import LandingButton from "../../../../../components/LandingButton/LandingButton";
 import { ADMINS_DASHBOARD } from "../../../../../constant/route";
+import type { EditorCanvasHandle } from "../EditorCanvas/EditorCanvas";
+import EditorCanvas from "../EditorCanvas/EditorCanvas";
+import SharedToolbar from "../SharedToolbar/SharedToolbar";
 
 const LastSlide = () => {
-  const { lastSlideImage, setLastSlideImage, lastSlideMessage, setLastSlideMessage } = useCardEditor();
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const navigate = useNavigate();
+  const {
+    lastElements,
+    setLastElements,
+    lastTextElements,
+    setLastTextElements,
+    lastStickerElements,
+    setLastStickerElements,
+    lastSlideImage,
+    lastSlideMessage,
 
-  const navigate = useNavigate()
+    // also include first slide slices to persist together if needed
+    selectedShapeImage,
+    uploadedShapeImage,
+    elements,
+    textElements,
+    stickerElements,
+  } = useCardEditor();
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const canvasRef = useRef<EditorCanvasHandle | null>(null);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setLastSlideImage(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+  const onSave = () => {
+    navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS, {
+      state: {
+        formData: {
+          lastElements,
+          lastTextElements,
+          lastStickerElements,
+          lastSlideImage,
+          lastSlideMessage,
+          selectedShapeImage,
+          uploadedShapeImage,
+          elements,
+          textElements,
+          stickerElements,
+        },
+      },
+    });
   };
+
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 1,
-        }}
-      >
-        <Typography sx={{ fontSize: "25px" }}>Last Slide</Typography>
-        <LandingButton
-          title="Save Changes"
-          onClick={() => navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS)}
-        />
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+        <Typography sx={{ fontSize: 25 }}>Last Slide</Typography>
+        <LandingButton title="Save Changes" onClick={onSave} />
       </Box>
+
       <Box
         sx={{
-          display: "flex",
+          display: { md: "flex", sm: "flex", xs: "block" },
+          gap: 2,
           justifyContent: "center",
-          alignItems: "center",
-          height: { md: "700px", sm: "700px", xs: 400 },
+          position: "relative",
         }}
       >
-        <Box
-          sx={{
-            width: "550px",
-            boxShadow: "3px 8px 9px gray",
-            borderRadius: "12px",
-            border: "1px solid lightgray",
-            height: "100%",
-            backgroundColor: "#f5f5f5",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            p: 2,
-            position: "relative",
-          }}
-        >
-          {/* Image Upload Section */}
-          <Box
-            sx={{
-              width: "100%",
-              height: "30%",
-              borderRadius: "12px",
-              backgroundColor: "#fafafa",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              cursor: "pointer",
-            }}
-            onClick={() => inputRef.current?.click()}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleImageUpload}
-            />
+        <EditorCanvas
+          ref={canvasRef}
+          elements={lastElements}
+          setElements={setLastElements}
+          textElements={lastTextElements}
+          setTextElements={setLastTextElements}
+          stickerElements={lastStickerElements}
+          setStickerElements={setLastStickerElements}
+        />
 
-            {lastSlideImage ? (
-              <Box
-                component="img"
-                src={`${lastSlideImage}`}
-                alt="Uploaded"
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  display: "block",
-                }}
-              />
-            ) : (
-              <Box sx={{ textAlign: "center", color: "#888" }}>
-                <ImageIcon sx={{ fontSize: 80, color: "#bbb" }} />
-                <Typography>Upload Image</Typography>
-              </Box>
-            )}
-          </Box>
-
-          {/* Editable Text Field */}
-          <Box sx={{ width: "100%", mt: 2 }}>
-            <TextField
-              placeholder="Enter you Details"
-              fullWidth
-              multiline
-              rows={2}
-              value={lastSlideMessage}
-              onChange={(e) => setLastSlideMessage(e.target.value)}
-            />
-          </Box>
+        <Box sx={{ position: "relative", alignSelf: "flex-start" }}>
+          <SharedToolbar activeRef={canvasRef} />
         </Box>
       </Box>
     </Box>

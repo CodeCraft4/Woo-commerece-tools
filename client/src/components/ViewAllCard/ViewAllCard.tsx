@@ -1,62 +1,95 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/material";
 import { COLORS } from "../../constant/color";
 import { SwapVert, TuneOutlined } from "@mui/icons-material";
-import { CATEGORIES_DATA } from "../../constant/data";
 import useModal from "../../hooks/useModal";
 import type { CategoryType } from "../ProductPopup/ProductPopup";
 import ProductPopup from "../ProductPopup/ProductPopup";
 
-const tabs = [
-  "View All Filters",
-  "Birthday Cards",
-  "Birthday Gift",
-  "Kids Birthday Cards",
-  "Kids Birthday Gift",
-  "Letter box",
-  "Under £30",
-  "Under £60",
-];
-
 type CategoryFilter = {
-  category?: number | string | null;
+  categoryId?: number | string | null;                  // align with ViewAll
+  categoryName?: string | null;                         // align with ViewAll
+  allCategories?: Array<{ id: string | number; name: string }>;
+  cardData?: any[];
 };
 
-const ViewAllCard = (props: CategoryFilter) => {
-  const { category } = props;
+const toStr = (v: unknown) => (v == null ? "" : String(v));
+const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
 
+// normalize card fields
+const getCardCategoryName = (item: any) =>
+  item?.cardcategory ?? item?.cardcategory ?? item?.cardname ?? "";
+
+const getCardCategoryId = (item: any) =>
+  item?.categoryId ?? item?.category_id ?? null;
+
+const getCardImage = (item: any) =>
+  item?.imageUrl ??
+  item?.imageurl ??
+  item?.lastpageImageUrl ??
+  item?.lastpageimageurl ??
+  item?.poster ??
+  "";
+
+const ViewAllCard = ({
+  categoryId = null,
+  categoryName = null,
+  allCategories = [],
+  cardData = [],
+}: CategoryFilter) => {
   const {
     open: isCategoryModal,
     openModal: openCategoryModal,
     closeModal: closeCategoryModal,
   } = useModal();
 
-  const [activeTab, setActiveTab] = useState(tabs[0]);
-  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>(
-    undefined
-  );
+  const [activeTab, setActiveTab] = useState<string>("View All Filters");
+  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>();
 
-  // ✅ Apply filtering using useMemo for performance
+  // init active tab from categoryName first, else resolve via categoryId
+  useEffect(() => {
+    const routeName = (categoryName ?? "").trim();
+    if (routeName) {
+      setActiveTab(routeName);
+      return;
+    }
+    if (categoryId != null) {
+      const hit = allCategories.find((c) => toStr(c.id) === toStr(categoryId));
+      if (hit?.name) setActiveTab(hit.name);
+    }
+  }, [categoryId, categoryName, allCategories]);
+
+  const selectedCategoryName: string | null = useMemo(() => {
+    if (activeTab !== "View All Filters") return activeTab;
+    if (categoryId != null) {
+      const hit = allCategories.find((c) => toStr(c.id) === toStr(categoryId));
+      return hit?.name ?? null;
+    }
+    return null;
+  }, [activeTab, allCategories, categoryId]);
+
   const filteredData = useMemo(() => {
-    let data = CATEGORIES_DATA;
+    const cards = Array.isArray(cardData) ? cardData : [];
 
-    // 1️⃣ Filter by passed category ID (from click)
-    if (category) {
-      data = data.filter((item) => item.id === category);
+    // Prefer ID-based filter when we have categoryId and either:
+    // - user is on "View All Filters", or
+    // - the activeTab matches the resolved name of that id.
+    if (categoryId != null) {
+      return cards.filter((item) => toStr(getCardCategoryId(item)) === toStr(categoryId));
     }
 
-    // 2️⃣ Then apply tab-based filter (optional)
-    if (activeTab !== "View All Filters") {
-      data = data.filter((item) => item.category === activeTab);
+    if (selectedCategoryName) {
+      const want = lc(selectedCategoryName);
+      return cards.filter((item) => lc(getCardCategoryName(item)) === want);
     }
 
-    return data;
-  }, [category, activeTab]);
+    return cards;
+  }, [cardData, categoryId, selectedCategoryName]);
 
-   const openCategoryModalPopup = (cate: CategoryType) => {
-      setSelectedCate(cate);
-      openCategoryModal();
-    };
+  const openCategoryModalPopup = (cate: CategoryType) => {
+    setSelectedCate(cate);
+    openCategoryModal();
+  };
 
   return (
     <Box>
@@ -69,6 +102,7 @@ const ViewAllCard = (props: CategoryFilter) => {
           justifyContent: "space-between",
         }}
       >
+        {/* Tabs */}
         <Box
           sx={{
             display: { md: "flex", sm: "flex", xs: "none" },
@@ -78,20 +112,44 @@ const ViewAllCard = (props: CategoryFilter) => {
             gap: "5px",
           }}
         >
-          {tabs.map((e) => (
+          <Box
+            component="div"
+            onClick={() => setActiveTab("View All Filters")}
+            sx={{
+              py: 1,
+              px: 3,
+              borderRadius: 20,
+              bgcolor: activeTab === "View All Filters" ? COLORS.primary : "transparent",
+              color: activeTab === "View All Filters" ? COLORS.white : COLORS.black,
+              border: activeTab === "View All Filters" ? `1px solid transparent` : `1px solid ${COLORS.black}`,
+              cursor: "pointer",
+              fontSize: "14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "3px",
+            }}
+          >
+            <TuneOutlined
+              fontSize="small"
+              sx={{
+                color: activeTab === "View All Filters" ? COLORS.white : COLORS.black,
+              }}
+            />
+            View All Filters
+          </Box>
+
+          {allCategories.map((e) => (
             <Box
-              component={"div"}
-              onClick={() => setActiveTab(e)}
+              key={e.id}
+              component="div"
+              onClick={() => setActiveTab(e.name)}
               sx={{
                 py: 1,
                 px: 3,
                 borderRadius: 20,
-                bgcolor: activeTab === e ? COLORS.primary : "transparent",
-                color: activeTab === e ? COLORS.white : COLORS.black,
-                border:
-                  activeTab === e
-                    ? `1px solid transparent`
-                    : `1px solid ${COLORS.black}`,
+                bgcolor: activeTab === e.name ? COLORS.primary : "transparent",
+                color: activeTab === e.name ? COLORS.white : COLORS.black,
+                border: activeTab === e.name ? `1px solid transparent` : `1px solid ${COLORS.black}`,
                 cursor: "pointer",
                 fontSize: "14px",
                 display: "flex",
@@ -99,15 +157,7 @@ const ViewAllCard = (props: CategoryFilter) => {
                 gap: "3px",
               }}
             >
-              {e === "View All Filters" && (
-                <TuneOutlined
-                  fontSize="small"
-                  sx={{
-                    color: activeTab === e ? COLORS.white : COLORS.black,
-                  }}
-                />
-              )}{" "}
-              {e}
+              {e.name}
             </Box>
           ))}
         </Box>
@@ -122,9 +172,7 @@ const ViewAllCard = (props: CategoryFilter) => {
             px: 2,
             py: 1,
             cursor: "pointer",
-            "&:hover": {
-              bgcolor: "lightGray",
-            },
+            "&:hover": { bgcolor: "lightGray" },
           }}
         >
           <SwapVert />
@@ -132,6 +180,7 @@ const ViewAllCard = (props: CategoryFilter) => {
         </Box>
       </Box>
 
+      {/* Grid */}
       <Box
         sx={{
           display: "flex",
@@ -142,18 +191,20 @@ const ViewAllCard = (props: CategoryFilter) => {
         }}
       >
         {filteredData.length > 0 ? (
-          filteredData.map((e:any) => (
+          filteredData.map((e: any) => (
             <Box
               key={e.id}
               onClick={() => openCategoryModalPopup(e)}
-              component={"img"}
-              src={e.poster}
+              component="img"
+              src={getCardImage(e)}
+              alt={e.name || e.title || "card"}
               sx={{
                 width: 248,
                 height: 300,
                 objectFit: "cover",
                 borderRadius: 2,
                 border: "2px solid lightGray",
+                cursor: "pointer",
               }}
             />
           ))
@@ -176,11 +227,7 @@ const ViewAllCard = (props: CategoryFilter) => {
       </Box>
 
       {isCategoryModal && selectedCate && (
-        <ProductPopup
-          open={isCategoryModal}
-          onClose={closeCategoryModal}
-          cate={selectedCate}
-        />
+        <ProductPopup open={isCategoryModal} onClose={closeCategoryModal} cate={selectedCate} />
       )}
     </Box>
   );

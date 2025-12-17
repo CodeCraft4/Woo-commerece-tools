@@ -31,7 +31,7 @@ const createNewTextElement = (defaults: any) => ({
 interface SlideSpreadProps {
   textAlign?: "start" | "center" | "end";
   rotation?: number;
-  togglePopup: (name: string | null) => void;
+  togglePopup?: (name: string | null) => void;
   activePopup?: string | null;
   activeIndex?: number;
   addTextRight?: number;
@@ -901,8 +901,8 @@ const SlideSpread = ({
                         e.stopPropagation();
 
                         // REMOVE image from selected
-                       setSelectedImage(prev => prev.filter(i => i !== id));
-                       setDraggableImages(prev => prev.filter(img => img.id !== id));
+                        setSelectedImage(prev => prev.filter(i => i !== id));
+                        setDraggableImages(prev => prev.filter(img => img.id !== id));
 
                         // RESET filter to original
                         setDraggableImages(prev =>

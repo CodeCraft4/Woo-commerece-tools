@@ -1,13 +1,14 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Box, Typography } from "@mui/material";
+import { COLORS } from "../../../../../constant/color";
 
-const PiChart = () => {
+const PiChart = ({ totalOrder }: any) => {
   const data = [
-    { name: "Purple", value: 20 },
+    { name: "Purple", value: 30 },
     { name: "Blue", value: 25 },
-    { name: "Pink", value: 18 },
+    { name: "Pink", value: 48 },
   ];
-  const total = data.reduce((sum, v) => sum + v.value, 0);
+  // const total = data.reduce((sum, v) => sum + v.value, 0);
   const colors = ["url(#gradPurple)", "url(#gradBlue)", "url(#gradPink)"];
 
   return (
@@ -26,11 +27,11 @@ const PiChart = () => {
         <PieChart>
           <defs>
             <linearGradient id="gradPurple" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#6D28D9" />
+              <stop offset="0%" stopColor={`${COLORS.primary}`} />
               <stop offset="100%" stopColor="#7C3AED" />
             </linearGradient>
             <linearGradient id="gradBlue" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#1E40AF" />
+              <stop offset="0%" stopColor={`#1E40AF`} />
               <stop offset="100%" stopColor="#2563EB" />
             </linearGradient>
             <linearGradient id="gradPink" x1="0" y1="0" x2="1" y2="1">
@@ -62,7 +63,7 @@ const PiChart = () => {
             startAngle={90}
             endAngle={-270}
             stroke="none"
-            animationDuration={1200}
+            animationDuration={1000}
           >
             {data.map((_, index) => (
               <Cell key={index} fill={colors[index]} />
@@ -82,8 +83,9 @@ const PiChart = () => {
           height: 117,
           borderRadius: "50%",
           background: "linear-gradient(180deg,#FFFFFF,#F9FAFB)",
-          boxShadow:
-            "0 16px 36px rgba(2,6,23,0.06), inset 0 6px 18px rgba(0,0,0,0.04)",
+          boxShadow: 8,
+          // boxShadow:
+          //   "0 16px 36px rgba(2,6,23,0.06), inset 0 6px 18px rgba(0,0,0,0.04)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -94,14 +96,18 @@ const PiChart = () => {
           sx={{
             fontSize: 28,
             fontWeight: 800,
-            background: "linear-gradient(90deg,#6D28D9 0%,#2563EB 100%)",
+            background: `linear-gradient(90deg,${COLORS.primary} 0%,${COLORS.black} 100%)`,
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}
         >
-          {total}
+          {totalOrder}
         </Typography>
-        <Typography variant="subtitle2" color="#2563EB" fontWeight={700}>
+        <Typography variant="subtitle2" sx={{
+          background: `linear-gradient(90deg,${COLORS.primary} 0%,${COLORS.black} 100%)`,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }} fontWeight={700}>
           Total
         </Typography>
       </Box>

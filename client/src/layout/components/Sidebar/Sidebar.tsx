@@ -10,7 +10,9 @@ import {
   HomeOutlined,
   LocalOfferOutlined,
   NewspaperOutlined,
+  OndemandVideoOutlined,
   PeopleOutline,
+  Person2Outlined,
   SettingsOutlined,
 } from "@mui/icons-material";
 import { COLORS } from "../../../constant/color";
@@ -24,6 +26,11 @@ const Sidebar = () => {
       icon: <HomeOutlined />,
       title: "Dashboard",
       href: ADMINS_DASHBOARD.HOME,
+    },
+    {
+      icon: <Person2Outlined />,
+      title: "Customers",
+      href: ADMINS_DASHBOARD.CUSTOMERS,
     },
     {
       icon: <FormatListBulleted />,
@@ -56,6 +63,11 @@ const Sidebar = () => {
       href: ADMINS_DASHBOARD.ADMIN_COMMUNITY_HUB,
     },
     {
+      icon: <OndemandVideoOutlined />,
+      title: "Toturial Guide",
+      href: ADMINS_DASHBOARD.ADMIN_TOTURIAL_GUIDE,
+    },
+    {
       icon: <AssessmentOutlined />,
       title: "Reports",
       href: ADMINS_DASHBOARD.ADMIN_REPORTS,
@@ -68,10 +80,10 @@ const Sidebar = () => {
   ];
 
   return (
-    <Box sx={{ pt: 3 }}>
+    <Box>
       <Box
         sx={{
-          pt: 2,
+          // pt: 2,
           display: "flex",
           flexDirection: "column",
           gap: "8px",

@@ -11,16 +11,6 @@ import { Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
 import { COLORS } from "../../../../../constant/color";
 import { useEffect, useState } from "react";
 
-// const visitorData = [
-//   { day: "Sun", visitors: 0 },
-//   { day: "Mon", visitors: 100 },
-//   { day: "Tue", visitors: 300 },
-//   { day: "Wed", visitors: 500 },
-//   { day: "Thu", visitors: 310 },
-//   { day: "Fri", visitors: 1150 },
-//   { day: "Sat", visitors: 350 },
-//   { day: "Sun", visitors: 800 },
-// ];
 
 export default function VisitorMiniChart() {
   const [visitorData, setVisitorData] = useState([]);
@@ -32,7 +22,8 @@ export default function VisitorMiniChart() {
   useEffect(() => {
     async function loadVisitors() {
       try {
-        const res = await fetch(`http://localhost:5000/api/visitors?range=${filter}`);
+        const res = await fetch(`https://diypersonalisation.com/api/visitors?range=${filter}`);
+        // const res = await fetch(`http://localhost:5000/visitors?range=${filter}`);
         const data = await res.json();
         setVisitorData(data);
       } catch (err) {
@@ -44,10 +35,12 @@ export default function VisitorMiniChart() {
 
     loadVisitors();
   }, [filter]);
+
+
   return (
     <Box
       sx={{
-        width: '35%',
+        width: { md: '35%', sm: '100%', xs: '100%' },
         height: 200,
         borderRadius: 3,
         boxShadow: 3,

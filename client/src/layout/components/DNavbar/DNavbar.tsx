@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import {
   AppBar,
   Toolbar,
@@ -18,7 +18,6 @@ import {
   Chat,
   LogoutOutlined,
   Notifications,
-  PersonOutline,
   SettingsOutlined,
 } from "@mui/icons-material";
 import { COLORS } from "../../../constant/color";
@@ -27,6 +26,8 @@ import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { useAdmin } from "../../../context/AdminContext";
 import { useNavigate } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
+import NotificationModal from "../../../modules/Admin/Home/components/NotificationModal/NotificationModal";
+import { useNotifications } from "../../../context/NotificationContext";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -66,8 +67,8 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     fontSize: '12px',
     color: COLORS.white,
     "&::placeholder": {
-      color: "#fff", // placeholder color to white
-      opacity: 1, // ensures full opacity
+      color: "#fff", 
+      opacity: 1, 
     },
     [theme.breakpoints.up("md")]: {
       width: "20ch",
@@ -76,13 +77,14 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 const DNavbar = () => {
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const navigate = useNavigate();
 
-  const { logout } = useAdmin();
+  const { logout, admin } = useAdmin();
+  const { unreadCount } = useNotifications();
 
-  const handleMenu = (event: any) => {
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -90,10 +92,17 @@ const DNavbar = () => {
     setAnchorEl(null);
   };
 
+  const open = Boolean(anchorEl);
+
   const {
     open: isLogoutModal,
     openModal: openLogoutModal,
     closeModal: closeLogoutModal,
+  } = useModal();
+  const {
+    open: isNotificationModal,
+    openModal: openNotificationModal,
+    closeModal: closeNotificationModal,
   } = useModal();
 
   const handleSignOut = () => {
@@ -105,7 +114,7 @@ const DNavbar = () => {
     <AppBar
       position="static"
       sx={{
-        backgroundColor: "#160215ff", // black background
+        backgroundColor: "#240222ff",
         boxShadow: "none",
         display: { md: 'flex', sm: 'flex', xs: 'none' }
       }}
@@ -141,18 +150,29 @@ const DNavbar = () => {
 
         {/* Right side - Admin dropdown */}
         <Box display="flex" alignItems="center" gap={1}>
-          <IconButton sx={{ color: "white" }}>
+          <IconButton sx={{ color: "white" }} onClick={() => navigate(ADMINS_DASHBOARD.ADMIN_COMMUNITY_HUB)}>
             <Chat />
           </IconButton>
-          <IconButton sx={{ color: "white" }}>
-            <Badge badgeContent={2} color="error">
+          <IconButton sx={{ color: "white" }} onClick={openNotificationModal}>
+            <Badge badgeContent={unreadCount} color="error">
               <Notifications />
             </Badge>
           </IconButton>
 
-          <Avatar sx={{ bgcolor: COLORS.primary, width: 30, height: 30 }}>A</Avatar>
+          <Avatar
+            sx={{ bgcolor: COLORS.primary, width: 30, height: 30, cursor: 'pointer' }}
+            onClick={handleMenu}
+            src={admin?.profile_image || undefined}
+          >
+            {
+              !admin?.profile_image && admin?.first_name
+                ? admin.first_name[0].toUpperCase()
+                : null
+            }
+          </Avatar>
+
           <Typography sx={{ color: "#fff", fontSize: '12px' }}>
-            Admin123
+            {admin?.first_name}
           </Typography>
           <IconButton onClick={handleMenu} sx={{ color: "#fff" }}>
             <ArrowDropDown />
@@ -160,15 +180,15 @@ const DNavbar = () => {
 
           <Menu
             anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
+            open={open}
             onClose={handleClose}
             PaperProps={{
               sx: { mt: 1, minWidth: 150, ml: -2 },
             }}
           >
-            <MenuItem onClick={() => navigate(ADMINS_DASHBOARD.SETTINGS)}>
+            {/* <MenuItem onClick={() => navigate(ADMINS_DASHBOARD.SETTINGS)}>
               <PersonOutline /> Profile
-            </MenuItem>
+            </MenuItem> */}
             <MenuItem onClick={() => navigate(ADMINS_DASHBOARD.SETTINGS)}>
               <SettingsOutlined /> Settings
             </MenuItem>
@@ -184,6 +204,12 @@ const DNavbar = () => {
           btnText="Yes,Sure"
           title="Are you sure to logout, You are Admin"
           onClick={handleSignOut}
+        />
+      )}
+      {isNotificationModal && (
+        <NotificationModal
+          open={isNotificationModal}
+          onCloseModal={closeNotificationModal}
         />
       )}
     </AppBar>

@@ -14,12 +14,11 @@ import Setting from "../../modules/Admin/Setting/Setting";
 import SignUp from "../../modules/User/Auth/SignUp";
 import AdminSignIn from "../../modules/Admin/Auth/SignIn";
 import AddToCart from "../../modules/User/AddToCart/AddToCart";
-import AdminRoute from "../../hoc/SecureRoute";
+import SecureRoute from "../../hoc/SecureRoute";
 import AdminEditor from "../../modules/Admin/AdminEditor/AdminEditor";
 import Reports from "../../modules/Admin/Reports/Reports";
 import Categories from "../../modules/Admin/Categories/Categories";
 import Orders from "../../modules/Admin/Orders/Orders";
-import AddCategories from "../../modules/Admin/AddCategories/AddCategories";
 import Blogs from "../../modules/User/Blogs/Blogs";
 import BlogsDetails from "../../modules/User/BlogsDetails/BlogsDetails";
 import Sustainibility from "../../modules/User/Sustainibility/Sustainibility";
@@ -27,6 +26,16 @@ import CommunityHub from "../../modules/User/CommunityHub/CommunityHub";
 import OurBlogs from "../../modules/Admin/OurBlogs/OurBlogs";
 import OurCommunityHub from "../../modules/Admin/OurCommunityHub/OurCommunityHub";
 import AddCommunityPost from "../../modules/Admin/AddCommunityPost/AddCommunityPost";
+import TempletEditor from "../../modules/User/TempletEditor/TempletEditor";
+import CategoriesEditor from "../../modules/Admin/CategoriesEditor/CategoriesEditor";
+import AdminPreview from "../../modules/Admin/AdminPreview/AdminPreview";
+import TempletEditorPreview from "../../modules/User/TempletEditorPreview/TempletEditorPreview";
+import CategoriesWisePreview from "../../modules/User/CategoriesWisePreview/CategoriesWisePreview";
+import Customers from "../../modules/Admin/Customers/Customers";
+import BlogsEditor from "../../modules/Admin/BlogsEditor/BlogsEditor";
+import UploadToturial from "../../modules/Admin/UploadToturial/UploadToturial";
+import UserProfile from "../../modules/User/UserProfile/UserProfile";
+import AddNewTemplets from "../../modules/Admin/AddNewTemplets/AddNewTemplets";
 
 const Router = () => {
   return (
@@ -37,6 +46,18 @@ const Router = () => {
       <Route path={`${USER_ROUTES.OUR_BLOGS_DETAILS}/:id`} element={<BlogsDetails />} />
       <Route path={USER_ROUTES.OUR_SUSTAIANIBILITY} element={<Sustainibility />} />
       <Route path={`${USER_ROUTES.HOME}/:id`} element={<Home />} />
+      <Route
+        path={`${USER_ROUTES.TEMPLET_EDITORS}/:category/:productId`}
+        element={<TempletEditor />}
+      />
+      <Route
+        path={`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/:category/:productId`}
+        element={<TempletEditorPreview />}
+      />
+      <Route
+        path={`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/:productId`}
+        element={<CategoriesWisePreview />}
+      />
       <Route path={USER_ROUTES.PREVIEW} element={<Preview />} />
       <Route path={`${USER_ROUTES.VIEW_ALL}/:search`} element={<ViewAll />} />
       <Route path={USER_ROUTES.ADD_TO_CART} element={<AddToCart />} />
@@ -45,103 +66,145 @@ const Router = () => {
       <Route path={USER_ROUTES.SUCCESS_PAY} element={<SuccessPayment />} />
       <Route path={USER_ROUTES.SIGNIN} element={<SignIn />} />
       <Route path={USER_ROUTES.SIGNUP} element={<SignUp />} />
+      <Route path={USER_ROUTES.USER_PROFILE} element={<UserProfile />} />
 
       {/* Just Admin dashboard Preview  */}
       <Route path={ADMINS_DASHBOARD.SIGNIN} element={<AdminSignIn />} />
       <Route
         path={ADMINS_DASHBOARD.HOME}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <DashboardHome />
-          </AdminRoute>
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.CUSTOMERS}
+        element={
+          <SecureRoute>
+            <Customers />
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.ORDERS_LIST}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <Orders />
-          </AdminRoute>
+          </SecureRoute>
         }
       />
-      <Route
-        path={`${ADMINS_DASHBOARD.ADD_CATEGORY}/:categories`}
-        element={
-          <AdminRoute>
-            <AddCategories />
-          </AdminRoute>
-        }
-      />
+
       <Route
         path={ADMINS_DASHBOARD.PRODUCTS_LIST}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <Products />
-          </AdminRoute>
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.ADD_NEW_CARDS}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <AddNewProducts />
-          </AdminRoute>
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.ADD_NEW_TEMPLETS_CARDS}
+        element={
+          <SecureRoute>
+            <AddNewTemplets />
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.ADMIN_CATEGORIES_EDITOR}
+        element={
+          <SecureRoute>
+            <CategoriesEditor />
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.ADMIN_CATEGORIES_EDITOR_PREIVEW}
+        element={
+          <SecureRoute>
+            <AdminPreview />
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.ADMIN_CATEGORIES}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <Categories />
-          </AdminRoute>
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.ADMIN_EDITOR}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <AdminEditor />
-          </AdminRoute>
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.ADMIN_BLOGS}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <OurBlogs />
-          </AdminRoute>
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.ADMIN_BLOGS_EDITOR}
+        element={
+          <SecureRoute>
+            <BlogsEditor />
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.ADMIN_COMMUNITY_HUB}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <OurCommunityHub />
-          </AdminRoute>
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.ADMIN_TOTURIAL_GUIDE}
+        element={
+          <SecureRoute>
+            <UploadToturial />
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.ADD_COMMUNITY_HUB_POST}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <AddCommunityPost />
-          </AdminRoute>
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.ADMIN_REPORTS}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <Reports />
-          </AdminRoute>
+          </SecureRoute>
         }
       />
       <Route
         path={ADMINS_DASHBOARD.SETTINGS}
         element={
-          <AdminRoute>
+          <SecureRoute>
             <Setting />
-          </AdminRoute>
+          </SecureRoute>
         }
       />
     </ReactRoutes>

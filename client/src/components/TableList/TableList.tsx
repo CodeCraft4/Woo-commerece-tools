@@ -28,7 +28,6 @@ const TableList: React.FC<TableTypes> = ({ data = [], heading = [] }) => {
     const [selected, setSelected] = useState<string[]>([]);
     const [search, setSearch] = useState<string>("");
     const [isData, setIsData] = useState<any[]>(data);
-    console.log(data, '--')
 
     // ✅ Sync data from DB when prop changes
     useEffect(() => {
@@ -111,6 +110,7 @@ const TableList: React.FC<TableTypes> = ({ data = [], heading = [] }) => {
                         }}
                         sx={{
                             borderRadius: 50,
+                            width: 300,
                             "& .MuiOutlinedInput-root": {
                                 borderRadius: 50,
                             },
@@ -140,7 +140,7 @@ const TableList: React.FC<TableTypes> = ({ data = [], heading = [] }) => {
                                 </TableCell>
                                 {
                                     heading.map((e) => (
-                                        <TableCell sx={{ fontWeight: 600 }}>{e}</TableCell>
+                                        <TableCell key={e} sx={{ fontWeight: 600 }}>{e}</TableCell>
                                     ))
                                 }
                             </TableRow>

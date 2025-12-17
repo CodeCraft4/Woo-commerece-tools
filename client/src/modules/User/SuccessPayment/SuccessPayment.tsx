@@ -6,7 +6,6 @@ import { USER_ROUTES } from "../../../constant/route";
 import toast from "react-hot-toast";
 
 const SuccessPayment = () => {
-
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   console.log(localStorage.getItem("selectedSize"), 'size')
@@ -20,8 +19,7 @@ const SuccessPayment = () => {
     }
 
     if (sessionId) {
-      // fetch("https://diypersonalisationserver-production.up.railway.app/send-pdf-after-success", {
-      fetch("http://localhost:5000/send-pdf-after-success", {
+      fetch("https://diypersonalisation.com/api/send-pdf-after-success", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -30,20 +28,26 @@ const SuccessPayment = () => {
           slides,
         }),
       })
-        .then(() => {
-          toast.success("Payment Successful! PDF sent to your email!");
+        .then(async (res) => {
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err?.error || `HTTP ${res.status}`);
+          }
+          return res.json();
         })
-        .catch(() => toast.error("Payment succeeded but PDF could not be sent."));
+        .then(() => toast.success(`Payment Successful! PDF sent to your Email!`))
+        .catch((e) => toast.error(`PDF could not be sent: ${e.message}`));
     }
   }, []);
 
+  // clear storage after 4s, then navigate
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate(USER_ROUTES.SUBSCRIPTION);
+      navigate(USER_ROUTES.SUBSCRIPTION, { replace: true });
     }, 4000);
+
     return () => clearTimeout(timer);
   }, [navigate]);
-
   return (
     <Box
       sx={{

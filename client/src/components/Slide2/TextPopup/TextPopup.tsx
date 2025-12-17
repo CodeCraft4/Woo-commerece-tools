@@ -21,12 +21,12 @@ import { useSlide2 } from "../../../context/Slide2Context";
 interface TextPopupProps {
   onClose?: () => void;
   activeIndex?: number
-  onShowFontSizePopup: () => void;
-  onShowFontColorPopup: () => void;
-  onShowFontFamilyPopup: () => void;
-  onSetLineHeightPopup: () => void;
-  onChangeTextAlign: () => void;
-  activeChildComponent: React.ReactNode | null;
+  onShowFontSizePopup?: () => void;
+  onShowFontColorPopup?: () => void;
+  onShowFontFamilyPopup?: () => void;
+  onSetLineHeightPopup?: () => void;
+  onChangeTextAlign?: () => void;
+  activeChildComponent?: React.ReactNode | null;
   onAddTextToCanvas?: () => void;
 }
 
@@ -121,7 +121,7 @@ const TextPopup = ({
     const newWeight = currentWeight === 700 ? 400 : 700;
     updateTextProperty('fontWeight', newWeight);
   };
-  
+
   // Text Rotation
   const rotateText = () => {
     const currentRotation = selectedTextElement?.rotation || rotation;

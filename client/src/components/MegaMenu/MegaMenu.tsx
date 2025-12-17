@@ -1,3 +1,194 @@
+// import {
+//   Box,
+//   List,
+//   ListItemButton,
+//   ListItemText,
+//   Typography,
+// } from "@mui/material";
+// import { COLORS } from "../../constant/color";
+// import { useMemo } from "react";
+
+// interface Category {
+//   name: string;
+//   links: string[];
+// }
+
+// interface MegaMenuItem {
+//   /** Main category title (e.g., "Birthday") */
+//   title: string;
+//   /** Columns */
+//   categories: Category[];
+// }
+
+// const MegaMenu = ({
+//   data,
+//   onSelect,
+// }: {
+//   data: MegaMenuItem;
+//   onSelect: () => void;
+// }) => {
+//   const columns = useMemo(() => {
+//     return (data?.categories ?? []).map((col) => {
+//       const footers = col.links.filter(
+//         (l) => /shop all/i.test(l) || /all .*$/i.test(l)
+//       );
+//       const items = col.links.filter((l) => !footers.includes(l));
+//       return { ...col, items, footers };
+//     });
+//   }, [data]);
+
+//   return (
+//     <Box
+//       sx={{
+//         position: "absolute",
+//         top: "80%",
+//         left: 0,
+//         width: "100%",
+//         zIndex: 10,
+//         display: "flex",
+//         justifyContent: "center",
+//         pointerEvents: "auto",
+//       }}
+//     >
+//       <Box
+//         sx={{
+//           width: { lg: 1660, md: "100%", sm: "100%", xs: "100%" },
+//           bgcolor: "#fff",
+//           display: "flex",
+//           p: 3,
+//           boxShadow: 3,
+//           position: "absolute",
+//           top: 0,
+//           minHeight: 340,
+//           maxHeight: 400,
+//           overflowY: 'auto',
+//           "&::-webkit-scrollbar": {
+//             height: "6px",
+//             width: 6
+//           },
+//           "&::-webkit-scrollbar-track": {
+//             backgroundColor: "#f1f1f1",
+//             borderRadius: "20px",
+//           },
+//           "&::-webkit-scrollbar-thumb": {
+//             backgroundColor: COLORS.primary,
+//             borderRadius: "20px",
+//           },
+//         }}
+//       >
+//         {/* LEFT — Moonpig-like grid of columns */}
+//         <Box
+//           sx={{
+//             width: "100%",
+//             pr: 3,
+//             // overflow: "hidden",
+//             display: "grid",
+//             gridTemplateColumns: {
+//               lg: "repeat(5, minmax(180px, 1fr))",
+//               md: "repeat(3, minmax(180px, 1fr))",
+//               sm: "repeat(2, minmax(180px, 1fr))",
+//             },
+//             gap: 3,
+//           }}
+//         >
+//           {columns.map((category, index: number) => (
+//             <Box key={`${category.name}-${index}`} sx={{ color: COLORS.black }}>
+//               {/* Column header */}
+//               <Typography
+//                 variant="subtitle1"
+//                 sx={{ fontWeight: 700, mb: 1, lineHeight: 1.2, color: COLORS.seconday }}
+//               >
+//                 {category.name}
+//               </Typography>
+
+//               {/* Links list */}
+//               <List
+//                 dense
+//                 disablePadding
+//                 sx={{
+//                   p: 0,
+//                   m: 0,
+//                   overflow: "auto",
+//                   maxHeight: 290,
+//                   "&::-webkit-scrollbar": { width: 6 },
+//                   "&::-webkit-scrollbar-thumb": {
+//                     backgroundColor: "#ddd",
+//                     borderRadius: 10,
+//                   },
+//                 }}
+//               >
+//                 {category.items.map((link, linkIndex: number) => (
+//                   <ListItemButton
+//                     key={`${link}-${linkIndex}`}
+//                     sx={{
+//                       py: 0.25,
+//                       px: 0,
+//                       "&:hover": { bgcolor: "transparent" },
+//                     }}
+//                     disableRipple
+//                     onClick={onSelect}
+//                   >
+//                     <ListItemText
+//                       primary={link}
+//                       primaryTypographyProps={{
+//                         fontSize: 14,
+//                         color: "#212121",
+//                       }}
+//                       sx={{
+//                         m: 0,
+//                         "& .MuiListItemText-primary:hover": {
+//                           textDecoration: "underline",
+//                         },
+//                       }}
+//                     />
+//                   </ListItemButton>
+//                 ))}
+
+//                 {/* “Shop all …” footer links, if any */}
+//                 {category.footers.length > 0 && (
+//                   <Box sx={{ pt: 0.75 }}>
+//                     {category.footers.map((link, i) => (
+//                       <ListItemButton
+//                         key={`footer-${link}-${i}`}
+//                         sx={{
+//                           py: 0.25,
+//                           px: 0,
+//                           "&:hover": { bgcolor: "transparent" },
+//                         }}
+//                         disableRipple
+//                         onClick={onSelect}
+//                       >
+//                         <ListItemText
+//                           primary={link}
+//                           primaryTypographyProps={{
+//                             fontSize: 14,
+//                             fontWeight: 600,
+//                             color: COLORS.primary,
+//                           }}
+//                           sx={{
+//                             m: 0,
+//                             "& .MuiListItemText-primary:hover": {
+//                               textDecoration: "underline",
+//                             },
+//                           }}
+//                         />
+//                       </ListItemButton>
+//                     ))}
+//                   </Box>
+//                 )}
+//               </List>
+//             </Box>
+//           ))}
+//         </Box>
+//       </Box>
+//     </Box>
+//   );
+// };
+
+// export default MegaMenu;
+
+
+// File: src/components/MegaMenu/MegaMenu.tsx
 import {
   Box,
   List,
@@ -6,10 +197,7 @@ import {
   Typography,
 } from "@mui/material";
 import { COLORS } from "../../constant/color";
-import { CATEGORIES_DATA } from "../../constant/data";
-import useModal from "../../hooks/useModal"; // ✅ import your custom hook
-import ProductPopup from "../ProductPopup/ProductPopup"; // ✅ import the popup
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 interface Category {
   name: string;
@@ -28,13 +216,25 @@ const MegaMenu = ({
   data: MegaMenuItem;
   onSelect: () => void;
 }) => {
-  const { open, openModal, closeModal } = useModal();
-  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+  const columns = useMemo(() => {
+    const cats = data?.categories ?? [];
+    return cats.map((col) => {
+      const footers = (col.links ?? []).filter(
+        (l) => /shop all/i.test(l) || /all .*$/i.test(l)
+      );
+      const items = (col.links ?? []).filter((l) => !footers.includes(l));
+      return { ...col, items, footers };
+    });
+  }, [data]);
 
-  const handleCardClick = (item: any) => {
-    setSelectedCategory(item);
-    openModal();
-  };
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  // why: keep active index valid when data changes
+  React.useEffect(() => {
+    if (activeIdx >= columns.length) setActiveIdx(0);
+  }, [columns.length, activeIdx]);
+
+  const active = columns[activeIdx];
 
   return (
     <Box
@@ -46,127 +246,164 @@ const MegaMenu = ({
         zIndex: 10,
         display: "flex",
         justifyContent: "center",
-        m: "auto",
+        pointerEvents: "auto",
       }}
+      role="dialog"
+      aria-label={data?.title ?? "Mega menu"}
     >
       <Box
         sx={{
-          width: { lg: "1310px", md: "100%", sm: "100%", xs: "100%" },
-          bgcolor: "white",
+          width: { lg: 1660, md: "100%", sm: "100%", xs: "100%" },
+          bgcolor: "#fff",
           display: "flex",
-          p: 4,
+          p: 3,
           boxShadow: 3,
           position: "absolute",
           top: 0,
-          height: 400,
+          minHeight: 200,
+          maxHeight: 400,
+          overflowY: "auto",
+          "&::-webkit-scrollbar": { height: "6px", width: 6 },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "#f1f1f1",
+            borderRadius: "20px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: COLORS.primary,
+            borderRadius: "20px",
+          },
+          gap: 4,
         }}
       >
-        {/* LEFT SIDE — Categories */}
+        {/* Left: Categories */}
         <Box
           sx={{
-            width: "70%",
             display: "flex",
+            gap: 2,
             flexWrap: "wrap",
-            gap: "60px",
-            pr: 2,
+            width: "70%",
+            justifyContent:'space-around',
+            alignContent: "flex-start",
           }}
+          role="list"
+          aria-label="Categories"
         >
-          {data.categories.map((category, index: number) => (
-            <Box key={index} sx={{ color: COLORS.primary }}>
-              <Typography variant="h6" sx={{ fontWeight: 500, mb: 1 }}>
+          {columns.map((category, idx) => {
+            const isActive = idx === activeIdx;
+            return (
+              <Typography
+                key={`cat-${category.name}-${idx}`}
+                variant="subtitle1"
+                onMouseEnter={() => setActiveIdx(idx)}
+                onFocus={() => setActiveIdx(idx)}
+                tabIndex={0}
+                sx={{
+                  fontWeight: 700,
+                  mb: 1,
+                  color: isActive ? COLORS.primary : COLORS.seconday,
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                  textDecoration: isActive ? "underline" : "none",
+                }}
+                aria-current={isActive ? "true" : undefined}
+              >
                 {category.name}
               </Typography>
-              <List sx={{ p: 0 }}>
-                {category.links.map((link, linkIndex: number) => (
-                  <ListItemButton
-                    key={linkIndex}
-                    sx={{ py: 0, px: 0 }}
-                    onClick={onSelect}
-                  >
-                    <ListItemText
-                      primary={link}
-                      sx={{
-                        fontSize: "12px",
-                        color: "#212121",
-                        "&:hover": {
-                          textDecoration: "underline",
-                          bgcolor: "transparent",
-                        },
-                      }}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-            </Box>
-          ))}
+            );
+          })}
         </Box>
 
-        {/* RIGHT SIDE — Category Cards */}
-        <Box
-          sx={{
-            width: "30%",
-            borderLeft:'2px solid gray',
-            overflowY: "scroll",
-            overflowX: "hidden",
-            display: "grid",
-            p: "5px",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 1,
-            "&::-webkit-scrollbar": {
-              width: "6px",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: COLORS.primary,
-              borderRadius: "10px",
-            },
-            "&::-webkit-scrollbar-thumb:hover": {
-              backgroundColor: COLORS.seconday,
-            },
-          }}
-        >
-          {CATEGORIES_DATA.map((item: any) => (
-            <Box
-              key={item.id}
-              onClick={() => handleCardClick(item)} 
+        {/* Right: Subcategories for active category */}
+        <Box sx={{ width: "30%" }}>
+          {active ? (
+            <List
+              dense
+              disablePadding
               sx={{
-                border: `2px solid ${item.borderColor}`,
-                borderRadius: "8px",
-                width: {md:"115px",sm:'95px',xs:'none'},
-                height: "160px",
-                overflow: "hidden",
-                cursor: "pointer",
+                p: 0,
+                m: 0,
+                overflow: "auto",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 3,
+                maxHeight: 290,
+                "&::-webkit-scrollbar": { width: 6 },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: "#ddd",
+                  borderRadius: 10,
+                },
               }}
+              aria-label={`Subcategories of ${active.name}`}
             >
-              <Box
-                component="img"
-                src={item.poster}
-                alt={item.title}
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  textAlign: "center",
-                  p: 0.5,
-                  fontWeight: 500,
-                  color: COLORS.black,
-                }}
-              >
-                {item.title}
-              </Typography>
-            </Box>
-          ))}
+              {active.items.map((link, linkIndex: number) => (
+                <ListItemButton
+                  key={`item-${active.name}-${link}-${linkIndex}`}
+                  sx={{
+                    py: 0.25,
+                    px: 0,
+                    "&:hover": { bgcolor: "transparent" },
+                  }}
+                  disableRipple
+                  onClick={onSelect}
+                >
+                  <ListItemText
+                    primary={link}
+                    primaryTypographyProps={{
+                      fontSize: 14,
+                      color: "#212121",
+                    }}
+                    sx={{
+                      m: 0,
+                      "& .MuiListItemText-primary:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              ))}
+
+              {active.footers.length > 0 && (
+                <Box sx={{ pt: 0.75, width: "100%" }}>
+                  {active.footers.map((link, i) => (
+                    <ListItemButton
+                      key={`footer-${active.name}-${link}-${i}`}
+                      sx={{
+                        py: 0.25,
+                        px: 0,
+                        "&:hover": { bgcolor: "transparent" },
+                      }}
+                      disableRipple
+                      onClick={onSelect}
+                    >
+                      <ListItemText
+                        primary={link}
+                        primaryTypographyProps={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: COLORS.primary,
+                        }}
+                        sx={{
+                          m: 0,
+                          "& .MuiListItemText-primary:hover": {
+                            textDecoration: "underline",
+                          },
+                        }}
+                      />
+                    </ListItemButton>
+                  ))}
+                </Box>
+              )}
+            </List>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No subcategories
+            </Typography>
+          )}
         </Box>
       </Box>
-
-      {/* ✅ Product Popup */}
-      <ProductPopup open={open} onClose={closeModal} cate={selectedCategory} />
     </Box>
   );
 };
 
 export default MegaMenu;
+

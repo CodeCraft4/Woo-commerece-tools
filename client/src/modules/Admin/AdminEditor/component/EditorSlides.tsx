@@ -9,29 +9,24 @@ import { ArrowBackIosNew, ArrowForwardIos } from "@mui/icons-material";
 
 const EditorSlides = () => {
   const [firstSlide, setFirstSlide] = useState("");
-
   const location = useLocation();
 
-  // Log the form data when the component mounts
   useEffect(() => {
-    const data = location.state.formData;
-    if (location.state?.formData) {
-      setFirstSlide(data);
-    } else {
-      console.log("No edit design data received.");
-    }
+    const data = location?.state?.formData;
+    if (data) setFirstSlide(data);
+    else console.log("No edit design data received.");
   }, [location.state]);
 
-  var settings = {
+  const settings = {
     dots: false,
     infinite: false,
     slidesToShow: 1,
     slidesToScroll: 1,
-    autoplay: false, 
-    pauseOnHover: false, 
-    pauseOnFocus: false, 
-    swipe: false, 
-    draggable: false, 
+    autoplay: false,
+    pauseOnHover: false,
+    pauseOnFocus: false,
+    swipe: false,
+    draggable: false,
     arrows: true,
     prevArrow: (
       <Box
@@ -66,31 +61,10 @@ const EditorSlides = () => {
         <ArrowForwardIos sx={{ fontSize: 50, color: "black" }} />
       </Box>
     ),
-      responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 3,
-          slidesToScroll: 3,
-          infinite: true,
-          dots: true,
-        },
-      },
-      {
-        breakpoint: 600,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 2,
-          initialSlide: 2,
-        },
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
+    responsive: [
+      { breakpoint: 1024, settings: { slidesToShow: 1, slidesToScroll: 1 } },
+      { breakpoint: 600, settings: { slidesToShow: 1, slidesToScroll: 1 } },
+      { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1 } },
     ],
   };
 

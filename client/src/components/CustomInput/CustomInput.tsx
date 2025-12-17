@@ -1,4 +1,3 @@
-"use client";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import {
   Box,
@@ -11,31 +10,32 @@ import {
 import React, { useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
-type Option = {
-  label: string;
-  value: string | number;
-};
+type Option = { label: string; value: string | number };
 
 type InputTypes = {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: string;
+  value?: string | number;                   // <-- add value for controlled mode
+  type?: "text" | "number" | "password" | "select" | "email";
   label: string;
-  placeholder: string;
+  placeholder?: string;
   icon?: string;
-  register?: UseFormRegisterReturn;
+  register?: UseFormRegisterReturn;          
   error?: string;
   options?: Option[];
   description?: boolean;
-  defaultValue?: string;
+  defaultValue?: string | number;           
   multiline?: boolean;
+  showRequiredAsterisk?: boolean;
+  showSelectPlaceholder?: boolean;
 };
 
 const CustomInput = (props: InputTypes) => {
   const {
     label,
-    placeholder,
+    placeholder = "",
     icon,
     onChange,
+    value,
     type = "text",
     register,
     error,
@@ -43,50 +43,49 @@ const CustomInput = (props: InputTypes) => {
     defaultValue,
     multiline,
     options = [],
+    showRequiredAsterisk = true,
+    showSelectPlaceholder = true,
   } = props;
 
   const [showPassword, setShowPassword] = useState(false);
-
   const inputType = type === "password" && showPassword ? "text" : type;
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        textAlign: "left",
-        mb: 1.5,
-      }}
-    >
-      <Typography sx={{ fontWeight: 700, mb: "5px",fontSize:{md:'auto',sm:'auto',xs:'12px'} }}>
-        {label} <span style={{ color: "red" }}> *</span>
+    <Box sx={{ display: "flex", flexDirection: "column", textAlign: "left", mb: 1.5 }}>
+      <Typography sx={{ fontWeight: 700, mb: "5px", fontSize: { md: "auto", sm: "auto", xs: "12px" } }}>
+        {label}
+        {showRequiredAsterisk && <span style={{ color: "red" }}> *</span>}
       </Typography>
-
-      {/* Input container: Apply error styling here */}
 
       {type === "select" ? (
         <TextField
           select
           fullWidth
           variant="standard"
-          defaultValue={defaultValue || ""}
-          {...register}
+          value={value}
+          onChange={(e) => onChange?.(e as unknown as React.ChangeEvent<HTMLInputElement>)}
+          error={Boolean(error)}
+          helperText={error || " "}
           sx={{
-            py: "10px",
+            // py: "10px",
             px: "12px",
-            "&:focus": { outline: "none" },
+            display:'flex',
+            alignItems:'center',
             borderRadius: "12px",
-            border: "1px solid #ccc",
-            "& .MuiInputBase-root:before, & .MuiInputBase-root:after": {
-              borderBottom: "none !important",
-            },
-            "& .MuiInput-underline:before, & .MuiInput-underline:after": {
-              borderBottom: "none !important",
-            },
+            border: "1px solid",
+            borderColor: error ? "red" : "#ccc",
+            "& .MuiInputBase-root:before, & .MuiInputBase-root:after": { borderBottom: "none !important" },
+            "& .MuiInput-underline:before, & .MuiInput-underline:after": { borderBottom: "none !important" },
+            "&:hover": { borderColor: error ? "red" : "black" },
           }}
         >
+          {showSelectPlaceholder && (
+            <MenuItem disabled value="">
+              {placeholder || "Select..."}
+            </MenuItem>
+          )}
           {options.map((option) => (
-            <MenuItem key={option.value} value={defaultValue || option.value}>
+            <MenuItem key={String(option.value)} value={option.value}>
               {option.label}
             </MenuItem>
           ))}
@@ -96,57 +95,37 @@ const CustomInput = (props: InputTypes) => {
           sx={{
             display: "flex",
             alignItems: description ? "flex-start" : "center",
-            // CRITICAL: Set border color based on the presence of the error message string
-            border: `1px solid ${error ? "red" : "#ccc"}`,
+            border: "1px solid",
+            borderColor: error ? "red" : "#ccc",
             borderRadius: "12px",
             px: 1,
             transition: "all 0.2s",
-            // Maintain hover effect but ensure 'error' takes precedence
-            "&:hover": {
-              borderColor: error ? "red" : "black",
-            },
+            "&:hover": { borderColor: error ? "red" : "black" },
           }}
         >
-          {icon && (
-            <Box
-              component="img"
-              src={icon}
-              alt="icon"
-              sx={{ width: 24, height: 24, mr: 1 }}
-            />
-          )}
+          {icon && <Box component="img" src={icon} alt="icon" sx={{ width: 24, height: 24, mr: 1 }} />}
 
           <InputBase
             fullWidth
             type={inputType}
-            defaultValue={defaultValue}
             placeholder={placeholder}
+            defaultValue={defaultValue}
             onChange={onChange}
+            value={value as any}
             rows={multiline ? 6 : 0}
             multiline={multiline}
-            // The spread operator correctly applies the register return object
             {...register}
-            sx={{
-              py: "10px",
-              px: "12px",
-              "&:focus": { outline: "none" },
-            }}
+            sx={{ py: "10px", px: "12px", "&:focus": { outline: "none" } }}
           />
 
           {type === "password" && !description && (
-            <IconButton
-              onClick={() => setShowPassword(!showPassword)}
-              edge="end"
-              size="small"
-              sx={{ color: "grey.600" }}
-            >
+            <IconButton onClick={() => setShowPassword((s) => !s)} edge="end" size="small" sx={{ color: "grey.600" }}>
               {showPassword ? <VisibilityOff /> : <Visibility />}
             </IconButton>
           )}
         </Box>
       )}
 
-      {/* Error Message Text */}
       {error && (
         <Typography sx={{ mt: 1, fontSize: "13px", color: "red" }}>
           {error}

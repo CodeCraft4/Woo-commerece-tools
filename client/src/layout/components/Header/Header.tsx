@@ -13,19 +13,18 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
 import LOGO from "/assets/images/blackLOGO.png";
-import { Close, Logout, Person, Search, Settings } from "@mui/icons-material";
-import { megaMenuData, navLinks } from "../../../constant/data";
-import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Close, Logout, Person, Search, Settings } from "@mui/icons-material";
+import { useLocation, useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 import MegaMenu from "../../../components/MegaMenu/MegaMenu";
 import { useCartStore } from "../../../stores";
-import { Avatar, Badge, ListItemIcon, Menu, MenuItem } from "@mui/material";
+import { Avatar, Badge, Link, ListItemIcon, Menu, MenuItem } from "@mui/material";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { useAuth } from "../../../context/AuthContext";
 import RemindersDrawer from "../../../components/RemindersDrawer/RemindersDrawer";
-// import { useQuery } from "@tanstack/react-query";
-// import { fetchAllCategoriesFromDB } from "../../../source/source";
+import { fetchAllCategoriesFromDB } from "../../../source/source";
+import { useQuery } from "@tanstack/react-query";
 
 interface Props {
   window?: () => Window;
@@ -34,71 +33,101 @@ interface Props {
 const drawerWidth = 200;
 const navItems = ["Home", "About", "Contact"];
 
-// Define the type for a single category
-interface Category {
-  name: string;
-  links: string[];
+function useHScrollArrows() {
+  const listRef = React.useRef<HTMLUListElement | null>(null);
+  const [canLeft, setCanLeft] = React.useState(false);
+  const [canRight, setCanRight] = React.useState(false);
+  const update = React.useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const max = scrollWidth - clientWidth;
+    setCanLeft(scrollLeft > 0);
+    setCanRight(scrollLeft < max - 1);
+  }, []);
+
+  React.useEffect(() => {
+    update();
+    const el = listRef.current;
+    if (!el) return;
+    const onScroll = () => update();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      ro.disconnect();
+    };
+  }, [update]);
+
+  const scrollByAmount = React.useCallback((dir: "left" | "right") => {
+    const el = listRef.current;
+    if (!el) return;
+    const delta = Math.round(el.clientWidth * 0.8) * (dir === "left" ? -1 : 1);
+    el.scrollBy({ left: delta, behavior: "smooth" });
+  }, []);
+
+  return { listRef, canLeft, canRight, scrollByAmount };
 }
 
-// Define the type for a single mega menu item
-interface MegaMenuItem {
-  title: string;
-  categories: Category[];
-}
-
-// Define the type for the entire mega menu data object
-interface MegaMenuData {
-  Birthday: MegaMenuItem;
-  Cards: MegaMenuItem;
-  Gifts: MegaMenuItem;
-  "Flowers & Plants": MegaMenuItem;
-  "Alcohol Gifts": MegaMenuItem;
-  "Gift Vouchers": MegaMenuItem;
-  "For Business": MegaMenuItem;
-  "For Kids": MegaMenuItem;
-}
-
-type MegaMenuKeys = keyof MegaMenuData;
 
 export default function Header(props: Props) {
   const { window } = props;
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { cart } = useCartStore();
+  const location = useLocation()
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const [hoveredMenuItem, setHoveredMenuItem] =
-    React.useState<MegaMenuKeys | null>(null);
 
-  // const { data: navCategories } = useQuery({
-  //   queryKey: ["navCategories"],
-  //   queryFn: fetchAllCategoriesFromDB,
-  //   staleTime: 1000 * 60 * 60 * 24,
-  //   gcTime: 1000 * 60 * 60 * 24,
-  //   refetchOnWindowFocus: false,
-  //   refetchOnReconnect: false,
-  //   refetchOnMount: false,
-  // });
+  const { data: navCategories = [], isLoading, isError } = useQuery<any[]>({
+    queryKey: ["navCategories"],
+    queryFn: fetchAllCategoriesFromDB,
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
+  // Only strings for the top row
+  const mainCategoryNames = React.useMemo(
+    () => navCategories.map((c) => c.name).filter(Boolean),
+    [navCategories]
+  );
+
+  // Build a map: main name -> MegaMenuItem
+  const megaMenuMap: Record<string, any> = React.useMemo(() => {
+    const map: Record<string, any> = {};
+    for (const c of navCategories) {
+      const subs = c.subcategories ?? [];
+      const subSub = c.sub_subcategories ?? {};
+
+      const cols: any[] = subs.map((sub: any) => ({
+        name: sub,
+        links: (subSub[sub] ?? []).slice(0),
+      }));
+
+      map[c.name] = {
+        title: c.name,
+        categories: cols,
+      };
+    }
+    return map;
+  }, [navCategories]);
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
   };
 
-  const handleMouseEnter = (item: MegaMenuKeys) => {
-    setHoveredMenuItem(item);
-  };
-
-  const handleMouseLeave = () => {
-    setHoveredMenuItem(null);
-  };
-
-  const handleSelect = () => {
-    setHoveredMenuItem(null);
-  };
+  const [hoveredMenuItem, setHoveredMenuItem] = React.useState<string | null>(null);
+  const handleMouseEnter = (item: string) => setHoveredMenuItem(item);
+  const handleMouseLeave = () => setHoveredMenuItem(null);
+  const handleSelect = () => setHoveredMenuItem(null);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const { listRef, canLeft, canRight, scrollByAmount } = useHScrollArrows();
+
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -119,6 +148,10 @@ export default function Header(props: Props) {
     openModal: openLogout,
     closeModal: closeLogout,
   } = useModal();
+
+  if (isError) {
+    return <Box sx={{ p: 2, textAlign: "center" }}>Failed to load categories</Box>;
+  }
 
   const drawer = (
     <Box sx={{ textAlign: "center", pt: 8 }}>
@@ -541,65 +574,128 @@ export default function Header(props: Props) {
           </Drawer>
         </nav>
       </Box>
-      <Box
-        sx={{
-          width: "100%",
-          display: { md: "flex", sm: "flex", xs: "none" },
-          m: "auto",
-          flexDirection: "column",
-          position: "relative",
-          bgcolor: COLORS.primary,
-          mt: "3px",
-        }}
-        onMouseLeave={handleMouseLeave}
-      >
-        <List
+      {
+        location.pathname === USER_ROUTES.USER_PROFILE ? null :
+         <Box
           sx={{
-            display: "flex",
+            width: "100%",
+            display: { md: "flex", sm: "flex", xs: "none" },
             m: "auto",
-            color: "white",
-            p: 3,
-            width: { lg: "1360px", md: "100%", sm: "100%", xs: "auto" },
+            flexDirection: "column",
+            position: "relative",
+            bgcolor: COLORS.primary,
+            mt: "3px",
           }}
-        // onMouseLeave={handleMouseLeave}
+          onMouseLeave={handleMouseLeave}
         >
-          {navLinks.map((item) => (
-            <ListItem
-              key={item.name}
-              onMouseEnter={() => handleMouseEnter(item.name as MegaMenuKeys)}
-              sx={{
-                m: 0,
-                p: 0,
-                cursor: "pointer",
-                "&:hover": { color: COLORS.black },
-                flexGrow: 1,
-                fontSize: "14px",
-                display: "flex",
-                width: "100%",
-                justifyContent: "space-around",
-                color: COLORS.black,
-              }}
-            >
-              {item.name}
-            </ListItem>
-          ))}
-        </List>
-        <Box
-          sx={{
-            width: { lg: "1340px", md: "100%", sm: "", xs: "auto" },
-            display: "flex",
-            m: "auto",
-            justifyContent: "center",
-          }}
-        >
-          {hoveredMenuItem && megaMenuData[hoveredMenuItem] && (
-            <MegaMenu
-              data={megaMenuData[hoveredMenuItem]}
-              onSelect={handleSelect}
-            />
-          )}
+          {/* Left arrow */}
+          <IconButton
+            onClick={() => scrollByAmount("left")}
+            disabled={!canLeft}
+            sx={{
+              position: "absolute",
+              left: { lg: 100, md: 60, sm: 30, xs: 0 },
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 2,
+              bgcolor: "rgba(255,255,255,0.95)",
+              border: "1px solid #e5e7eb",
+              boxShadow: 1,
+              "&:hover": { bgcolor: "#fff" },
+              opacity: canLeft ? 1 : 0.5,
+              pointerEvents: canLeft ? "auto" : "none",
+            }}
+          >
+            <ChevronLeft />
+          </IconButton>
+
+          {/* Right arrow */}
+          <IconButton
+            onClick={() => scrollByAmount("right")}
+            disabled={!canRight}
+            sx={{
+              position: "absolute",
+              right: { lg: 100, md: 60, sm: 30, xs: 0 },
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 2,
+              bgcolor: "rgba(255,255,255,0.95)",
+              border: "1px solid #e5e7eb",
+              boxShadow: 1,
+              "&:hover": { bgcolor: "#fff" },
+              opacity: canRight ? 1 : 0.5,
+              pointerEvents: canRight ? "auto" : "none",
+            }}
+          >
+            <ChevronRight />
+          </IconButton>
+
+          <List
+            ref={listRef}
+            disablePadding
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              p: 3,
+              m: "auto",
+              flexWrap: "nowrap",
+              overflowX: "auto",
+              scrollBehavior: "smooth",
+              width: { lg: 1440, md: '1024px', sm: '700px', xs: "100%" },
+              // Hide scrollbar
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+              position: "relative",
+              maskImage:
+                "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
+            }}
+          >
+            {isLoading && <Box sx={{ pt: 2, textAlign: "center", justifyContent: 'center', display: 'flex', m: 'auto' }}>Loading...</Box>}
+
+            {mainCategoryNames.map((name) => (
+              <ListItem
+                key={name}
+                disableGutters
+                disablePadding
+                onMouseEnter={() => handleMouseEnter(name)}
+                sx={{ flex: "0 0 auto", width: "auto" }}
+              >
+                <Link
+                  href={`${USER_ROUTES.VIEW_ALL}/${name}`}
+                  sx={{
+                    m: 0,
+                    p: 0,
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    fontSize: 16,
+                    color: COLORS.black,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                    "&:hover": { color: "rgba(46, 46, 46, 1)" },
+                  }}
+                >
+                  {name}
+                </Link>
+              </ListItem>
+            ))}
+          </List>
+
+          <Box
+            sx={{
+              width: { lg: "1340px", md: "100%", sm: "", xs: "auto" },
+              display: "flex",
+              m: "auto",
+              justifyContent: "center",
+            }}
+          >
+            {hoveredMenuItem && megaMenuMap[hoveredMenuItem] && (
+              <MegaMenu data={megaMenuMap[hoveredMenuItem]} onSelect={handleSelect} />
+            )}
+          </Box>
         </Box>
-      </Box>
+      }
+
 
       {isOpenLogout && (
         <ConfirmModal open={isOpenLogout} onCloseModal={closeLogout} />

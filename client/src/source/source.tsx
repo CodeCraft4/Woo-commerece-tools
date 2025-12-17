@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/supabase";
+import { toast } from 'react-hot-toast';
 
 // Fetch all cards from the database
 export const fetchAllCardsFromDB = async () => {
@@ -25,6 +26,21 @@ export const fetchCardCount = async () => {
 };
 
 
+export const fetchAllUsersFromDB = async (): Promise<any[]> => {
+  const { data, error } = await supabase
+    .from("Users")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data || []);
+};
+
+export const deleteUserById = async (id: number | string) => {
+  const { error } = await supabase.from("Users").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return id;
+};
+
 // Fetch all Orders from DB.
 export const fetchAllOrders = async () => {
   const { data, error } = await supabase
@@ -35,7 +51,6 @@ export const fetchAllOrders = async () => {
   if (error) throw new Error(error.message);
   return data;
 };
-
 
 // Fetch all Orders Length.
 export const fetchOrderCount = async () => {
@@ -50,23 +65,221 @@ export const fetchOrderCount = async () => {
 
 // Fetch All Blogs from Db
 export const fetchAllBlogs = async () => {
-    const { data, error } = await supabase
-        .from("blogs")
-        .select("*")
-        .order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("blogs")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-    if (error) {
-        console.error("Error fetching blogs:", error);
-        return [];
-    }
+  if (error) {
+    toast.error("Error fetching blogs:");
+    return [];
+  }
 
-    return data || [];
+  return data || [];
 };
 
-// Delete Blogs by Id from DB
-export const deleteBlog = async (id: string) => {
-  const { error } = await supabase.from("blogs").delete().eq("id", id);
+export async function fetchBlogByParam(param: string): Promise<any | null> {
+  if (!param) return null;
+
+  // 1) If numeric: query by numeric id
+  const isNumeric = /^[0-9]+$/.test(param);
+
+  if (isNumeric) {
+    const numericId = Number(param);
+    const { data, error } = await supabase
+      .from("blogs")
+      .select("*")
+      .eq("id", numericId)
+      .single();
+
+    if (!error && data) return data;
+    // if not found, fall through and try as slug/uuid just in case
+  }
+
+  // 2) Try id as string (uuid/text)
+  {
+    const { data, error } = await supabase
+      .from("blogs")
+      .select("*")
+      .eq("id", param)
+      .single();
+
+    if (!error && data) return data;
+  }
+
+  // 3) Try slug (recommended to have a unique index on blogs.slug)
+  {
+    const { data, error } = await supabase
+      .from("blogs")
+      .select("*")
+      .eq("slug", param)
+      .single();
+
+    if (!error && data) return data;
+  }
+
+  return null;
+}
+
+
+// Fetch all template designs from DB
+export const fetchAllTempletDesigns = async () => {
+  const { data, error } = await supabase
+    .from("templetDesign")
+    .select("*");
+
+  if (error) {
+    console.error("Error fetching template designs:", error);
+    return [];
+  }
+
+  return data || [];
+};
+
+
+// Fetch All card Length
+export const fetchTempletCardCount = async () => {
+  const { count, error } = await supabase
+    .from("templetDesign")
+    .select("*", { count: "exact", head: true });
 
   if (error) throw new Error(error.message);
-  return true;
+  return count;
 };
+
+
+// db/templetDesign.ts
+export const fetchTempletDesignById = async (id: string) => {
+  const { data, error } = await supabase
+    .from("templetDesign")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error("Error fetching template:", error);
+    return null;
+  }
+
+  return data;
+};
+
+
+// Blogs-----------------------------
+export async function saveBlog({
+  title,
+  content_html,
+  meta = {},
+}: {
+  title: string;
+  content_html: string;
+  meta?: any['meta'];
+}) {
+  if (!title?.trim()) throw new Error('Title is required');
+  if (!content_html?.trim()) throw new Error('HTML content is required');
+
+  const { data, error } = await supabase
+    .from('blogs')
+    .insert([{ title, content_html, meta }])
+    .select()
+    .single();
+  if (error) throw error;
+  toast.success("Blogs is Added")
+  return data;
+}
+
+// glue for your component
+export async function submitBlog({
+  title,
+  html,
+  meta,
+}: {
+  title: string;
+  html: string;
+  meta: { fontFamily?: string; defaultFontPx?: number; color?: string };
+}) {
+  return saveBlog({ title, content_html: html, meta });
+}
+
+export async function updateBlog(id: string, input: {
+  title: string;
+  content_html: string;
+  meta?: any['meta'];
+}): Promise<any> {
+  const { data, error } = await supabase
+    .from('blogs')
+    .update({ title: input.title, content_html: input.content_html, meta: input.meta ?? {} })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteBlog(id: string): Promise<void> {
+  const { error } = await supabase.from('blogs').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function fetchBlogById(id: string): Promise<any> {
+  if (!id || typeof id !== 'string') throw new Error('fetchBlogById: id is required');
+
+  const { data, error } = await supabase
+    .from('blogs')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    // why: surface "not found" or SQL errors clearly
+    throw new Error(error.message || 'Failed to fetch blog');
+  }
+  return data;
+}
+
+
+// For Video Toturial Adding
+export async function saveTutorial(input: any): Promise<any> {
+  const { data, error } = await supabase.from('tutorials').insert([input]).select().single();
+  toast.success("Toturial is save successfully")
+  if (error) throw new Error(error.message || 'Failed to save tutorial');
+  return data;
+}
+
+/** Update */
+export async function updateTutorial(id: string, input: any): Promise<any> {
+  const { data, error } = await supabase
+    .from('tutorials')
+    .update(input)
+    .eq('id', id)
+    .select()
+    .single();
+  toast.success("Updated Toturial is Successfully ")
+  if (error) throw new Error(error.message || 'Failed to update tutorial');
+  return data as any;
+}
+
+/** Delete */
+export async function deleteTutorial(id: string): Promise<void> {
+  const { error } = await supabase.from('tutorials').delete().eq('id', id);
+  if (error) throw new Error(error.message || 'Failed to delete tutorial');
+}
+
+// (Optional) fetchAll
+export async function fetchAllTutorials(): Promise<any[]> {
+  const { data, error } = await supabase
+    .from('tutorials')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message || 'Failed to fetch tutorials');
+  return (data ?? []) as any[];
+}
+
+export async function fileToBase64Url(file: File): Promise<string> {
+  return await new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result as string);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}

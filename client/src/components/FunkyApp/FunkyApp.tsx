@@ -98,7 +98,7 @@ const FunkyApp = () => {
       <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>
         <Box
           component={"img"}
-          src="/assets/images/AppBanner.png"
+          src="/assets/images/AppBanners.png"
           alt="mobile app"
           width={"100%"}
           height={"100%"}
