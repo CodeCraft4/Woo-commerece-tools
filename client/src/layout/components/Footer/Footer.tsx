@@ -1,11 +1,41 @@
-import { Box, List, ListItem, Typography } from "@mui/material";
+// src/layout/Footer/Footer.tsx
+import { useState, useEffect } from "react";
+import { Box, List, ListItem, Menu, MenuItem, Typography } from "@mui/material";
 import { COLORS } from "../../../constant/color";
 import { FooterLinks, PAYMENT_CARD } from "../../../constant/data";
 import { useAuth } from "../../../context/AuthContext";
-import { USER_ROUTES } from './../../../constant/route';
+import { USER_ROUTES } from "./../../../constant/route";
+
+type Region = "UK" | "US";
+
+const FLAGS: Record<Region, string> = {
+  UK: "https://www.funkypigeon.com/_next/image?url=%2Fimages%2Fflags%2Fuk-icon.jpg&w=32&q=30",
+  US: "https://static.vecteezy.com/system/resources/thumbnails/015/698/734/small/official-flag-of-united-stated-in-circle-shape-nation-flag-illustration-png.png",
+};
 
 const Footer = () => {
-  const { user } = useAuth()
+  const { user } = useAuth();
+
+  // region selection (default UK)
+  const [region, setRegion] = useState<Region>("UK");
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(anchorEl);
+
+  useEffect(() => {
+    // why: optionally restore selection (comment out if not needed)
+    // const saved = localStorage.getItem("region") as Region | null;
+    // if (saved === "UK" || saved === "US") setRegion(saved);
+  }, []);
+
+  const handleOpenMenu = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+  const handleCloseMenu = () => setAnchorEl(null);
+  const selectRegion = (r: Region) => {
+    setRegion(r);
+    // localStorage.setItem("region", r); // why: persist choice
+    handleCloseMenu();
+    // TODO: trigger currency/locale switch if needed
+  };
+
   return (
     <Box
       sx={{
@@ -46,13 +76,11 @@ const Footer = () => {
                     mb: { md: 1.5, sm: 1.5, xs: "auto" },
                     textAlign: "start",
                     px: 0,
-                    "&:hover": {
-                      textDecoration: "underline",
-                    },
+                    "&:hover": { textDecoration: "underline" },
                   }}
                 >
                   <a
-                    href={!user ? USER_ROUTES.SIGNIN : link.path}
+                    href={!user && link.path === USER_ROUTES.COMMUNITY_HUB ? USER_ROUTES.SIGNIN : link.path}
                     style={{ textDecoration: "none", color: COLORS.black }}
                   >
                     {link.name}
@@ -91,61 +119,12 @@ const Footer = () => {
               mb: 3,
             }}
           >
-            <a href="#">
-              <Box
-                component={"img"}
-                src="/assets/icons/facebook.svg"
-                sx={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: 50,
-                }}
-              />
-            </a>
-            <a href="#">
-              <Box
-                component={"img"}
-                src="/assets/icons/tiktok.svg"
-                sx={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: 50,
-                }}
-              />
-            </a>
-            <a href="#">
-              <Box
-                component={"img"}
-                src="/assets/icons/instagram.svg"
-                sx={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: 50,
-                }}
-              />
-            </a>
-            <a href="#">
-              <Box
-                component={"img"}
-                src="/assets/icons/youtube.svg"
-                sx={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: 50,
-                }}
-              />
-            </a>
-            <a href="#">
-              <Box
-                component={"img"}
-                src="/assets/icons/DIYP.svg"
-                sx={{
-                  width: "35px",
-                  height: "35px",
-                  borderRadius: 50,
-                }}
-              />
-            </a>
+            <a href="#"><Box component={"img"} src="/assets/icons/facebook.svg" sx={{ width: 40, height: 40, borderRadius: 50 }} /></a>
+            <a href="#"><Box component={"img"} src="/assets/icons/tiktok.svg" sx={{ width: 40, height: 40, borderRadius: 50 }} /></a>
+            <a href="#"><Box component={"img"} src="/assets/icons/instagram.svg" sx={{ width: 40, height: 40, borderRadius: 50 }} /></a>
+            <a href="#"><Box component={"img"} src="/assets/icons/youtube.svg" sx={{ width: 40, height: 40, borderRadius: 50 }} /></a>
+            <a href="#"><Box component={"img"} src="/assets/icons/DIYP.svg" sx={{ width: 35, height: 35, borderRadius: 50 }} /></a>
+            <a href="#"><Box component={"img"} src="/assets/icons/pinterest.png" sx={{ width: 35, height: 35, borderRadius: 50 }} /></a>
           </Box>
         </Box>
 
@@ -181,11 +160,7 @@ const Footer = () => {
                 mb: { md: 0, sm: 1, xs: 2 },
               }}
             >
-              <Box
-                component={"img"}
-                src="/assets/icons/Apple.svg"
-                sx={{ width: 30 }}
-              />
+              <Box component={"img"} src="/assets/icons/Apple.svg" sx={{ width: 30 }} />
               <Box>
                 <Typography fontSize={"10px"}>Download on the</Typography>
                 <Typography variant="h6">App Store</Typography>
@@ -205,13 +180,9 @@ const Footer = () => {
                 gap: 2,
               }}
             >
-              <Box
-                component={"img"}
-                src="/assets/icons/Playstore.svg"
-                sx={{ width: 30 }}
-              />
+              <Box component={"img"} src="/assets/icons/Playstore.svg" sx={{ width: 30 }} />
               <Box>
-                <Typography fontSize={"10px"}>ANDRIOD APP ON</Typography>
+                <Typography fontSize={"10px"}>ANDROID APP ON</Typography>
                 <Typography variant="h6">Google Play</Typography>
               </Box>
             </Box>
@@ -219,6 +190,7 @@ const Footer = () => {
         </Box>
       </Box>
 
+      {/* Shop by Region */}
       <Box
         sx={{
           display: { md: "flex", sm: "flex", xs: "block" },
@@ -247,6 +219,7 @@ const Footer = () => {
           >
             Shop by Region
           </Typography>
+
           <Box
             sx={{
               display: "flex",
@@ -256,12 +229,45 @@ const Footer = () => {
               mb: 3,
             }}
           >
+            {/* Clickable current flag + label */}
             <Box
-              component={"img"}
-              src="https://www.funkypigeon.com/_next/image?url=%2Fimages%2Fflags%2Fuk-icon.jpg&w=32&q=30"
-            />
+              component="button"
+              onClick={handleOpenMenu}
+              aria-label={`Select country, current ${region}`}
+              style={{ all: "unset", cursor: "pointer" }}
+              sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}
+            >
+              <Box
+                component={"img"}
+                src={FLAGS[region]}
+                alt={region}
+                sx={{ width: 35, height: 35, borderRadius: 1 }}
+              />
+              {/* <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{region}</Typography> */}
+            </Box>
+
+            {/* Upward-opening menu */}
+            <Menu
+              anchorEl={anchorEl}
+              open={menuOpen}
+              onClose={handleCloseMenu}
+              anchorOrigin={{ vertical: "top", horizontal: "left" }}
+              transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+              MenuListProps={{ dense: true }}
+              PaperProps={{ elevation: 3, sx: { mt: -1 } }}
+            >
+              <MenuItem onClick={() => selectRegion("UK")} selected={region === "UK"}>
+                <Box component="img" src={FLAGS.UK} alt="UK" sx={{ width: 20, height: 20, mr: 1 }} />
+                UK
+              </MenuItem>
+              <MenuItem onClick={() => selectRegion("US")} selected={region === "US"}>
+                <Box component="img" src={FLAGS.US} alt="US" sx={{ width: 20, height: 20, mr: 1 }} />
+                US
+              </MenuItem>
+            </Menu>
           </Box>
         </Box>
+
         <Box
           sx={{
             width: { md: "50%", sm: "100%", xs: "100%" },
@@ -272,41 +278,13 @@ const Footer = () => {
         >
           {PAYMENT_CARD.map((e, i) => (
             <a key={i} href={e.href}>
-              <Box
-                component={"img"}
-                src={e.icon}
-                sx={{ cursor: "pointer", width: "45px", height: "45px" }}
-              />
+              <Box component={"img"} src={e.icon} sx={{ cursor: "pointer", width: 45, height: 45 }} />
             </a>
           ))}
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          display: { md: "flex", sm: "flex", xs: "block" },
-          justifyContent: "start",
-          mt: { md: 0, sm: 0, xs: 15 },
-          mb: { md: 2, sm: 3, xs: 0 },
-          textAlign: "start",
-        }}
-      >
-        <Typography
-          sx={{
-            fontSize: { md: "14px", sm: "12px", xs: "14px" },
-            width: { md: "900px", sm: "100%", xs: "100%" },
-            fontWeight: 300,
-            textAlign: "start",
-          }}
-        >
-          © 2025 DIYPersonalizatoin.com Limited, County Gates, Ashton Road,
-          Bristol, BS3 2JH, UK Registered Office: Century House, Wakefield 41
-          Industrial Estate, Wakefield WF2 0XG, UK
-          <a href="#" style={{ textDecoration: "none", marginLeft: "5px" }}>
-            Term and Condition
-          </a>
-        </Typography>
-      </Box>
+      <Typography sx={{ display: 'flex', justifyContent: 'center', p: 2, alignItems: 'center', fontSize: 13, color: 'gray' }}>8 Dodwood, Welwyn Garden City, Hertfordshire</Typography>
     </Box>
   );
 };

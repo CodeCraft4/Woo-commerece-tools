@@ -1,46 +1,99 @@
+import React, { useRef } from "react";
 import { Box, Typography } from "@mui/material";
+import { useCardEditor } from "../../../../../context/AdminEditorContext";
+import type { EditorCanvasHandle } from "../EditorCanvas/EditorCanvas";
+import EditorCanvas from "../EditorCanvas/EditorCanvas";
+import SharedToolbar from "../SharedToolbar/SharedToolbar";
 
-const MainSlide = () => {
+
+const MainSlide: React.FC = () => {
+  const {
+    midLeftElements,
+    setMidLeftElements,
+    midLeftTextElements,
+    setMidLeftTextElements,
+    midLeftStickerElements,
+    setMidLeftStickerElements,
+    midRightElements,
+    setMidRightElements,
+    midRightTextElements,
+    setMidRightTextElements,
+    midRightStickerElements,
+    setMidRightStickerElements,
+    activeMid,
+    setActiveMid,
+  } = useCardEditor();
+
+  const leftRef = useRef<EditorCanvasHandle | null>(null);
+  const rightRef = useRef<EditorCanvasHandle | null>(null);
+  const activeRef = activeMid === "left" ? leftRef : rightRef;
+
+  const isLeftActive = activeMid === "left";
+  const isRightActive = activeMid === "right";
+
   return (
     <Box>
       <Typography sx={{ fontSize: "25px" }}>Main Slide</Typography>
+
       <Box
         sx={{
           display: { md: "flex", sm: "flex", xs: "block" },
-          p: 2,
           width: "100%",
+          gap: "20px",
+          justifyContent: "center",
+          position: "relative",
         }}
       >
         <Box
+          onClick={() => setActiveMid("left")}
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            bgcolor: "lightgray",
-            height: { md: "700px", sm: "700px", xs: 400 },
-            border: "1px solid gray",
-            boxShadow: "3px 4px 9px lightgray",
-            borderRadius: "12px",
-            mb: { md: 0, sm: 0, xs: 1 },
+            borderRadius: "14px",
+            transition: "all .15s ease",
+            border: isLeftActive ? "2px solid #1976d2" : "1px dashed rgba(0,0,0,0.2)",
+            boxShadow: isLeftActive ? "0 0 0 4px rgba(25,118,210,0.12)" : "none",
+            opacity: isLeftActive ? 1 : 0.5,
+            cursor: "pointer",
           }}
         >
-          fadfadsfa
+          <EditorCanvas
+            ref={leftRef}
+            elements={midLeftElements}
+            setElements={setMidLeftElements}
+            textElements={midLeftTextElements}
+            setTextElements={setMidLeftTextElements}
+            stickerElements={midLeftStickerElements}
+            setStickerElements={setMidLeftStickerElements}
+            onFocus={() => setActiveMid("left")}
+            disabled={!isLeftActive}
+          />
         </Box>
+
+        <Box sx={{ position: "relative", alignSelf: "flex-start" }}>
+          <SharedToolbar activeRef={activeRef} />
+        </Box>
+
         <Box
+          onClick={() => setActiveMid("right")}
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            bgcolor: "lightgray",
-            height: { md: "700px", sm: "700px", xs: 400 },
-            border: "1px solid gray",
-            boxShadow: "3px 4px 9px lightgray",
-            borderRadius: "12px",
+            borderRadius: "14px",
+            transition: "all .15s ease",
+            border: isRightActive ? "2px solid #1976d2" : "1px dashed rgba(0,0,0,0.2)",
+            boxShadow: isRightActive ? "0 0 0 4px rgba(25,118,210,0.12)" : "none",
+            opacity: isRightActive ? 1 : 0.5,
+            cursor: "pointer",
           }}
         >
-          fasdf
+          <EditorCanvas
+            ref={rightRef}
+            elements={midRightElements}
+            setElements={setMidRightElements}
+            textElements={midRightTextElements}
+            setTextElements={setMidRightTextElements}
+            stickerElements={midRightStickerElements}
+            setStickerElements={setMidRightStickerElements}
+            onFocus={() => setActiveMid("right")}
+            disabled={!isRightActive}
+          />
         </Box>
       </Box>
     </Box>

@@ -2,7 +2,7 @@ import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
 import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../../../../constant/color";
 import { useEffect, useState } from "react";
-import { fetchCardCount } from "../../../../../source/source";
+import { fetchCardCount, fetchTempletCardCount } from "../../../../../source/source";
 
 // --- Mock Data ---
 const productData = [
@@ -55,6 +55,7 @@ const MinimalGradientAreaChart = ({
 const TotalProductChart = () => {
 
   const [cardCount, setCardCount] = useState(0);
+  const [templetCardCount, setTempletCardCount] = useState(0);
 
   useEffect(() => {
     const loadCount = async () => {
@@ -68,6 +69,23 @@ const TotalProductChart = () => {
 
     loadCount();
   }, []);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const templetCardCount: any = await fetchTempletCardCount();
+        setTempletCardCount(templetCardCount);
+      } catch (err) {
+        console.error("Error fetching cards count:", err);
+      }
+    };
+
+    loadCount();
+  }, []);
+
+  const totalCards = cardCount + templetCardCount;
+
+
   return (
     <Box
       sx={{
@@ -135,7 +153,7 @@ const TotalProductChart = () => {
               fontWeight="bold"
               sx={{ my: 1, fontSize: "2rem" }}
             >
-              0{cardCount?.toLocaleString()}
+              {totalCards?.toLocaleString()}
             </Typography>
             <Typography
               variant="body2"

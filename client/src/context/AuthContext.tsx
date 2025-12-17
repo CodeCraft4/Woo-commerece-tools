@@ -27,7 +27,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (input: SignUpInput) => Promise<any>;
   signIn: (input: SignInInput) => Promise<any>;
-  signInWithGoogle: () => Promise<any>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -41,29 +41,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Watch for auth state changes
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/`
+      : "https://diypersonalisation.com/";
+
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        // ✅ First, check if we have a Supabase session
         const {
           data: { session },
           error,
         } = await supabase.auth.getSession();
-
-        if (error) {
-          console.warn("Supabase getSession error:", error);
-        }
-
-        if (session?.user) {
-          setUser(session.user);
-        } else {
-          // ✅ Try localStorage fallback (optional)
-          const local = localStorage.getItem("supabase.auth.token");
-          if (local) {
-            console.log("Found local session, waiting for Supabase restore...");
-          }
-        }
+        if (error) console.warn("Supabase getSession error:", error);
+        setUser(session?.user ?? null);
       } catch (err) {
         console.error("Error fetching session:", err);
       } finally {
@@ -81,7 +72,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       listener.subscription.unsubscribe();
     };
   }, []);
-  // ✅ Helper: Insert user into "Users" table if not already there
+
+  // Upsert user record in "Users" table
   const upsertUser = async (authUser: User) => {
     try {
       const { data: existing } = await supabase
@@ -95,12 +87,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           {
             auth_id: authUser.id,
             full_name:
-              authUser.user_metadata?.full_name ||
-              authUser.user_metadata?.name ||
+              (authUser.user_metadata as any)?.full_name ||
+              (authUser.user_metadata as any)?.name ||
               "",
             email: authUser.email,
-            phone: authUser.user_metadata?.phone || null,
-            password: null, 
+            phone: (authUser.user_metadata as any)?.phone || null,
+            password: null, // why: never store provider passwords
           },
         ]);
       }
@@ -109,67 +101,58 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // 🔹 Email + Password Signup
   const signUp = async ({ fullName, phone, email, password }: SignUpInput) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: fullName, phone },
-      },
+      options: { data: { full_name: fullName, phone } },
     });
-
     if (error) throw error;
-
-    const authUser = data.user;
-    if (authUser) {
-      await upsertUser(authUser);
-    }
-
+    if (data.user) await upsertUser(data.user);
     return data;
   };
 
-  // 🔹 Email + Password Signin
   const signIn = async ({ email, password }: SignInInput) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) throw error;
-
-
-    const authUser = data.user;
-    if (authUser) {
-      await upsertUser(authUser);
-    }
-
+    if (data.user) await upsertUser(data.user);
     return data;
   };
 
-  const redirectTo =
-    window.location.hostname === "localhost"
-      ? "http://localhost:5173/"
-      : "https://diypersonalisation.com/";
-  // 🔹 Google Signin
-  const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+  const signInWithGoogle = async (): Promise<void> => {
+    // why: signInWithOAuth will navigate away; only show success after we return authenticated
+    const { error, data } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo,
-        queryParams: {
-          prompt: "select_account",
-        },
+        queryParams: { prompt: "select_account" },
       },
     });
 
-    toast.success("User is Logged In")
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error("Google OAuth error:", error);
+      toast.error(error.message || "Google sign-in failed");
+      throw error;
+    }
+
+    // If no error, browser will redirect to Google immediately.
+    // After redirect back, onAuthStateChange will set the user.
+    if (!data?.url) {
+      // Defensive: if SDK didn’t redirect (popup blockers or SSR)
+      toast.error("Unable to start Google sign-in.");
+    }
   };
 
-  // 🔹 Signout
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Sign out error:", error);
+      toast.error("Sign out failed");
+      return;
+    }
     setUser(null);
   };
 
@@ -182,18 +165,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signOut,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// ✅ Custom Hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };

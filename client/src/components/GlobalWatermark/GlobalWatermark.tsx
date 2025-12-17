@@ -30,7 +30,7 @@ const GlobalWatermark: React.FC = () => {
 
     // 3️⃣ Detect certain keys often linked with screenshots or printing
     const handleKeyDown = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
+      const key = e.key?.toLowerCase();
       const combo = [
         "printscreen",
         "f12", // DevTools

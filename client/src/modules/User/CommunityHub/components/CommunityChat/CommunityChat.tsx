@@ -24,7 +24,7 @@ const CommunityChat = () => {
 
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const { user } = useAuth(); // from context
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     const { data: userProfile } = useQuery({

@@ -25,8 +25,8 @@ const Sustainibility = () => {
                 </Box>
 
                 <Typography sx={{
-                    fontFamily: "'Dancing Script', Arial, sans-serif",
-                    fontSize: { md: '60px', sm: '50px', xs: '30px' },
+                    // fontFamily: "'Dancing Script', Arial, sans-serif",
+                    fontSize: { md: '40px', sm: '30px', xs: '20px' },
                     color: COLORS.seconday,
                     p: 2,
                     textAlign: 'center',
@@ -53,8 +53,8 @@ const Sustainibility = () => {
 
 
                 <Typography sx={{
-                    fontFamily: "'Dancing Script', Arial, sans-serif",
-                    fontSize: { md: '60px', sm: '50px', xs: '30px' },
+                    // fontFamily: "'Dancing Script', Arial, sans-serif",
+                    fontSize: { md: '40px', sm: '30px', xs: '20px' },
                     color: COLORS.seconday,
                     p: 2,
                     textAlign: 'center',

@@ -27,6 +27,33 @@ const style = {
   //   p: 2,
 };
 
+function clearEditorStorage(opts?: { all?: boolean }) {
+  if (opts?.all) {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {/* ignore */ }
+    return;
+  }
+  try {
+    const KEYS = [
+      "selectedSize",
+      "categorieTemplet",
+      "3dModel",
+    ];
+    KEYS.forEach(k => localStorage.removeItem(k));
+    sessionStorage.removeItem("slides");
+
+    // remove any templet editor drafts (per productId)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("templetEditor:draft:")) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {/* ignore */ }
+}
+
 export type LayoutElement = {
   id: string;
   src?: string;
@@ -62,12 +89,13 @@ export type CategoryType = {
 type ProductsPopTypes = {
   open: boolean;
   onClose: () => void;
-  cate?: CategoryType;
+  cate?: CategoryType | any;
+  isTempletDesign?: boolean
 };
 
 
 const ProductPopup = (props: ProductsPopTypes) => {
-  const { open, onClose, cate } = props;
+  const { open, onClose, cate, isTempletDesign } = props;
   const [loading, setLoading] = useState(false);
   const { resetSlide1State } = useSlide1()
   const { resetSlide2State } = useSlide2()
@@ -85,29 +113,53 @@ const ProductPopup = (props: ProductsPopTypes) => {
   const handlePersonalize = () => {
     if (!cate) return;
     setLoading(true);
-    // ✅ And add or personalize a new card.
+
+    clearEditorStorage({ all: false });
+    localStorage.removeItem("selectedSize");
+    localStorage.removeItem("categorieTemplet");
+    localStorage.removeItem("3dModel");
+    sessionStorage.removeItem("slides");
     resetSlide1State();
     resetSlide2State();
     resetSlide3State();
     resetSlide4State();
 
-    if (user) {
-      setTimeout(() => {
+    // 🔥 Case 1 — Template Design
+    if (isTempletDesign && user) {
+      return setTimeout(() => {
+        navigate(`${USER_ROUTES.TEMPLET_EDITORS}/${cate.category}/${cate.id}`, {
+          state: {
+            templetDesing: cate
+          },
+        });
+        setLoading(false);
+      }, 1000);
+    }
+
+    // 🔥 Case 2 — User logged in
+    else if (user) {
+      return setTimeout(() => {
         navigate(`${USER_ROUTES.HOME}/${cate.id}`, {
           state: {
-            poster: cate.imageUrl || cate.lastpageImageUrl,
+            poster: cate.imageurl || cate.lastpageimageurl,
             plan: selectedPlan,
-            layout: cate?.polygonLayout,
+            layout: cate?.polygonlayout,
           },
         });
         setLoading(false);
       }, 2000);
-    } else
-      setTimeout(() => {
-        toast.error("You need to First Login"), navigate(USER_ROUTES.SIGNIN);
+    }
+
+    // 🔥 Case 3 — User not logged in
+    else {
+      return setTimeout(() => {
+        toast.error("You need to First Login");
+        navigate(USER_ROUTES.SIGNIN);
         setLoading(false);
       }, 2000);
+    }
   };
+
 
   const handleToggleZoom = () => {
     setIsZoomed((prev) => !prev);
@@ -130,19 +182,19 @@ const ProductPopup = (props: ProductsPopTypes) => {
       id: "square-card",
       title: "Square Card",
       desc: "For the little message",
-      price: cate?.actualPrice,
+      price: cate?.actualprice,
     },
     {
       id: "Medium square card",
       title: "Medium Square Card",
       desc: "IDEA Favourite",
-      price: cate?.actualPrice + 3,
+      price: cate?.actualprice + 3,
     },
     {
       id: "large square card",
       title: "Large Square Card",
       desc: "IDEA Favourite",
-      price: cate?.actualPrice + 5,
+      price: cate?.actualprice + 5,
     },
   ];
 
@@ -180,7 +232,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
             >
               <Box
                 component="img"
-                src={cate?.imageUrl || cate?.lastpageImageUrl || cate?.poster || cate?.cover_screenshot}
+                src={cate?.imageurl || cate.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url}
                 onClick={handleToggleZoom}
                 sx={{
                   width: "100%",
@@ -305,3 +357,4 @@ const isActivePay = {
   borderRadius: 2,
   boxShadow: "3px 7px 8px #eff1f1ff",
 };
+

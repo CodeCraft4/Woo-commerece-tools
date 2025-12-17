@@ -1,22 +1,33 @@
-import { Box, Container, Grid, Typography } from "@mui/material";
+import { Box, Container, Grid, IconButton, Typography } from "@mui/material";
 import Applayout from "../../../layout/Applayout";
-import { useState } from "react";
-import A4Img from "/assets/images/A4.png";
-import PrevewCardImg from "/assets/images/preview-card.png";
+import { useMemo, useState } from "react";
 import TableBgImg from "/assets/images/table.png";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { loadStripe } from '@stripe/stripe-js';
 import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
+import { ArrowBackIos } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { COLORS } from "../../../constant/color";
 
 const stripePromise = loadStripe(
-  "pk_test_51Qy8qWQOrHBOHXVwgcKXeKleaQbr43esHIWeeEuLCvE9SfmldVnMVYwnZVf72lHMKj6Hj6Pwh01ak5e7ZsTucB9I00xyfjVroR");
+  "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK");
+
+// live key: 
+// pk_live_51RPLagFqpxUy9vCxpTGqfngxVpbIOgogg8VY4pjGJBusMlc6XUDLmfeUxCFaWrKbFYxzPfybJMeu3aO7RrvSqFuN00zaRmAfgt
 
 const Subscription = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>("standard");
   const [loading, setLoading] = useState(false);
 
+  const slides = useMemo(() => {
+    try { return JSON.parse(sessionStorage.getItem("slides") || "{}"); }
+    catch { return {}; }
+  }, []);
+  const firstSlideUrl: string | undefined = slides?.slide1;
+
   const { user } = useAuth()
+  const navigate = useNavigate();
 
   const plans = [
     {
@@ -38,8 +49,7 @@ const Subscription = () => {
   const handleStripeOrder = async (plan: any) => {
     setLoading(true);
     try {
-      // const res = await fetch("https://diypersonalisationserver-production.up.railway.app/create-checkout-session", {
-      const res = await fetch("http://localhost:5000/create-checkout-session", {
+      const res = await fetch("https://diypersonalisation.com/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -47,7 +57,7 @@ const Subscription = () => {
           price: plan.price,
           user: {
             email: user?.email,
-            name: user?.user_metadata?.full_name || "Guest",
+            name: user?.user_metadata?.full_name || "User",
           },
         }),
       });
@@ -66,6 +76,7 @@ const Subscription = () => {
 
   return (
     <Applayout>
+
       <Box
         sx={{
           bgcolor: "white",
@@ -86,7 +97,9 @@ const Subscription = () => {
             fontWeight: "bold",
           }}
         >
-          Go big and upgrade your card!
+          <IconButton onClick={() => navigate(-4)}>
+            <ArrowBackIos fontSize='large' sx={{ color: 'black' }} />
+          </IconButton> Go big and upgrade your card!
         </Typography>
 
         <Container maxWidth="xl">
@@ -112,30 +125,99 @@ const Subscription = () => {
               }}
             >
               <Box
-                component={"img"}
-                src={A4Img}
-                alt="A4Img"
                 sx={{
                   position: "absolute",
-                  bottom: 100,
+                  bottom: 150,
                   left: { md: 200, sm: 200, xs: 50 },
-                  width: { md: 200, sm: 200, xs: 100 },
-                  height: { md: 280, sm: 280, xs: 150 },
+                  width: { md: 150, sm: 200, xs: 100 },
+                  height: { md: 200, sm: 280, xs: 150 },
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 2,
                 }}
-              />
+              >
+                <Box
+                  component={"img"}
+                  src={"/assets/images/A4.svg"}
+                  alt="A4Img"
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 2,
+                    display: "block",
+                  }}
+                />
+                <Typography
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    m: 0,
+                    p: 0,
+                    fontWeight: 700,
+                    pointerEvents: "none",
+                    userSelect: "none",
+                    fontSize: { md: 24, sm: 24, xs: 16 },
+                    color: COLORS.seconday
+                  }}
+                >
+                  A4
+                </Typography>
+              </Box>
+
+
               <Box
-                component={"img"}
-                src={PrevewCardImg}
-                alt="A4Img"
                 sx={{
                   position: "absolute",
-                  bottom: { md: 100, sm: 100, xs: 85 },
+                  bottom: { md: 150, sm: 100, xs: 85 },
                   right: { md: 100, sm: 100, xs: 0 },
                   width: previewSizes[selectedPlan].width,
                   height: previewSizes[selectedPlan].height,
                   transition: "all 0.3s ease",
                 }}
-              />
+              >
+                {/* A4 frame */}
+                <Box
+                  component="img"
+                  src={"/assets/images/A4.svg"}
+                  alt="A4 frame"
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 2,
+                    display: "block",
+                    pointerEvents: "none",
+                    userSelect: "none",
+                  }}
+                />
+
+                {/* Captured slide image placed inside the A4 */}
+                <Box
+                  component="img"
+                  src={firstSlideUrl || ""}
+                  alt="Your design"
+                  sx={{
+                    position: "absolute",
+                    top: "18%",
+                    left: "0%",
+                    right: "0%",
+                    bottom: "8%",
+                    width: "auto",
+                    height: "auto",
+                    maxWidth: "85%",
+                    maxHeight: "90%",
+                    margin: "auto",
+                    objectFit: "cover",
+                    display: firstSlideUrl ? "block" : "none",
+                    pointerEvents: "none",
+                    userSelect: "none",
+                  }}
+                />
+              </Box>
             </Grid>
 
             {/* Right Side - Plans */}

@@ -1,8 +1,8 @@
 import { Box } from "@mui/material";
 import CategoryCard from "../../../components/CategoryCard/CategoryCard";
 import MainLayout from "../../../layout/MainLayout";
-import { CATEGORIES_DATA } from "../../../constant/data";
-import ProductCard from "../../../components/ProductCard/ProductCard";
+// import { CATEGORIES_DATA } from "../../../constant/data";
+// import ProductCard from "../../../components/ProductCard/ProductCard";
 import AdvertisementCard from "../../../components/AdvertisementCard/AdvertisementCard";
 import PersonalGift from "../../../components/PersonalGift/PersonalGift";
 import Banner from "../../../components/Banner/Banner";
@@ -14,6 +14,12 @@ import Description from "../../../components/Description/Description";
 import { COLORS } from "../../../constant/color";
 import { useQuery } from "@tanstack/react-query";
 import CommingSoonOffers from "../../../components/CommingSoon/CommingSoon";
+import TempletsCardSlider from "../../../components/TempletsCard/TempletsCard";
+import { fetchAllCategoriesFromDB } from "../../../source/source";
+import WhyChoose from "./components/WhyChoose/WhyChoose";
+import VisualSection from "./components/VisualSection/VisualSection";
+import VideoSection from "./components/VideoSection/VideoSection";
+import BalloonSticker from "./components/BalloonSticker/BalloonSticker";
 
 const AdverstisementCard = [
   {
@@ -37,75 +43,16 @@ const AdverstisementCard = [
 ];
 
 const LandingHome = () => {
-  // const { user } = useAuth()
-  const fetchMockCategories = async () => {
-    return new Promise<typeof CATEGORIES_DATA>((resolve) => {
-      resolve(CATEGORIES_DATA);
-    });
-  };
 
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading } = useQuery({
     queryKey: ["categories"],
-    queryFn: fetchMockCategories,
+    queryFn: fetchAllCategoriesFromDB,
     staleTime: 1000 * 60 * 60 * 24,
     gcTime: 1000 * 60 * 60 * 24,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
   });
-
-
-
-  // const [draftData, setDraftData] = useState<any>(null);
-  // const {
-  //   open: isOpenDetailModal,
-  //   openModal: openDetailModal,
-  //   closeModal,
-  // } = useModal();
-  // const [selectedCate, setSelectedCate] = useState<any>(null);
-
-  // Fetch all Draft
-  // useEffect(() => {
-  //   if (!user) return;
-
-  //   const fetchDrafts = async () => {
-  //     const { data, error } = await supabase
-  //       .from("draft") // ✅ correct table name
-  //       .select("*")
-  //       .eq("user_id", user.id)
-  //       .order("created_at", { ascending: false });
-  //     if (error) {
-  //       console.error("❌ Error fetching drafts:", error.message);
-  //     } else {
-  //       setDraftData(data);
-  //     }
-  //   };
-
-  //   fetchDrafts();
-  // }, [user]);
-
-  // ✅ Handle click on draft card
-  // const handleOpenDraft = (draft: any) => {
-  //   setSelectedCate(draft);
-  //   openDetailModal();
-  // };
-
-  // const handleDelete = async (id: number) => {
-  //   if (!confirm("Are you sure you want to delete this?")) return;
-
-  //   const { error } = await supabase.from("drafts").delete().eq("id", id);
-
-  //   if (error) {
-  //     console.error("Delete failed:", error);
-  //     alert("Failed to delete item");
-  //     return;
-  //   }
-
-  //   // Remove locally
-  //   setDraftData((prev: any[]) => prev.filter((item) => item.id !== id));
-
-  //   alert("Deleted successfully!");
-  // };
 
 
   return (
@@ -145,12 +92,17 @@ const LandingHome = () => {
             },
           }}
         >
-          {categories?.map((cate) => (
+          {
+            isLoading && (
+              <Box>Loading...</Box>
+            )
+          }
+          {categories?.map((cate, index) => (
             <CategoryCard
-              key={cate.id}
+              key={index}
               id={cate.id}
-              poster={cate.poster}
-              title={cate.title}
+              poster={cate.image_base64}
+              title={cate.name}
               borderColor={`${cate.borderColor}`}
             />
           ))}
@@ -187,10 +139,13 @@ const LandingHome = () => {
           }}
         >
           {categories?.map((cate) => (
-            <ProductCard
+            <CategoryCard
               key={cate.id}
-              poster={cate.poster}
-              borderColor={cate.borderColor}
+              id={cate.id}
+              poster={cate.image_base64}
+              title={cate.name}
+              borderColor={`${cate.borderColor}`}
+              seasonalCard
             />
           ))}
         </Box>
@@ -216,120 +171,19 @@ const LandingHome = () => {
           </Box>
         </Box>
 
+        <VisualSection />
+
+        <VideoSection />
 
         {/* Birthday Slider CArd */}
         <BirthdaySlider
           title="Make it a Birthday to Remember!..."
-          description="Show you give a DIY and celebrate their birthday with a personalised card for him, for her or for kids!"
+          description={`DIY Personalisation has been created for busy, creative, or last minute legends who want
+          personalised magic without the stress of delivery or high prices`}
         />
 
         {/* VIP Funkey just for offer */}
         <VIPFunky />
-
-
-        {/* Draft..Card  */}
-        {/* {draftData?.length > 0 &&
-          <Box sx={{ p: 2, borderRadius: 2 }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
-              }}
-            >
-              <Typography sx={{ fontSize: 25, fontWeight: "bold" }}>Draft</Typography>
-              <LandingButton title="See All" personal width="140px" />
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-              {draftData?.map((e: any) => (
-                <Box
-                  key={e.id}
-                  sx={{
-                    width: 200,
-                    height: 280,
-                    border: "1px solid gray",
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    position: "relative",
-                    cursor: "pointer",
-
-                    "&:hover .overlay": {
-                      opacity: 1,
-                    },
-                  }}
-                >
-                  {e.cover_screenshot ? (
-                    <Box
-                      component="img"
-                      src={e.cover_screenshot}
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: 2,
-                      }}
-                    />
-                  ) : (
-                    <Typography sx={{ color: "gray", mt: 4, textAlign: "center" }}>
-                      No image
-                    </Typography>
-                  )}
-
-                  <Box
-                    className="overlay"
-                    sx={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      height: "100%",
-                      bgcolor: "rgba(0, 0, 0, 0.6)",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      gap: 2,
-                      opacity: 0,
-                      transition: "opacity 0.3s ease-in-out",
-                    }}
-                  >
-                    <IconButton
-                      sx={{
-                        bgcolor: "white",
-                        color: "black",
-                        "&:hover": { bgcolor: "#f0f0f0" },
-                      }}
-                      onClick={() => handleOpenDraft(e)} // your edit popup handler
-                    >
-                      <Edit fontSize="small" />
-                    </IconButton>
-
-                    <IconButton
-                      sx={{
-                        bgcolor: "white",
-                        color: "red",
-                        "&:hover": { bgcolor: "#ffe5e5" },
-                      }}
-                      onClick={() => handleDelete(e.id)} // delete handler
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </Box>
-
-              ))}
-            </Box>
-
-            {isOpenDetailModal && selectedCate && (
-              <ProductPopup
-                open={isOpenDetailModal}
-                onClose={closeModal}
-                cate={selectedCate}
-              />
-            )}
-          </Box>
-        } */}
 
 
         {/* Basket Slider Cards */}
@@ -344,15 +198,28 @@ const LandingHome = () => {
         {/* Basket Card Sales */}
         <BasketSlider title="Sale!" saleSlide={true} />
 
+
+        <BasketSlider
+          title="Clothing"
+          description="Get into the summer mood with a selection of our favourite seasonal Clothing and top picks."
+          clothing
+        />
+
+        {/* Templet Slider CArd */}
+        <TempletsCardSlider
+          title="Personalised Home Gifts"
+          description="A section of mugs, wall art, candles with personalised designs"
+        />
+
         {/* Comming Offers */}
         <CommingSoonOffers />
-
         {/* Just advertisemtn */}
         {/* <GiveFunk /> */}
-
+        <BalloonSticker />
         {/* For App monatization */}
         <FunkyApp />
 
+        <WhyChoose />
         {/* Description */}
         <Description />
         <br />

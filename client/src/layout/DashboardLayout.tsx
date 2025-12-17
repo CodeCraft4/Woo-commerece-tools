@@ -34,6 +34,18 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick }: Layout
             color: COLORS.white,
             height: "100vh",
             overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              height: "6px",
+              width: '6px',
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "#f1f1f1",
+              borderRadius: "20px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: COLORS.seconday,
+              borderRadius: "20px",
+            },
             position: { xs: "fixed", sm: "relative" },
             top: 0,
             left: 0,
@@ -51,11 +63,11 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick }: Layout
               sx={{
                 mt: 3,
                 textAlign: "start",
-                height: "calc(100vh - 100px)",
+                height: "calc(100vh)",
                 overflowY: "auto",
                 "&::-webkit-scrollbar": {
                   height: "6px",
-                  width:'4px',
+                  width: '4px',
                 },
                 "&::-webkit-scrollbar-track": {
                   backgroundColor: "#f1f1f1",
@@ -106,7 +118,7 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick }: Layout
           </Box>
 
           {/* Page Content */}
-          <Box sx={{ flex: 1, p: 1, mb: 10 }}>
+          <Box sx={{ flex: 1, mb: 10 }}>
             <DHeader title={title} exportBtn={exportBtn} addBtn={addBtn} onClick={onClick} />
             {children}
           </Box>

@@ -1,6 +1,5 @@
-// src/features/PreviewCard/PreviewBookCard.tsx
 import { useMemo, useRef, useState } from "react";
-import { Box, Button, IconButton, Typography, useMediaQuery } from "@mui/material";
+import { Box, IconButton, Typography, useMediaQuery } from "@mui/material";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import "./card.css";
 import GlobalWatermark from "../../../../../components/GlobalWatermark/GlobalWatermark";
@@ -11,12 +10,14 @@ import Slide4 from "../Slide4/Slide4";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../../../constant/route";
 import { toPng } from "html-to-image";
+import LandingButton from "../../../../../components/LandingButton/LandingButton";
 
 const PreviewBookCard = () => {
   // currentLocation is 1..(numOfPapers+1) for the flip-book
   const [currentLocation, setCurrentLocation] = useState(1);
   // single index for mobile 1..4
   const [mobileIndex, setMobileIndex] = useState(1);
+  const [loading,setLoading] = useState(false)
   const navigate = useNavigate()
 
 
@@ -70,6 +71,7 @@ const PreviewBookCard = () => {
   console.log(slideImages, '--')
 
  const captureSlides = async () => {
+  setLoading(true)
   const results: any = {};
 
   // 1️⃣ Disable transform ONLY on slide sections
@@ -97,6 +99,7 @@ const PreviewBookCard = () => {
   });
 
   setSlideImages(results);
+  setLoading(false)
   return results;
 };
 
@@ -110,17 +113,16 @@ const PreviewBookCard = () => {
           Preview
         </Typography>
         <Box sx={{ display: "flex", gap: 3 }}>
-          <Button
-            variant="contained"
+          <LandingButton
+            title="Download"
+            loading={loading}
             onClick={async () => {
               const slidesCaptured = await captureSlides();
               sessionStorage.setItem("slides", JSON.stringify(slidesCaptured));
               navigate(USER_ROUTES.SUBSCRIPTION);
             }}
 
-          >
-            Download
-          </Button>
+          />
         </Box>
       </Box>
 

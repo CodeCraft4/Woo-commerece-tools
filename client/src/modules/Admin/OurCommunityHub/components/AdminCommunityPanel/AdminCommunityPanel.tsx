@@ -8,23 +8,25 @@ import {
     Divider,
     Avatar,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import SendIcon from "@mui/icons-material/Send";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../../../../supabase/supabase";
 import { COLORS } from "../../../../../constant/color";
 import { Delete } from "@mui/icons-material";
 import toast from "react-hot-toast";
+import useModal from "../../../../../hooks/useModal";
+import ConfirmModal from "../../../../../components/ConfirmModal/ConfirmModal";
+
 
 const ADMIN_AVATAR = "/assets/icons/administrater.png";
 const ADMIN_NAME = "Admin";
 
 const AdminCommunityPanel = () => {
-    const [newTopic, setNewTopic] = useState("");
     const [selectedTopic, setSelectedTopic] = useState<any>(null);
     const [message, setMessage] = useState("");
 
     const [adminUser, setAdminUser] = useState<any>(null);
+    const { open: isDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal()
 
     // Get logged-in admin
     useEffect(() => {
@@ -68,23 +70,6 @@ const AdminCommunityPanel = () => {
         },
         enabled: !!selectedTopic,
     });
-
-    // CREATE TOPIC
-    const createTopic = async () => {
-        if (!newTopic.trim()) return;
-
-        await supabase.from("topics").insert([
-            {
-                title: newTopic.trim(),
-                created_by: ADMIN_NAME,
-            }
-        ]);
-
-        setNewTopic("");
-
-        // ⭐ INSTANT topic refresh (no delay)
-        await refetchTopics();
-    };
 
 
     // AUTO REFETCH EVERY 5 SECONDS (POLLING)
@@ -148,10 +133,11 @@ const AdminCommunityPanel = () => {
             return;
         }
 
-        toast.success("Topic delted successfully")
+        toast.success("Topic deleted successfully")
 
         // Refresh topics immediately
         await refetchTopics();
+        closeDeleteModal();
 
         // If the deleted topic was selected → clear selection
         if (selectedTopic?.id === id) {
@@ -159,33 +145,14 @@ const AdminCommunityPanel = () => {
         }
     };
 
-
-
-
     return (
-        <Paper sx={{ display: "flex", height: "75vh", overflow: "hidden" }}>
+        <Paper sx={{ display: { md: "flex", sm: "flex", xs: 'block' }, height: "85vh", overflow: "hidden" }}>
 
             {/* LEFT SIDE – TOPICS LIST */}
-            <Box sx={{ width: "25%", bgcolor: COLORS.black, color: COLORS.white, p: 2 }}>
-                <Typography sx={{ fontSize: 24, fontWeight: "bold" }}>Admin Community</Typography>
-
+            <Box sx={{ width: { md: "25%", sm: "35%", xs: '100%' }, bgcolor: COLORS.black, color: COLORS.white, p: 2 }}>
+                <Typography sx={{ fontSize: { md: 24, sm: 18, xs: 'auto' }, fontWeight: "bold", color: COLORS.primary }}>My Community Hub</Typography>
                 <Divider sx={{ my: 2, borderColor: "#444" }} />
-
-                {/* Add Topic */}
-                <Box sx={{ display: "flex", gap: 1 }}>
-                    <TextField
-                        placeholder="New topic..."
-                        size="small"
-                        value={newTopic}
-                        onChange={(e) => setNewTopic(e.target.value)}
-                        sx={{ bgcolor: COLORS.white, borderRadius: 1, flex: 1 }}
-                    />
-                    <IconButton onClick={createTopic} sx={{ bgcolor: COLORS.white, "&:hover": { bgcolor: COLORS.seconday, color: 'white' } }}>
-                        <AddIcon />
-                    </IconButton>
-                </Box>
-
-                <Typography sx={{ mt: 3, fontSize: 18, fontWeight: "bold", color: COLORS.primary }}>
+                <Typography sx={{ mt: 1, fontSize: 18, fontWeight: "bold", color: COLORS.seconday }}>
                     Topics
                 </Typography>
 
@@ -212,13 +179,22 @@ const AdminCommunityPanel = () => {
 
                             <IconButton
                                 sx={{ bgcolor: "red", color: "white" }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteTopic(topic.id);
-                                }}
+                                onClick={openDeleteModal}
                             >
                                 <Delete fontSize="small" />
                             </IconButton>
+                            {
+                                isDeleteModal && (
+                                    <ConfirmModal
+                                        open={isDeleteModal}
+                                        onCloseModal={closeDeleteModal}
+                                        title="Are you sure you want to delete this topic?"
+                                        btnText="Delete"
+                                        onClick={() => deleteTopic(topic.id)}
+                                        icon={<Delete fontSize="large" />}
+                                    />
+                                )
+                            }
                         </Box>
                     ))}
                 </Box>
@@ -226,9 +202,14 @@ const AdminCommunityPanel = () => {
             </Box>
 
             {/* RIGHT SIDE – CHAT PANEL */}
-            <Box sx={{ width: "75%", display: "flex", flexDirection: "column" }}>
-                <Box sx={{ p: 2, borderBottom: "1px solid #ddd" }}>
-                    <Typography sx={{ fontSize: 22, fontWeight: "bold" }}>
+            <Box sx={{ width: { md: "75%", sm: "75%", xs: '100%' }, display: "flex", flexDirection: "column" }}>
+                <Box sx={{ p: 2, borderBottom: "1px solid #ddd", display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Box
+                        component='img'
+                        src={`${selectedTopic ? selectedTopic.image_base64 : "/assets/icons/DIYP.svg"}`}
+                        sx={{ width: 40, heigth: 40, objectFit: 'cover', borderRadius: 50 }}
+                    />
+                    <Typography sx={{ fontSize: { md: 22, sm: 18, xs: 'auto' }, fontWeight: "bold" }}>
                         {selectedTopic ? selectedTopic.post_title : "Select a topic to start"}
                     </Typography>
                 </Box>
@@ -243,7 +224,7 @@ const AdminCommunityPanel = () => {
                         bgcolor: "#f5f5f5"
                     }}
                 >
-                    <Box sx={{ p: 2, width: "50%", mb: 2 }}>
+                    <Box sx={{ p: 2, width: { md: "50%", sm: "50%", xs: '100%' }, mb: 2 }}>
                         {selectedTopic && (
                             <Box
                                 sx={{
@@ -281,6 +262,7 @@ const AdminCommunityPanel = () => {
                             </Box>
                         )}
                     </Box>
+
                     {messages.map((msg: any) => {
                         const fromAdmin = msg.sender_type === "admin";
 
@@ -294,7 +276,6 @@ const AdminCommunityPanel = () => {
                                     mb: 2,
                                     alignItems: "flex-end",
                                     position: "relative",
-
                                     "&:hover .delete-btn": {
                                         opacity: 1,
                                         pointerEvents: "auto"

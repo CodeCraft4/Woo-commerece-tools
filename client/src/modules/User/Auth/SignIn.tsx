@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 import { COLORS } from "../../../constant/color";
 import { useForm } from "react-hook-form";
-import { useAuthStore } from "../../../stores";
 import toast from "react-hot-toast";
+import { useAuth } from "../../../context/AuthContext";
 
 type SigninForm = {
   email: string;
@@ -15,7 +15,7 @@ type SigninForm = {
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle } = useAuthStore();
+  const { signIn, signInWithGoogle } = useAuth();
 
   const {
     register,
@@ -95,7 +95,7 @@ const SignIn = () => {
             <CustomInput
               label="Email"
               placeholder="Enter your email"
-              type="email"
+              // type="email"
               register={register("email", {
                 required: "Email is required",
               })}

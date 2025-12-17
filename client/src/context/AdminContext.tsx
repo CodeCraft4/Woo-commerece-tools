@@ -1,16 +1,16 @@
-"use client";
-import React, { createContext, useContext, useEffect, useState } from "react";
+// context/AdminContext.tsx
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase/supabase";
 import toast from "react-hot-toast";
 
-type Admin = {
+export type Admin = {
   id: string;
   role: string;
   first_name: string;
   last_name: string;
   email: string;
-  password: string;
-  profile_image?: string;
+  password: string; // NOTE: storing plain passwords is unsafe in real apps
+  profile_image?: string | null;
 };
 
 type AdminContextType = {
@@ -19,84 +19,93 @@ type AdminContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateAdmin: (patch: Partial<Omit<Admin, "id">>) => Promise<Admin | null>;
+  refreshFromDb: (id: string) => Promise<Admin | null>;
 };
 
 const AdminContext = createContext<AdminContextType | null>(null);
 
+const ADMIN_STORAGE_KEY = "adminData";
+
+function readLocalAdmin(): Admin | null {
+  try {
+    const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Admin) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalAdmin(admin: Admin | null) {
+  if (!admin) localStorage.removeItem(ADMIN_STORAGE_KEY);
+  else localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(admin));
+}
+
 export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [admin, setAdmin] = useState<Admin | null>(null);
-  const [loading, setLoading] = useState(true);
+  // initialize from localStorage synchronously to avoid flicker
+  const initialAdmin = useMemo(() => (typeof window !== "undefined" ? readLocalAdmin() : null), []);
+  const [admin, setAdmin] = useState<Admin | null>(initialAdmin);
+  const [isAdmin, setIsAdmin] = useState<boolean>(!!initialAdmin);
+  const [loading, setLoading] = useState<boolean>(false);
+  console.log(setLoading,)
 
-  // ✅ Restore admin from localStorage and Supabase session
+  // Optional: sanity-refresh admin row on mount if you want
   useEffect(() => {
-    const restoreSession = async () => {
+    let mounted = true;
+    const refresh = async () => {
+      if (!initialAdmin?.id) return;
       try {
-        const storedAdmin = localStorage.getItem("adminData");
-
-        if (storedAdmin) {
-          const parsed = JSON.parse(storedAdmin);
-          setAdmin(parsed);
+        const { data } = await supabase
+          .from("admins")
+          .select("id, role, first_name, last_name, email, password, profile_image")
+          .eq("id", initialAdmin.id)
+          .single();
+        if (mounted && data) {
+          setAdmin(data as Admin);
           setIsAdmin(true);
+          writeLocalAdmin(data as Admin);
         }
-
-        // Optional: Check Supabase auth session (for consistency)
-        const { data, error } = await supabase.auth.getSession();
-        if (error) console.warn("Supabase session error:", error);
-        if (data.session) {
-        }
-      } catch (err) {
-        console.error("Error restoring admin session:", err);
-      } finally {
-        setLoading(false);
+      } catch {
+        /* ignore */
       }
     };
+    refresh();
+    return () => {
+      mounted = false;
+    };
+  }, [initialAdmin?.id]);
 
-    restoreSession();
-  }, []);
-
-  // ✅ Login
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      console.log("Logging in admin:", email);
-
-      // Hardcoded admin (optional)
-      if (email === "moazam@mtlondon.tech" && password === "Admin123@") {
-        const fakeAdmin: Admin = {
+      // Dev backdoor
+      if (email === "depersonalisation@gmail.com" && password === "Admin123@") {
+        const fake: Admin = {
           id: "local-admin",
           role: "superadmin",
           first_name: "Admin",
           last_name: "User",
           email,
           password,
+          profile_image: null,
         };
+        setAdmin(fake);
         setIsAdmin(true);
-        setAdmin(fakeAdmin);
-        localStorage.setItem("isAdmin", "true");
-        localStorage.setItem("adminData", JSON.stringify(fakeAdmin));
-        console.log("✅ Local admin login successful");
+        writeLocalAdmin(fake);
         return true;
       }
 
-      // Supabase login
       const { data, error } = await supabase
         .from("admins")
-        .select("*")
+        .select("id, role, first_name, last_name, email, password, profile_image")
         .eq("email", email)
         .eq("password", password)
         .single();
 
-      if (error || !data) {
-        console.error("❌ Invalid credentials:", error);
-        return false;
-      }
+      if (error || !data) return false;
 
+      setAdmin(data as Admin);
       setIsAdmin(true);
-      setAdmin(data);
-      localStorage.setItem("isAdmin", "true");
-      localStorage.setItem("adminData", JSON.stringify(data));
-      console.log("✅ Supabase admin login successful:", data);
-
+      writeLocalAdmin(data as Admin);
       return true;
     } catch (err) {
       console.error("Login error:", err);
@@ -104,18 +113,53 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // ✅ Logout
   const logout = () => {
     setIsAdmin(false);
     setAdmin(null);
-    localStorage.removeItem("isAdmin");
-    localStorage.removeItem("adminData");
-    supabase.auth.signOut();
-    toast.success("Now the Admin is logout");
+    writeLocalAdmin(null);
+    // DO NOT call supabase.auth.signOut() if you don't sign in via supabase.auth
+    toast.success("Admin logged out");
+  };
+
+  const refreshFromDb = async (id: string): Promise<Admin | null> => {
+    const { data, error } = await supabase
+      .from("admins")
+      .select("id, role, first_name, last_name, email, password, profile_image")
+      .eq("id", id)
+      .single();
+    if (error || !data) return null;
+    setAdmin(data as Admin);
+    setIsAdmin(true);
+    writeLocalAdmin(data as Admin);
+    return data as Admin;
+  };
+
+  const updateAdmin = async (patch: Partial<Omit<Admin, "id">>): Promise<Admin | null> => {
+    if (!admin?.id) return null;
+    const payload: Record<string, unknown> = {};
+    Object.entries(patch).forEach(([k, v]) => {
+      if (typeof v !== "undefined") payload[k] = v;
+    });
+
+    const { data, error } = await supabase
+      .from("admins")
+      .update(payload)
+      .eq("id", admin.id)
+      .select("id, role, first_name, last_name, email, password, profile_image")
+      .maybeSingle();
+
+    if (error || !data) {
+      console.log("Update failed:", error?.message);
+      return null;
+    }
+
+    setAdmin(data as Admin);
+    writeLocalAdmin(data as Admin);
+    return data as Admin;
   };
 
   return (
-    <AdminContext.Provider value={{ isAdmin, admin, loading, login, logout }}>
+    <AdminContext.Provider value={{ isAdmin, admin, loading, login, logout, updateAdmin, refreshFromDb }}>
       {children}
     </AdminContext.Provider>
   );

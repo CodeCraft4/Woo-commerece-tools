@@ -1,6 +1,14 @@
 import { useState } from "react";
-import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
-import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Typography,
+  Button,
+  Menu,
+  MenuItem,
+} from "@mui/material";
+import { ArrowBackIos, ArrowDropDown, ArrowForwardIos } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
@@ -14,14 +22,10 @@ import useModal from "../../hooks/useModal";
 import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../constant/route";
-import { fetchAllCardsFromDB } from "../../source/source";
-
-const TABS = [
-  "Birthday Cards",
-  "Birthday Gift",
-  "Kids Birthday Cards",
-  "Kids Birthday Gift",
-];
+import {
+  fetchAllCardsFromDB,
+  fetchAllCategoriesFromDB,
+} from "../../source/source";
 
 type BirthdayTypes = {
   title?: string;
@@ -34,7 +38,11 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>();
 
-  const { data: birthdayCards, isLoading } = useQuery({
+  // Others menu state
+  const [othersEl, setOthersEl] = useState<null | HTMLElement>(null);
+  const [othersLabel, setOthersLabel] = useState<string>("Others");
+
+  const { data: birthdayCards = [], isLoading } = useQuery({
     queryKey: ["birthdayCards"],
     queryFn: fetchAllCardsFromDB,
     staleTime: 1000 * 60 * 60,
@@ -43,18 +51,57 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
     refetchOnReconnect: false,
   });
 
-  const filteredCards = birthdayCards
-    ? birthdayCards.filter(
-        (card) => card.cardCategory === TABS[activeTab]
-      )
-    : [];
+  const { data: tabsCategories = [] } = useQuery<any[]>({
+    queryKey: ["tabsCategories"],
+    queryFn: fetchAllCategoriesFromDB,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const currentCat = tabsCategories[activeTab];
+
+  // Filter cards by selected category
+  const filteredCards = birthdayCards.filter((card: any) => {
+    if (!currentCat) return false;
+    if (card.categoryId != null && currentCat.id != null) {
+      return String(card.categoryId) === String(currentCat.id);
+    }
+    return (card.cardcategory || card.cardname) === currentCat.name;
+  });
 
   const { open: isOpenDetailModal, openModal, closeModal } = useModal();
-
   const openDetailModal = (cate: CategoryType) => {
     setSelectedCate(cate);
     openModal();
   };
+
+  const handleShopAll = () => {
+    if (!currentCat) return;
+    navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(currentCat.name)}`, {
+      state: { categoryId: currentCat.id ?? null },
+    });
+  };
+
+  // Others button handlers
+  const openOthers = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (tabsCategories.length <= 5) return; // safety
+    setOthersEl(e.currentTarget);
+  };
+  const closeOthers = () => setOthersEl(null);
+  const selectOther = (cat: any) => {
+    // why: map back to actual index from full array
+    const idx = tabsCategories.findIndex((c: any) => String(c.id) === String(cat.id));
+    if (idx >= 0) {
+      setActiveTab(idx);
+      setOthersLabel(cat.name || "Others");
+    }
+    closeOthers();
+  };
+
+  const othersDisabled = tabsCategories.length <= 5;
+  const othersList = tabsCategories.slice(5);
 
   return (
     <Box
@@ -67,46 +114,23 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
       }}
     >
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Typography
-          sx={{
-            fontSize: { md: "25px", sm: "20px", xs: "16px" },
-            fontWeight: 800,
-          }}
-        >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography sx={{ fontSize: { md: "25px", sm: "20px", xs: "16px" }, fontWeight: 800 }}>
           {title}
         </Typography>
 
         {!brandSlider && (
           <Box sx={{ display: { md: "flex", sm: "flex", xs: "none" } }}>
-            <LandingButton
-              title="Shop All"
-              width="150px"
-              onClick={() => navigate(USER_ROUTES.VIEW_ALL)}
-            />
+            <LandingButton title="Shop All" width="150px" onClick={handleShopAll} />
           </Box>
         )}
       </Box>
 
-      {/* Tabs */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: "10px",
-          alignItems: "center",
-          flexWrap: "wrap",
-          mt: 2,
-        }}
-      >
-        {TABS.map((tab, index) => (
+      {/* Tabs + Others */}
+      <Box sx={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", mt: 2 }}>
+        {tabsCategories.slice(0, 5).map((tab: any, index: number) => (
           <Box
-            key={index}
+            key={tab.id ?? index}
             onClick={() => setActiveTab(index)}
             sx={{
               px: { md: 3, sm: 1, xs: 1 },
@@ -115,12 +139,8 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
               borderRadius: "15px",
               cursor: "pointer",
               transition: "all 0.3s ease-in-out",
-              backgroundColor:
-                activeTab === index ? COLORS.primary : "transparent",
-              "&:hover": {
-                backgroundColor:
-                  activeTab === index ? COLORS.seconday : "#f0f0f0",
-              },
+              backgroundColor: activeTab === index ? COLORS.primary : "transparent",
+              "&:hover": { backgroundColor: activeTab === index ? COLORS.seconday : "#f0f0f0" },
             }}
           >
             <Typography
@@ -130,34 +150,57 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
                 color: activeTab === index ? COLORS.white : COLORS.black,
               }}
             >
-              {tab}
+              {tab.name}
             </Typography>
           </Box>
         ))}
+
+        {/* Others button */}
+        <Button
+          variant="outlined"
+          endIcon={<ArrowDropDown />}
+          disabled={othersDisabled}
+          onClick={openOthers}
+          sx={{
+            textTransform: "none",
+            borderRadius: "15px",
+            border: "2px solid black",
+            color: COLORS.black,
+            px: { md: 3, sm: 1, xs: 1 },
+            py: { md: 0.5, sm: 0.25, xs: 0.25 },
+            bgcolor: "transparent",
+            "&.Mui-disabled": { opacity: 0.5, color: COLORS.black, borderColor: "black" },
+          }}
+        >
+          {othersLabel}
+        </Button>
+
+        <Menu
+          anchorEl={othersEl}
+          open={Boolean(othersEl)}
+          onClose={closeOthers}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+        >
+          {othersList.map((cat: any) => (
+            <MenuItem key={cat.id} onClick={() => selectOther(cat)}>
+              {cat.name}
+            </MenuItem>
+          ))}
+        </Menu>
       </Box>
 
       {/* Slider */}
       <Box sx={{ mt: 3, position: "relative" }}>
         {isLoading ? (
-          <Box
-            sx={{
-              width: "100%",
-              height: "300px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
+          <Box sx={{ width: "100%", height: "300px", display: "flex", justifyContent: "center", alignItems: "center" }}>
             <CircularProgress sx={{ color: COLORS.seconday }} />
           </Box>
         ) : (
           <Swiper
             modules={[Navigation]}
             spaceBetween={10}
-            navigation={{
-              prevEl: ".swiper-button-prev",
-              nextEl: ".swiper-button-next",
-            }}
+            navigation={{ prevEl: ".swiper-button-prev", nextEl: ".swiper-button-next" }}
             breakpoints={{
               0: { slidesPerView: 1 },
               600: { slidesPerView: 3 },
@@ -167,11 +210,11 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
               1920: { slidesPerView: 7 },
             }}
           >
-            {filteredCards.map((cate, idx) => (
-              <SwiperSlide key={idx}>
+            {filteredCards.map((cate: any, idx: number) => (
+              <SwiperSlide key={cate.id ?? idx}>
                 <Box px={{ lg: 1, md: "2px", sm: 1, xs: 1 }}>
                   <ProductCard
-                    poster={cate?.imageUrl || cate?.lastpageImageUrl}
+                    poster={cate?.imageurl || cate?.lastpageimageurl}
                     tabsSlider
                     layoutCard={cate?.polygonLayout}
                     openModal={() => openDetailModal(cate)}
@@ -183,14 +226,10 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
         )}
 
         {isOpenDetailModal && selectedCate && (
-          <ProductPopup
-            open={isOpenDetailModal}
-            onClose={closeModal}
-            cate={selectedCate}
-          />
+          <ProductPopup open={isOpenDetailModal} onClose={closeModal} cate={selectedCate} />
         )}
 
-        {/* Custom Navigation Buttons */}
+        {/* Custom Nav */}
         <IconButton
           className="swiper-button-prev"
           sx={{
@@ -206,7 +245,6 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
         >
           <ArrowBackIos />
         </IconButton>
-
         <IconButton
           className="swiper-button-next"
           sx={{
@@ -224,13 +262,7 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
         </IconButton>
       </Box>
 
-      <Typography
-        sx={{
-          mt: { md: 3, sm: 3, xs: 2 },
-          fontSize: "16px",
-          fontWeight: 300,
-        }}
-      >
+      <Typography sx={{ mt: { md: 3, sm: 3, xs: 2 }, fontSize: "16px", fontWeight: 300 }}>
         {description}
       </Typography>
     </Box>

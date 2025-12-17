@@ -45,7 +45,7 @@ const AdminSigninForm = () => {
         p: 3,
         borderRadius: 3,
         textAlign: "center",
-        bgcolor:COLORS.white,
+        bgcolor: COLORS.white,
       }}
     >
       <Typography sx={{ fontSize: "45px", fontWeight: 700 }}>

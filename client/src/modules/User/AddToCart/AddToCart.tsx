@@ -139,7 +139,7 @@ const AddToCart = () => {
                         src={item.img}
                         alt={item.title}
                         width={80}
-                        height={80}
+                        height={100}
                         borderRadius={1}
                       />
                       <Typography>{item.title || "No title"}</Typography>
@@ -210,8 +210,8 @@ const AddToCart = () => {
                     title="Add To Pay"
                     width="300px"
                     personal
-                    // loading={loading}
-                    // onClick={handleStripeSubscription}
+                  // loading={loading}
+                  // onClick={handleStripeSubscription}
                   />
                 </Box>
               </Box>

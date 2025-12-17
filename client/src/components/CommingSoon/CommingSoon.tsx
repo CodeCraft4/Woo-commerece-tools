@@ -58,7 +58,7 @@ const CommingSoonOffers = () => {
         <Box sx={{ mt: 1 }}>
           <LandingButton
             title="Shop Christmas Card & Gift"
-            width="25vw"
+            width="20vw"
             personal
             bgblack
           />

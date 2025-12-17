@@ -10,7 +10,7 @@ const Banner = () => {
         width: "100%",
         position: "relative",
         overflow: "hidden",
-        mt: {md:10,sm:10,xs:0},
+        mt: { md: 10, sm: 10, xs: 0 },
         borderRadius: 3,
       }}
     >
@@ -20,7 +20,7 @@ const Banner = () => {
         src="/assets/images/animated-banner.jpg"
         alt="animated ImG"
         sx={{
-          display:{md:'none',sm:'none',xs:'block'},
+          display: { md: 'none', sm: 'none', xs: 'block' },
           width: "100%",
           height: "100%",
           objectFit: "cover",
@@ -33,7 +33,7 @@ const Banner = () => {
         alt="animated ImG"
         className="panning-img"
         sx={{
-          display:{md:'block',sm:'block',xs:'none'},
+          display: { md: 'block', sm: 'block', xs: 'none' },
           width: "100%",
           height: "100%",
           objectFit: "cover",
@@ -74,7 +74,7 @@ const Banner = () => {
             },
           }}
         >
-          Your flock deserve better!
+          The power to personalise, in your hands
         </Typography>
         <Typography
           sx={{
@@ -82,11 +82,12 @@ const Banner = () => {
               md: "20px",
               sm: "",
               xs: "15px",
-              width: "auto",
+              width: "70%",
             },
           }}
         >
-          Make it personal and show you give a DIY!
+          Edit any design, download your printable PDF, and make thoughtful cards, invites, clothing,
+          mugs, décor and more from home. Easy, fast and affordable
         </Typography>
 
         <Box
@@ -95,7 +96,7 @@ const Banner = () => {
             gap: "10px",
             flexWrap: "wrap",
             width: { md: "50%", sm: "70%", xs: "100%" },
-            mt: {md:5,sm:3,xs:1},
+            mt: { md: 5, sm: 3, xs: 1 },
           }}
         >
           <LandingButton title="For Her" width="250px" personal active />

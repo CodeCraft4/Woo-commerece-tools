@@ -104,11 +104,12 @@ const WishCard = () => {
   const [addTextCountFirst, setAddTextCountFirst] = useState(0);
   const [addTextCountLast, setAddTextCountLast] = useState(0);
 
-  // For slide
+  // For slide 1
   const [activeTextSlide1Child, setActiveTextSlide1Child] = useState<
     "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
+  // For Slide 2
   const [activeTextChild, setActiveTextChild] = useState<
     "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
@@ -123,10 +124,10 @@ const WishCard = () => {
     "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
-  const { setTips1, setIsSlideActive1 } = useSlide1();
+  const { setIsSlideActive1 } = useSlide1();
   const { setTips, setIsSlideActive } = useSlide2();
   const { setTips3, setIsSlideActive3 } = useSlide3();
-  const { setTips4, setIsSlideActive4 } = useSlide4();
+  const { setIsSlideActive4 } = useSlide4();
 
   // ==============SLIDE STATE MANAGEMENT=======================
   // Function to handle slide changes and manage state
@@ -708,7 +709,7 @@ const WishCard = () => {
 
           {/* Editing Toolbar 
           {/* 1st Card */}
-          {layout1 &&
+          {/* {layout1 &&
             (
               (!layout1.elements || layout1.elements.length === 0) &&
               (!layout1.textElements || layout1.textElements.length === 0)
@@ -809,7 +810,7 @@ const WishCard = () => {
                   </Box>
                 )}
               </>
-            )}
+            )} */}
           {/* 2nd Card */}
           {activeIndex === 1 && (
             <Box
@@ -1007,7 +1008,7 @@ const WishCard = () => {
             </Box>
           )}
           {/* 4th card */}
-          {layout1 &&
+          {/* {layout1 &&
             (
               (!layout1.elements || layout1.elements.length === 0) &&
               (!layout1.textElements || layout1.textElements.length === 0)
@@ -1098,7 +1099,7 @@ const WishCard = () => {
                   </Box>
                 )}
               </>
-            )}
+            )} */}
         </Box>
 
         {/* Thumbnail gallery */}

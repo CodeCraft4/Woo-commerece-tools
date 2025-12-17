@@ -266,19 +266,12 @@ export const FooterLinks = [
         path: "#",
       },
       {
-        name: "Delivery Information",
-        path: "#",
-      },
-      {
         name: "FAQ",
         path: "#",
       },
-      // {
-      //   name: "DIY VIP FAQs",
-      //   path: "#",
-      // },
+
       {
-        name: "Creators",
+        name: "How to Video guide",
         path: "#",
       },
       {
@@ -299,7 +292,7 @@ export const FooterLinks = [
         path: "/sustainability",
       },
       {
-        name: "Career",
+        name: "Returns policy",
         path: "#",
       },
       {
@@ -321,23 +314,23 @@ export const FooterLinks = [
       },
     ],
   },
-  {
-    title: "Product Info",
-    links: [
-      {
-        name: "Bulk Pricing",
-        path: "#",
-      },
-      {
-        name: "Flow Care",
-        path: "#",
-      },
-      {
-        name: "Offers",
-        path: "#",
-      },
-    ],
-  },
+  // {
+  //   title: "Product Info",
+  //   links: [
+  //     {
+  //       name: "Bulk Pricing",
+  //       path: "#",
+  //     },
+  //     {
+  //       name: "Flow Care",
+  //       path: "#",
+  //     },
+  //     {
+  //       name: "Offers",
+  //       path: "#",
+  //     },
+  //   ],
+  // },
 ];
 
 export const navLinks = [
@@ -795,6 +788,98 @@ export const DUMMY_ORDERS = [
   },
 ];
 
+// Admin Google Font
+export const ADMINS_GOOGLE_FONTS: string[] = [
+  // Classic scripts
+  "Tangerine",
+  "Great Vibes",
+  "Alex Brush",
+  "Parisienne",
+  "Carattere",
+  "Courgette",
+  "Satisfy",
+  "Cookie",
+  "Dancing Script",
+  "Lobster",
+  "Pacifico",
+  "Handlee",
+  "Kaushan Script",
+  "Allura",
+  "Windsong",
+  "Yellowtail",
+  "Homemade Apple",
+  "Rouge Script",
+  "Delius Swash Caps",
+  "Marck Script",
+  "Grand Hotel",
+  "Monsieur La Doulaise",
+  "Bilbo",
+  "Bilbo Swash Caps",
+  "Bonbon",
+  "Charm",
+  "Crafty Girls",
+  "Damion",
+  "Dawning of a New Day",
+  "Griffy",
+  "La Belle Aurore",
+  "Leckerli One",
+  "Lovers Quarrel",
+  "Meow Script",
+  "Mrs Saint Delafield",
+  "Mrs Sheppards",
+  "Mystery Quest",
+  "Playball",
+  "Princess Sofia",
+  // New additions (high-quality, legible)
+  "Pinyon Script",
+  "Sacremento",
+  "Norican",
+  "Mr Dafoe",
+  "Arizonia",
+  "Yesteryear",
+  "Italianno",
+  "Meddon",
+  "Qwigley",
+  "Vibur",
+  "Bad Script",
+  "Gloria Hallelujah",
+  "Indie Flower",
+  "Nothing You Could Do",
+  "Caveat",
+  "Caveat Brush",
+  "Amatic SC",
+  "Gochi Hand",
+  "Kalam",
+  "Permanent Marker",
+  "Rock Salt",
+  "Sedgwick Ave",
+  "Sedgwick Ave Display",
+  "Patrick Hand",
+  "Patrick Hand SC",
+  "Sriracha",
+  "Beth Ellen",
+  "Shadows Into Light",
+  "Shadows Into Light Two",
+  "Reenie Beanie",
+  "Nanum Pen Script",
+  "Covered By Your Grace",
+  "Courgette",
+  "Just Another Hand",
+  "Bad Script",
+  "Allison",
+  "Clicker Script",
+  "Great Vibes",
+  "Alex Brush",
+  "Dancing Script",
+  "Satisfy",
+  "MonteCarlo",
+  "The Nautigal",
+  "Waterfall",
+  "WindSong",
+  "Libre Baskerville", // for contrast titles (serif)
+  "Playfair Display", // stylish display serif
+];
+
 // Dummy Categories
 export const DUMMY_CATEGORIES = [
   {
@@ -1179,3 +1264,263 @@ export const BLOGS_DATA = [
     description2: `From cuddly comforters and cosy shawls.`,
   },
 ];
+
+// Dummy data
+export const TEMPLATE_DATA = {
+  Invite: {
+    productId: "Invite-001",
+    slides: ["front", "back"],
+    size: "A5",
+    templates: [
+      {
+        id: "temp1",
+        name: "Pink Hearts Invite",
+        preview:
+          "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=800&auto=format",
+        layers: [],
+      },
+      {
+        id: "temp2",
+        name: "Flower Invite",
+        preview:
+          "https://images.unsplash.com/photo-1524253482453-3fed8d2fe12b?w=800&auto=format",
+        layers: [],
+      },
+    ],
+  },
+
+  Mug: {
+    productId: "Mug-001",
+    slides: ["wrap"],
+    size: "228mm x 88.9mm",
+    templates: [
+      {
+        id: "mug1",
+        name: "Cheers Mug",
+        preview:
+          "https://images.unsplash.com/photo-1517685352821-92cf88aee5a5?w=800&auto=format",
+        layers: [],
+      },
+      {
+        id: "mug2",
+        name: "Minimal Mug",
+        preview:
+          "https://images.unsplash.com/photo-1503602642458-232111445657?w=800&auto=format",
+        layers: [],
+      },
+    ],
+  },
+
+  Sticker: {
+    productId: "Sticker-001",
+    slides: ["sheet"],
+    size: "A4",
+    templates: [
+      {
+        id: "sticker1",
+        name: "Circle + Square Sheet",
+        preview:
+          "https://images.unsplash.com/photo-1616587894289-86496552d99c?w=800&auto=format",
+        layers: [],
+      },
+      {
+        id: "sticker2",
+        name: "Cute Sticker Pack",
+        preview:
+          "https://images.unsplash.com/photo-1617050259573-b94c50d6fc08?w=800&auto=format",
+        layers: [],
+      },
+    ],
+  },
+
+  BusinessCard: {
+    productId: "BC-001",
+    slides: ["front", "back"],
+    size: "85mm x 55mm",
+    templates: [
+      {
+        id: "bc1",
+        name: "Modern Black",
+        preview:
+          "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format",
+        layers: [],
+      },
+      {
+        id: "bc2",
+        name: "Clean White",
+        preview:
+          "https://images.unsplash.com/photo-1611078483047-3c64c45d67a5?w=800&auto=format",
+        layers: [],
+      },
+    ],
+  },
+};
+
+// Categories wise key
+export const CATEGORY_KEYS = [
+  "Invites",
+  "Apparel (T-shirts & Hoodies)",
+  "Mugs (11oz)",
+  "Coasters",
+  "Stickers (A4 Sheet)",
+  "Stationery (Notebook Covers)",
+  "Wall Art",
+  "Photo Art",
+  "Tote Bags",
+  "Business Cards",
+  "Business Leaflets",
+] as const;
+export type CategoryKey = (typeof CATEGORY_KEYS)[number];
+
+// Categories wise editor
+export const CATEGORY_CONFIG = {
+  Invites: {
+    key: "Invites",
+    label: "Invites (A5)",
+    mmWidth: 148,
+    mmHeight: 210,
+    slideLabels: ["Front", "Back"],
+    maxSlides: 2,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: false,
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  "Apparel (T-shirts & Hoodies)": {
+    key: "Apparel (T-shirts & Hoodies)",
+    label: "Apparel (A4 area)",
+    mmWidth: 210,
+    mmHeight: 297,
+    slideLabels: ["Front", "Back"],
+    maxSlides: 2,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: true,
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  "Mugs (11oz)": {
+    key: "Mugs (11oz)",
+    label: "Mug (228 × 88.9 mm)",
+    mmWidth: 228,        // ✅ corrected
+    mmHeight: 88.9,      // ✅ corrected
+    slideLabels: ["Front"],
+    maxSlides: 1,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: true,   // ✅ mirror for transfer
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  Coasters: {
+    key: "Coasters",
+    label: "Coasters (pair 95×95 mm)",
+    mmWidth: 95,
+    mmHeight: 95,
+    slideLabels: ["Coaster 1", "Coaster 2"], // ✅ pair
+    maxSlides: 2,
+    allowAddRemovePages: false,
+    bleedMm: 3,          // ✅ 3mm bleed
+    mirrorPrint: true,   // ✅ mirror for transfer
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  "Stickers (A4 Sheet)": {
+    key: "Stickers (A4 Sheet)",
+    label: "Stickers (A4 sheet)",
+    mmWidth: 210,
+    mmHeight: 297,
+    slideLabels: ["Front"], // ✅ 1-sided
+    maxSlides: 50,          // ✅ lots of pages
+    allowAddRemovePages: true, // ✅ dynamic pages
+    bleedMm: 3,
+    mirrorPrint: false,
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  "Stationery (Notebook Covers)": {
+    key: "Stationery (Notebook Covers)",
+    label: "Notebook Covers (A5 panel)",
+    mmWidth: 148,
+    mmHeight: 210,
+    slideLabels: ["Front", "Back"], // ✅ front/back
+    maxSlides: 2,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: false,
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  "Wall Art": {
+    key: "Wall Art",
+    label: "Wall Art (A4)",
+    mmWidth: 210,
+    mmHeight: 297,
+    slideLabels: ["Front"],
+    maxSlides: 1,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: false,
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  "Photo Art": {
+    key: "Photo Art",
+    label: "Photo Art (A4)",
+    mmWidth: 210,
+    mmHeight: 297,
+    slideLabels: ["Front"],
+    maxSlides: 1,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: false,
+    features: { text: true, photo: true, sticker: true, aiArt: true },
+  },
+  "Tote Bags": {
+    key: "Tote Bags",
+    label: "Tote Bags (A4 area)",
+    mmWidth: 210,
+    mmHeight: 297,
+    slideLabels: ["Front", "Back"],
+    maxSlides: 2,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: true,
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  "Business Cards": {
+    key: "Business Cards",
+    label: "Business Cards (85×55)",
+    mmWidth: 85,
+    mmHeight: 55,
+    slideLabels: ["Front", "Back"],
+    maxSlides: 2,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: false,
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  "Business Leaflets": {
+    key: "Business Leaflets",
+    label: "Business Leaflets (A5)",
+    mmWidth: 148,
+    mmHeight: 210,
+    slideLabels: ["Front", "Back"],
+    maxSlides: 2,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: false,
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+} as const;
+
+export const PRIMARY_CATEGORIES = [
+  "Birthday Cards",
+  "Birthday Gift",
+  "Kids Birthday Cards",
+  "Kids Birthday Gift",
+  "Invites",
+  "Mugs",
+  "Apparel",
+  "Stationery",
+  // +5 more tabs
+  "Wedding",
+  "Anniversary",
+  "Thank You",
+  "Get Well Soon",
+  "New Baby",
+] as const;

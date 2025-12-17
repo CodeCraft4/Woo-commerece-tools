@@ -126,7 +126,7 @@ const OrderChart = () => {
               fontWeight="bold"
               sx={{ my: 1, fontSize: "2rem" }}
             >
-              0{orderCount.toLocaleString()}
+              {orderCount.toLocaleString()}
             </Typography>
             <Typography
               variant="body2"

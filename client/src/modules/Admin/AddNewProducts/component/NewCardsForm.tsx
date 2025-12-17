@@ -1,157 +1,78 @@
 import { Box, Typography } from "@mui/material";
 import CustomInput from "../../../../components/CustomInput/CustomInput";
 import LandingButton from "../../../../components/LandingButton/LandingButton";
-import React, { useState, useRef } from "react";
-import { useForm } from "react-hook-form";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { supabase } from "../../../../supabase/supabase";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../../constant/route";
 import { useCardEditor } from "../../../../context/AdminEditorContext";
 import * as htmlToImage from "html-to-image";
-
-
-const shapes = [
-  { id: "square", label: "Square", path: "inset(0% 0% 0% 0%)" },
-  {
-    id: "triangle",
-    label: "Triangle",
-    path: "polygon(50% 0%, 0% 100%, 100% 100%)",
-  },
-  {
-    id: "trapezoid",
-    label: "Trapezoid",
-    path: "polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)",
-  },
-  {
-    id: "parallelogram",
-    label: "Parallelogram",
-    path: "polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)",
-  },
-  {
-    id: "rhombus",
-    label: "Rhombus",
-    path: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-  },
-  {
-    id: "pentagon",
-    label: "Pentagon",
-    path: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)",
-  },
-  {
-    id: "hexagon",
-    label: "Hexagon",
-    path: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
-  },
-  {
-    id: "heptagon",
-    label: "Heptagon",
-    path: "polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%)",
-  },
-  {
-    id: "octagon",
-    label: "Octagon",
-    path: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
-  },
-  {
-    id: "nonagon",
-    label: "Nonagon",
-    path: "polygon(50% 0%, 85% 15%, 100% 45%, 90% 80%, 60% 100%, 40% 100%, 10% 80%, 0% 45%, 15% 15%)",
-  },
-  {
-    id: "decagon",
-    label: "Decagon",
-    path: "polygon(50% 0%, 80% 10%, 100% 35%, 100% 65%, 80% 90%, 50% 100%, 20% 90%, 0% 65%, 0% 35%, 20% 10%)",
-  },
-  {
-    id: "bevel",
-    label: "Bevel",
-    path: "polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%)",
-  },
-  {
-    id: "rabbet",
-    label: "Rabbet",
-    path: "polygon(20% 0%, 80% 0%, 80% 20%, 100% 20%, 100% 80%, 80% 80%, 80% 100%, 20% 100%, 20% 80%, 0% 80%, 0% 20%, 20% 20%)",
-  },
-  {
-    id: "star",
-    label: "Star",
-    path: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
-  },
-  {
-    id: "cross",
-    label: "Cross",
-    path: "polygon(35% 0%, 65% 0%, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0% 65%, 0% 35%, 35% 35%)",
-  },
-  {
-    id: "message",
-    label: "Message",
-    path: "polygon(0% 0%, 100% 0%, 100% 80%, 60% 80%, 50% 100%, 40% 80%, 0% 80%)",
-  },
-  {
-    id: "close",
-    label: "Close",
-    path: "polygon(20% 0%, 50% 30%, 80% 0%, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0% 80%, 30% 50%, 0% 20%)",
-  },
-  {
-    id: "frame",
-    label: "Frame",
-    path: "polygon(20% 0%, 80% 0%, 80% 20%, 100% 20%, 100% 80%, 80% 80%, 80% 100%, 20% 100%, 20% 80%, 0% 80%, 0% 20%, 20% 20%)",
-  },
-  {
-    id: "inset",
-    label: "Inset",
-    path: "polygon(10% 10%, 90% 10%, 90% 90%, 10% 90%)",
-  },
-  {
-    id: "custom-polygon",
-    label: "Custom Polygon",
-    path: "polygon(50% 0%, 100% 25%, 80% 100%, 20% 100%, 0% 25%)",
-  },
-  { id: "circle", label: "Circle", path: "circle(50% at 50% 50%)" },
-  { id: "ellipse", label: "Ellipse", path: "ellipse(45% 35% at 50% 50%)" },
-];
+import { useQuery } from "@tanstack/react-query";
+import { fetchAllCategoriesFromDB } from "../../../../source/source";
 
 type FormValue = {
-  cardName: string;
-  cardCategory: string;
+  cardname: string;
+  cardcategory: string;
+  subCategory?: string;
+  subSubCategory?: string;
   sku: string;
-  actualPrice: string;
-  salePrice: string;
+  actualprice?: string;
+  saleprice?: string;
   description: string;
   cardImage: FileList;
   polygon_shape: string;
 };
 
+type CategoryRow = {
+  id: string;
+  name: string;
+  subcategories: string[];
+  sub_subcategories: Record<string, string[]>;
+};
+
 type EditFormValue = {
-  cardName: string;
-  cardCategory: string;
-  sku: string;
-  actualPrice: string;
-  salePrice: string;
-  description: string;
-  imageUrl: FileList | string;
-  polygon_shape: string;
-  polyganLayout: string;
-  lastpageImageUrl: string;
-  lastMessage: string;
+  cardName?: string;
+  cardCategory?: string;
+  sku?: string;
+  actualPrice?: string;
+  salePrice?: string;
+  description?: string;
+  imageUrl?: string;
+  polygon_shape?: string;
+  polygonlayout?: any;
+  subCategory?: string;
+  subSubCategory?: string;
+  lastpageImageUrl?: string;
+  lastMessage?: string;
+  cardname?: string;
+  cardcategory?: string;
+  actualprice?: string;
+  saleprice?: string;
+  imageurl?: string;
+  lastpageimageurl?: string;
+  lastmessage?: string;
 };
 
-type Props = {
-  editProduct?: EditFormValue;
-};
+type Props = { editProduct?: EditFormValue };
 
-const NewCardsForm = (props: Props) => {
-  const { editProduct } = props;
+const NewCardsForm = ({ editProduct }: Props) => {
+
+  console.log(editProduct,'edit form 4slide card')
 
   const {
-    uploadedShapeImage,
-    selectedShapeImage,
-    elements,
-    textElements,
+    elements, textElements, stickerElements,
+    midLeftElements, midLeftTextElements, midLeftStickerElements,
+    midRightElements, midRightTextElements, midRightStickerElements,
+    lastElements, lastTextElements, lastStickerElements,
+    lastSlideImage, lastSlideMessage,
+    uploadedShapeImage, selectedShapeImage,
     setFormData,
-    resetEditor,
-    stickerElements,
+    setStickerElements, setTextElements,
+    setSelectedShapeImage, setUploadedShapeImage,
+    setLastElements, setLastTextElements,
+    resetEditor
   } = useCardEditor();
 
   const [image, setImage] = useState<string | null>(null);
@@ -159,47 +80,114 @@ const NewCardsForm = (props: Props) => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { formData } = (location.state as any) || {};
 
-  // Access formData from navigation state
-  const { formData } = location.state || {};
-  const initialElements =
-    formData?.elements ||
-    (editProduct?.polyganLayout
-      ? JSON.parse(editProduct.polyganLayout).elements
-      : []) ||
-    [];
-  const initialTextElements =
-    formData?.textElements ||
-    (editProduct?.polyganLayout
-      ? JSON.parse(editProduct.polyganLayout).textElements
-      : []) ||
-    [];
+  // ========= Categories (only “Cards”) =========
+  const {
+    data: categories = [],
+    isLoading: isLoadingCats,
+    isError: isErrorCats,
+  } = useQuery<CategoryRow[]>({
+    queryKey: ["categories"],
+    queryFn: fetchAllCategoriesFromDB,
+    staleTime: 1000 * 60 * 30,
+  });
 
+  const cardsRow = useMemo(
+    () => categories.find(c => (c?.name ?? "").trim().toLowerCase() === "cards") || null,
+    [categories]
+  );
+
+  // The select shows only “Cards” as an option
+  const categoryOptions = useMemo(
+    () => (cardsRow ? [{ label: "Cards", value: "Cards" }] : []),
+    [cardsRow]
+  );
+
+  // ========= Form =========
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
     reset,
+    control,
+    setValue,
   } = useForm<FormValue>({
     defaultValues: {
-      cardName: editProduct?.cardName || formData?.cardName || "",
-      cardCategory: editProduct?.cardCategory || formData?.cardCategory || "",
-      sku: editProduct?.sku || formData?.sku || "",
-      actualPrice: editProduct?.actualPrice || formData?.actualprice || "",
-      salePrice: editProduct?.salePrice || formData?.salePrice || "",
-      description: editProduct?.description || formData?.description || "",
-      polygon_shape: editProduct?.polygon_shape || selectedShapeImage || "",
+      cardname: "",
+      cardcategory: "Cards", // default to Cards
+      subCategory: "",
+      subSubCategory: "",
+      sku: "",
+      actualprice: "",
+      saleprice: "",
+      description: "",
+      polygon_shape: "",
     },
   });
 
-  const cardImageFiles = watch("cardImage");
-  const isImageMissing =
-    !image &&
-    !cardImageFiles?.length &&
-    !uploadedShapeImage &&
-    initialElements.length === 0;
+  // normalize edit defaults (only for inputs)
+  const normalizedEdit = useMemo(() => {
+    const src = editProduct ?? {};
+    const fd = formData ?? {};
+    return {
+      cardname: (src.cardname ?? src.cardName ?? fd.cardname ?? fd.cardName ?? "") as string,
+      // force category = Cards, but keep existing if it already is "Cards"
+      cardcategory: "Cards",
+      sku: (src.sku ?? fd.sku ?? "") as string,
+      actualprice: (src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as string | number,
+      saleprice: (src.saleprice ?? src.salePrice ?? fd.saleprice ?? fd.salePrice ?? "") as string | number,
+      description: (src.description ?? fd.description ?? "") as string,
+      polygon_shape: (src.polygon_shape ?? fd.polygon_shape ?? "") as string,
+      subCategory: (src.subCategory ?? (src as any).subcategory ?? (fd as any).subCategory ?? (fd as any).subcategory ?? "") as string,
+      subSubCategory: (src.subSubCategory ?? (src as any).sub_subcategory ?? (fd as any).subSubCategory ?? (fd as any).sub_subcategory ?? "") as string,
+    } as FormValue;
+  }, [editProduct, formData]);
+
+  useEffect(() => {
+    reset(normalizedEdit);
+  }, [normalizedEdit, reset]);
+
+  // Make sure category is “Cards” once categories are fetched
+  useEffect(() => {
+    if (cardsRow) {
+      setValue("cardcategory", "Cards", { shouldValidate: true });
+    }
+  }, [cardsRow, setValue]);
+
+  const selectedCategoryName = watch("cardcategory"); // should always be "Cards"
+  const selectedSubCategory = watch("subCategory");
+
+  // Build subcat/sub-sub from the Cards row only
+  const subCategoryOptions = useMemo(() => {
+    if (!cardsRow) return [];
+    return (cardsRow.subcategories ?? []).map((sub) => ({ label: sub, value: sub }));
+  }, [cardsRow]);
+
+  const subSubCategoryOptions = useMemo(() => {
+    if (!cardsRow || !selectedSubCategory) return [];
+    const list = cardsRow.sub_subcategories?.[selectedSubCategory] ?? [];
+    return list.map((name) => ({ label: name, value: name }));
+  }, [cardsRow, selectedSubCategory]);
+
+  // Since sub categories are optional now, we only clear subSub if the chosen sub becomes invalid
+  useEffect(() => {
+    const sub = (watch("subCategory") || "") as string;
+    const stillValidSub = !!(cardsRow?.subcategories ?? []).includes(sub);
+    if (!stillValidSub) {
+      setValue("subCategory", "");
+      setValue("subSubCategory", "");
+    } else {
+      const subsub = (watch("subSubCategory") || "") as string;
+      const stillValidSubSub = !!(cardsRow?.sub_subcategories?.[sub] ?? []).includes(subsub);
+      if (!stillValidSubSub) setValue("subSubCategory", "");
+    }
+  }, [selectedCategoryName, cardsRow, setValue, watch]);
+
+  // ========== Preview ==========
+  const previewRef = useRef<HTMLDivElement>(null);
+  const isImageMissing = !image && !uploadedShapeImage && elements.length === 0;
 
   const handleImageUpload = (file: File) => {
     if (!file) return;
@@ -209,28 +197,22 @@ const NewCardsForm = (props: Props) => {
     setLoading(false);
   };
 
-
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) handleImageUpload(file);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleImageUpload(file);
-  };
-
   const handleEditLayout = () => {
-    const formData = watch();
+    const formDataNow = watch();
     setFormData({
-      cardName: formData.cardName,
-      cardCategory: formData.cardCategory,
-      sku: formData.sku,
-      actualPrice: formData.actualPrice,
-      salePrice: formData.salePrice,
-      description: formData.description,
-      cardImage: `${image || editProduct?.imageUrl || null}`,
+      cardName: formDataNow.cardname,
+      cardCategory: "Cards",
+      sku: formDataNow.sku,
+      actualPrice: formDataNow.actualprice,
+      salePrice: formDataNow.saleprice,
+      description: formDataNow.description,
+      cardImage: `${image || (editProduct?.imageUrl as string) || null}`,
       layout_type:
         elements.length > 0
           ? "isMultipleLayout"
@@ -242,8 +224,9 @@ const NewCardsForm = (props: Props) => {
     navigate(ADMINS_DASHBOARD.ADMIN_EDITOR, {
       state: {
         formData: {
-          ...formData,
-          cardImage: image || editProduct?.imageUrl || null,
+          ...formDataNow,
+          cardcategory: "Cards",
+          cardImage: image || (editProduct?.imageUrl as string) || null,
           elements,
           textElements,
         },
@@ -251,86 +234,70 @@ const NewCardsForm = (props: Props) => {
     });
   };
 
-  const onSubmit = async (data: FormValue) => {
-    const finalImage = image || editProduct?.imageUrl || uploadedShapeImage || stickerElements;
-    if (!finalImage && initialElements.length === 0 || stickerElements.length === 0) {
-      toast.error("Please upload at least one card image!");
-      return;
-    }
+  // Build one JSON payload with ALL slides
+  const buildLayoutPayload = () => ({
+    first: {
+      elements: elements.map((el) => ({
+        id: el.id, x: el.x, y: el.y, width: el.width, height: el.height, src: el.src,
+      })),
+      textElements: textElements.map((te) => ({
+        id: te.id, x: te.x, y: te.y, width: te.width, height: te.height,
+        text: te.text, bold: !!te.bold, italic: !!te.italic,
+        fontSize: te.fontSize, fontFamily: te.fontFamily, color: te.color,
+      })),
+      stickers: stickerElements.map((st) => ({
+        id: st.id, sticker: st.sticker, x: st.x, y: st.y, width: st.width, height: st.height, zIndex: st.zIndex,
+      })),
+    },
+    main: {
+      left: { elements: midLeftElements, textElements: midLeftTextElements, stickers: midLeftStickerElements },
+      right: { elements: midRightElements, textElements: midRightTextElements, stickers: midRightStickerElements },
+    },
+    last: {
+      elements: lastElements, textElements: lastTextElements, stickers: lastStickerElements,
+      lastSlideImage, lastSlideMessage,
+    },
+  });
 
+  const onSubmit = async (data: FormValue) => {
     try {
       setLoading(true);
 
-      // ✅ Capture screenshot of the card preview
-      let capturedImageUrl = null;
+      // Snapshot of FIRST SLIDE only → to PNG for thumbnail
+      let capturedimageurl: string | null = null;
       if (previewRef.current) {
         try {
-          const dataUrl = await htmlToImage.toPng(previewRef.current, {
-            quality: 0.95,
-            cacheBust: true,
-          });
-          capturedImageUrl = dataUrl;
-          console.log("✅ Card captured image URL:", dataUrl);
-        } catch (err) {
-          console.warn("⚠️ Failed to capture image:", err);
+          const dataUrl = await htmlToImage.toPng(previewRef.current, { quality: 0.95, cacheBust: true });
+          capturedimageurl = dataUrl;
+        } catch {
+          /* best-effort */
         }
       }
 
-      // Prepare layout data as an object of elements and textElements
-      const layoutData = {
-        elements: initialElements.map((el: any) => ({
-          id: el.id,
-          x: el.x,
-          y: el.y,
-          width: el.width,
-          height: el.height,
-          src: el.src,
-        })),
-        textElements: initialTextElements.map((te: any) => ({
-          id: te.id,
-          x: te.x,
-          y: te.y,
-          width: te.width,
-          height: te.height,
-          text: te.text,
-          bold: te.bold,
-          italic: te.italic,
-          fontSize: te.fontSize,
-          fontFamily: te.fontFamily,
-          color: te.color,
-        })),
-        stickers: stickerElements.map((st) => ({
-          id: st.id,
-          sticker: st.sticker,
-          x: st.x,
-          y: st.y,
-          width: st.width,
-          height: st.height,
-          zIndex: st.zIndex
-        }))
-      };
+      const polygonlayout = buildLayoutPayload();
 
       const cardPayload = {
-        cardName: data.cardName,
-        cardCategory: data.cardCategory,
+        cardname: data.cardname,
+        cardcategory: "Cards", // locked
         sku: data.sku,
-        actualPrice: Number(data.actualPrice),
-        salePrice: Number(data.salePrice) || null,
+        actualprice: Number(data.actualprice),
+        saleprice: Number(data.saleprice) || null,
         description: data.description,
-        imageUrl: capturedImageUrl || initialElements[initialElements.length - 1]?.src || null,
-        polygon_shape: selectedShapeImage || data.polygon_shape || null,
-        polygonLayout: layoutData, // Store the layout data directly as JSON
-        lastpageImageUrl: capturedImageUrl || initialElements[initialElements.length - 1]?.src || null,
-        lastMessage:
-          initialTextElements[initialTextElements.length - 1]?.text ||
-          "",
+
+        // OPTIONAL now:
+        subCategory: data.subCategory || null,
+        subSubCategory: data.subSubCategory || null,
+
+        imageurl: capturedimageurl || null,
+        lastpageimageurl: capturedimageurl || null,
+
+        polygon_shape: selectedShapeImage || (data.polygon_shape as string) || null,
+        polygonlayout,
+        lastmessage: lastSlideMessage || "",
       };
 
-      if (editProduct) {
-        const { error } = await supabase
-          .from("cards")
-          .update(cardPayload)
-          .eq("sku", editProduct.sku);
+      if (editProduct?.sku) {
+        const { error } = await supabase.from("cards").update(cardPayload).eq("sku", String(editProduct.sku));
         if (error) throw error;
         toast.success("Card updated successfully!");
       } else {
@@ -340,39 +307,29 @@ const NewCardsForm = (props: Props) => {
       }
 
       setImage(null);
-
     } catch (err: any) {
-      console.error("Error saving card:", err);
       toast.error("Failed to save card: " + err.message);
     } finally {
       setLoading(false);
     }
+
+    // Optional: clear editor after save
+    setStickerElements([]);
+    setTextElements([]);
+    setSelectedShapeImage(null);
+    setLastElements([]);
+    setLastTextElements([]);
+    setUploadedShapeImage(null);
+    resetEditor();
     reset();
-    // Optionally reset context
-    resetEditor()
+    setImage(null);
   };
-
-  // Combine react-hook-form ref and fileInputRef
-  const setInputRef = (
-    element: HTMLInputElement | null,
-    rhfRef: React.Ref<HTMLInputElement>
-  ) => {
-    fileInputRef.current = element;
-    if (typeof rhfRef === "function") {
-      rhfRef(element);
-    } else if (rhfRef) {
-      (rhfRef as React.MutableRefObject<HTMLInputElement | null>).current =
-        element;
-    }
-  };
-
-  const previewRef = useRef<HTMLDivElement>(null);
 
   return (
     <Box>
       <Box
         sx={{
-          display: { md: "flex", sm: "flex", xs: 'block' },
+          display: { md: "flex", sm: "flex", xs: "block" },
           gap: "20px",
           justifyContent: "center",
           width: "100%",
@@ -381,11 +338,11 @@ const NewCardsForm = (props: Props) => {
           mt: 2,
         }}
       >
-        {/* Left Side - Display Editor Content */}
+        {/* Left — Preview (ONLY FirstSlide slices) */}
         <Box
           ref={previewRef}
           sx={{
-            width: { md: "500px", sm: '400px', xs: '100%' },
+            width: { md: "500px", sm: "400px", xs: "100%" },
             height: { md: "700px", sm: "600px", xs: 400 },
             borderRadius: "12px",
             boxShadow: "3px 5px 8px gray",
@@ -394,33 +351,15 @@ const NewCardsForm = (props: Props) => {
             justifyContent: "center",
             position: "relative",
             overflow: "hidden",
-            border: `1px solid ${isImageMissing && errors.cardImage ? "red" : "lightgray"
-              }`,
-            cursor: "pointer",
+            border: `1px solid ${isImageMissing && (errors as any).cardImage ? "red" : "lightgray"}`,
+            backgroundColor: "#fff",
           }}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          onClick={() => fileInputRef.current?.click()}
         >
-          <input
-            type="file"
-            id="fileInput"
-            hidden
-            accept="image/*"
-            {...register("cardImage", {
-              required:
-                !editProduct && initialElements.length === 0 || stickerElements.length === 0
-                  ? "Card image is required"
-                  : false,
-              onChange: handleFileSelect,
-            })}
-            ref={(e) => setInputRef(e, register("cardImage").ref)}
-          />
-
-          {initialElements.length > 0 || initialTextElements.length > 0 || stickerElements.length > 0 ? (
-            <Box sx={{ width: '100%', height: '100%' }}>
-              {/* Render Images */}
-              {initialElements.map((el: any) => (
+          {elements.length > 0 || textElements.length > 0 || stickerElements.length > 0 ? (
+            <Box sx={{ width: "100%", height: "100%" }}>
+              {elements.map((el) => (
                 <Box
                   key={el.id}
                   component="img"
@@ -438,8 +377,8 @@ const NewCardsForm = (props: Props) => {
                   }}
                 />
               ))}
-              {/* Render Text Elements */}
-              {initialTextElements.map((te: any) => (
+
+              {textElements.map((te) => (
                 <Typography
                   key={te.id}
                   sx={{
@@ -467,174 +406,162 @@ const NewCardsForm = (props: Props) => {
               ))}
 
               {stickerElements.map((st) => (
-                <Box key={st.id} sx={{ width: st.width, height: st.height, position: "absolute", left: st.x, top: st.y, zIndex: st.zIndex }}>
-                  {/* Sticker Image */}
+                <Box
+                  key={st.id}
+                  sx={{
+                    width: st.width,
+                    height: st.height,
+                    position: "absolute",
+                    left: st.x,
+                    top: st.y,
+                    zIndex: st.zIndex,
+                  }}
+                >
                   <Box
                     component="img"
                     src={st.sticker}
                     alt="sticker"
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      pointerEvents: "none",
-                    }}
+                    sx={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
                   />
                 </Box>
               ))}
             </Box>
-          ) : uploadedShapeImage || image || editProduct?.imageUrl ? (
+          ) : editProduct ? (
             <Box
               component="img"
-              src={`${uploadedShapeImage || image || editProduct?.imageUrl}`}
+              src={editProduct?.imageUrl || editProduct?.lastpageimageurl || "/assets/icons/gallery.png"}
               alt="Uploaded"
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                clipPath:
-                  shapes.find((s) => s.path === selectedShapeImage)?.path ||
-                  "none",
-                borderRadius: 2,
-              }}
+              sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 2 }}
             />
           ) : (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                flexDirection: "column",
-                m: "auto",
-                alignItems: "center",
-              }}
-            >
-              <Box
-                component="img"
-                src="/assets/icons/gallery.png"
-                sx={{ width: 150, height: 150 }}
-              />
-              <Typography sx={{ color: "gray", fontSize: 16 }}>
-                Drag & Drop or Click to Upload
-              </Typography>
+            <Box sx={{ display: "flex", justifyContent: "center", flexDirection: "column", m: "auto", alignItems: "center" }}>
+              <Box component="img" src="/assets/icons/gallery.png" sx={{ width: 150, height: 150 }} />
             </Box>
-          )}
-
-          {isImageMissing && errors.cardImage && (
-            <Typography
-              sx={{
-                position: "absolute",
-                bottom: 10,
-                fontSize: 14,
-                color: "red",
-              }}
-            >
-              {errors.cardImage.message}
-            </Typography>
           )}
         </Box>
 
-        {/* Right Side - Form */}
+        {/* Right — Form */}
         <Box
           component="form"
-          sx={{ width: { md: "500px", sm: "500px", xs: '100%' }, mt: { md: 0, sm: 0, xs: 3 } }}
+          sx={{ width: { md: "500px", sm: "500px", xs: "100%" }, mt: { md: 0, sm: 0, xs: 3 } }}
           onSubmit={handleSubmit(onSubmit)}
         >
           <CustomInput
             label="Card Name"
             placeholder="Enter your card name"
-            defaultValue={editProduct?.cardName || formData?.cardName || ""}
-            register={register("cardName", {
-              required: !editProduct ? "Card Name is required" : false,
-            })}
-            error={errors.cardName?.message}
+            defaultValue=""
+            register={register("cardname", { required: !editProduct ? "Card Name is required" : false })}
+            error={errors.cardname?.message}
           />
-          <CustomInput
-            label="Card Category"
-            type="select"
-            placeholder="Select category"
-            register={register("cardCategory", {
-              required: !editProduct ? "Category is required" : false,
-            })}
-            error={errors.cardCategory?.message}
-            defaultValue={
-              editProduct?.cardCategory || formData?.cardCategory || ""
-            }
-            options={[
-              { label: "Birthday Cards", value: "Birthday Cards" },
-              { label: "Birthday Gift", value: "Birthday Gift" },
-              { label: "Kids Birthday Cards", value: "Kids Birthday Cards" },
-              { label: "Kids Birthday Gift", value: "Kids Birthday Gift" },
-              { label: "Letter box", value: "Letter box" },
-              { label: "Under £30", value: "Under £30" },
-              { label: "Under £60", value: "Under £60" },
-            ]}
+
+          <Controller
+            name="cardcategory"
+            control={control}
+            render={({ field }) => (
+              <CustomInput
+                label="Card Category"
+                type="select"
+                placeholder={
+                  isLoadingCats
+                    ? "Loading categories..."
+                    : isErrorCats
+                      ? "Failed to load categories"
+                      : "Cards"
+                }
+                value={field.value || "Cards"}
+                onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
+                error={errors.cardcategory?.message}
+                options={categoryOptions}
+              />
+            )}
           />
+
+          <Controller
+            name="subCategory"
+            control={control}
+            rules={{ required: false }}  // OPTIONAL
+            render={({ field }) => (
+              <CustomInput
+                label="Sub Category"
+                type="select"
+                placeholder={
+                  subCategoryOptions.length === 0
+                    ? "No sub categories"
+                    : "Select sub category (optional)"
+                }
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
+                error={errors.subCategory?.message}
+                options={subCategoryOptions}
+              />
+            )}
+          />
+
+          <Controller
+            name="subSubCategory"
+            control={control}
+            rules={{ required: false }} // OPTIONAL
+            render={({ field }) => (
+              <CustomInput
+                label="Sub Sub Category"
+                type="select"
+                placeholder={
+                  !watch("subCategory")
+                    ? "Select sub category first (optional)"
+                    : subSubCategoryOptions.length === 0
+                      ? "No sub-sub categories"
+                      : "Select sub-sub category (optional)"
+                }
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
+                error={errors.subSubCategory?.message}
+                options={subSubCategoryOptions}
+              />
+            )}
+          />
+
           <CustomInput
             label="SKU"
             placeholder="Enter your SKU"
-            defaultValue={editProduct?.sku || formData?.sku || ""}
-            register={register("sku", {
-              required: !editProduct ? "SKU is required" : false,
-            })}
+            defaultValue=""
+            register={register("sku", { required: !editProduct ? "SKU is required" : false })}
             error={errors.sku?.message}
           />
           <CustomInput
             label="Actual Price"
             placeholder="Enter your actual price"
-            defaultValue={
-              editProduct?.actualPrice || formData?.actualPrice || ""
-            }
+            defaultValue=""
             type="number"
-            register={register("actualPrice", {
+            register={register("actualprice", {
               required: !editProduct ? "Actual Price is required" : false,
               valueAsNumber: true,
               min: { value: 0.01, message: "Price must be greater than zero" },
             })}
-            error={errors.actualPrice?.message}
+            error={errors.actualprice?.message}
           />
           <CustomInput
             label="Sale Price"
             placeholder="Enter your sale price"
-            defaultValue={editProduct?.salePrice || formData?.salePrice || ""}
             type="number"
-            register={register("salePrice", {
+            defaultValue=""
+            register={register("saleprice", {
               required: false,
               valueAsNumber: true,
               min: { value: 0.01, message: "Price must be greater than zero" },
             })}
-            error={errors.salePrice?.message}
+            error={errors.saleprice?.message}
           />
           <CustomInput
             label="Card description"
             placeholder="Enter your description"
-            defaultValue={
-              editProduct?.description || formData?.description || ""
-            }
-            register={register("description", {
-              required: !editProduct ? "Description is required" : false,
-            })}
+            defaultValue=""
+            register={register("description", { required: !editProduct ? "Description is required" : false })}
             error={errors.description?.message}
             multiline
           />
-          <input
-            type="hidden"
-            {...register("polygon_shape")}
-            value={selectedShapeImage || editProduct?.polygon_shape || ""}
-          />
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mt: 2,
-            }}
-          >
-            <LandingButton
-              title="Edit Layout"
-              personal
-              width="200px"
-              onClick={handleEditLayout}
-            />
+
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+            <LandingButton title={editProduct ? "Update Layout" : "Edit Layout"} personal width="200px" onClick={handleEditLayout} />
             <LandingButton
               title={`${editProduct ? "Update & Publish" : "Save & Publish"}`}
               personal
@@ -645,8 +572,6 @@ const NewCardsForm = (props: Props) => {
             />
           </Box>
         </Box>
-
-
       </Box>
     </Box>
   );

@@ -8,16 +8,18 @@ type CategoryType = {
   poster?: string;
   title?: string;
   borderColor?: string;
+  seasonalCard?: boolean,
+  key?: number
 };
 
 const CategoryCard = (props: CategoryType) => {
-  const { id, poster, title, borderColor } = props;
+  const { id, poster, title, borderColor, seasonalCard } = props;
   const navigate = useNavigate();
 
   return (
     <Box
       component={"div"}
-     onClick={() => navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(title || "")}`)}
+      onClick={() => navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(title || "")}`)}
       key={id}
       sx={{
         border: "3px solid lightgray",
@@ -27,11 +29,11 @@ const CategoryCard = (props: CategoryType) => {
         flexDirection: "column",
         justifyContent: "center",
         width: { md: "175px", sm: "100px", xs: "100px" },
-        height: { md: "175px", sm: "130px", xs: "130px" },
+        height: { md: seasonalCard ? 200 : "175px", sm: seasonalCard ? 175 : "130px", xs: "130px" },
         alignItems: "center",
         textAlign: "center",
         bgcolor: COLORS.white,
-        ml: id === 1 ? { md: "285px", sm: 0, xs: 0 } : 0,
+        // ml: key === 0 ? { md: "285px", sm: 0, xs: 0 } : 0,
         cursor: "pointer",
         transition: "border-color 0.3s ease",
         "&:hover": {
@@ -63,6 +65,7 @@ const CategoryCard = (props: CategoryType) => {
           color: "#212121",
           display: "flex",
           flexWrap: "wrap",
+          whiteSpace: "nowrap",
         }}
       >
         {title}
