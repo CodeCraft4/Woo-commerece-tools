@@ -51,6 +51,7 @@ interface DraggableImage {
   rotation: number;
   zIndex?: number;
   filter?: string
+  shapePath?: string | null;
 }
 interface DraggableQR {
   id: string;
@@ -219,6 +220,26 @@ interface Slide3ContextType {
   removeSticker3: (index: number) => void;
   resetSlide3State: () => void | any;
 
+  layout3?: any,
+  setLayout3?: any,
+
+  // ------------------------ Adding Admin Editor -------------------------------------------------------------------------------------------
+  bgColor3: string | null;
+  setBgColor3: React.Dispatch<React.SetStateAction<string | null>>;
+  bgImage3: string | null;
+  setBgImage3: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedShapePath3: string | null;
+  setSelectedShapePath3: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedShapeImageId3: string | number | null;
+  setSelectedShapeImageId3: React.Dispatch<React.SetStateAction<string | number | null>>;
+  canEditBg3?: boolean;
+  setCanEditBg3?: any;
+  canEditImages3?: boolean;
+  setCanEditImages3?: any;
+  canEditStickers3?: boolean;
+  setCanEditStickers3?: any,
+  setEditAll3: any,
+
 }
 
 const Slide3Context = createContext<Slide3ContextType | undefined>(undefined);
@@ -263,6 +284,22 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [imageFilter3, setImageFilter3] = useState(false)
   const [activeFilterImageId3, setActiveFilterImageId3] = useState<string | null>(null);
+
+
+  const [bgColor3, setBgColor3] = useState<string | null>(null);
+  const [bgImage3, setBgImage3] = useState<string | null>(null);
+  const [selectedShapePath3, setSelectedShapePath3] = useState<string | null>(null);
+  const [selectedShapeImageId3, setSelectedShapeImageId3] = useState<string | number | null>(null);
+  const [canEditBg3, setCanEditBg3] = useState<boolean>(true);
+  const [canEditImages3, setCanEditImages3] = useState<boolean>(true);
+  const [canEditStickers3, setCanEditStickers3] = useState<boolean>(true);
+
+
+  const setEditAll3 = (on: boolean) => {
+    setCanEditBg3(on);
+    setCanEditImages3(on);
+    setCanEditStickers3(on);
+  };
 
 
 
@@ -584,6 +621,10 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.selectedAIimageUrl3)
           setSelectedAIimageUrl3(parsed.selectedAIimageUrl3);
 
+        if (parsed.bgColor3 !== undefined) setBgColor3(parsed.bgColor3);
+        if (parsed.bgImage3 !== undefined) setBgImage3(parsed.bgImage3);
+        if (Object.prototype.hasOwnProperty.call(parsed, "selectedShapePath3")) setSelectedShapePath3(parsed.selectedShapePath3);
+
         if (parsed.fontSize3) setFontSize3(parsed.fontSize3);
         if (parsed.fontWeight3) setFontWeight3(parsed.fontWeight3);
         if (parsed.fontFamily3) setFontFamily3(parsed.fontFamily3);
@@ -629,6 +670,10 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       letterSpacing3,
       lineHeight3,
       rotation3,
+
+      bgColor3,
+      bgImage3,
+      selectedShapePath3
     };
 
     try {
@@ -662,6 +707,10 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     letterSpacing3,
     lineHeight3,
     rotation3,
+
+    bgColor3,
+    bgImage3,
+    selectedShapePath3,
   ]);
 
   // --- 🧹 Clear localStorage ---
@@ -672,6 +721,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error clearing slide3_state:", error);
     }
   };
+
+  const [layout3, setLayout3] = useState<any>(null);
 
   return (
     <Slide3Context.Provider
@@ -793,7 +844,22 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
 
         slide3DataStore3,
         // reset All State
-        resetSlide3State
+        resetSlide3State,
+
+        layout3,
+        setLayout3,
+
+        bgColor3, setBgColor3,
+        bgImage3, setBgImage3,
+        selectedShapePath3,
+        setSelectedShapePath3,
+        selectedShapeImageId3,
+        setSelectedShapeImageId3,
+        canEditBg3, setCanEditBg3,
+        canEditImages3, setCanEditImages3,
+        canEditStickers3, setCanEditStickers3,
+        setEditAll3,
+
       }}
     >
       {children}

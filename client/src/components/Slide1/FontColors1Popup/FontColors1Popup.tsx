@@ -14,7 +14,7 @@ const FontColor1Popup = () => {
   } = useSlide1();
   
   // Get the currently selected text element
-  const selectedTextElement = textElements1.find(text => text.id === selectedTextId1);
+  const selectedTextElement = textElements1?.find(text => text.id === selectedTextId1);
   
   // Use individual text color or global default
   const currentFontColor = selectedTextElement?.fontColor || fontColor1;
@@ -51,7 +51,6 @@ const FontColor1Popup = () => {
   }, [currentFontColor]);
 
   return (
-    
     <Box
       sx={{
         py: 2,

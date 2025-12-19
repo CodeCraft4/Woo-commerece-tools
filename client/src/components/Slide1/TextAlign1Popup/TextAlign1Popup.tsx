@@ -32,7 +32,7 @@ const TextAlign1Popup = () => {
     setTextAlign1,
   } = useSlide1();
 
-  const selectedTextElement = textElements1.find(
+  const selectedTextElement = textElements1?.find(
     (text) => text.id === selectedTextId1
   );
 
@@ -54,8 +54,8 @@ const TextAlign1Popup = () => {
       sx={{
         p: 2,
         width: { md: 460, sm: 230, xs: "100%" },
-        height: {md:400,sm:400,xs:200},
-        mt: {md:4,sm:4,xs:0},
+        height: { md: 400, sm: 400, xs: 200 },
+        mt: { md: 4, sm: 4, xs: 0 },
         textAlign: "start",
         overflowY: "auto",
       }}
@@ -74,9 +74,9 @@ const TextAlign1Popup = () => {
               sx={{
                 p: 2,
                 border: `2px solid ${(selectedTextElement?.verticalAlign || verticalAlign1) ===
-                    opt.key
-                    ? "#3a7bd5"
-                    : "lightgray"
+                  opt.key
+                  ? "#3a7bd5"
+                  : "lightgray"
                   }`,
                 borderRadius: 3,
                 cursor: "pointer",
@@ -111,8 +111,8 @@ const TextAlign1Popup = () => {
               sx={{
                 p: 2,
                 border: `2px solid ${(selectedTextElement?.textAlign || textAlign1) === opt.key
-                    ? "#3a7bd5"
-                    : "lightgray"
+                  ? "#3a7bd5"
+                  : "lightgray"
                   }`,
                 borderRadius: 3,
                 cursor: "pointer",

@@ -14,8 +14,8 @@ const GeneAIPopup = (props: GeneAIType) => {
   const { onClose } = props;
 
   const {
-    isAIimage,
-    setIsAIimage,
+    isAIimage1,
+    setIsAIimage1,
     setSelectedAIimageUrl1,
     selectedAIimageUrl1,
   } = useSlide1();
@@ -340,11 +340,11 @@ const GeneAIPopup = (props: GeneAIType) => {
 
       <Box
         sx={{
-          height: {md:420,sm:420,xs:250},
+          height: { md: 420, sm: 420, xs: 250 },
           border: "2px solid #acc9c9ff",
           borderRadius: 2,
           width: "100%",
-          p: {md:1,sm:1,xs:0},
+          p: { md: 1, sm: 1, xs: 0 },
         }}
       >
         {selectedAIimageUrl1 && (
@@ -362,13 +362,13 @@ const GeneAIPopup = (props: GeneAIType) => {
               src={`${selectedAIimageUrl1}`}
               alt="Generated design"
               onClick={() => {
-                if (setIsAIimage) {
-                  setIsAIimage(true);
+                if (setIsAIimage1) {
+                  setIsAIimage1(true);
                 }
               }}
               sx={{
-               width: "100%",
-                height:{md:'100%',sm:'100%',xs:'250px'},
+                width: "100%",
+                height: { md: '100%', sm: '100%', xs: '250px' },
                 objectFit: "fill",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               }}
@@ -399,7 +399,7 @@ const GeneAIPopup = (props: GeneAIType) => {
               <Download />
             </Box>
 
-            {isAIimage && (
+            {isAIimage1 && (
               <Box
                 component={"div"}
                 sx={{
@@ -411,7 +411,7 @@ const GeneAIPopup = (props: GeneAIType) => {
                   height: 20,
                   zIndex: 2,
                   cursor: "pointer",
-                  bgcolor: isAIimage ? "black" : "transparent",
+                  bgcolor: isAIimage1 ? "black" : "transparent",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -421,7 +421,7 @@ const GeneAIPopup = (props: GeneAIType) => {
               >
                 <Check
                   fontSize="small"
-                  sx={{ color: isAIimage ? "white" : "black" }}
+                  sx={{ color: isAIimage1 ? "white" : "black" }}
                 />
               </Box>
             )}

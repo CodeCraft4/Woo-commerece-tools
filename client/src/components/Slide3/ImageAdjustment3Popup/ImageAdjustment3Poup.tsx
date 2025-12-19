@@ -8,10 +8,11 @@ interface ImageAdjustment3PopupProps {
     togglePopup?: any,
     onClose: () => void;
     activeIndex?: number;
+    isAdminEditor?:boolean
 }
 
 const ImageAdjustment3Popup = (props: ImageAdjustment3PopupProps) => {
-    const { onClose } = props
+    const { onClose, isAdminEditor } = props
 
     const { setImageFilter3, imageFilter3, setDraggableImages3, selectedImg3, setImages3, setSelectedImage3, setActiveFilterImageId3, draggableImages3 } = useSlide3()
 
@@ -120,13 +121,17 @@ const ImageAdjustment3Popup = (props: ImageAdjustment3PopupProps) => {
                         Effect
                     </IconButton>
 
-                    <IconButton sx={editingButtonStyle} onClick={bringToFront}>
-                        <KeyboardArrowUp fontSize="large" /> Front
-                    </IconButton>
+                    {!isAdminEditor && (
+                        <IconButton sx={editingButtonStyle} onClick={bringToFront}>
+                            <KeyboardArrowUp fontSize="large" /> Front
+                        </IconButton>
+                    )}
 
-                    <IconButton sx={editingButtonStyle} onClick={sendToBack}>
-                        <KeyboardArrowDown fontSize="large" /> Back
-                    </IconButton>
+                    {!isAdminEditor && (
+                        <IconButton sx={editingButtonStyle} onClick={sendToBack}>
+                            <KeyboardArrowDown fontSize="large" /> Back
+                        </IconButton>
+                    )}
 
                     <IconButton
                         sx={editingButtonStyle}

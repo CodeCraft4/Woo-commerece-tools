@@ -8,8 +8,10 @@ import {
   BlurOn,
   CollectionsOutlined,
   EmojiEmotionsOutlined,
+  FilterFramesOutlined,
   SlideshowOutlined,
   TitleOutlined,
+  WallpaperOutlined,
 } from "@mui/icons-material";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -68,7 +70,6 @@ import TextAlign1Popup from "../Slide1/TextAlign1Popup/TextAlign1Popup";
 import TextAlignPopup from "../Slide2/TextAlignPopup/TextAlignPopup";
 import TextAlign3Popup from "../Slide3/TextAlign3Popup/TextAlign3Popup";
 import TextAlign4Popup from "../Slide4/TextAlign4Popup/TextAlign4Popup";
-import { useLocation } from "react-router-dom";
 import LineHeight1Popup from "../Slide1/LineHeight1Popup/LineHeight1Popup";
 import LineHeight2Popup from "../Slide2/LineHeight2Popup/LineHeight2Popup";
 import LineHeight4Popup from "../Slide4/LineHeight4Popup/LineHeight4Popup";
@@ -76,6 +77,16 @@ import LineHeight3Popup from "../Slide3/LineHeight3Popup/LineHeight3Popup";
 import { COLORS } from "../../constant/color";
 import ImageAdjustment from "../Slide2/ImageAdjustment/ImageAdjustment";
 import ImageAdjustment3Popup from "../Slide3/ImageAdjustment3Popup/ImageAdjustment3Poup";
+import BgChanger from "../Slide1/BgChanger/BgChanger";
+import ShapeFrames from "../Slide1/ShapeFrames/ShapeFrames";
+import ImageAdjustment1 from "../Slide1/ImageAdjustment1/ImageAdjustment1";
+import ImageAdjustment4Popup from "../Slide4/ImageAdjustment4Popup/ImageAdjustment4Popup";
+import BgChanger2 from "../Slide2/BgChanger2/BgChanger2";
+import ShapeFrames2 from "../Slide2/ShapeFrames2/ShapeFrames2";
+import BgChanger3 from "../Slide3/BgChanger3/BgChanger3";
+import ShapeFrames3 from "../Slide3/ShapeFrames3/ShapeFrames3";
+import BgChanger4 from "../Slide4/BgChanger4/BgChanger4";
+import ShapeFrames4 from "../Slide4/ShapeFrames4/ShapeFrames4";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -84,19 +95,18 @@ const slides = [
   { id: 4, label: "Slide4" },
 ];
 
-const WishCard = () => {
+type wishCardType = {
+  adminEditor?: any
+  initialLayout?: any;
+  product?: any
+}
+
+const WishCard = (props: wishCardType) => {
+
+  const { adminEditor } = props
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [activePopup, setActivePopup] = useState(null);
-
-  const location = useLocation();
-  const { layout } = location.state || {};
-  const { layout1, setLayout1 } = useSlide1();
-
-  useEffect(() => {
-    if (layout && !layout1) {
-      setLayout1(layout);
-    }
-  }, [layout, layout1]);
 
   // const [addTextRightSide, setAddTextRightSide] = useState(false);
   const [addTextCount, setAddTextCount] = useState(0);
@@ -124,10 +134,10 @@ const WishCard = () => {
     "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
-  const { setIsSlideActive1 } = useSlide1();
+  const { setIsSlideActive1, setTips1, } = useSlide1();
   const { setTips, setIsSlideActive } = useSlide2();
   const { setTips3, setIsSlideActive3 } = useSlide3();
-  const { setIsSlideActive4 } = useSlide4();
+  const { setIsSlideActive4, setTips4 } = useSlide4();
 
   // ==============SLIDE STATE MANAGEMENT=======================
   // Function to handle slide changes and manage state
@@ -320,6 +330,8 @@ const WishCard = () => {
     setActiveIndex(index);
   };
 
+
+
   return (
     <DndProvider backend={HTML5Backend}>
       {/* One Box for Tools */}
@@ -364,8 +376,8 @@ const WishCard = () => {
                   width: { md: 500, sm: 400, xs: "100%" },
                   height: { md: 700, sm: 600, xs: 600 },
                   ml: index === 0 ? { md: 80, sm: 23, xs: 0 } : 0,
+                  mr: adminEditor && index === 3 ? 55 : 0,
                   borderRadius: 2,
-                  mt: { md: 0, sm: 0, xs: 0 },
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "row",
@@ -373,9 +385,7 @@ const WishCard = () => {
                   transition: "all 0.3s ease",
                   position: "relative",
                 }}
-              // onMouseEnter={() => scrollToSlide(index)}
               >
-                {/* First slide (cover) with image + editable text */}
                 {e.id === 1 ? (
                   <SlideCover
                     togglePopup={togglePopup}
@@ -383,6 +393,7 @@ const WishCard = () => {
                     addTextRight={addTextCountFirst}
                     rightBox={true}
                     isCaptureMode={true}
+                    isAdminEditor={adminEditor}
                   />
                 ) : e.id === 2 ? (
                   <SlideSpread
@@ -390,6 +401,7 @@ const WishCard = () => {
                     activeIndex={index}
                     addTextRight={addTextCount}
                     rightBox={true}
+                    isAdminEditor={adminEditor}
                   />
                 ) : e.id === 3 ? (
                   <SpreadRightSide
@@ -397,6 +409,7 @@ const WishCard = () => {
                     activeIndex={index}
                     addTextRight={addTextCountRight}
                     rightBox={true}
+                    isAdminEditor={adminEditor}
                   />
                 ) : (
                   <SlideLogo
@@ -404,6 +417,7 @@ const WishCard = () => {
                     activeIndex={index}
                     addTextRight={addTextCountLast}
                     rightBox={true}
+                    isAdminEditor={adminEditor}
                   />
                 )}
               </Box>
@@ -443,11 +457,41 @@ const WishCard = () => {
                 <Photo1Popup
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
+                  isAdminEditor={adminEditor}
                 />
               )}
 
+              {activePopup === "photo" && (
+                <ImageAdjustment1
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                // togglePopup={togglePopup("photo")}
+                />
+              )}
+              {activePopup === "photo" && (
+                <ImageAdjustment1
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                  isAdminEditor={!!adminEditor}  // true for admin, false for user
+                />
+              )}
+              {
+                activePopup === "BgChanger" && (
+                  <BgChanger
+                    onClose={() => setActivePopup(null)}
+                    activeIndex={activeIndex}
+                  />
+                )
+              }
+
               {activePopup === "sticker" && (
                 <Sticker1Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+              {activePopup === "frames" && (
+                <ShapeFrames
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
                 />
@@ -504,15 +548,33 @@ const WishCard = () => {
                 <PhotoPopup
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
+                  isAdminEditor={adminEditor}
                 />
               )}
               {activePopup === "photo" && (
                 <ImageAdjustment
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
+                  isAdminEditor={!!adminEditor}
                 // togglePopup={togglePopup("photo")}
                 />
               )}
+              {
+                activePopup === "BgChanger" && (
+                  <BgChanger2
+                    onClose={() => setActivePopup(null)}
+                    activeIndex={activeIndex}
+                  />
+                )
+              }
+              {
+                activePopup === "frames" && (
+                  <ShapeFrames2
+                    onClose={() => setActivePopup(null)}
+                    activeIndex={activeIndex}
+                  />
+                )
+              }
               {activePopup === "sticker" && (
                 <StickerPopup
                   onClose={() => setActivePopup(null)}
@@ -577,6 +639,7 @@ const WishCard = () => {
                 <Photo3Popup
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
+                  isAdminEditor={adminEditor}
                 />
               )}
 
@@ -584,9 +647,27 @@ const WishCard = () => {
                 <ImageAdjustment3Popup
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
+                  isAdminEditor={!!adminEditor}
                 // togglePopup={togglePopup("photo")}
                 />
               )}
+
+              {
+                activePopup === "BgChanger" && (
+                  <BgChanger3
+                    onClose={() => setActivePopup(null)}
+                    activeIndex={activeIndex}
+                  />
+                )
+              }
+              {
+                activePopup === "frames" && (
+                  <ShapeFrames3
+                    onClose={() => setActivePopup(null)}
+                    activeIndex={activeIndex}
+                  />
+                )
+              }
 
               {activePopup === "sticker" && (
                 <Sticker3Popup
@@ -621,196 +702,222 @@ const WishCard = () => {
             </>
           )}
 
+          {activeIndex === 3 && (
+            <>
+              {activePopup === "layout" && (
+                <Layout4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "text" && (
+                <Text4Popup
+                  onClose={() => setActivePopup(null)}
+                  onShowFontSizePopup={() => setActiveTextSlideLastChild("size")}
+                  onShowFontColorPopup={() => setActiveTextSlideLastChild("color")}
+                  onShowFontFamilyPopup={() =>
+                    setActiveTextSlideLastChild("family")
+                  }
+                  onSetLineHeightPopup={() => setActiveTextSlideLastChild("lineHeight")}
+                  onChangeTextAlign={() =>
+                    setActiveTextSlideLastChild("textAlign")
+                  }
+                  activeChildComponent={renderActiveTextSlideLastChild()}
+                  onAddTextToCanvas={() =>
+                    setAddTextCountLast((prev) => prev + 1)
+                  }
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "photo" && (
+                <Photo4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                  isAdminEditor={adminEditor}
+                />
+              )}
+
+              {activePopup === "photo" && (
+                <ImageAdjustment4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                  isAdminEditor={!!adminEditor}
+                // togglePopup={togglePopup("photo")}
+                />
+              )}
+
+              {activePopup === "sticker" && (
+                <Sticker4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+              {
+                activePopup === "BgChanger" && (
+                  <BgChanger4
+                    onClose={() => setActivePopup(null)}
+                    activeIndex={activeIndex}
+                  />
+                )
+              }
+              {
+                activePopup === "frames" && (
+                  <ShapeFrames4
+                    onClose={() => setActivePopup(null)}
+                    activeIndex={activeIndex}
+                  />
+                )
+              }
+
+              {activePopup === "video" && (
+                <Video4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "audio" && (
+                <Media4Popup
+                  onClose={() => {
+                    setActivePopup(null);
+                  }}
+                  mediaType="audio"
+                  activeIndex={activeIndex}
+                />
+              )}
+
+              {activePopup === "geneAi" && (
+                <GeneAI4Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+            </>
+          )}
+
+          {/* 1st card Toolbar */}
           {
-            layout1 &&
-            (
-              (!layout1.elements || layout1.elements.length === 0) &&
-              (!layout1.textElements || layout1.textElements.length === 0)
-            ) && (
-              <>
-                {activeIndex === 3 && (
-                  <>
-                    {activePopup === "layout" && (
-                      <Layout4Popup
-                        onClose={() => setActivePopup(null)}
-                        activeIndex={activeIndex}
-                      />
-                    )}
-
-                    {activePopup === "text" && (
-                      <Text4Popup
-                        onClose={() => setActivePopup(null)}
-                        onShowFontSizePopup={() =>
-                          setActiveTextSlideLastChild("size")
-                        }
-                        onShowFontColorPopup={() =>
-                          setActiveTextSlideLastChild("color")
-                        }
-                        onShowFontFamilyPopup={() =>
-                          setActiveTextSlideLastChild("family")
-                        }
-                        onChangeTextAlign={() =>
-                          setActiveTextSlideLastChild("textAlign")
-                        }
-
-                        onSetLineHeightPopup={() =>
-                          setActiveTextSlideLastChild("lineHeight")
-                        }
-                        activeChildComponent={renderActiveTextSlideLastChild()}
-                        onAddTextToCanvas={() =>
-                          setAddTextCountLast((prev) => prev + 1)
-                        }
-                        activeIndex={activeIndex}
-                      />
-                    )}
-
-                    {activePopup === "photo" && (
-                      <Photo4Popup
-                        onClose={() => setActivePopup(null)}
-                        activeIndex={activeIndex}
-                      />
-                    )}
-
-                    {activePopup === "sticker" && (
-                      <Sticker4Popup
-                        onClose={() => setActivePopup(null)}
-                        activeIndex={activeIndex}
-                      />
-                    )}
-
-                    {activePopup === "video" && (
-                      <Video4Popup
-                        onClose={() => setActivePopup(null)}
-                        activeIndex={activeIndex}
-                      />
-                    )}
-
-                    {activePopup === "audio" && (
-                      <Media4Popup
-                        onClose={() => {
-                          setActivePopup(null);
-                        }}
-                        mediaType="audio"
-                        activeIndex={activeIndex}
-                      />
-                    )}
-
-                    {activePopup === "geneAi" && (
-                      <GeneAI4Popup
-                        onClose={() => setActivePopup(null)}
-                        activeIndex={activeIndex}
-                      />
-                    )}
-                  </>
-                )}</>
-            )
+            adminEditor &&
+            <>
+              {activeIndex === 0 && (
+                <Box
+                  sx={{
+                    height: { md: "600px", sm: "600px", xs: "80px" },
+                    width: { md: "auto", sm: "auto", xs: "95%" },
+                    bgcolor: "white",
+                    borderRadius: "4px",
+                    p: 1,
+                    display: "flex",
+                    flexDirection: { md: "column", sm: "column", xs: "row" },
+                    overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
+                    gap: "15px",
+                    position: "absolute",
+                    top: { md: 40, sm: 40, xs: '100%' },
+                    left: { md: "28.5%", sm: "14%", xs: 10 },
+                    zIndex: { md: 10, sm: 10, xs: 99999 },
+                    boxShadow: 3,
+                    "&::-webkit-scrollbar": {
+                      height: "6px",
+                      width: '5px'
+                    },
+                    "&::-webkit-scrollbar-track": {
+                      backgroundColor: "#212121",
+                      borderRadius: "20px",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor: COLORS.primary,
+                      borderRadius: "20px",
+                    },
+                  }}
+                >
+                  <IconButton
+                    sx={editingButtonStyle}
+                    onClick={() => togglePopup("layout")}
+                    aria-label="Layout"
+                  >
+                    <AutoAwesomeMosaicOutlined fontSize="large" />
+                    Layout
+                  </IconButton>
+                  <IconButton
+                    sx={editingButtonStyle}
+                    onClick={() => togglePopup("text")}
+                    aria-label="Text"
+                  >
+                    <TitleOutlined fontSize="large" />
+                    Text
+                  </IconButton>
+                  <IconButton
+                    sx={editingButtonStyle}
+                    onClick={() => togglePopup("photo")}
+                    aria-label="Photo"
+                  >
+                    <CollectionsOutlined fontSize="large" />
+                    Photo
+                  </IconButton>
+                  <IconButton
+                    sx={editingButtonStyle}
+                    onClick={() => togglePopup("sticker")}
+                    aria-label="Sticker"
+                  >
+                    <EmojiEmotionsOutlined fontSize="large" />
+                    Sticker
+                  </IconButton>
+                  {
+                    adminEditor && (
+                      <IconButton sx={editingButtonStyle}
+                        onClick={() => togglePopup("frames")}
+                        aria-label="Frames">
+                        <FilterFramesOutlined fontSize="large" />
+                        Frames
+                      </IconButton>
+                    )
+                  }
+                  {
+                    adminEditor && (
+                      <IconButton sx={editingButtonStyle}
+                        onClick={() => togglePopup("BgChanger")}
+                        aria-label="BgChanger">
+                        <WallpaperOutlined fontSize="large" />
+                        BGImg
+                      </IconButton>
+                    )
+                  }
+                  <IconButton
+                    onClick={() => {
+                      togglePopup("video");
+                      setTips1(true);
+                    }}
+                    sx={editingButtonStyle}
+                  >
+                    <SlideshowOutlined fontSize="large" />
+                    Video
+                  </IconButton>
+                  <IconButton
+                    onClick={() => {
+                      togglePopup("audio");
+                      setTips1(true);
+                    }}
+                    sx={editingButtonStyle}
+                  >
+                    <AudiotrackOutlined fontSize="large" />
+                    Audio
+                  </IconButton>
+                  <IconButton
+                    onClick={() => {
+                      togglePopup("geneAi");
+                    }}
+                    sx={editingButtonStyle}
+                  >
+                    <BlurOn fontSize="large" />
+                    GenAI
+                  </IconButton>
+                </Box>
+              )}
+            </>
           }
 
-
-          {/* Editing Toolbar 
-          {/* 1st Card */}
-          {/* {layout1 &&
-            (
-              (!layout1.elements || layout1.elements.length === 0) &&
-              (!layout1.textElements || layout1.textElements.length === 0)
-            ) && (
-              <>
-                {activeIndex === 0 && (
-                  <Box
-                    sx={{
-                      height: { md: "600px", sm: "600px", xs: "80px" },
-                      width: { md: "auto", sm: "auto", xs: "95%" },
-                      bgcolor: "white",
-                      borderRadius: "4px",
-                      p: 1,
-                      display: "flex",
-                      flexDirection: { md: "column", sm: "column", xs: "row" },
-                      overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
-                      gap: "15px",
-                      position: "absolute",
-                      top: { md: 40, sm: 40, xs: '100%' },
-                      left: { md: "29.5%", sm: "14%", xs: 10 },
-                      zIndex: { md: 10, sm: 10, xs: 99999 },
-                      boxShadow: 3,
-                      "&::-webkit-scrollbar": {
-                        height: "6px",
-                        width: '5px'
-                      },
-                      "&::-webkit-scrollbar-track": {
-                        backgroundColor: "#ca1111ff",
-                        borderRadius: "20px",
-                      },
-                      "&::-webkit-scrollbar-thumb": {
-                        backgroundColor: COLORS.primary,
-                        borderRadius: "20px",
-                      },
-                    }}
-                  >
-                    <IconButton
-                      sx={editingButtonStyle}
-                      onClick={() => togglePopup("layout")}
-                      aria-label="Layout"
-                    >
-                      <AutoAwesomeMosaicOutlined fontSize="large" />
-                      Layout
-                    </IconButton>
-                    <IconButton
-                      sx={editingButtonStyle}
-                      onClick={() => togglePopup("text")}
-                      aria-label="Text"
-                    >
-                      <TitleOutlined fontSize="large" />
-                      Text
-                    </IconButton>
-                    <IconButton
-                      sx={editingButtonStyle}
-                      onClick={() => togglePopup("photo")}
-                      aria-label="Photo"
-                    >
-                      <CollectionsOutlined fontSize="large" />
-                      Photo
-                    </IconButton>
-                    <IconButton
-                      sx={editingButtonStyle}
-                      onClick={() => togglePopup("sticker")}
-                      aria-label="Sticker"
-                    >
-                      <EmojiEmotionsOutlined fontSize="large" />
-                      Sticker
-                    </IconButton>
-                    <IconButton
-                      onClick={() => {
-                        togglePopup("video");
-                        setTips1(true);
-                      }}
-                      sx={editingButtonStyle}
-                    >
-                      <SlideshowOutlined fontSize="large" />
-                      Video
-                    </IconButton>
-                    <IconButton
-                      onClick={() => {
-                        togglePopup("audio");
-                        setTips1(true);
-                      }}
-                      sx={editingButtonStyle}
-                    >
-                      <AudiotrackOutlined fontSize="large" />
-                      Audio
-                    </IconButton>
-                    <IconButton
-                      onClick={() => {
-                        togglePopup("geneAi");
-                      }}
-                      sx={editingButtonStyle}
-                    >
-                      <BlurOn fontSize="large" />
-                      GenAI
-                    </IconButton>
-                  </Box>
-                )}
-              </>
-            )} */}
           {/* 2nd Card */}
           {activeIndex === 1 && (
             <Box
@@ -826,7 +933,13 @@ const WishCard = () => {
                 gap: "15px",
                 position: "absolute",
                 top: { md: 50, sm: 50, xs: '100%' },
-                left: {
+                left: adminEditor ? {
+                  xs: 10,
+                  sm: "14%",
+                  md: "18%",
+                  lg: "27%",
+                  xl: "28%",
+                } : {
                   xs: 10,
                   sm: "14%",
                   md: "18%",
@@ -881,6 +994,28 @@ const WishCard = () => {
                 <EmojiEmotionsOutlined fontSize="large" />
                 Sticker
               </IconButton>
+
+              {
+                adminEditor && (
+                  <IconButton sx={editingButtonStyle}
+                    onClick={() => togglePopup("frames")}
+                    aria-label="Frames">
+                    <FilterFramesOutlined fontSize="large" />
+                    Frames
+                  </IconButton>
+                )
+              }
+              {
+                adminEditor && (
+                  <IconButton sx={editingButtonStyle}
+                    onClick={() => togglePopup("BgChanger")}
+                    aria-label="BgChanger">
+                    <WallpaperOutlined fontSize="large" />
+                    BGImg
+                  </IconButton>
+                )
+              }
+
               <IconButton
                 onClick={() => {
                   togglePopup("video");
@@ -927,7 +1062,7 @@ const WishCard = () => {
                 gap: "15px",
                 position: "absolute",
                 top: { md: 50, sm: 50, xs: '100%' },
-                left: { xl: "39%", lg: '27%', md: "18%", sm: "14%", xs: 10 },
+                left: adminEditor ? { xl: "28.5%", lg: '27%', md: "18%", sm: "14%", xs: 10 } : { xl: "39%", lg: '27%', md: "18%", sm: "14%", xs: 10 },
                 zIndex: { md: 10, sm: 10, xs: 99999 },
                 boxShadow: 3,
                 "&::-webkit-scrollbar": {
@@ -976,6 +1111,27 @@ const WishCard = () => {
                 <EmojiEmotionsOutlined fontSize="large" />
                 Sticker
               </IconButton>
+
+              {
+                adminEditor && (
+                  <IconButton sx={editingButtonStyle}
+                    onClick={() => togglePopup("frames")}
+                    aria-label="Frames">
+                    <FilterFramesOutlined fontSize="large" />
+                    Frames
+                  </IconButton>
+                )
+              }
+              {
+                adminEditor && (
+                  <IconButton sx={editingButtonStyle}
+                    onClick={() => togglePopup("BgChanger")}
+                    aria-label="BgChanger">
+                    <WallpaperOutlined fontSize="large" />
+                    BGImg
+                  </IconButton>
+                )
+              }
               <IconButton
                 onClick={() => {
                   togglePopup("video");
@@ -1007,99 +1163,116 @@ const WishCard = () => {
               </IconButton>
             </Box>
           )}
+
           {/* 4th card */}
-          {/* {layout1 &&
-            (
-              (!layout1.elements || layout1.elements.length === 0) &&
-              (!layout1.textElements || layout1.textElements.length === 0)
-            ) && (
-              <>
-                {activeIndex === 3 && (
-                  <Box
-                    sx={{
-                      height: { md: "600px", sm: "600px", xs: "80px" },
-                      width: { md: "auto", sm: "auto", xs: "95%" },
-                      bgcolor: "white",
-                      borderRadius: "4px",
-                      p: 1,
-                      display: "flex",
-                      flexDirection: { md: "column", sm: "column", xs: "row" },
-                      overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
-                      gap: "15px",
-                      position: "absolute",
-                      top: { md: 40, sm: 40, xs: '100%' },
-                      right: { md: "22%", sm: "54%", xs: 10 },
-                      zIndex: { md: 10, sm: 10, xs: 99999 },
-                      boxShadow: 3,
-                      "&::-webkit-scrollbar": {
-                        height: "6px",
-                        width: '5px'
-                      },
-                      "&::-webkit-scrollbar-track": {
-                        backgroundColor: "#f1f1f1ff",
-                        borderRadius: "20px",
-                      },
-                      "&::-webkit-scrollbar-thumb": {
-                        backgroundColor: COLORS.primary,
-                        borderRadius: "20px",
-                      },
+          {adminEditor &&
+            <>
+              {activeIndex === 3 && (
+                <Box
+                  sx={{
+                    height: { md: "600px", sm: "600px", xs: "80px" },
+                    width: { md: "auto", sm: "auto", xs: "95%" },
+                    bgcolor: "white",
+                    borderRadius: "4px",
+                    p: 1,
+                    display: "flex",
+                    flexDirection: { md: "column", sm: "column", xs: "row" },
+                    overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
+                    gap: "15px",
+                    position: "absolute",
+                    top: { md: 40, sm: 40, xs: '100%' },
+                    left: { md: "35%", sm: "54%", xs: 10 },
+                    zIndex: { md: 10, sm: 10, xs: 99999 },
+                    boxShadow: 3,
+                    "&::-webkit-scrollbar": {
+                      height: "6px",
+                      width: '5px'
+                    },
+                    "&::-webkit-scrollbar-track": {
+                      backgroundColor: "#f1f1f1ff",
+                      borderRadius: "20px",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor: COLORS.primary,
+                      borderRadius: "20px",
+                    },
+                  }}
+                >
+                  <IconButton sx={editingButtonStyle} onClick={() => togglePopup("layout")}>
+                    <AutoAwesomeMosaicOutlined fontSize="large" />
+                    Layout
+                  </IconButton>
+
+                  <IconButton sx={editingButtonStyle} onClick={() => togglePopup("text")}>
+                    <TitleOutlined fontSize="large" />
+                    Text
+                  </IconButton>
+
+                  <IconButton sx={editingButtonStyle} onClick={() => togglePopup("photo")}>
+                    <CollectionsOutlined fontSize="large" />
+                    Photo
+                  </IconButton>
+
+                  <IconButton sx={editingButtonStyle} onClick={() => togglePopup("sticker")}>
+                    <EmojiEmotionsOutlined fontSize="large" />
+                    Sticker
+                  </IconButton>
+                  {
+                    adminEditor && (
+                      <IconButton sx={editingButtonStyle}
+                        onClick={() => togglePopup("frames")}
+                        aria-label="Frames">
+                        <FilterFramesOutlined fontSize="large" />
+                        Frames
+                      </IconButton>
+                    )
+                  }
+                  {
+                    adminEditor && (
+                      <IconButton sx={editingButtonStyle}
+                        onClick={() => togglePopup("BgChanger")}
+                        aria-label="BgChanger">
+                        <WallpaperOutlined fontSize="large" />
+                        BGImg
+                      </IconButton>
+                    )
+                  }
+
+                  <IconButton
+                    onClick={() => {
+                      togglePopup("video");
+                      setTips4(true);
                     }}
+                    sx={editingButtonStyle}
                   >
-                    <IconButton sx={editingButtonStyle} onClick={() => togglePopup("layout")}>
-                      <AutoAwesomeMosaicOutlined fontSize="large" />
-                      Layout
-                    </IconButton>
+                    <SlideshowOutlined fontSize="large" />
+                    Video
+                  </IconButton>
 
-                    <IconButton sx={editingButtonStyle} onClick={() => togglePopup("text")}>
-                      <TitleOutlined fontSize="large" />
-                      Text
-                    </IconButton>
+                  <IconButton
+                    onClick={() => {
+                      togglePopup("audio");
+                      setTips4(true);
+                    }}
+                    sx={editingButtonStyle}
+                  >
+                    <AudiotrackOutlined fontSize="large" />
+                    Audio
+                  </IconButton>
 
-                    <IconButton sx={editingButtonStyle} onClick={() => togglePopup("photo")}>
-                      <CollectionsOutlined fontSize="large" />
-                      Photo
-                    </IconButton>
+                  <IconButton
+                    onClick={() => {
+                      togglePopup("geneAi");
+                    }}
+                    sx={editingButtonStyle}
+                  >
+                    <BlurOn fontSize="large" />
+                    GenAI
+                  </IconButton>
+                </Box>
+              )}
+            </>}
 
-                    <IconButton sx={editingButtonStyle} onClick={() => togglePopup("sticker")}>
-                      <EmojiEmotionsOutlined fontSize="large" />
-                      Sticker
-                    </IconButton>
-
-                    <IconButton
-                      onClick={() => {
-                        togglePopup("video");
-                        setTips4(true);
-                      }}
-                      sx={editingButtonStyle}
-                    >
-                      <SlideshowOutlined fontSize="large" />
-                      Video
-                    </IconButton>
-
-                    <IconButton
-                      onClick={() => {
-                        togglePopup("audio");
-                        setTips4(true);
-                      }}
-                      sx={editingButtonStyle}
-                    >
-                      <AudiotrackOutlined fontSize="large" />
-                      Audio
-                    </IconButton>
-
-                    <IconButton
-                      onClick={() => {
-                        togglePopup("geneAi");
-                      }}
-                      sx={editingButtonStyle}
-                    >
-                      <BlurOn fontSize="large" />
-                      GenAI
-                    </IconButton>
-                  </Box>
-                )}
-              </>
-            )} */}
         </Box>
 
         {/* Thumbnail gallery */}

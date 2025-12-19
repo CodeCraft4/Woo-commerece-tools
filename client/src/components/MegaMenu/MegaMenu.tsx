@@ -1,193 +1,3 @@
-// import {
-//   Box,
-//   List,
-//   ListItemButton,
-//   ListItemText,
-//   Typography,
-// } from "@mui/material";
-// import { COLORS } from "../../constant/color";
-// import { useMemo } from "react";
-
-// interface Category {
-//   name: string;
-//   links: string[];
-// }
-
-// interface MegaMenuItem {
-//   /** Main category title (e.g., "Birthday") */
-//   title: string;
-//   /** Columns */
-//   categories: Category[];
-// }
-
-// const MegaMenu = ({
-//   data,
-//   onSelect,
-// }: {
-//   data: MegaMenuItem;
-//   onSelect: () => void;
-// }) => {
-//   const columns = useMemo(() => {
-//     return (data?.categories ?? []).map((col) => {
-//       const footers = col.links.filter(
-//         (l) => /shop all/i.test(l) || /all .*$/i.test(l)
-//       );
-//       const items = col.links.filter((l) => !footers.includes(l));
-//       return { ...col, items, footers };
-//     });
-//   }, [data]);
-
-//   return (
-//     <Box
-//       sx={{
-//         position: "absolute",
-//         top: "80%",
-//         left: 0,
-//         width: "100%",
-//         zIndex: 10,
-//         display: "flex",
-//         justifyContent: "center",
-//         pointerEvents: "auto",
-//       }}
-//     >
-//       <Box
-//         sx={{
-//           width: { lg: 1660, md: "100%", sm: "100%", xs: "100%" },
-//           bgcolor: "#fff",
-//           display: "flex",
-//           p: 3,
-//           boxShadow: 3,
-//           position: "absolute",
-//           top: 0,
-//           minHeight: 340,
-//           maxHeight: 400,
-//           overflowY: 'auto',
-//           "&::-webkit-scrollbar": {
-//             height: "6px",
-//             width: 6
-//           },
-//           "&::-webkit-scrollbar-track": {
-//             backgroundColor: "#f1f1f1",
-//             borderRadius: "20px",
-//           },
-//           "&::-webkit-scrollbar-thumb": {
-//             backgroundColor: COLORS.primary,
-//             borderRadius: "20px",
-//           },
-//         }}
-//       >
-//         {/* LEFT — Moonpig-like grid of columns */}
-//         <Box
-//           sx={{
-//             width: "100%",
-//             pr: 3,
-//             // overflow: "hidden",
-//             display: "grid",
-//             gridTemplateColumns: {
-//               lg: "repeat(5, minmax(180px, 1fr))",
-//               md: "repeat(3, minmax(180px, 1fr))",
-//               sm: "repeat(2, minmax(180px, 1fr))",
-//             },
-//             gap: 3,
-//           }}
-//         >
-//           {columns.map((category, index: number) => (
-//             <Box key={`${category.name}-${index}`} sx={{ color: COLORS.black }}>
-//               {/* Column header */}
-//               <Typography
-//                 variant="subtitle1"
-//                 sx={{ fontWeight: 700, mb: 1, lineHeight: 1.2, color: COLORS.seconday }}
-//               >
-//                 {category.name}
-//               </Typography>
-
-//               {/* Links list */}
-//               <List
-//                 dense
-//                 disablePadding
-//                 sx={{
-//                   p: 0,
-//                   m: 0,
-//                   overflow: "auto",
-//                   maxHeight: 290,
-//                   "&::-webkit-scrollbar": { width: 6 },
-//                   "&::-webkit-scrollbar-thumb": {
-//                     backgroundColor: "#ddd",
-//                     borderRadius: 10,
-//                   },
-//                 }}
-//               >
-//                 {category.items.map((link, linkIndex: number) => (
-//                   <ListItemButton
-//                     key={`${link}-${linkIndex}`}
-//                     sx={{
-//                       py: 0.25,
-//                       px: 0,
-//                       "&:hover": { bgcolor: "transparent" },
-//                     }}
-//                     disableRipple
-//                     onClick={onSelect}
-//                   >
-//                     <ListItemText
-//                       primary={link}
-//                       primaryTypographyProps={{
-//                         fontSize: 14,
-//                         color: "#212121",
-//                       }}
-//                       sx={{
-//                         m: 0,
-//                         "& .MuiListItemText-primary:hover": {
-//                           textDecoration: "underline",
-//                         },
-//                       }}
-//                     />
-//                   </ListItemButton>
-//                 ))}
-
-//                 {/* “Shop all …” footer links, if any */}
-//                 {category.footers.length > 0 && (
-//                   <Box sx={{ pt: 0.75 }}>
-//                     {category.footers.map((link, i) => (
-//                       <ListItemButton
-//                         key={`footer-${link}-${i}`}
-//                         sx={{
-//                           py: 0.25,
-//                           px: 0,
-//                           "&:hover": { bgcolor: "transparent" },
-//                         }}
-//                         disableRipple
-//                         onClick={onSelect}
-//                       >
-//                         <ListItemText
-//                           primary={link}
-//                           primaryTypographyProps={{
-//                             fontSize: 14,
-//                             fontWeight: 600,
-//                             color: COLORS.primary,
-//                           }}
-//                           sx={{
-//                             m: 0,
-//                             "& .MuiListItemText-primary:hover": {
-//                               textDecoration: "underline",
-//                             },
-//                           }}
-//                         />
-//                       </ListItemButton>
-//                     ))}
-//                   </Box>
-//                 )}
-//               </List>
-//             </Box>
-//           ))}
-//         </Box>
-//       </Box>
-//     </Box>
-//   );
-// };
-
-// export default MegaMenu;
-
-
 // File: src/components/MegaMenu/MegaMenu.tsx
 import {
   Box,
@@ -209,6 +19,18 @@ interface MegaMenuItem {
   categories: Category[];
 }
 
+const splitFooters = (links: string[] = []) => {
+  const footers = links.filter((l) => /shop all/i.test(l) || /all .*$/i.test(l));
+  const items = links.filter((l) => !footers.includes(l));
+  return { items, footers };
+};
+
+const distributeIntoThree = <T,>(arr: T[]) => {
+  const cols: [T[], T[], T[]] = [[], [], []];
+  arr.forEach((item, i) => cols[i % 3].push(item));
+  return cols;
+};
+
 const MegaMenu = ({
   data,
   onSelect,
@@ -219,10 +41,7 @@ const MegaMenu = ({
   const columns = useMemo(() => {
     const cats = data?.categories ?? [];
     return cats.map((col) => {
-      const footers = (col.links ?? []).filter(
-        (l) => /shop all/i.test(l) || /all .*$/i.test(l)
-      );
-      const items = (col.links ?? []).filter((l) => !footers.includes(l));
+      const { items, footers } = splitFooters(col.links ?? []);
       return { ...col, items, footers };
     });
   }, [data]);
@@ -235,6 +54,12 @@ const MegaMenu = ({
   }, [columns.length, activeIdx]);
 
   const active = columns[activeIdx];
+
+  // 3 columns of names (balanced)
+  const [colA, colB, colC] = useMemo(
+    () => distributeIntoThree(columns),
+    [columns]
+  );
 
   return (
     <Box
@@ -255,13 +80,12 @@ const MegaMenu = ({
         sx={{
           width: { lg: 1660, md: "100%", sm: "100%", xs: "100%" },
           bgcolor: "#fff",
-          display: "flex",
           p: 3,
           boxShadow: 3,
           position: "absolute",
           top: 0,
-          minHeight: 200,
-          maxHeight: 400,
+          minHeight: 240,
+          maxHeight: 480,
           overflowY: "auto",
           "&::-webkit-scrollbar": { height: "6px", width: 6 },
           "&::-webkit-scrollbar-track": {
@@ -272,30 +96,26 @@ const MegaMenu = ({
             backgroundColor: COLORS.primary,
             borderRadius: "20px",
           },
-          gap: 4,
+          display: "grid",
+          gap: 3,
+          gridTemplateColumns: {
+            xs: "1fr", // stack on mobile
+            sm: "1fr", // stack on small
+            md: "repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr)", // 3 name cols + 1 list col
+          },
         }}
       >
-        {/* Left: Categories */}
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            flexWrap: "wrap",
-            width: "70%",
-            justifyContent:'space-around',
-            alignContent: "flex-start",
-          }}
-          role="list"
-          aria-label="Categories"
-        >
-          {columns.map((category, idx) => {
-            const isActive = idx === activeIdx;
+        {/* Column 1 — category names */}
+        <Box role="list" aria-label="Categories column 1">
+          {colA.map((category, idx) => {
+            const realIdx = columns.indexOf(category);
+            const isActive = realIdx === activeIdx;
             return (
               <Typography
-                key={`cat-${category.name}-${idx}`}
+                key={`cat-a-${category.name}-${idx}`}
                 variant="subtitle1"
-                onMouseEnter={() => setActiveIdx(idx)}
-                onFocus={() => setActiveIdx(idx)}
+                onMouseEnter={() => setActiveIdx(realIdx)}
+                onFocus={() => setActiveIdx(realIdx)}
                 tabIndex={0}
                 sx={{
                   fontWeight: 700,
@@ -313,8 +133,64 @@ const MegaMenu = ({
           })}
         </Box>
 
-        {/* Right: Subcategories for active category */}
-        <Box sx={{ width: "30%" }}>
+        {/* Column 2 — category names */}
+        <Box role="list" aria-label="Categories column 2">
+          {colB.map((category, idx) => {
+            const realIdx = columns.indexOf(category);
+            const isActive = realIdx === activeIdx;
+            return (
+              <Typography
+                key={`cat-b-${category.name}-${idx}`}
+                variant="subtitle1"
+                onMouseEnter={() => setActiveIdx(realIdx)}
+                onFocus={() => setActiveIdx(realIdx)}
+                tabIndex={0}
+                sx={{
+                  fontWeight: 700,
+                  mb: 1,
+                  color: isActive ? COLORS.primary : COLORS.seconday,
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                  textDecoration: isActive ? "underline" : "none",
+                }}
+                aria-current={isActive ? "true" : undefined}
+              >
+                {category.name}
+              </Typography>
+            );
+          })}
+        </Box>
+
+        {/* Column 3 — category names */}
+        <Box role="list" aria-label="Categories column 3">
+          {colC.map((category, idx) => {
+            const realIdx = columns.indexOf(category);
+            const isActive = realIdx === activeIdx;
+            return (
+              <Typography
+                key={`cat-c-${category.name}-${idx}`}
+                variant="subtitle1"
+                onMouseEnter={() => setActiveIdx(realIdx)}
+                onFocus={() => setActiveIdx(realIdx)}
+                tabIndex={0}
+                sx={{
+                  fontWeight: 700,
+                  mb: 1,
+                  color: isActive ? COLORS.primary : COLORS.seconday,
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                  textDecoration: isActive ? "underline" : "none",
+                }}
+                aria-current={isActive ? "true" : undefined}
+              >
+                {category.name}
+              </Typography>
+            );
+          })}
+        </Box>
+
+        {/* Column 4 — active category links */}
+        <Box>
           {active ? (
             <List
               dense
@@ -323,10 +199,7 @@ const MegaMenu = ({
                 p: 0,
                 m: 0,
                 overflow: "auto",
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 3,
-                maxHeight: 290,
+                maxHeight: 360,
                 "&::-webkit-scrollbar": { width: 6 },
                 "&::-webkit-scrollbar-thumb": {
                   backgroundColor: "#ddd",
@@ -348,10 +221,7 @@ const MegaMenu = ({
                 >
                   <ListItemText
                     primary={link}
-                    primaryTypographyProps={{
-                      fontSize: 14,
-                      color: "#212121",
-                    }}
+                    primaryTypographyProps={{ fontSize: 14, color: "#212121" }}
                     sx={{
                       m: 0,
                       "& .MuiListItemText-primary:hover": {
@@ -363,7 +233,7 @@ const MegaMenu = ({
               ))}
 
               {active.footers.length > 0 && (
-                <Box sx={{ pt: 0.75, width: "100%" }}>
+                <Box sx={{ pt: 0.75 }}>
                   {active.footers.map((link, i) => (
                     <ListItemButton
                       key={`footer-${active.name}-${link}-${i}`}
@@ -406,4 +276,3 @@ const MegaMenu = ({
 };
 
 export default MegaMenu;
-

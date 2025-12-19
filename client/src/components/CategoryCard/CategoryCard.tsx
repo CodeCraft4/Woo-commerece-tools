@@ -28,12 +28,11 @@ const CategoryCard = (props: CategoryType) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        width: { md: "175px", sm: "100px", xs: "100px" },
+        width: { md: "175px", sm: "120px", xs: "100px" },
         height: { md: seasonalCard ? 200 : "175px", sm: seasonalCard ? 175 : "130px", xs: "130px" },
         alignItems: "center",
         textAlign: "center",
         bgcolor: COLORS.white,
-        // ml: key === 0 ? { md: "285px", sm: 0, xs: 0 } : 0,
         cursor: "pointer",
         transition: "border-color 0.3s ease",
         "&:hover": {

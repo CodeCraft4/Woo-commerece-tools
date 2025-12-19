@@ -76,11 +76,12 @@ const LandingHome = () => {
             alignItems: "center",
             overflowX: "auto",
             width: "100%",
-            p: { xs: 1, sm: 2, md: 3 },
-            justifyContent: { xs: "flex-start", md: "center" },
+            pb: { xs: 1, sm: 2, md: 3 },
+            justifyContent: { xs: "flex-start", md: "flex-start" },
             m: "auto",
             "&::-webkit-scrollbar": {
               height: "6px",
+              width: '6px',
             },
             "&::-webkit-scrollbar-track": {
               backgroundColor: "#f1f1f1",
@@ -94,7 +95,9 @@ const LandingHome = () => {
         >
           {
             isLoading && (
-              <Box>Loading...</Box>
+              <Box sx={{
+                textAlign: 'center'
+              }}>Loading...</Box>
             )
           }
           {categories?.map((cate, index) => (

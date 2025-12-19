@@ -11,10 +11,10 @@ interface Sticker1PopupProps {
 }
 
 const Sticker1Popup = ({ onClose, activeIndex }: Sticker1PopupProps) => {
-  const { addSticker } = useSlide1();
+  const { addSticker1 } = useSlide1();
 
   const handleSelectSticker = (stick: any) => {
-    addSticker(stick);
+    addSticker1(stick);
   };
 
   return (

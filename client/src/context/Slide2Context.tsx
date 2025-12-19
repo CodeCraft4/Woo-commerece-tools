@@ -52,6 +52,7 @@ interface DraggableImage {
   rotation: number;
   zIndex?: number;
   filter?: string;
+  shapePath?: string | null;
 }
 
 interface DraggableQR {
@@ -244,6 +245,25 @@ interface Slide2ContextType {
   updateSticker2: (index: number, data: Partial<StickerItem>) => void;
   removeSticker2: (index: number) => void;
   resetSlide2State: () => void | any;
+
+  layout2?: any,
+  setLayout2?: any,
+  // ------------------------ Adding Admin Editor -------------------------------------------------------------------------------------------
+  bgColor2: string | null;
+  setBgColor2: React.Dispatch<React.SetStateAction<string | null>>;
+  bgImage2: string | null;
+  setBgImage2: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedShapePath2: string | null;
+  setSelectedShapePath2: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedShapeImageId2: string | number | null;
+  setSelectedShapeImageId2: React.Dispatch<React.SetStateAction<string | number | null>>;
+  canEditBg2?: boolean;
+  setCanEditBg2?: any;
+  canEditImages2?: boolean;
+  setCanEditImages2?: any;
+  canEditStickers2?: boolean;
+  setCanEditStickers2?: any,
+  setEditAll2: any,
 }
 
 const Slide2Context = createContext<Slide2ContextType | undefined>(undefined);
@@ -279,6 +299,22 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
   const [imageFilter, setImageFilter] = useState(false)
   const [imageSketch, setImageSketch] = useState(false)
   const [activeFilterImageId, setActiveFilterImageId] = useState<string | null>(null);
+
+  //  ADD for Admin Editor ===============================================================================================================================================================================
+  const [bgColor2, setBgColor2] = useState<string | null>(null);
+  const [bgImage2, setBgImage2] = useState<string | null>(null);
+  const [selectedShapePath2, setSelectedShapePath2] = useState<string | null>(null);
+  const [selectedShapeImageId2, setSelectedShapeImageId2] = useState<string | number | null>(null);
+  const [canEditBg2, setCanEditBg2] = useState<boolean>(true);
+  const [canEditImages2, setCanEditImages2] = useState<boolean>(true);
+  const [canEditStickers2, setCanEditStickers2] = useState<boolean>(true);
+
+
+  const setEditAll2 = (on: boolean) => {
+    setCanEditBg2(on);
+    setCanEditImages2(on);
+    setCanEditStickers2(on);
+  };
 
 
 
@@ -372,7 +408,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
   const [lineHeight2, setLineHeight2] = useState(1.5);
   const [letterSpacing2, setLetterSpacing2] = useState(0);
-
+  // Layout with uploaded images for preview
+  const [layout2, setLayout2] = useState<any>(null);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -607,6 +644,10 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.selectedAIimageUrl2)
           setSelectedAIimageUrl2(parsed.selectedAIimageUrl2);
 
+        if (parsed.bgColor2 !== undefined) setBgColor2(parsed.bgColor2);
+        if (parsed.bgImage2 !== undefined) setBgImage2(parsed.bgImage2);
+        if (Object.prototype.hasOwnProperty.call(parsed, "selectedShapePath2")) setSelectedShapePath2(parsed.selectedShapePath2);
+
         if (parsed.fontSize) setFontSize(parsed.fontSize);
         if (parsed.fontWeight) setFontWeight(parsed.fontWeight);
         if (parsed.fontFamily) setFontFamily(parsed.fontFamily);
@@ -652,6 +693,10 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       letterSpacing2,
       lineHeight2,
       rotation,
+
+      bgColor2,
+      bgImage2,
+      selectedShapePath2
     };
 
     try {
@@ -686,6 +731,11 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     letterSpacing2,
     lineHeight2,
     rotation,
+
+
+    bgColor2,
+    bgImage2,
+    selectedShapePath2
   ]);
 
   // --- 🧹 Clear localStorage ---
@@ -697,6 +747,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error clearing slide2_state:", error);
     }
   };
+
+
 
   return (
     <Slide2Context.Provider
@@ -837,7 +889,21 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
         slide2DataStore,
         // Reset function
-        resetSlide2State
+        resetSlide2State,
+
+        layout2,
+        setLayout2,
+
+        bgColor2, setBgColor2,
+        bgImage2, setBgImage2,
+        selectedShapePath2,
+        setSelectedShapePath2,
+        selectedShapeImageId2,
+        setSelectedShapeImageId2,
+        canEditBg2, setCanEditBg2,
+        canEditImages2, setCanEditImages2,
+        canEditStickers2, setCanEditStickers2,
+        setEditAll2,
       }}
     >
       {children}
