@@ -1,46 +1,46 @@
 import { Adjust, Check, Delete, DrawOutlined, Flare, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import { Box, IconButton } from "@mui/material";
 import { COLORS } from "../../../constant/color";
-import { useSlide2 } from "../../../context/Slide2Context";
 import { convertToRealisticSketch } from "../../../source/SketchEffect";
+import { useSlide1 } from "../../../context/Slide1Context";
 
-interface ImageAdjustmentProps {
+interface ImageAdjustment1Props {
     togglePopup?: any,
     onClose: () => void;
     activeIndex?: number;
     isAdminEditor?: boolean
 }
 
-const ImageAdjustment = (props: ImageAdjustmentProps) => {
+const ImageAdjustment1 = (props: ImageAdjustment1Props) => {
     const { onClose, isAdminEditor } = props
 
-    const { setImageFilter, imageFilter, setDraggableImages, selectedImg, setImages, setSelectedImage, setActiveFilterImageId, draggableImages } = useSlide2()
+    const { setImageFilter1, imageFilter1, setDraggableImages1, selectedImg1, setImages1, setSelectedImage1, setActiveFilterImageId1, draggableImages1 } = useSlide1()
 
     const deleteSelectedImages = () => {
-        if (selectedImg.length === 0) return;
+        if (selectedImg1.length === 0) return;
 
         // 1. Delete from draggableImages (canvas)
-        setDraggableImages(prev =>
-            prev.filter(img => !selectedImg.includes(img.id))
+        setDraggableImages1(prev =>
+            prev.filter(img => !selectedImg1.includes(img.id))
         );
 
         // 2. Delete from PhotoPopup images list
-        setImages(prev =>
-            prev.filter(img => !selectedImg.includes(img.id))
+        setImages1(prev =>
+            prev.filter(img => !selectedImg1.includes(img.id))
         );
 
         // 3. REMOVE ALL CHECKS
-        setSelectedImage([]); // ← THIS removes the blue check icons
+        setSelectedImage1([]); // ← THIS removes the blue check icons
     };
 
 
     const bringToFront = () => {
-        setDraggableImages(prev => {
+        setDraggableImages1(prev => {
             const maxZ = Math.max(...prev.map(i => i.zIndex || 0));
             console.log(maxZ)
 
             return prev.map(img =>
-                selectedImg.includes(img.id)
+                selectedImg1.includes(img.id)
                     ? { ...img, zIndex: (img.zIndex || 0) + 1 }
                     : img
             );
@@ -48,9 +48,9 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
     };
 
     const sendToBack = () => {
-        setDraggableImages(prev => {
+        setDraggableImages1(prev => {
             return prev.map(img =>
-                selectedImg.includes(img.id)
+                selectedImg1.includes(img.id)
                     ? { ...img, zIndex: Math.max((img.zIndex || 0) - 1, 0) } // don't go below 0
                     : img
             );
@@ -59,15 +59,15 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
 
 
     const applySketch = async () => {
-        if (selectedImg.length === 0) return;
+        if (selectedImg1.length === 0) return;
 
-        const id = selectedImg[selectedImg.length - 1];
-        const target = draggableImages.find(img => img.id === id);
+        const id = selectedImg1[selectedImg1.length - 1];
+        const target = draggableImages1.find(img => img.id === id);
         if (!target) return;
 
         const sketchUrl = await convertToRealisticSketch(target?.src);
 
-        setDraggableImages(prev =>
+        setDraggableImages1(prev =>
             prev.map(img =>
                 img.id === id ? { ...img, src: sketchUrl } : img
             )
@@ -76,7 +76,7 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
 
 
     return (
-        <Box sx={{ position: 'absolute', left: '33%', zIndex: 99, height: 600, bgcolor: 'white', mt: 1, borderRadius: 1 }}>
+        <Box sx={{ position: 'absolute', left: isAdminEditor ? '29.5%' : '30%', zIndex: 99, height: 600, bgcolor: 'white', mt: 1, borderRadius: 1 }}>
             <Box
                 sx={{
                     display: "flex",
@@ -112,9 +112,9 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
                     <IconButton
                         sx={editingButtonStyle}
                         onClick={() => {
-                            const lastSelected = selectedImg[selectedImg.length - 1];
-                            setActiveFilterImageId(lastSelected);
-                            setImageFilter(!imageFilter);
+                            const lastSelected = selectedImg1[selectedImg1.length - 1];
+                            setActiveFilterImageId1(lastSelected);
+                            setImageFilter1(!imageFilter1);
                         }}
                     >
                         <Flare fontSize="large" />
@@ -132,6 +132,7 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
                             <KeyboardArrowDown fontSize="large" /> Back
                         </IconButton>
                     )}
+
 
                     <IconButton
                         sx={editingButtonStyle}
@@ -179,7 +180,7 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
     );
 };
 
-export default ImageAdjustment;
+export default ImageAdjustment1;
 
 const editingButtonStyle = {
     display: "flex",

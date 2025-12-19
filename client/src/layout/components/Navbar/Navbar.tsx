@@ -114,7 +114,7 @@ const Navbar = () => {
 
     const layout1Draft = layout1
       ? {
-        elements: layout1.elements.map((el: any) => ({
+        elements: layout1?.stickers?.map((el: any) => ({
           id: el.id,
           src: el.src,
           x: el.x,

@@ -14,7 +14,7 @@ const FontSize1Popup = () => {
   } = useSlide1();
 
   // Get the currently selected text element
-  const selectedTextElement = textElements1.find(text => text.id === selectedTextId1);
+  const selectedTextElement = textElements1?.find(text => text.id === selectedTextId1);
   
   // Use individual text size or global default
   const currentFontSize = selectedTextElement?.fontSize || fontSize1;

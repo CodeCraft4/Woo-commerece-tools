@@ -36,17 +36,23 @@ interface TextElement {
   position: Position;
   size: Size;
   isEditing?: boolean;
+  lineHeight?: number,
+  letterSpacing?: number,
   verticalAlign?: "top" | "center" | "bottom";
 }
 
 interface DraggableImage {
-  id: string;
+  id: string | any;
   src: string;
+  originalSrc?: string | any;
   x: number;
   y: number;
   width: number;
   height: number;
   rotation: number;
+  zIndex?: number;
+  filter?: string;
+  shapePath?: string | null;
 }
 
 interface DraggableQR {
@@ -95,7 +101,7 @@ interface Slide4ContextType {
   setTitle4: React.Dispatch<React.SetStateAction<string>>;
   activePopup4: string | null;
   setActivePopup4: React.Dispatch<React.SetStateAction<string | null>>;
-  selectedImg4: number[];
+  selectedImg4: number[] | any;
   setSelectedImage4: React.Dispatch<React.SetStateAction<number[]>>;
   showOneTextRightSideBox4: boolean;
   setShowOneTextRightSideBox4: React.Dispatch<React.SetStateAction<boolean>>;
@@ -103,6 +109,11 @@ interface Slide4ContextType {
   setOneTextValue4: React.Dispatch<React.SetStateAction<string>>;
   multipleTextValue4: boolean;
   setMultipleTextValue4: React.Dispatch<React.SetStateAction<boolean>>;
+
+  lineHeight4: number;
+  setLineHeight4: React.Dispatch<React.SetStateAction<number>>;
+  letterSpacing4: number;
+  setLetterSpacing4: React.Dispatch<React.SetStateAction<number>>;
 
   // Layout selection
   selectedLayout4: "blank" | "oneText" | "multipleText";
@@ -129,6 +140,24 @@ interface Slide4ContextType {
   setFontFamily4: React.Dispatch<React.SetStateAction<string>>;
   rotation4: number;
   setRotation4: React.Dispatch<React.SetStateAction<number>>;
+  defaultFontSize4: number;
+  setDefaultFontSize4: React.Dispatch<React.SetStateAction<number>>;
+  defaultFontWeight4: number;
+  setDefaultFontWeight4: React.Dispatch<React.SetStateAction<number>>;
+  defaultFontColor4: string;
+  setDefaultFontColor4: React.Dispatch<React.SetStateAction<string>>;
+  defaultFontFamily4: string;
+  setDefaultFontFamily4: React.Dispatch<React.SetStateAction<string>>;
+  defaultTextAlign4: "start" | "center" | "end";
+  setDefaultTextAlign4: React.Dispatch<
+    React.SetStateAction<"start" | "center" | "end">
+  >;
+  defaultVerticalAlign4: "top" | "center" | "bottom";
+  setDefaultVerticalAlign4: React.Dispatch<
+    React.SetStateAction<"top" | "center" | "bottom">
+  >;
+  defaultRotation4: number;
+  setDefaultRotation4: React.Dispatch<React.SetStateAction<number>>;
 
   // Individual text elements management
   textElements4: TextElement[];
@@ -156,14 +185,25 @@ interface Slide4ContextType {
   setUpload4: React.Dispatch<React.SetStateAction<boolean>>;
   duration4: number | null;
   setDuration4: React.Dispatch<React.SetStateAction<number | null>>;
+  isAIimage4?: boolean;
+  setIsAIimage4?: React.Dispatch<React.SetStateAction<boolean | any>>;
+  selectedAIimageUrl4: string | null;
+  setSelectedAIimageUrl4: React.Dispatch<React.SetStateAction<string | null>>;
+
+  aimage4: ImagePosition;
+  setAIImage4: React.Dispatch<React.SetStateAction<ImagePosition>>;
 
   selectedPreviewImage4?: string | null;
-  setSelectedPreviewImage4?: React.Dispatch<
-    React.SetStateAction<string | null>
-  >;
-
+  setSelectedPreviewImage4?: React.Dispatch<React.SetStateAction<string | null>>
   draggableImages4: DraggableImage[];
   setDraggableImages4: React.Dispatch<React.SetStateAction<DraggableImage[]>>;
+  imageFilter4?: boolean,
+  setImageFilter4?: any,
+  imageSketch4?: boolean,
+  setImageSketch4?: any,
+
+  activeFilterImageId4?: string | null | any,
+  setActiveFilterImageId4?: any
 
   qrPosition4: DraggableQR;
   setQrPosition4: React.Dispatch<React.SetStateAction<DraggableQR>>;
@@ -175,14 +215,6 @@ interface Slide4ContextType {
   setTextPositions4: React.Dispatch<React.SetStateAction<Position[]>>;
   textSizes4: Size[];
   setTextSizes4: React.Dispatch<React.SetStateAction<Size[]>>;
-
-
-  lineHeight4: number;
-  setLineHeight4: React.Dispatch<React.SetStateAction<number>>;
-  letterSpacing4: number;
-  setLetterSpacing4: React.Dispatch<React.SetStateAction<number>>;
-
-
   imagePositions4: Record<number, Position>; // keyed by image id
   setImagePositions4: React.Dispatch<
     React.SetStateAction<Record<number, Position>>
@@ -195,18 +227,11 @@ interface Slide4ContextType {
   setSelectedVideoUrl4: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedAudioUrl4: React.Dispatch<React.SetStateAction<string | null>>;
   selectedAudioUrl4: string | null;
-  isAIimage4?: boolean;
-  setIsAIimage4?: React.Dispatch<React.SetStateAction<boolean | any>>;
-  selectedAIimageUrl4: string | null;
-  setSelectedAIimageUrl4: React.Dispatch<React.SetStateAction<string | null>>;
 
   // Slide state management
   isSlideActive4: boolean;
   setIsSlideActive4: React.Dispatch<React.SetStateAction<boolean>>;
-  slide4DataStore?: any[];
-
-  aimage4: ImagePosition;
-  setAIImage4: React.Dispatch<React.SetStateAction<ImagePosition>>;
+  slide4DataStore4: any[];
 
   isEditable4: boolean; // NEW: To control edit/view mode
   setIsEditable4: React.Dispatch<React.SetStateAction<boolean>>;
@@ -218,12 +243,27 @@ interface Slide4ContextType {
   ) => void;
   updateSticker4: (index: number, data: Partial<StickerItem>) => void;
   removeSticker4: (index: number) => void;
+  resetSlide4State: () => void | any;
 
-  // Layout with uploaded images for preview
-  layout4: any;
-  setLayout4: React.Dispatch<React.SetStateAction<any>>;
+  layout4?: any,
+  setLayout4?: any,
 
-  resetSlide4State: () => void
+  // ------------------------ Adding Admin Editor -------------------------------------------------------------------------------------------
+  bgColor4: string | null;
+  setBgColor4: React.Dispatch<React.SetStateAction<string | null>>;
+  bgImage4: string | null;
+  setBgImage4: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedShapePath4: string | null;
+  setSelectedShapePath4: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedShapeImageId4: string | number | null;
+  setSelectedShapeImageId4: React.Dispatch<React.SetStateAction<string | number | null>>;
+  canEditBg4?: boolean;
+  setCanEditBg4?: any;
+  canEditImages4?: boolean;
+  setCanEditImages4?: any;
+  canEditStickers4?: boolean;
+  setCanEditStickers4?: any,
+  setEditAll4: any,
 }
 
 const Slide4Context = createContext<Slide4ContextType | undefined>(undefined);
@@ -235,8 +275,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [title4, setTitle4] = useState("Happy Birthday");
   const [activePopup4, setActivePopup4] = useState<string | null>(null);
   const [selectedImg4, setSelectedImage4] = useState<number[]>([]);
-  const [showOneTextRightSideBox4, setShowOneTextRightSideBox4] =
-    useState(false);
+  const [showOneTextRightSideBox4, setShowOneTextRightSideBox4] = useState(false);
   const [oneTextValue4, setOneTextValue4] = useState("");
   const [multipleTextValue4, setMultipleTextValue4] = useState(false);
 
@@ -244,44 +283,63 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [selectedLayout4, setSelectedLayout4] = useState<
     "blank" | "oneText" | "multipleText"
   >("blank");
-  const [selectedVideoUrl4, setSelectedVideoUrl4] = useState<string | null>(
+  const [selectedVideoUrl4, setSelectedVideoUrl4] = useState<string | null>(null);
+  const [selectedAudioUrl4, setSelectedAudioUrl4] = useState<string | null>(null);
+  const [selectedAIimageUrl4, setSelectedAIimageUrl4] = useState<string | null>(
     null
   );
-  const [selectedAudioUrl4, setSelectedAudioUrl4] = useState<string | null>(
-    null
-  );
+  const [isAIimage4, setIsAIimage4] = useState<boolean>(false);
+
   const [selectedPreviewImage4, setSelectedPreviewImage4] = useState<
     string | null
   >(null);
 
   // Image Resizing.
-  const [draggableImages4, setDraggableImages4] = useState<DraggableImage[]>(
-    []
-  );
+  const [draggableImages4, setDraggableImages4] = useState<DraggableImage[]>([]);
+  const [imageFilter4, setImageFilter4] = useState(false)
+  const [imageSketch4, setImageSketch4] = useState(false)
+  const [activeFilterImageId4, setActiveFilterImageId4] = useState<string | null>(null);
 
-  const [layout4, setLayout4] = useState<any>(null);
+  //  ADD for Admin Editor ===============================================================================================================================================================================
+  const [bgColor4, setBgColor4] = useState<string | null>(null);
+  const [bgImage4, setBgImage4] = useState<string | null>(null);
+  const [selectedShapePath4, setSelectedShapePath4] = useState<string | null>(null);
+  const [selectedShapeImageId4, setSelectedShapeImageId4] = useState<string | number | null>(null);
+  const [canEditBg4, setCanEditBg4] = useState<boolean>(true);
+  const [canEditImages4, setCanEditImages4] = useState<boolean>(true);
+  const [canEditStickers4, setCanEditStickers4] = useState<boolean>(true);
+
+
+  const setEditAll4 = (on: boolean) => {
+    setCanEditBg4(on);
+    setCanEditImages4(on);
+    setCanEditStickers4(on);
+  };
+
+
+
 
   // QR Resizing and Moving
   const [qrPosition4, setQrPosition4] = useState<DraggableQR>({
-    id: "qr4",
+    id: "qr1",
     url: "",
-    x: 20,
-    y: 10,
-    width: 59,
+    x: 0,
+    y: 0,
+    width: 70,
     height: 105,
     rotation: 0,
-    zIndex: 999,
+    zIndex: 1000,
   });
 
   const [qrAudioPosition4, setQrAudioPosition4] = useState<DraggableAudioQR>({
     id: "qr2",
     url: "",
-    x: 20,
-    y: 10,
-    width: 59,
+    x: 0,
+    y: 0,
+    width: 70,
     height: 105,
     rotation: 0,
-    zIndex: 999,
+    zIndex: 1000,
   });
 
   const [aimage4, setAIImage4] = useState<ImagePosition>({
@@ -309,6 +367,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [textElements4, setTextElements4] = useState<TextElement[]>([]);
   const [selectedTextId4, setSelectedTextId4] = useState<string | null>(null);
 
+
+
   // Legacy support
   const [texts4, setTexts4] = useState([
     {
@@ -319,6 +379,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
     {
       value: "",
@@ -328,6 +390,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
     {
       value: "",
@@ -337,6 +401,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       fontFamily: "Roboto",
       verticalAlign: "center",
       textAlign: "center",
+      lineHeight: 1.5,
+      letterSpacing: 0,
     },
   ]);
 
@@ -354,19 +420,12 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [duration4, setDuration4] = useState<number | null>(null);
   const [poster4, setPoster4] = useState<string | null>(null);
 
-  const [selectedAIimageUrl4, setSelectedAIimageUrl4] = useState<string | null>(
-    null
-  );
-  const [isAIimage4, setIsAIimage4] = useState<boolean>(false);
-
-  const [selectedStickers4, setSelectedStickers4] = useState<StickerItem[]>([]);
-
   // New states for position and size
   const [textPositions4, setTextPositions4] = useState<Position[]>(
     texts4.map(() => ({ x: 0, y: 0 }))
   );
   const [textSizes4, setTextSizes4] = useState<Size[]>(
-    texts4.map(() => ({ width: 400, height: 30 }))
+    texts4.map(() => ({ width: 100, height: 30 }))
   );
 
   // For images, use an object keyed by image id for quick lookup
@@ -379,7 +438,9 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [isSlideActive4, setIsSlideActive4] = useState(false);
   const [isEditable4, setIsEditable4] = useState(true);
 
-  const [slide4DataStore, setSlide4DataStore] = useState<any[]>([]);
+  const [slide4DataStore4, setSlide4DataStore] = useState<any[]>([]);
+
+  const [selectedStickers4, setSelectedStickers4] = useState<StickerItem[]>([]);
 
   const addSticker4 = (
     sticker: Omit<
@@ -388,12 +449,13 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     >
   ) => {
     setSelectedStickers4((prev) => {
+      const isFirstSticker = prev.length === 0;
       const newSticker: StickerItem = {
         ...sticker,
-        x: 0 + prev.length * 10,
-        y: 0 + prev.length * 10,
-        width: 100,
-        height: 100,
+        x: isFirstSticker ? 30 : 30 + prev.length * 20,
+        y: isFirstSticker ? 30 : 30 + prev.length * 20,
+        width: isFirstSticker ? 120 : 100,
+        height: isFirstSticker ? 120 : 100,
         zIndex: prev.length + 2,
         rotation: 0,
       };
@@ -415,63 +477,12 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  // ✅ LOG ALL CHANGES LIVE
-  useEffect(() => {
-    setSlide4DataStore([
-      activeIndex4,
-      title4,
-      selectedLayout4,
-      oneTextValue4,
-      multipleTextValue4,
-      textElements4,
-      texts4,
-      fontSize4,
-      fontWeight4,
-      fontColor4,
-      fontFamily4,
-      textAlign4,
-      verticalAlign4,
-      rotation4,
-      images4,
-      imagePositions4,
-      imageSizes4,
-      video4,
-      audio4,
-      duration4,
-      poster4,
-      isSlideActive4,
-      selectedPreviewImage4,
-      setSelectedPreviewImage4,
-    ]);
-  }, [
-    activeIndex4,
-    title4,
-    selectedLayout4,
-    oneTextValue4,
-    multipleTextValue4,
-    textElements4,
-    texts4,
-    fontSize4,
-    fontWeight4,
-    fontColor4,
-    fontFamily4,
-    textAlign4,
-    verticalAlign4,
-    rotation4,
-    images4,
-    imagePositions4,
-    imageSizes4,
-    video4,
-    audio4,
-    duration4,
-    poster4,
-    isSlideActive4,
-    selectedPreviewImage4,
-    setSelectedPreviewImage4,
-  ]);
-
   // ✅ Reset all context state to initial values
   const resetSlide4State = () => {
+    // 🧹 Clear persisted local storage
+    clearSlide4LocalData();
+
+    // Base states
     setActiveIndex4(0);
     setTitle4("Happy Birthday");
     setActivePopup4(null);
@@ -479,13 +490,23 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     setShowOneTextRightSideBox4(false);
     setOneTextValue4("");
     setMultipleTextValue4(false);
+
+    // Layout & selections
     setSelectedLayout4("blank");
     setSelectedVideoUrl4(null);
     setSelectedAudioUrl4(null);
     setSelectedAIimageUrl4(null);
     setIsAIimage4(false);
     setSelectedPreviewImage4(null);
+
+    // Images & draggable
+    setImages4([]);
     setDraggableImages4([]);
+
+    // Stickers
+    setSelectedStickers4([]);
+
+    // QR positions
     setQrPosition4({
       id: "qr1",
       url: "",
@@ -496,6 +517,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       rotation: 0,
       zIndex: 1000,
     });
+
     setQrAudioPosition4({
       id: "qr2",
       url: "",
@@ -506,12 +528,16 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       rotation: 0,
       zIndex: 1000,
     });
+
+    // AI image position
     setAIImage4({
       x: 30,
       y: 30,
       width: 300,
       height: 400,
     });
+
+    // Fonts & text defaults
     setFontSize4(20);
     setFontWeight4(400);
     setTextAlign4("start");
@@ -519,6 +545,10 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     setFontFamily4("Roboto");
     setFontColor4("#000000");
     setRotation4(0);
+    setLineHeight4(1.5)
+    setLetterSpacing4(0)
+
+    // Text elements
     setTextElements4([]);
     setSelectedTextId4(null);
     setTexts4([
@@ -530,6 +560,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         fontFamily: "Roboto",
         verticalAlign: "center",
         textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
       },
       {
         value: "",
@@ -539,6 +571,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         fontFamily: "Roboto",
         verticalAlign: "center",
         textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
       },
       {
         value: "",
@@ -548,26 +582,179 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         fontFamily: "Roboto",
         verticalAlign: "center",
         textAlign: "center",
+        lineHeight: 1.5,
+        letterSpacing: 0,
       },
     ]);
+
+    // Misc editing states
     setEditingIndex4(null);
-    setImages4([]);
-    setVideo4(null);
-    setAudio4(null);
     setTips4(false);
     setUpload4(false);
     setDuration4(null);
     setPoster4(null);
+
+    // Position & size data
     setTextPositions4([]);
     setTextSizes4([]);
     setImagePositions4({});
     setImageSizes4({});
+
+
+    setBgColor4(null)
+    setBgImage4(null)
+    setSelectedShapeImageId4(null)
+    setSelectedShapePath4(null)
+
+    // Video / audio files
+    setVideo4(null);
+    setAudio4(null);
+
+    // Slide states
     setIsSlideActive4(false);
     setIsEditable4(true);
-    setSelectedStickers4([]);
+
+    // Typography adjustments
     setLineHeight4(1.5);
     setLetterSpacing4(0);
+
+    // Clear data store snapshot
+    setSlide4DataStore([]);
   };
+
+  // Passed value to storing and state recognizing.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("slide4_state");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        if (parsed.textElements4) setTextElements4(parsed.textElements4);
+        if (parsed.draggableImages4) setDraggableImages4(parsed.draggableImages4);
+        if (parsed.images4) setImages4(parsed.images4);
+        if (parsed.selectedImg4) setSelectedImage4(parsed.selectedImg4);
+        if (parsed.selectedVideoUrl4) setSelectedVideoUrl4(parsed.selectedVideoUrl4);
+        if (parsed.selectedAudioUrl4) setSelectedAudioUrl4(parsed.selectedAudioUrl4);
+        if (parsed.selectedLayout4) setSelectedLayout4(parsed.selectedLayout4);
+        if (parsed.oneTextValue4) setOneTextValue4(parsed.oneTextValue4);
+        if (parsed.showOneTextRightSideBox4) setShowOneTextRightSideBox4(parsed.showOneTextRightSideBox4);
+        if (parsed.multipleTextValue4)
+          setMultipleTextValue4(parsed.multipleTextValue4);
+        if (parsed.selectedStickers4)
+          setSelectedStickers4(parsed.selectedStickers4);
+        if (parsed.qrPosition4) setQrPosition4(parsed.qrPosition4);
+        if (parsed.qrAudioPosition4) setQrAudioPosition4(parsed.qrAudioPosition4);
+        if (parsed.aimage4) setAIImage4(parsed.aimage4);
+        if (typeof parsed.isAIimage4 === "boolean") setIsAIimage4(parsed.isAIimage);
+        if (parsed.selectedAIimageUrl4)
+          setSelectedAIimageUrl4(parsed.selectedAIimageUrl4);
+
+        if (parsed.bgColor4 !== undefined) setBgColor4(parsed.bgColor4);
+        if (parsed.bgImage4 !== undefined) setBgImage4(parsed.bgImage4);
+        if (Object.prototype.hasOwnProperty.call(parsed, "selectedShapePath3")) setSelectedShapePath4(parsed.selectedShapePath4);
+
+        if (parsed.fontSize4) setFontSize4(parsed.fontSize4);
+        if (parsed.fontWeight4) setFontWeight4(parsed.fontWeight4);
+        if (parsed.fontFamily4) setFontFamily4(parsed.fontFamily4);
+        if (parsed.fontColor4) setFontColor4(parsed.fontColor4);
+        if (parsed.textAlign4) setTextAlign4(parsed.textAlign4);
+        if (parsed.verticalAlign4) setVerticalAlign4(parsed.verticalAlign4);
+        if (parsed.letterSpacing4 !== undefined) setLetterSpacing4(parsed.letterSpacing4);
+        if (parsed.lineHeight4 !== undefined) setLineHeight4(parsed.lineHeight4);
+        if (parsed.rotation4 !== undefined) setRotation4(parsed.rotation4);
+
+      }
+    } catch (error) {
+      console.error("❌ Error restoring slide4_state:", error);
+    }
+  }, []);
+
+  // --- 💾 Auto-save changes ---
+  useEffect(() => {
+    const stateToSave = {
+      textElements4,
+      draggableImages4,
+      images4,
+      selectedImg4,
+      selectedVideoUrl4,
+      selectedAudioUrl4,
+      selectedLayout4,
+      oneTextValue4,
+      multipleTextValue4,
+      showOneTextRightSideBox4,
+      selectedStickers4,
+      qrPosition4,
+      qrAudioPosition4,
+      aimage4,
+      isAIimage4,
+      selectedAIimageUrl4,
+
+      fontSize4,
+      fontWeight4,
+      fontFamily4,
+      fontColor4,
+      textAlign4,
+      verticalAlign4,
+      letterSpacing4,
+      lineHeight4,
+      rotation4,
+
+      bgColor4,
+      bgImage4,
+      selectedShapePath4
+    };
+
+    try {
+      localStorage.setItem("slide4_state", JSON.stringify(stateToSave));
+    } catch (error) {
+      console.error("❌ Error saving slide4_state:", error);
+    }
+  }, [
+    textElements4,
+    draggableImages4,
+    images4,
+    selectedImg4,
+    selectedVideoUrl4,
+    selectedAudioUrl4,
+    selectedLayout4,
+    oneTextValue4,
+    multipleTextValue4,
+    selectedStickers4,
+    qrPosition4,
+    qrAudioPosition4,
+    aimage4,
+    isAIimage4,
+    selectedAIimageUrl4,
+    showOneTextRightSideBox4,
+
+    fontSize4,
+    fontWeight4,
+    fontFamily4,
+    fontColor4,
+    textAlign4,
+    verticalAlign4,
+    letterSpacing4,
+    lineHeight4,
+    rotation4,
+
+
+    bgColor4,
+    bgImage4,
+    selectedShapePath4
+  ]);
+
+  // --- 🧹 Clear localStorage ---
+  const clearSlide4LocalData = () => {
+    try {
+      localStorage.removeItem("slide4_state");
+      console.log("🧹 Cleared Slide4 saved state");
+    } catch (error) {
+      console.error("Error clearing slide4_state:", error);
+    }
+  };
+
+  // Layout with uploaded images for preview
+  const [layout4, setLayout4] = useState<any>(null);
 
   return (
     <Slide4Context.Provider
@@ -586,6 +773,20 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         setOneTextValue4,
         multipleTextValue4,
         setMultipleTextValue4,
+        defaultFontColor4: fontColors[0],
+        setDefaultFontColor4: () => { },
+        defaultFontSize4: 20,
+        setDefaultFontSize4: () => { },
+        defaultFontWeight4: 400,
+        setDefaultFontWeight4: () => { },
+        defaultFontFamily4: "Roboto",
+        setDefaultFontFamily4: () => { },
+        defaultTextAlign4: "start",
+        setDefaultTextAlign4: () => { },
+        defaultVerticalAlign4: "top",
+        setDefaultVerticalAlign4: () => { },
+        defaultRotation4: 0,
+        setDefaultRotation4: () => { },
 
         // Layout selection
         selectedLayout4,
@@ -619,27 +820,24 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
 
         images4,
         setImages4,
-        aimage4,
-        setAIImage4,
+
+        addSticker4,
+        selectedStickers4,
+        updateSticker4,
+        removeSticker4,
 
         selectedPreviewImage4,
         setSelectedPreviewImage4,
         draggableImages4,
         setDraggableImages4,
-        isAIimage4,
-        setIsAIimage4,
-        setSelectedAIimageUrl4,
-        selectedAIimageUrl4,
 
         video4,
         setVideo4,
         audio4,
         setAudio4,
 
-        addSticker4,
-        selectedStickers4,
-        updateSticker4,
-        removeSticker4,
+        aimage4,
+        setAIImage4,
 
         tips4,
         setTips4,
@@ -661,18 +859,31 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         setTextPositions4,
         textSizes4,
         setTextSizes4,
+        slide4DataStore4,
+
+        lineHeight4,
+        setLineHeight4,
+        letterSpacing4,
+        setLetterSpacing4,
+
+
+
         imagePositions4,
         setImagePositions4,
         imageSizes4,
         setImageSizes4,
         poster4,
         setPoster4,
-
-
-        lineHeight4,
-        setLineHeight4,
-        letterSpacing4,
-        setLetterSpacing4,
+        isAIimage4,
+        setIsAIimage4,
+        setSelectedAIimageUrl4,
+        selectedAIimageUrl4,
+        setImageFilter4,
+        imageFilter4,
+        setImageSketch4,
+        imageSketch4,
+        activeFilterImageId4,
+        setActiveFilterImageId4,
 
         // Slide state management
         isSlideActive4,
@@ -681,13 +892,21 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         setIsEditable4,
         verticalAlign4,
         setVerticalAlign4,
+
+        resetSlide4State,
         layout4,
         setLayout4,
 
-        slide4DataStore,
-
-        // Reset all State
-        resetSlide4State
+        bgColor4, setBgColor4,
+        bgImage4, setBgImage4,
+        selectedShapePath4,
+        setSelectedShapePath4,
+        selectedShapeImageId4,
+        setSelectedShapeImageId4,
+        canEditBg4, setCanEditBg4,
+        canEditImages4, setCanEditImages4,
+        canEditStickers4, setCanEditStickers4,
+        setEditAll4,
       }}
     >
       {children}

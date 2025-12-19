@@ -1,4 +1,3 @@
-// Text1Popup.tsx
 import { Box, IconButton, Typography } from "@mui/material";
 import {
   TextIncreaseOutlined,
@@ -74,7 +73,7 @@ const Text1Popup = ({
 
 
   // Get the currently selected text element
-  const selectedTextElement = textElements1.find(text => text.id === selectedTextId1);
+  const selectedTextElement = textElements1?.find(text => text.id === selectedTextId1);
 
   // Function to update individual text element or global defaults
   const updateTextProperty = (property: string, value: any) => {

@@ -14,7 +14,7 @@ const FontFamily1Popup = () => {
   } = useSlide1();
 
   // Get the currently selected text element
-  const selectedTextElement = textElements1.find(text => text.id === selectedTextId1);
+  const selectedTextElement = textElements1?.find(text => text.id === selectedTextId1);
   
   // Use individual text font family or global default
   const currentFontFamily = selectedTextElement?.fontFamily || fontFamily1;

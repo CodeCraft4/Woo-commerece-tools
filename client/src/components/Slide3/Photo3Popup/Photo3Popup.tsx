@@ -1,19 +1,26 @@
 import { Box, Typography, IconButton } from "@mui/material";
 import { ControlPoint, Delete, Check } from "@mui/icons-material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { COLORS } from "../../../constant/color";
-import { useSlide3 } from "../../../context/Slide3Context";
+import { handleAutoDeletedImage } from "../../../lib/lib";
 import { supabase } from "../../../supabase/supabase";
 import toast from "react-hot-toast";
+import { useSlide3 } from "../../../context/Slide3Context";
 
 interface Photo3PopupProps {
   onClose: () => void;
   activeIndex?: number;
+  isAdminEditor?: boolean;
 }
 
-const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
+const BUCKETS = {
+  USER: "user-images",
+  ADMIN: "admin-images",
+} as const;
+
+const Photo3Popup = ({ onClose, activeIndex, isAdminEditor = false }: Photo3PopupProps) => {
   const {
     images3,
     setSelectedImage3,
@@ -22,231 +29,205 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
     setDraggableImages3,
     imageFilter3,
     setImageFilter3,
-    setActiveFilterImageId3,
     draggableImages3,
     activeFilterImageId3,
+    setActiveFilterImageId3,
   } = useSlide3();
 
   const [loading, setLoading] = useState(false);
-
   const { user } = useAuth();
 
-  const generateId: any = () => Date.now() + Math.random();
+  const bucket = isAdminEditor ? BUCKETS.ADMIN : BUCKETS.USER;
 
-  const uploadToSupabase = async (file: File, fileName: string) => {
+  const filters = useMemo(
+    () => [
+      { name: "None", css: "none" },
+      { name: "Brightness", css: "brightness(150%)" },
+      { name: "Contrast", css: "contrast(180%)" },
+      { name: "Grayscale", css: "grayscale(100%)" },
+      { name: "Sepia", css: "sepia(100%)" },
+      { name: "Invert", css: "invert(100%)" },
+      { name: "Blur", css: "blur(3px)" },
+    ],
+    []
+  );
+
+  const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  const pathForUpload = useCallback(
+    (fileName: string) => {
+      // why: namespacing prevents collisions and simplifies delete/list by user
+      if (isAdminEditor) return fileName; // flat at root for admins
+      if (!user?.id) return fileName;
+      return `${user.id}/${fileName}`;
+    },
+    [isAdminEditor, user?.id]
+  );
+
+  const getPublicUrl = (bucketName: string, objectPath: string) =>
+    supabase.storage.from(bucketName).getPublicUrl(objectPath).data.publicUrl;
+
+  const uploadToSupabase = async (file: File, objectPath: string) => {
     setLoading(true);
-
-    try {
-      const { error } = await supabase.storage
-        .from("user-images")
-        .upload(fileName, file);
-
-      if (error) {
-        console.error("Upload error:", error.message);
-        toast.error(`Upload failed: ${error.message}`);
-        setLoading(false);
-        return null;
-      }
-
-      const { data } = supabase.storage
-        .from("user-images")
-        .getPublicUrl(fileName);
-
-      setLoading(false);
-      toast.success("✅ Photo uploaded successfully!");
-      return data.publicUrl;
-    } catch (err: any) {
-      console.error("Unexpected upload error:", err);
-      toast.error("Unexpected error while uploading.");
+    const { error } = await supabase.storage.from(bucket).upload(objectPath, file, {
+      upsert: false,
+    });
+    if (error) {
+      toast.error(`Upload failed: ${error.message}`);
       setLoading(false);
       return null;
     }
+    const publicUrl = getPublicUrl(bucket, objectPath);
+    setLoading(false);
+    toast.success("✅ Photo uploaded!");
+    return publicUrl;
   };
 
-  // ✅ Save image URL to the user's images array in DB (only id and url)
-  const saveImageUrlToDB = async (imageId: string, imageUrl: string) => {
+  const saveUserImageUrlToDB = async (imageId: string, imageUrl: string) => {
     if (!user?.id) {
-      toast.error("No authenticated user found!");
+      toast.error("No authenticated user found");
+      return;
+    }
+    const { data: userData, error: fetchError } = await supabase
+      .from("Users")
+      .select("images")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (fetchError) {
+      toast.error("Failed to fetch user data");
       return;
     }
 
-    try {
+    const newImage = { id: imageId, url: imageUrl };
+    const updatedImages = Array.isArray(userData?.images)
+      ? [...userData.images, newImage]
+      : [newImage];
+
+    const { error: updateError } = await supabase
+      .from("Users")
+      .update({ images: updatedImages })
+      .eq("auth_id", user.id);
+
+    if (updateError) {
+      toast.error("Failed to save image URL");
+      return;
+    }
+    toast.success("✅ Image saved to your account");
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const imageId = generateId();
+      const objectFileName = `${imageId}.${fileExt}`;
+      const objectPath = pathForUpload(objectFileName);
+
+      const url = await uploadToSupabase(file, objectPath);
+      if (!url) continue;
+
+      if (isAdminEditor) {
+        // Admin: do not persist URL in DB
+        setImages3((prev: any[]) => [...prev, { id: imageId, src: url, fileName: objectPath }]);
+      } else {
+        setImages3((prev: any[]) => [...prev, { id: imageId, src: url, fileName: objectPath }]);
+        await saveUserImageUrlToDB(imageId, url);
+        // Optional auto-delete (adjust TTL)
+        handleAutoDeletedImage(user?.id, imageId, objectPath, fetchImages, 7 * 24 * 60 * 60 * 1000);
+      }
+    }
+
+    e.target.value = "";
+  };
+
+  const handleDelete = async (id: any) => {
+    const imgToDelete: any = images3.find((img: any) => img.id === id);
+    if (!imgToDelete?.fileName) return;
+
+    const { error } = await supabase.storage.from(bucket).remove([imgToDelete.fileName]);
+    if (error) {
+      toast.error("Failed to delete");
+      return;
+    }
+
+    if (!isAdminEditor && user?.id) {
       const { data: userData, error: fetchError } = await supabase
         .from("Users")
         .select("images")
         .eq("auth_id", user.id)
         .single();
 
-      if (fetchError) {
-        console.error("Error fetching user data:", fetchError);
-        toast.error("Failed to fetch user data.");
-        return;
-      }
-
-      const newImage = { id: imageId, url: imageUrl };
-      const updatedImages = userData?.images
-        ? [...userData.images, newImage]
-        : [newImage];
-
-      const { error: updateError } = await supabase
-        .from("Users")
-        .update({ images: updatedImages })
-        .eq("auth_id", user.id);
-
-      if (updateError) {
-        console.error("Error updating user images:", updateError);
-        toast.error("Failed to save image URL.");
-        return;
-      }
-
-      toast.success("✅ Image saved to your account!");
-    } catch (err) {
-      console.error("Error saving image to DB:", err);
-      toast.error("Database save failed.");
-    }
-  };
-
-  const handleFileChange = async (e: any) => {
-    const files: any = Array.from(e.target.files);
-
-    for (const file of files) {
-      const fileExt = file.name.split(".").pop();
-      const imageId = generateId().toString(); // Generate unique ID
-      const fileName = `${imageId}.${fileExt}`;
-
-      const url = await uploadToSupabase(file, fileName);
-
-      if (url) {
-        // Store in local state with fileName for deletion
-        setImages3((prev: any) => [
-          ...prev,
-          { id: imageId, src: url, fileName },
-        ]);
-
-        // Save to DB with only id and url
-        await saveImageUrlToDB(imageId, url);
+      if (!fetchError && Array.isArray(userData?.images)) {
+        const updatedImages = userData.images.filter((img: any) => img.id !== id);
+        await supabase.from("Users").update({ images: updatedImages }).eq("auth_id", user.id);
       }
     }
 
-    e.target.value = null;
+    setImages3((prev) => prev.filter((img: any) => img.id !== id));
+    toast.success("🗑️ Deleted");
   };
 
-  const handleDelete = async (id: any) => {
-    const imgToDelete: any = images3.find((img) => img.id === id);
-    if (!imgToDelete) return;
-
-    try {
-      await supabase.storage.from("user-images").remove([imgToDelete.fileName]);
-
-      if (user?.id) {
-        const { data: userData, error: fetchError } = await supabase
-          .from("Users")
-          .select("images")
-          .eq("auth_id", user.id)
-          .single();
-
-        if (!fetchError && userData?.images) {
-          const updatedImages = userData.images.filter(
-            (img: any) => img.id !== id
-          );
-
-          await supabase
-            .from("Users")
-            .update({ images: updatedImages })
-            .eq("auth_id", user.id);
-        }
-      }
-
-      setImages3((prev) => prev.filter((img) => img.id !== id));
-      toast.success("🗑️ Photo deleted successfully!");
-    } catch (err) {
-      console.error("Delete error:", err);
-      toast.error("Failed to delete photo!");
-    }
-  };
-
-  // 🔹 Fetch all images from Supabase when user is available
   const fetchUserImages = async () => {
     if (!user?.id) return;
+    const { data, error } = await supabase.from("Users").select("images").eq("auth_id", user.id).single();
+    if (error) return;
 
-    try {
-      const { data, error } = await supabase
-        .from("Users")
-        .select("images")
-        .eq("auth_id", user.id)
-        .single();
-
-      if (error) {
-        console.error("Error fetching user images:", error);
-        return;
-      }
-
-      if (data?.images && Array.isArray(data.images)) {
-        // Map to your component's local structure
-        const formattedImages = data.images.map((img: any) => ({
-          id: img.id,
-          src: img.url, // rename url → src for consistency
-        }));
-
-        setImages3(formattedImages);
-      } else {
-        console.log("No images found for this user.");
-        setImages3([]); // clear if none
-      }
-    } catch (err) {
-      console.error("Unexpected error fetching images:", err);
-    }
+    const formatted = Array.isArray(data?.images)
+      ? data.images.map((img: any) => ({ id: img.id, src: img.url }))
+      : [];
+    setImages3(formatted);
   };
 
+  const fetchAdminImages = async () => {
+    // why: admin does not store URLs; we list bucket and render public URLs directly
+    const { data, error } = await supabase.storage.from(BUCKETS.ADMIN).list("", {
+      limit: 1000,
+      sortBy: { column: "created_at", order: "desc" },
+    });
+    if (error) return;
+
+    const mapped: any[] = (data || [])
+      .filter((o) => o.id && o.name && !o.name.endsWith("/"))
+      .map((o) => {
+        const src = getPublicUrl(BUCKETS.ADMIN, o.name);
+        return { id: o.id.toString(), src, fileName: o.name };
+      });
+
+    setImages3(mapped);
+  };
+
+  const fetchImages = useCallback(async () => {
+    if (isAdminEditor) return fetchAdminImages();
+    return fetchUserImages();
+  }, [isAdminEditor, user?.id]);
+
   useEffect(() => {
-    if (!user) return;
-
-    const fetchData = async () => {
-      try {
-        await fetchUserImages(); // ✅ await allowed here
-      } catch (error) {
-        console.error("❌ Error fetching user images:", error);
-      }
-    };
-
-    fetchData();
-  }, [user, images3]);
-
-  const filters = [
-    { name: "None", css: "none" },
-    { name: "Brightness", css: "brightness(150%)" },
-    { name: "Contrast", css: "contrast(180%)" },
-    { name: "Grayscale", css: "grayscale(100%)" },
-    { name: "Sepia", css: "sepia(100%)" },
-    { name: "Invert", css: "invert(100%)" },
-    { name: "Blur", css: "blur(3px)" },
-  ];
+    fetchImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdminEditor, user?.id]);
 
   const applyFilter = (filterCss: string) => {
-    setDraggableImages3(prev =>
-      prev.map(img =>
-        img.id === activeFilterImageId3  // 👈 ONLY 1 image gets filter!
-          ? { ...img, filter: filterCss }
-          : img
-      )
+    setDraggableImages3((prev) =>
+      prev.map((img) => (img.id === activeFilterImageId3 ? { ...img, filter: filterCss } : img))
     );
   };
 
-
   if (imageFilter3) {
-    const selectedImage = draggableImages3.find(img => selectedImg3.includes(img.id));
-
-    const previewImg = selectedImage?.src ||
-      "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400";
+    const selectedImage = draggableImages3.find((img) => img.id === activeFilterImageId3);
+    const previewImg =
+      selectedImage?.src || "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400";
 
     return (
       <PopupWrapper
         title="Image Filter"
         onClose={() => setImageFilter3(false)}
         sx={{
-          width: { md: 300, sm: 300, xs: '95%' },
+          width: { md: 300, sm: 300, xs: "95%" },
           height: { md: 600, sm: 600, xs: 450 },
-          left: { md: "23%", sm: "0%", xs: 0 },
+          left: activeIndex === 1 ? { md: "17%", sm: "0%", xs: 0 } : "17%",
           zIndex: 99,
         }}
       >
@@ -264,16 +245,7 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
                 overflow: "hidden",
               }}
             >
-              <Box
-                component="img"
-                src={previewImg}
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  filter: f.css,
-                }}
-              />
+              <Box component="img" src={previewImg} sx={{ width: "100%", height: "100%", objectFit: "cover", filter: f.css }} />
             </Box>
           ))}
         </Box>
@@ -283,26 +255,18 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
 
   return (
     <PopupWrapper
-      title="Photos"
+      title={isAdminEditor ? "Admin Photos" : "Photos"}
       onClose={onClose}
       sx={{
-        width: { md: 300, sm: 300, xs: '95%' },
+        width: { md: 300, sm: 300, xs: "95%" },
         height: { md: 600, sm: 600, xs: 450 },
-        left: { md: "23%", sm: "0%", xs: 0 },
         mt: { md: 0, sm: 0, xs: 0 },
+        left: activeIndex === 1 ? { md: "17%", sm: "0%", xs: 0 } : "17%",
         zIndex: 99,
       }}
     >
-      <Typography
-        sx={{
-          color: "#414141ff",
-          textAlign: "start",
-          fontSize: "15px",
-          fontFamily: "sans-serif",
-          mb: 2,
-        }}
-      >
-        You can upload any .png .jpeg or .heic file.
+      <Typography sx={{ color: "#414141ff", textAlign: "start", fontSize: "15px", fontFamily: "sans-serif", mb: 2 }}>
+        {isAdminEditor ? "Admin uploads are shown directly from bucket." : "You can upload any .png .jpeg or .heic file."}
       </Typography>
 
       <Box
@@ -312,18 +276,9 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
           flexWrap: "wrap",
           overflow: "auto",
           height: "auto",
-          "&::-webkit-scrollbar": {
-            height: "6px",
-            width: "5px",
-          },
-          "&::-webkit-scrollbar-track": {
-            backgroundColor: "#f1f1f1",
-            borderRadius: "20px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: COLORS.primary,
-            borderRadius: "20px",
-          },
+          "&::-webkit-scrollbar": { height: "6px", width: "5px" },
+          "&::-webkit-scrollbar-track": { backgroundColor: "#f1f1f1", borderRadius: "20px" },
+          "&::-webkit-scrollbar-thumb": { backgroundColor: COLORS.primary, borderRadius: "20px" },
         }}
       >
         <Box
@@ -332,9 +287,8 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
           accept="image/png, image/jpeg, image/heic"
           sx={{
             position: "absolute",
-            width: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
-            height: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
-            bgcolor: "red",
+            width: { lg: "115px", md: "115px", sm: "115px", xs: "100px" },
+            height: { lg: "115px", md: "115px", sm: "115px", xs: "100px" },
             opacity: 0,
             cursor: "pointer",
             top: 100,
@@ -345,11 +299,10 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
           multiple
         />
 
-        {/* Upload box */}
         <Box
           sx={{
-            width: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
-            height: { lg: "115px", md: "115px", sm: "115px", xs: '100px' },
+            width: { lg: "115px", md: "115px", sm: "115px", xs: "100px" },
+            height: { lg: "115px", md: "115px", sm: "115px", xs: "100px" },
             borderRadius: "5px",
             border: `2px solid ${loading ? "#855833ff" : "#3a7bd5"} `,
             display: "flex",
@@ -368,67 +321,37 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
           {loading ? "Uploading..." : "Add Photo"}
         </Box>
 
-        {/* Uploaded images */}
         {images3.map(({ id, src }) => (
           <Box
             key={id}
             onClick={() => {
               setSelectedImage3((prev: any) => {
                 const isSelected = prev.includes(id);
-
-                // When user selects an image → set active filter image
-                if (!isSelected) {
-                  setActiveFilterImageId3(id);
-                }
-                // zIndex update...
+                if (!isSelected) setActiveFilterImageId3(id);
                 setDraggableImages3((imgs: any[]) =>
                   imgs.map((img) =>
                     img.id === id
-                      ? {
-                        ...img,
-                        zIndex: !isSelected
-                          ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1
-                          : img.zIndex,
-                      }
+                      ? { ...img, zIndex: !isSelected ? Math.max(...imgs.map((i) => i.zIndex || 0)) + 1 : img.zIndex }
                       : img
                   )
                 );
-
-                const updated = isSelected
-                  ? prev.filter((i: any) => i !== id)
-                  : [...prev, id];
-
-                return updated;
+                return isSelected ? prev.filter((i: any) => i !== id) : [...prev, id];
               });
             }}
             sx={{
-              width: { lg: "115px", md: "115px", sm: "115px", xs: '95px' },
-              height: { lg: "115px", md: "115px", sm: "115px", xs: '95px' },
-              border: `2px solid ${selectedImg3?.includes(id) ? "#3a7bd5" : "#bd7082ff"
-                }`,
+              width: { lg: "115px", md: "115px", sm: "115px", xs: "95px" },
+              height: { lg: "115px", md: "115px", sm: "115px", xs: "95px" },
+              border: `2px solid ${selectedImg3?.includes(id) ? "#3a7bd5" : "#bd7082ff"}`,
               borderRadius: 2,
               position: "relative",
               cursor: "pointer",
               overflow: "hidden",
               transition: "border 0.2s ease",
-              "&:hover": {
-                border: "2px solid #d34767",
-              },
+              "&:hover": { border: "2px solid #d34767" },
             }}
           >
-            <Box
-              component="img"
-              src={src}
-              alt="Uploaded"
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                borderRadius: 1.6,
-              }}
-            />
+            <Box component="img" src={src} alt="Uploaded" sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 1.6 }} />
 
-            {/* Delete Button */}
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();
@@ -447,17 +370,9 @@ const Photo3Popup = ({ onClose }: Photo3PopupProps) => {
               size="small"
               aria-label="Delete uploaded image"
             >
-              <Delete
-                fontSize="small"
-                sx={{
-                  color: "black",
-                  "&:hover": { color: "red" },
-                  fontSize: 15,
-                }}
-              />
+              <Delete fontSize="small" sx={{ color: "black", "&:hover": { color: "red" }, fontSize: 15 }} />
             </IconButton>
 
-            {/* Selected Check Icon */}
             {selectedImg3?.includes(id) && (
               <IconButton
                 sx={{

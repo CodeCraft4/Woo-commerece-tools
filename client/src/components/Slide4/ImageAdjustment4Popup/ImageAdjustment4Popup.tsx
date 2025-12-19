@@ -1,46 +1,45 @@
-import { Adjust, Check, Delete, DrawOutlined, Flare, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import { Check, Delete, DrawOutlined, Flare, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import { Box, IconButton } from "@mui/material";
 import { COLORS } from "../../../constant/color";
-import { useSlide2 } from "../../../context/Slide2Context";
 import { convertToRealisticSketch } from "../../../source/SketchEffect";
+import { useSlide4 } from "../../../context/Slide4Context";
 
-interface ImageAdjustmentProps {
+interface ImageAdjustment4PopupProps {
     togglePopup?: any,
     onClose: () => void;
     activeIndex?: number;
     isAdminEditor?: boolean
 }
 
-const ImageAdjustment = (props: ImageAdjustmentProps) => {
+const ImageAdjustment4Popup = (props: ImageAdjustment4PopupProps) => {
     const { onClose, isAdminEditor } = props
 
-    const { setImageFilter, imageFilter, setDraggableImages, selectedImg, setImages, setSelectedImage, setActiveFilterImageId, draggableImages } = useSlide2()
+    const { setImageFilter4, imageFilter4, setDraggableImages4, selectedImg4, setImages4, setSelectedImage4, setActiveFilterImageId4, draggableImages4 } = useSlide4()
 
     const deleteSelectedImages = () => {
-        if (selectedImg.length === 0) return;
+        if (selectedImg4.length === 0) return;
 
         // 1. Delete from draggableImages (canvas)
-        setDraggableImages(prev =>
-            prev.filter(img => !selectedImg.includes(img.id))
+        setDraggableImages4(prev =>
+            prev.filter(img => !selectedImg4.includes(img.id))
         );
 
         // 2. Delete from PhotoPopup images list
-        setImages(prev =>
-            prev.filter(img => !selectedImg.includes(img.id))
+        setImages4(prev =>
+            prev.filter(img => !selectedImg4.includes(img.id))
         );
 
         // 3. REMOVE ALL CHECKS
-        setSelectedImage([]); // ← THIS removes the blue check icons
+        setSelectedImage4([]); // ← THIS removes the blue check icons
     };
 
-
     const bringToFront = () => {
-        setDraggableImages(prev => {
+        setDraggableImages4(prev => {
             const maxZ = Math.max(...prev.map(i => i.zIndex || 0));
             console.log(maxZ)
 
             return prev.map(img =>
-                selectedImg.includes(img.id)
+                selectedImg4.includes(img.id)
                     ? { ...img, zIndex: (img.zIndex || 0) + 1 }
                     : img
             );
@@ -48,9 +47,9 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
     };
 
     const sendToBack = () => {
-        setDraggableImages(prev => {
+        setDraggableImages4(prev => {
             return prev.map(img =>
-                selectedImg.includes(img.id)
+                selectedImg4.includes(img.id)
                     ? { ...img, zIndex: Math.max((img.zIndex || 0) - 1, 0) } // don't go below 0
                     : img
             );
@@ -59,15 +58,15 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
 
 
     const applySketch = async () => {
-        if (selectedImg.length === 0) return;
+        if (selectedImg4.length === 0) return;
 
-        const id = selectedImg[selectedImg.length - 1];
-        const target = draggableImages.find(img => img.id === id);
+        const id = selectedImg4[selectedImg4.length - 1];
+        const target = draggableImages4.find(img => img.id === id);
         if (!target) return;
 
         const sketchUrl = await convertToRealisticSketch(target?.src);
 
-        setDraggableImages(prev =>
+        setDraggableImages4(prev =>
             prev.map(img =>
                 img.id === id ? { ...img, src: sketchUrl } : img
             )
@@ -75,13 +74,14 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
     };
 
 
+
     return (
-        <Box sx={{ position: 'absolute', left: '33%', zIndex: 99, height: 600, bgcolor: 'white', mt: 1, borderRadius: 1 }}>
+        <Box sx={{ position: 'absolute', right: '34%', zIndex: 99, height: 600, bgcolor: 'white', mt: 1, borderRadius: 1 }}>
             <Box
                 sx={{
                     display: "flex",
                     flexDirection: "column",
-                    height: "600px",
+                    height: "600px", // adjust as you need
                     width: "auto",
                     justifyContent: 'center'
                 }}
@@ -107,14 +107,14 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
 
                     {/* <IconButton sx={editingButtonStyle}><Crop fontSize="large" /> Crop</IconButton> */}
 
-                    <IconButton sx={editingButtonStyle}><Adjust fontSize="large" /> Adjust</IconButton>
+                    {/* <IconButton sx={editingButtonStyle}><Adjust fontSize="large" /> Adjust</IconButton> */}
 
                     <IconButton
                         sx={editingButtonStyle}
                         onClick={() => {
-                            const lastSelected = selectedImg[selectedImg.length - 1];
-                            setActiveFilterImageId(lastSelected);
-                            setImageFilter(!imageFilter);
+                            const lastSelected = selectedImg4[selectedImg4.length - 1];
+                            setActiveFilterImageId4(lastSelected);
+                            setImageFilter4(!imageFilter4);
                         }}
                     >
                         <Flare fontSize="large" />
@@ -179,7 +179,7 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
     );
 };
 
-export default ImageAdjustment;
+export default ImageAdjustment4Popup;
 
 const editingButtonStyle = {
     display: "flex",
