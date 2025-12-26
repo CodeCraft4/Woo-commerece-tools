@@ -22,10 +22,7 @@ import useModal from "../../hooks/useModal";
 import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../constant/route";
-import {
-  fetchAllCardsFromDB,
-  fetchAllCategoriesFromDB,
-} from "../../source/source";
+import { fetchAllCardsFromDB, fetchAllCategoriesFromDB } from "../../source/source";
 
 type BirthdayTypes = {
   title?: string;
@@ -55,21 +52,20 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
     queryKey: ["tabsCategories"],
     queryFn: fetchAllCategoriesFromDB,
     staleTime: 1000 * 60 * 60,
-    gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
 
-  const currentCat = tabsCategories[activeTab];
+  // Only "Cards" category subcategories
+  const cardsCategory = tabsCategories.find((cat) => cat.name === "Cards");
+  const cardsSubCategories = cardsCategory?.subcategories || [];
 
-  // Filter cards by selected category
-  const filteredCards = birthdayCards.filter((card: any) => {
-    if (!currentCat) return false;
-    if (card.categoryId != null && currentCat.id != null) {
-      return String(card.categoryId) === String(currentCat.id);
-    }
-    return (card.cardcategory || card.cardname) === currentCat.name;
-  });
+  const currentSubCat = cardsSubCategories[activeTab];
+
+  // Filter cards by selected subcategory
+  const filteredCards = birthdayCards.filter(
+    (card: any) => String(card.subcategoryId) === String(currentSubCat?.id)
+  );
 
   const { open: isOpenDetailModal, openModal, closeModal } = useModal();
   const openDetailModal = (cate: CategoryType) => {
@@ -78,21 +74,20 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
   };
 
   const handleShopAll = () => {
-    if (!currentCat) return;
-    navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(currentCat.name)}`, {
-      state: { categoryId: currentCat.id ?? null },
+    if (!currentSubCat) return;
+    navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(currentSubCat.name)}`, {
+      state: { categoryId: currentSubCat.id ?? null },
     });
   };
 
   // Others button handlers
   const openOthers = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (tabsCategories.length <= 5) return; // safety
+    if (cardsSubCategories.length <= 5) return; // safety
     setOthersEl(e.currentTarget);
   };
   const closeOthers = () => setOthersEl(null);
   const selectOther = (cat: any) => {
-    // why: map back to actual index from full array
-    const idx = tabsCategories.findIndex((c: any) => String(c.id) === String(cat.id));
+    const idx = cardsSubCategories.findIndex((c: any) => String(c.id) === String(cat.id));
     if (idx >= 0) {
       setActiveTab(idx);
       setOthersLabel(cat.name || "Others");
@@ -100,8 +95,8 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
     closeOthers();
   };
 
-  const othersDisabled = tabsCategories.length <= 5;
-  const othersList = tabsCategories.slice(5);
+  const othersDisabled = cardsSubCategories.length <= 5;
+  const othersList = cardsSubCategories.slice(5);
 
   return (
     <Box
@@ -128,7 +123,7 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
 
       {/* Tabs + Others */}
       <Box sx={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", mt: 2 }}>
-        {tabsCategories.slice(0, 5).map((tab: any, index: number) => (
+        {cardsSubCategories.slice(0, 5).map((tab: any, index: number) => (
           <Box
             key={tab.id ?? index}
             onClick={() => setActiveTab(index)}
@@ -150,7 +145,7 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
                 color: activeTab === index ? COLORS.white : COLORS.black,
               }}
             >
-              {tab.name}
+              {tab}
             </Typography>
           </Box>
         ))}
@@ -184,7 +179,7 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
         >
           {othersList.map((cat: any) => (
             <MenuItem key={cat.id} onClick={() => selectOther(cat)}>
-              {cat.name}
+              {cat}
             </MenuItem>
           ))}
         </Menu>
@@ -210,14 +205,14 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
               1920: { slidesPerView: 7 },
             }}
           >
-            {filteredCards.map((cate: any, idx: number) => (
-              <SwiperSlide key={cate.id ?? idx}>
+            {filteredCards.map((card: any, idx: number) => (
+              <SwiperSlide key={card.id ?? idx}>
                 <Box px={{ lg: 1, md: "2px", sm: 1, xs: 1 }}>
                   <ProductCard
-                    poster={cate?.imageurl || cate?.lastpageimageurl}
+                    poster={card?.imageurl || card?.lastpageimageurl}
                     tabsSlider
-                    layoutCard={cate?.polygonLayout}
-                    openModal={() => openDetailModal(cate)}
+                    layoutCard={card?.polygonLayout}
+                    openModal={() => openDetailModal(card)}
                   />
                 </Box>
               </SwiperSlide>

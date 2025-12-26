@@ -1,3 +1,5 @@
+
+// src/pages/admin/cards/NewCardsForm.tsx
 import { Box, Typography } from "@mui/material";
 import { useMemo, useRef, useState, useEffect } from "react";
 import CustomInput from "../../../../components/CustomInput/CustomInput";
@@ -14,7 +16,11 @@ import { useSlide2 } from "../../../../context/Slide2Context";
 import { useSlide3 } from "../../../../context/Slide3Context";
 import { useSlide4 } from "../../../../context/Slide4Context";
 import QrGenerator from "../../../../components/QR-code/Qrcode";
-import { buildPolygonLayout, captureNodeToPng } from "../../../../lib/polygon";
+import {
+  applyPolygonLayoutToContexts,
+  buildPolygonLayout,
+  captureNodeToPng,
+} from "../../../../lib/polygon";
 
 type FormValue = {
   cardname: string;
@@ -23,7 +29,13 @@ type FormValue = {
   subSubCategory?: string;
   sku: string;
   actualprice?: string;
+  a4price?: string;
+  a5price?: string;
+  usletter?: string;
   saleprice?: string;
+  salea4price?: string;
+  salea5price?: string;
+  saleusletter?: string;
   description: string;
   cardImage: FileList;
   polygon_shape: string;
@@ -41,7 +53,13 @@ type EditFormValue = {
   cardCategory?: string;
   sku?: string;
   actualPrice?: string;
+  a4price?: string;
+  a5price?: string;
+  usletter?: string;
   salePrice?: string;
+  salea4price?: string;
+  salea5price?: string;
+  saleusletter?: string;
   description?: string;
   imageUrl?: string;
   polygon_shape?: string;
@@ -50,7 +68,7 @@ type EditFormValue = {
   subSubCategory?: string;
   lastpageImageUrl?: string;
   lastMessage?: string;
-  // legacy snake-case keys tolerated if coming from older rows
+
   cardname?: string;
   cardcategory?: string;
   actualprice?: string;
@@ -58,53 +76,50 @@ type EditFormValue = {
   imageurl?: string;
   lastpageimageurl?: string;
   lastmessage?: string;
+
+  polyganLayout?: any;
 };
 
 type Props = { editProduct?: EditFormValue };
 
 const NewCardsForm = ({ editProduct }: Props) => {
-  // const {
-  //   elements, textElements, stickerElements,
-  //   midLeftElements, midLeftTextElements, midLeftStickerElements,
-  //   midRightElements, midRightTextElements, midRightStickerElements,
-  //   lastElements, lastTextElements, lastStickerElements,
-  //   lastSlideImage, lastSlideMessage,
-  //   uploadedShapeImage, selectedShapeImage,
-  //   setFormData,
-  //   setStickerElements, setTextElements,
-  //   setSelectedShapeImage, setUploadedShapeImage,
-  //   setLastElements, setLastTextElements,
-  //   resetEditor
-  // } = useCardEditor();
-
-  // All contexts (we store all of them into polygonLayout)
   const slide1 = useSlide1();
   const slide2 = useSlide2();
   const slide3 = useSlide3();
   const slide4 = useSlide4();
 
-  const { resetSlide1State } = useSlide1()
-  const { resetSlide2State } = useSlide2()
-  const { resetSlide3State } = useSlide3()
-  const { resetSlide4State } = useSlide4()
-
-  const [loading, setLoading] = useState<boolean>(false);
-
   const navigate = useNavigate();
   const location = useLocation();
-  const { formData } = (location.state as any) || {};
+  const navState = (location.state as any) || {};
+  const { id, product, formData } = navState;
+
+ const editLayout =
+  product?.polygonlayout ??        // ❌ ye purana layout hota hai (DB wala)
+  product?.polyganLayout ??
+  formData?.polygonlayout ??
+  formData?.polyganLayout ??
+  navState?.polygonlayout ??       // ✅ updated layout yahan hota hai
+  navState?.polyganLayout ??
+  null;
 
 
-  // ===== Categories (only “Cards”) =====
-  const { data: categories = [], isLoading: isLoadingCats, isError: isErrorCats } =
-    useQuery<CategoryRow[]>({
-      queryKey: ["categories"],
-      queryFn: fetchAllCategoriesFromDB,
-      staleTime: 1000 * 60 * 30,
-    });
+  const [loading, setLoading] = useState(false);
+
+  const {
+    data: categories = [],
+    isLoading: isLoadingCats,
+    isError: isErrorCats,
+  } = useQuery<CategoryRow[]>({
+    queryKey: ["categories"],
+    queryFn: fetchAllCategoriesFromDB,
+    staleTime: 1000 * 60 * 30,
+  });
 
   const cardsRow = useMemo(
-    () => categories.find(c => (c?.name ?? "").trim().toLowerCase() === "cards") || null,
+    () =>
+      categories.find(
+        (c) => (c?.name ?? "").trim().toLowerCase() === "cards"
+      ) || null,
     [categories]
   );
 
@@ -113,9 +128,14 @@ const NewCardsForm = ({ editProduct }: Props) => {
     [cardsRow]
   );
 
-  // ===== Form =====
   const {
-    register, handleSubmit, formState: { errors }, watch, reset, control, setValue,
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    reset,
+    control,
+    setValue,
   } = useForm<FormValue>({
     defaultValues: {
       cardname: "",
@@ -124,7 +144,13 @@ const NewCardsForm = ({ editProduct }: Props) => {
       subSubCategory: "",
       sku: "",
       actualprice: "",
+      a4price: "",
+      a5price: "",
+      usletter: "",
       saleprice: "",
+      salea4price: "",
+      salea5price: "",
+      saleusletter: "",
       description: "",
       polygon_shape: "",
     },
@@ -132,82 +158,86 @@ const NewCardsForm = ({ editProduct }: Props) => {
 
   const normalizedEdit = useMemo(() => {
     const src = editProduct ?? {};
-    const fd = formData ?? {};
+    const fd = formData ?? product ?? {};
     return {
       cardname: (src.cardname ?? src.cardName ?? fd.cardname ?? fd.cardName ?? "") as string,
       cardcategory: "Cards",
       sku: (src.sku ?? fd.sku ?? "") as string,
-      actualprice: (src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as string | number,
-      saleprice: (src.saleprice ?? src.salePrice ?? fd.saleprice ?? fd.salePrice ?? "") as string | number,
+      actualprice: (src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as any,
+      a4price: (src.a4price ?? fd.a4price ?? src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as any,
+      a5price: (src.a5price ?? fd.a5price ?? src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as any,
+      usletter: (src.usletter ?? fd.usletter ?? src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as any,
+      saleprice: (src.saleprice ?? src.salePrice ?? fd.saleprice ?? fd.salePrice ?? "") as any,
+      salea4price: (src.salea4price ?? fd.salea4price ?? "") as any,
+      salea5price: (src.salea5price ?? fd.salea5price ?? "") as any,
+      saleusletter: (src.saleusletter ?? fd.saleusletter ?? "") as any,
       description: (src.description ?? fd.description ?? "") as string,
       polygon_shape: (src.polygon_shape ?? fd.polygon_shape ?? "") as string,
-      subCategory: (src.subCategory ?? (src as any).subcategory ?? (fd as any).subCategory ?? (fd as any).subcategory ?? "") as string,
-      subSubCategory: (src.subSubCategory ?? (src as any).sub_subcategory ?? (fd as any).subSubCategory ?? (fd as any).sub_subcategory ?? "") as string,
-    } as FormValue;
-  }, [editProduct, formData]);
+      subCategory: (src.subCategory ?? (src as any).subcategory ?? fd.subCategory ?? (fd as any).subcategory ?? "") as string,
+      subSubCategory: (src.subSubCategory ?? (src as any).sub_subcategory ?? fd.subSubCategory ?? (fd as any).sub_subcategory ?? "") as string,
+    } as any;
+  }, [editProduct, formData, product]);
 
-  useEffect(() => { reset(normalizedEdit); }, [normalizedEdit, reset]);
+  useEffect(() => {
+    reset(normalizedEdit);
+  }, [normalizedEdit, reset]);
 
   useEffect(() => {
     if (cardsRow) setValue("cardcategory", "Cards", { shouldValidate: true });
   }, [cardsRow, setValue]);
 
-  const selectedCategoryName = watch("cardcategory");
   const selectedSubCategory = watch("subCategory");
 
   const subCategoryOptions = useMemo(() => {
     if (!cardsRow) return [];
-    return (cardsRow.subcategories ?? []).map(sub => ({ label: sub, value: sub }));
+    return (cardsRow.subcategories ?? []).map((sub) => ({
+      label: sub,
+      value: sub,
+    }));
   }, [cardsRow]);
 
   const subSubCategoryOptions = useMemo(() => {
     if (!cardsRow || !selectedSubCategory) return [];
     const list = cardsRow.sub_subcategories?.[selectedSubCategory] ?? [];
-    return list.map(name => ({ label: name, value: name }));
+    return list.map((name) => ({ label: name, value: name }));
   }, [cardsRow, selectedSubCategory]);
 
-  useEffect(() => {
-    const sub = (watch("subCategory") || "") as string;
-    const validSub = !!(cardsRow?.subcategories ?? []).includes(sub);
-    if (!validSub) {
-      setValue("subCategory", "");
-      setValue("subSubCategory", "");
-    } else {
-      const subsub = (watch("subSubCategory") || "") as string;
-      const validSubSub = !!(cardsRow?.sub_subcategories?.[sub] ?? []).includes(subsub);
-      if (!validSubSub) setValue("subSubCategory", "");
-    }
-  }, [selectedCategoryName, cardsRow, setValue, watch]);
-
-  // ===== Left preview (Slide1 visible) capture ref =====
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const handleEditLayout = () => {
-    // const formDataNow = watch();
-    // setFormData({
-    //   cardName: formDataNow.cardname,
-    //   cardCategory: "Cards",
-    //   sku: formDataNow.sku,
-    //   actualPrice: formDataNow.actualprice,
-    //   salePrice: formDataNow.saleprice,
-    //   description: formDataNow.description,
-    //   cardImage: `${image || (editProduct?.imageUrl as string) || null}`,
-    //   layout_type:
-    //     elements.length > 0 ? "isMultipleLayout" : selectedShapeImage ? "isShapeLayout" : null,
-    // });
+  // ✅ hydrate ONLY once when editLayout arrives
+ useEffect(() => {
+  if (!editLayout) return;
 
-    navigate(ADMINS_DASHBOARD.ADMIN_EDITOR);
+  requestAnimationFrame(() => {
+    slide1.resetSlide1State?.();
+    slide2.resetSlide2State?.();
+    slide3.resetSlide3State?.();
+    slide4.resetSlide4State?.();
+
+    applyPolygonLayoutToContexts(editLayout, slide1, slide2, slide3, slide4);
+  });
+}, [editLayout, slide1, slide2, slide3, slide4]);
+
+
+  const handleEditLayout = () => {
+    const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4);
+    navigate(ADMINS_DASHBOARD.ADMIN_EDITOR, {
+      state: {
+        id,
+        product,
+        formData: watch(),
+        mode: "edit",
+        polygonlayout: layoutNow ?? editLayout,
+      },
+    });
   };
 
-  // ======= SUBMIT: ONLY CAPTURE SLIDE-1, STORE ALL CONTEXTS =======
   const onSubmit = async (data: FormValue) => {
     try {
       setLoading(true);
 
-      // 1) Build polygonLayout from ALL 4 contexts
       const polygonLayout = buildPolygonLayout(slide1, slide2, slide3, slide4);
 
-      // 2) Capture Slide-1 ONLY
       let imageurl: string | null = null;
       if (previewRef.current) {
         try {
@@ -217,25 +247,37 @@ const NewCardsForm = ({ editProduct }: Props) => {
         }
       }
 
-      // 3) Payload matches your camelCase DB schema
+      const toNum = (v: any) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      };
+
       const payload = {
         cardname: data.cardname,
         cardcategory: "Cards",
-        sku: data.sku,
-        actualprice: Number(data.actualprice),
-        saleprice: data.saleprice ? Number(data.saleprice) : null,
+        sku: String(data.sku),
         description: data.description,
-        subCategory: data.subCategory || null,
-        subSubCategory: data.subSubCategory || null,
-        imageurl: imageurl,
-        lastpageimageurl: null,
+        subCategory: data.subCategory ?? null,
+        subSubCategory: data.subSubCategory ?? null,
         polygon_shape: "",
-        polygonlayout: polygonLayout,
+        polygonlayout: polygonLayout ?? {},
         lastmessage: "",
+        imageurl,
+        lastpageimageurl: null,
+        actualprice: toNum(data.actualprice),
+        a4price: toNum(data.a4price),
+        a5price: toNum(data.a5price),
+        usletter: toNum(data.usletter),
+        saleprice: toNum(data.saleprice),
+        salea4price: toNum(data.salea4price),
+        salea5price: toNum(data.salea5price),
+        saleusletter: toNum(data.saleusletter),
       };
 
-      if (editProduct?.sku) {
-        const { error } = await supabase.from("cards").update(payload).eq("sku", String(editProduct.sku));
+      if (payload.actualprice == null) throw new Error("Actual Price is required");
+
+      if (id) {
+        const { error } = await supabase.from("cards").update(payload).eq("id", id);
         if (error) throw error;
         toast.success("Card updated successfully!");
       } else {
@@ -243,45 +285,78 @@ const NewCardsForm = ({ editProduct }: Props) => {
         if (error) throw error;
         toast.success("Card saved successfully!");
       }
-
     } catch (err: any) {
-      toast.error("Failed to save card: " + err.message);
+      toast.error("Failed to save card: " + (err?.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
-    reset();
-    resetSlide1State()
-    resetSlide2State()
-    resetSlide3State()
-    resetSlide4State()
   };
 
-  // ======== Slide-1 visible preview (exact editor look, static) ========
-  // Uses your existing state variables from slide1 context (already imported above)
+  // ======== Slide-1 Preview Render (context-only) ========
   const {
-    bgImage1, bgColor1,
-    showOneTextRightSideBox1, oneTextValue1,
-    fontSize1, fontWeight1, fontColor1, fontFamily1, textAlign1, verticalAlign1, rotation1, lineHeight1, letterSpacing1,
-    multipleTextValue1, texts1,
+    bgImage1,
+    bgColor1,
+    bgRect1,
+    showOneTextRightSideBox1,
+    oneTextValue1,
+    fontSize1,
+    fontWeight1,
+    fontColor1,
+    fontFamily1,
+    textAlign1,
+    verticalAlign1,
+    rotation1,
+    lineHeight1,
+    letterSpacing1,
+    texts1,
     textElements1,
-    draggableImages1, selectedImg1,
+    draggableImages1,
+    selectedImg1,
     selectedStickers1,
     selectedVideoUrl1,
     selectedAudioUrl1,
-    isAIimage1, aimage1, selectedAIimageUrl1,
+    isAIimage1,
+    aimage1,
+    selectedAIimageUrl1,
   } = slide1;
 
   const renderOneText = () => (
-    <Box sx={{
-      position: "absolute", inset: 0, display: "flex",
-      justifyContent: verticalAlign1 === "top" ? "flex-start" : verticalAlign1 === "bottom" ? "flex-end" : "center",
-      alignItems: textAlign1 === "start" ? "flex-start" : textAlign1 === "end" ? "flex-end" : "center", px: 2,
-    }}>
-      <Typography sx={{
-        fontSize: fontSize1, fontWeight: fontWeight1, color: fontColor1, fontFamily: fontFamily1,
-        textAlign: textAlign1 as any, transform: `rotate(${rotation1 || 0}deg)`,
-        lineHeight: lineHeight1, letterSpacing: letterSpacing1, whiteSpace: "pre-wrap", wordBreak: "break-word", width: "100%",
-      }}>
+    <Box
+      sx={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        justifyContent:
+          verticalAlign1 === "top"
+            ? "flex-start"
+            : verticalAlign1 === "bottom"
+              ? "flex-end"
+              : "center",
+        alignItems:
+          textAlign1 === "start"
+            ? "flex-start"
+            : textAlign1 === "end"
+              ? "flex-end"
+              : "center",
+        px: 2,
+        zIndex: 5,
+      }}
+    >
+      <Typography
+        sx={{
+          fontSize: fontSize1,
+          fontWeight: fontWeight1,
+          color: fontColor1,
+          fontFamily: fontFamily1,
+          textAlign: textAlign1 as any,
+          transform: `rotate(${rotation1 || 0}deg)`,
+          lineHeight: lineHeight1,
+          letterSpacing: letterSpacing1,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          width: "100%",
+        }}
+      >
         {oneTextValue1}
       </Typography>
     </Box>
@@ -289,26 +364,60 @@ const NewCardsForm = ({ editProduct }: Props) => {
 
   const renderMultipleText = () => (
     <>
-      {texts1?.map((t: any, i: number) => (
-        <Box key={i} sx={{
-          position: "absolute", left: t.x ?? 0, top: t.y ?? i * 220,
-          width: t.width ?? "100%", height: t.height ?? 210, display: "flex",
-          alignItems: t.verticalAlign === "top" ? "flex-start" : t.verticalAlign === "bottom" ? "flex-end" : "center",
-          justifyContent: t.textAlign === "left" ? "flex-start" : t.textAlign === "right" ? "flex-end" : "center",
-          px: 1, zIndex: t.zIndex ?? 50,
-        }}>
-          <Typography sx={{
-            fontSize: t.fontSize1 ?? t.fontSize, fontWeight: t.fontWeight1 ?? t.fontWeight,
-            color: t.fontColor1 ?? t.fontColor, fontFamily: t.fontFamily1 ?? t.fontFamily,
-            textAlign: (t.textAlign ?? "center") as any, lineHeight: t.lineHeight ?? 1.4,
-            letterSpacing: t.letterSpacing ?? 0, width: "100%", whiteSpace: "pre-wrap", wordBreak: "break-word",
-          }}>
+      {(texts1 ?? []).map((t: any, i: number) => (
+        <Box
+          key={t?.id ?? i}
+          sx={{
+            position: "absolute",
+            left: t.x ?? 0,
+            top: t.y ?? i * 220,
+            width: t.width ?? "100%",
+            height: t.height ?? 210,
+            display: "flex",
+            alignItems:
+              t.verticalAlign === "top"
+                ? "flex-start"
+                : t.verticalAlign === "bottom"
+                  ? "flex-end"
+                  : "center",
+            justifyContent:
+              t.textAlign === "left"
+                ? "flex-start"
+                : t.textAlign === "right"
+                  ? "flex-end"
+                  : "center",
+            px: 1,
+            zIndex: t.zIndex ?? 50,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: t.fontSize1 ?? t.fontSize,
+              fontWeight: t.fontWeight1 ?? t.fontWeight,
+              color: t.fontColor1 ?? t.fontColor,
+              fontFamily: t.fontFamily1 ?? t.fontFamily,
+              textAlign: (t.textAlign ?? "center") as any,
+              lineHeight: t.lineHeight ?? 1.4,
+              letterSpacing: t.letterSpacing ?? 0,
+              width: "100%",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}
+          >
             {t.value}
           </Typography>
         </Box>
       ))}
     </>
   );
+
+  const showAllImages = !Array.isArray(selectedImg1) || selectedImg1.length === 0;
+
+  const shouldRenderOneText =
+    !!oneTextValue1 || !!showOneTextRightSideBox1;
+
+  const shouldRenderMultiple =
+    Array.isArray(texts1) && texts1.length > 0;
 
   return (
     <Box>
@@ -333,156 +442,431 @@ const NewCardsForm = ({ editProduct }: Props) => {
             overflow: "hidden",
             borderRadius: "12px",
             boxShadow: "3px 5px 8px rgba(0,0,0,0.25)",
-            backgroundColor: bgImage1 ? "transparent" : bgColor1 ?? "#fff",
-            backgroundImage: bgImage1 ? `url(${bgImage1})` : "none",
+            backgroundColor: bgColor1 ?? "#fff",
+            backgroundImage: !bgRect1 && bgImage1 ? `url(${bgImage1})` : "none",
             backgroundSize: "cover",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",
             pointerEvents: "none",
             userSelect: "none",
           }}
-          onDrop={(e) => { e.preventDefault(); }}
-          onDragOver={(e) => e.preventDefault()}
         >
-          {showOneTextRightSideBox1 && renderOneText()}
-          {multipleTextValue1 && renderMultipleText()}
+          {bgImage1 && bgRect1 && (
+            <Box
+              sx={{
+                position: "absolute",
+                left: bgRect1.x,
+                top: bgRect1.y,
+                width: bgRect1.width,
+                height: bgRect1.height,
+                zIndex: 0,
+                borderRadius: 1,
+                overflow: "hidden",
+                backgroundImage: `url(${bgImage1})`,
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+              }}
+            />
+          )}
 
-          {Array.isArray(textElements1) && textElements1.map((t: any) => (
-            <Box key={t.id} sx={{
-              position: "absolute",
-              left: t.position?.x, top: t.position?.y,
-              width: t.size?.width, height: t.size?.height,
-              display: "flex",
-              alignItems: t.verticalAlign === "top" ? "flex-start" : t.verticalAlign === "bottom" ? "flex-end" : "center",
-              justifyContent: t.textAlign === "start" ? "flex-start" : t.textAlign === "end" ? "flex-end" : "center",
-              transform: `rotate(${t.rotation || 0}deg)`,
-              transformOrigin: "center",
-              zIndex: t.zIndex ?? 2000,
-            }}>
-              <Typography sx={{
-                width: "100%", height: "100%",
-                fontSize: t.fontSize, fontWeight: t.fontWeight, color: t.fontColor || "#000",
-                fontFamily: t.fontFamily || "Roboto",
-                textAlign: t.textAlign === "start" ? "left" : t.textAlign === "end" ? "right" : "center",
-                lineHeight: t.lineHeight || 1.5,
-                letterSpacing: typeof t.letterSpacing === "number" ? `${t.letterSpacing}px` : "0px",
-                overflow: "hidden", whiteSpace: "pre-wrap", wordBreak: "break-word",
-              }}>
-                {t.value}
-              </Typography>
-            </Box>
-          ))}
+          {shouldRenderOneText && renderOneText()}
+          {shouldRenderMultiple && renderMultipleText()}
+
+          {Array.isArray(textElements1) &&
+            textElements1.map((t: any) => (
+              <Box
+                key={t.id}
+                sx={{
+                  position: "absolute",
+                  left: t.position?.x,
+                  top: t.position?.y,
+                  width: t.size?.width,
+                  height: t.size?.height,
+                  display: "flex",
+                  alignItems:
+                    t.verticalAlign === "top"
+                      ? "flex-start"
+                      : t.verticalAlign === "bottom"
+                        ? "flex-end"
+                        : "center",
+                  justifyContent:
+                    t.textAlign === "start"
+                      ? "flex-start"
+                      : t.textAlign === "end"
+                        ? "flex-end"
+                        : "center",
+                  transform: `rotate(${t.rotation || 0}deg)`,
+                  transformOrigin: "center",
+                  zIndex: t.zIndex ?? 2000,
+                }}
+              >
+                <Typography
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    fontSize: t.fontSize,
+                    fontWeight: t.fontWeight,
+                    color: t.fontColor || "#000",
+                    fontFamily: t.fontFamily || "Roboto",
+                    textAlign:
+                      t.textAlign === "start"
+                        ? "left"
+                        : t.textAlign === "end"
+                          ? "right"
+                          : "center",
+                    lineHeight: t.lineHeight || 1.5,
+                    letterSpacing:
+                      typeof t.letterSpacing === "number"
+                        ? `${t.letterSpacing}px`
+                        : "0px",
+                    overflow: "hidden",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {t.value}
+                </Typography>
+              </Box>
+            ))}
 
           {Array.isArray(draggableImages1) &&
             draggableImages1
-              .filter((img: any) => (Array.isArray(selectedImg1) ? selectedImg1.includes(img.id) : true))
+              .filter((img: any) => showAllImages || (selectedImg1 ?? []).includes(img.id))
               .map((img: any) => (
-                <Box key={img.id} sx={{
-                  position: "absolute", left: img.x, top: img.y, width: img.width, height: img.height,
-                  transform: `rotate(${img.rotation || 0}deg)`, transformOrigin: "center",
-                  zIndex: img.zIndex ?? 1, overflow: "hidden", borderRadius: 1,
-                }}>
+                <Box
+                  key={img.id}
+                  sx={{
+                    position: "absolute",
+                    left: img.x,
+                    top: img.y,
+                    width: img.width,
+                    height: img.height,
+                    transform: `rotate(${img.rotation || 0}deg)`,
+                    transformOrigin: "center",
+                    zIndex: img.zIndex ?? 1,
+                    overflow: "hidden",
+                    borderRadius: 1,
+                  }}
+                >
                   <img
-                    src={img.src} alt=""
-                    style={{ width: "100%", height: "100%", objectFit: "fill", filter: img.filter || "none", clipPath: img.shapePath || "none", display: "block" }}
+                    src={img.src}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "fill",
+                      filter: img.filter || "none",
+                      clipPath: img.shapePath || "none",
+                      display: "block",
+                    }}
                   />
                 </Box>
               ))}
 
           {Array.isArray(selectedStickers1) &&
             selectedStickers1.map((st: any, i: number) => (
-              <Box key={st.id ?? `st-${i}`} sx={{
-                position: "absolute", left: st.x, top: st.y, width: st.width, height: st.height,
-                transform: `rotate(${st.rotation || 0}deg)`, transformOrigin: "center", zIndex: st.zIndex ?? 1,
-              }}>
-                <Box component="img" src={st.sticker} alt="" sx={{ width: "100%", height: "100%", objectFit: "contain" }} />
+              <Box
+                key={st.id ?? `st-${i}`}
+                sx={{
+                  position: "absolute",
+                  left: st.x,
+                  top: st.y,
+                  width: st.width,
+                  height: st.height,
+                  transform: `rotate(${st.rotation || 0}deg)`,
+                  transformOrigin: "center",
+                  zIndex: st.zIndex ?? 1,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={st.sticker}
+                  alt=""
+                  sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
               </Box>
             ))}
 
           {selectedVideoUrl1 && (
-            <Box sx={{
-              position: "absolute", top: slide1.qrPosition1.y, left: slide1.qrPosition1.x,
-              width: 400, height: 180, display: "flex", justifyContent: "center", alignItems: "flex-end", textAlign: "center",
-              zIndex: slide1.qrPosition1.zIndex || 1,
-            }}>
-              <Box component="img" src="/assets/images/video-qr-tips.png" sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }} />
+            <Box
+              sx={{
+                position: "absolute",
+                top: slide1.qrPosition1.y,
+                left: slide1.qrPosition1.x,
+                width: 400,
+                height: 180,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "flex-end",
+                textAlign: "center",
+                zIndex: slide1.qrPosition1.zIndex || 1,
+              }}
+            >
+              <Box
+                component="img"
+                src="/assets/images/video-qr-tips.png"
+                sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }}
+              />
               <Box sx={{ position: "absolute", top: 33, height: 10, width: 15, left: 28, borderRadius: 2 }}>
                 <QrGenerator url={slide1.qrPosition1.url || selectedVideoUrl1} size={Math.min(68, 70)} />
               </Box>
-              <a href={`${selectedVideoUrl1}`} target="_blank" rel="noopener noreferrer">
-                <Typography sx={{ position: "absolute", top: 60, right: 40, zIndex: 99, color: "black", fontSize: "10px", width: "105px" }}>
-                  {`${selectedVideoUrl1.slice(0, 20)}.....`}
-                </Typography>
-              </a>
+              <Typography
+                sx={{
+                  position: "absolute",
+                  top: 60,
+                  right: 40,
+                  zIndex: 99,
+                  color: "black",
+                  fontSize: "10px",
+                  width: "105px",
+                }}
+              >
+                {`${selectedVideoUrl1.slice(0, 20)}.....`}
+              </Typography>
             </Box>
           )}
 
           {selectedAudioUrl1 && (
-            <Box sx={{
-              position: "absolute", top: slide1.qrAudioPosition1.y, left: slide1.qrAudioPosition1.x,
-              width: 400, height: 180, display: "flex", justifyContent: "center", alignItems: "flex-end", textAlign: "center",
-              zIndex: slide1.qrAudioPosition1.zIndex || 1,
-            }}>
-              <Box component="img" src="/assets/images/audio-qr-tips.png" sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }} />
+            <Box
+              sx={{
+                position: "absolute",
+                top: slide1.qrAudioPosition1.y,
+                left: slide1.qrAudioPosition1.x,
+                width: 400,
+                height: 180,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "flex-end",
+                textAlign: "center",
+                zIndex: slide1.qrAudioPosition1.zIndex || 1,
+              }}
+            >
+              <Box
+                component="img"
+                src="/assets/images/audio-qr-tips.png"
+                sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }}
+              />
               <Box sx={{ position: "absolute", top: 33, height: 10, width: 15, left: 28, borderRadius: 2 }}>
                 <QrGenerator url={slide1.qrAudioPosition1.url || selectedAudioUrl1} size={Math.min(68, 70)} />
               </Box>
-              <a href={`${selectedAudioUrl1}`} target="_blank" rel="noopener noreferrer">
-                <Typography sx={{ position: "absolute", top: 60, right: 40, zIndex: 99, color: "black", fontSize: "10px", width: "105px" }}>
-                  {`${selectedAudioUrl1.slice(0, 20)}.....`}
-                </Typography>
-              </a>
+              <Typography
+                sx={{
+                  position: "absolute",
+                  top: 60,
+                  right: 40,
+                  zIndex: 99,
+                  color: "black",
+                  fontSize: "10px",
+                  width: "105px",
+                }}
+              >
+                {`${selectedAudioUrl1.slice(0, 20)}.....`}
+              </Typography>
             </Box>
           )}
 
           {isAIimage1 && (
-            <Box sx={{
-              position: "absolute", left: aimage1?.x ?? 0, top: aimage1?.y ?? 0,
-              width: aimage1?.width ?? 200, height: aimage1?.height ?? 200, zIndex: 10, overflow: "hidden", borderRadius: 1,
-            }}>
-              <Box component="img" src={String(selectedAIimageUrl1 || "")} alt="AI" sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
+            <Box
+              sx={{
+                position: "absolute",
+                left: aimage1?.x ?? 0,
+                top: aimage1?.y ?? 0,
+                width: aimage1?.width ?? 200,
+                height: aimage1?.height ?? 200,
+                zIndex: 10,
+                overflow: "hidden",
+                borderRadius: 1,
+              }}
+            >
+              <Box
+                component="img"
+                src={String(selectedAIimageUrl1 || "")}
+                alt="AI"
+                sx={{ width: "100%", height: "100%", objectFit: "fill" }}
+              />
             </Box>
           )}
         </Box>
 
         {/* Right — Form */}
-        <Box component="form" sx={{ width: { md: "500px", sm: "500px", xs: "100%" }, mt: { md: 0, sm: 0, xs: 3 } }} onSubmit={handleSubmit(onSubmit)}>
-          <CustomInput label="Card Name" placeholder="Enter your card name" defaultValue="" register={register("cardname", { required: !editProduct ? "Card Name is required" : false })} error={errors.cardname?.message} />
-          <Controller name="cardcategory" control={control} render={({ field }) => (
-            <CustomInput label="Card Category" type="select"
-              placeholder={isLoadingCats ? "Loading categories..." : isErrorCats ? "Failed to load categories" : "Cards"}
-              value={field.value || "Cards"} onChange={(e) => field.onChange((e.target as HTMLInputElement).value)} error={errors.cardcategory?.message}
-              options={categoryOptions} />
-          )} />
-          <Controller name="subCategory" control={control} rules={{ required: false }} render={({ field }) => (
-            <CustomInput label="Sub Category" type="select"
-              placeholder={subCategoryOptions.length === 0 ? "No sub categories" : "Select sub category (optional)"}
-              value={field.value ?? ""} onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
-              error={errors.subCategory?.message} options={subCategoryOptions} />
-          )} />
-          <Controller name="subSubCategory" control={control} rules={{ required: false }} render={({ field }) => (
-            <CustomInput label="Sub Sub Category" type="select"
-              placeholder={!watch("subCategory") ? "Select sub category first (optional)" : subSubCategoryOptions.length === 0 ? "No sub-sub categories" : "Select sub-sub category (optional)"}
-              value={field.value ?? ""} onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
-              error={errors.subSubCategory?.message} options={subSubCategoryOptions} />
-          )} />
-          <CustomInput label="SKU" placeholder="Enter your SKU" defaultValue="" register={register("sku", { required: !editProduct ? "SKU is required" : false })} error={errors.sku?.message} />
-          <CustomInput label="Actual Price" placeholder="Enter your actual price" defaultValue="" type="number"
-            register={register("actualprice", { required: !editProduct ? "Actual Price is required" : false, valueAsNumber: true, min: { value: 0.01, message: "Price must be greater than zero" } })}
-            error={errors.actualprice?.message} />
-          <CustomInput label="Sale Price" placeholder="Enter your sale price" type="number" defaultValue=""
-            register={register("saleprice", { required: false, valueAsNumber: true, min: { value: 0.01, message: "Price must be greater than zero" } })}
-            error={errors.saleprice?.message} />
-          <CustomInput label="Card description" placeholder="Enter your description" defaultValue=""
-            register={register("description", { required: !editProduct ? "Description is required" : false })}
-            error={errors.description?.message} multiline />
+        <Box
+          component="form"
+          sx={{ width: { md: "500px", sm: "500px", xs: "100%" }, mt: { md: 0, sm: 0, xs: 3 } }}
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <CustomInput
+            label="Card Name"
+            placeholder="Enter your card name"
+            defaultValue=""
+            register={register("cardname", { required: "Card Name is required" })}
+            error={errors.cardname?.message}
+          />
+
+          <Controller
+            name="cardcategory"
+            control={control}
+            render={({ field }) => (
+              <CustomInput
+                label="Card Category"
+                type="select"
+                placeholder={
+                  isLoadingCats
+                    ? "Loading categories..."
+                    : isErrorCats
+                      ? "Failed to load categories"
+                      : "Cards"
+                }
+                value={field.value || "Cards"}
+                onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
+                error={errors.cardcategory?.message}
+                options={categoryOptions}
+              />
+            )}
+          />
+
+          <Controller
+            name="subCategory"
+            control={control}
+            render={({ field }) => (
+              <CustomInput
+                label="Sub Category"
+                type="select"
+                placeholder={
+                  subCategoryOptions.length === 0
+                    ? "No sub categories"
+                    : "Select sub category (optional)"
+                }
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
+                error={errors.subCategory?.message}
+                options={subCategoryOptions}
+              />
+            )}
+          />
+
+          <Controller
+            name="subSubCategory"
+            control={control}
+            render={({ field }) => (
+              <CustomInput
+                label="Sub Sub Category"
+                type="select"
+                placeholder={
+                  !watch("subCategory")
+                    ? "Select sub category first (optional)"
+                    : subSubCategoryOptions.length === 0
+                      ? "No sub-sub categories"
+                      : "Select sub-sub category (optional)"
+                }
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
+                error={errors.subSubCategory?.message}
+                options={subSubCategoryOptions}
+              />
+            )}
+          />
+
+          <CustomInput
+            label="SKU"
+            placeholder="Enter your SKU"
+            defaultValue=""
+            register={register("sku", { required: "SKU is required" })}
+            error={errors.sku?.message}
+          />
+
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+            <CustomInput
+              label="Actual Price"
+              placeholder="Actual price"
+              defaultValue=""
+              type="number"
+              register={register("actualprice", {
+                required: "Actual Price is required",
+                valueAsNumber: true,
+              })}
+              error={errors.actualprice?.message}
+            />
+            <CustomInput
+              label="A4 Price"
+              placeholder="A4 price"
+              defaultValue=""
+              type="number"
+              register={register("a4price", { valueAsNumber: true })}
+              error={errors.a4price?.message}
+            />
+            <CustomInput
+              label="A5 Price"
+              placeholder="A5 price"
+              defaultValue=""
+              type="number"
+              register={register("a5price", { valueAsNumber: true })}
+              error={errors.a5price?.message}
+            />
+            <CustomInput
+              label="US Letter"
+              placeholder="US Letter"
+              defaultValue=""
+              type="number"
+              register={register("usletter", { valueAsNumber: true })}
+              error={errors.usletter?.message}
+            />
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+            <CustomInput
+              label="Sale Price"
+              placeholder="Sale price"
+              type="number"
+              defaultValue=""
+              register={register("saleprice", { valueAsNumber: true })}
+              error={errors.saleprice?.message}
+            />
+            <CustomInput
+              label="Sale A4 Price"
+              placeholder="A4 Price"
+              type="number"
+              defaultValue=""
+              register={register("salea4price", { valueAsNumber: true })}
+              error={errors.salea4price?.message}
+            />
+            <CustomInput
+              label="Sale A5 Price"
+              placeholder="A5 Price"
+              type="number"
+              defaultValue=""
+              register={register("salea5price", { valueAsNumber: true })}
+              error={errors.salea5price?.message}
+            />
+            <CustomInput
+              label="Sale US Letter"
+              placeholder="US Letter"
+              type="number"
+              defaultValue=""
+              register={register("saleusletter", { valueAsNumber: true })}
+              error={errors.saleusletter?.message}
+            />
+          </Box>
+
+          <CustomInput
+            label="Card description"
+            placeholder="Enter your description"
+            defaultValue=""
+            register={register("description", { required: "Description is required" })}
+            error={errors.description?.message}
+            multiline
+          />
 
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
-            {
-              editProduct ? null : <LandingButton title={"Edit Layout"} personal width="200px" onClick={handleEditLayout} />
-            }
-
-            <LandingButton title={`${editProduct ? "Update & Publish" : "Save & Publish"}`} personal variant="outlined" width="250px" type="submit" loading={loading} />
+            <LandingButton title={id ? "Update Layout" : "Edit Layout"} personal width="200px" onClick={handleEditLayout} />
+            <LandingButton
+              title={id ? "Update & Publish" : "Save & Publish"}
+              personal
+              variant="outlined"
+              width="250px"
+              type="submit"
+              loading={loading}
+            />
           </Box>
         </Box>
       </Box>

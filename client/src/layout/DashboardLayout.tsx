@@ -13,9 +13,10 @@ type LayoutType = {
   exportBtn?: string;
   addBtn?: string;
   onClick?: () => void;
+  onExportClick?: () => void;
 };
 
-const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick }: LayoutType) => {
+const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick, onExportClick }: LayoutType) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
@@ -119,7 +120,7 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick }: Layout
 
           {/* Page Content */}
           <Box sx={{ flex: 1, mb: 10 }}>
-            <DHeader title={title} exportBtn={exportBtn} addBtn={addBtn} onClick={onClick} />
+            <DHeader title={title} exportBtn={exportBtn} addBtn={addBtn} onClick={onClick} onExportClick={onExportClick} />
             {children}
           </Box>
         </Box>

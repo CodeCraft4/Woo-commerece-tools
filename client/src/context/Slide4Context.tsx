@@ -249,6 +249,9 @@ interface Slide4ContextType {
   setLayout4?: any,
 
   // ------------------------ Adding Admin Editor -------------------------------------------------------------------------------------------
+  bgEdit4: boolean, setBgEdit4: any,
+  bgLocked4: boolean, setBgLocked4: any,
+  bgRect4: any, setBgRect4: any,
   bgColor4: string | null;
   setBgColor4: React.Dispatch<React.SetStateAction<string | null>>;
   bgImage4: string | null;
@@ -301,6 +304,9 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [activeFilterImageId4, setActiveFilterImageId4] = useState<string | null>(null);
 
   //  ADD for Admin Editor ===============================================================================================================================================================================
+  const [bgEdit4, setBgEdit4] = useState(false);
+  const [bgLocked4, setBgLocked4] = useState<boolean>(false);
+  const [bgRect4, setBgRect4] = useState<any>({ x: 40, y: 40, width: 300, height: 400 });
   const [bgColor4, setBgColor4] = useState<string | null>(null);
   const [bgImage4, setBgImage4] = useState<string | null>(null);
   const [selectedShapePath4, setSelectedShapePath4] = useState<string | null>(null);
@@ -899,6 +905,9 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
 
         bgColor4, setBgColor4,
         bgImage4, setBgImage4,
+        bgEdit4, setBgEdit4,
+        bgLocked4, setBgLocked4,
+        bgRect4, setBgRect4,
         selectedShapePath4,
         setSelectedShapePath4,
         selectedShapeImageId4,

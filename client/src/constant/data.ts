@@ -1359,11 +1359,11 @@ export const TEMPLATE_DATA = {
 // Categories wise key
 export const CATEGORY_KEYS = [
   "Invites",
-  "Apparel (T-shirts & Hoodies)",
-  "Mugs (11oz)",
+  "Apparel",
+  "Mugs",
   "Coasters",
-  "Stickers (A4 Sheet)",
-  "Stationery (Notebook Covers)",
+  "Stickers",
+  "Notebooks",
   "Wall Art",
   "Photo Art",
   "Tote Bags",
@@ -1376,7 +1376,7 @@ export type CategoryKey = (typeof CATEGORY_KEYS)[number];
 export const CATEGORY_CONFIG = {
   Invites: {
     key: "Invites",
-    label: "Invites (A5)",
+    label: "Invites",
     mmWidth: 148,
     mmHeight: 210,
     slideLabels: ["Front", "Back"],
@@ -1386,9 +1386,9 @@ export const CATEGORY_CONFIG = {
     mirrorPrint: false,
     features: { text: true, photo: true, sticker: true, aiArt: false },
   },
-  "Apparel (T-shirts & Hoodies)": {
-    key: "Apparel (T-shirts & Hoodies)",
-    label: "Apparel (A4 area)",
+  Apparel: {
+    key: "Apparel",
+    label: "Apparel",
     mmWidth: 210,
     mmHeight: 297,
     slideLabels: ["Front", "Back"],
@@ -1398,45 +1398,45 @@ export const CATEGORY_CONFIG = {
     mirrorPrint: true,
     features: { text: true, photo: true, sticker: true, aiArt: false },
   },
-  "Mugs (11oz)": {
-    key: "Mugs (11oz)",
-    label: "Mug (228 × 88.9 mm)",
-    mmWidth: 228,        // ✅ corrected
-    mmHeight: 88.9,      // ✅ corrected
+  Mugs: {
+    key: "Mugs",
+    label: "Mugs",
+    mmWidth: 228, // ✅ corrected
+    mmHeight: 88.9, // ✅ corrected
     slideLabels: ["Front"],
     maxSlides: 1,
     allowAddRemovePages: false,
     bleedMm: 3,
-    mirrorPrint: true,   // ✅ mirror for transfer
+    mirrorPrint: true, // ✅ mirror for transfer
     features: { text: true, photo: true, sticker: true, aiArt: false },
   },
   Coasters: {
     key: "Coasters",
-    label: "Coasters (pair 95×95 mm)",
+    label: "Coasters",
     mmWidth: 95,
     mmHeight: 95,
     slideLabels: ["Coaster 1", "Coaster 2"], // ✅ pair
     maxSlides: 2,
     allowAddRemovePages: false,
-    bleedMm: 3,          // ✅ 3mm bleed
-    mirrorPrint: true,   // ✅ mirror for transfer
+    bleedMm: 3, // ✅ 3mm bleed
+    mirrorPrint: true, // ✅ mirror for transfer
     features: { text: true, photo: true, sticker: true, aiArt: false },
   },
-  "Stickers (A4 Sheet)": {
-    key: "Stickers (A4 Sheet)",
-    label: "Stickers (A4 sheet)",
+  Stickers: {
+    key: "Stickers",
+    label: "Stickers",
     mmWidth: 210,
     mmHeight: 297,
     slideLabels: ["Front"], // ✅ 1-sided
-    maxSlides: 50,          // ✅ lots of pages
+    maxSlides: 50, // ✅ lots of pages
     allowAddRemovePages: true, // ✅ dynamic pages
     bleedMm: 3,
     mirrorPrint: false,
     features: { text: true, photo: true, sticker: true, aiArt: false },
   },
-  "Stationery (Notebook Covers)": {
-    key: "Stationery (Notebook Covers)",
-    label: "Notebook Covers (A5 panel)",
+  Notebooks: {
+    key: "Notebooks",
+    label: "Notebooks",
     mmWidth: 148,
     mmHeight: 210,
     slideLabels: ["Front", "Back"], // ✅ front/back
@@ -1448,7 +1448,7 @@ export const CATEGORY_CONFIG = {
   },
   "Wall Art": {
     key: "Wall Art",
-    label: "Wall Art (A4)",
+    label: "Wall Art",
     mmWidth: 210,
     mmHeight: 297,
     slideLabels: ["Front"],
@@ -1460,7 +1460,7 @@ export const CATEGORY_CONFIG = {
   },
   "Photo Art": {
     key: "Photo Art",
-    label: "Photo Art (A4)",
+    label: "Photo Art",
     mmWidth: 210,
     mmHeight: 297,
     slideLabels: ["Front"],
@@ -1472,7 +1472,7 @@ export const CATEGORY_CONFIG = {
   },
   "Tote Bags": {
     key: "Tote Bags",
-    label: "Tote Bags (A4 area)",
+    label: "Tote Bags",
     mmWidth: 210,
     mmHeight: 297,
     slideLabels: ["Front", "Back"],
@@ -1484,7 +1484,7 @@ export const CATEGORY_CONFIG = {
   },
   "Business Cards": {
     key: "Business Cards",
-    label: "Business Cards (85×55)",
+    label: "Business Cards",
     mmWidth: 85,
     mmHeight: 55,
     slideLabels: ["Front", "Back"],
@@ -1496,7 +1496,7 @@ export const CATEGORY_CONFIG = {
   },
   "Business Leaflets": {
     key: "Business Leaflets",
-    label: "Business Leaflets (A5)",
+    label: "Business Leaflets",
     mmWidth: 148,
     mmHeight: 210,
     slideLabels: ["Front", "Back"],

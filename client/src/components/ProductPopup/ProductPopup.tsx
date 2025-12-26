@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import LandingButton from "../LandingButton/LandingButton";
 import { IconButton } from "@mui/material";
 import { Close } from "@mui/icons-material";
@@ -17,41 +17,38 @@ import { useSlide1 } from "../../context/Slide1Context";
 import { COLORS } from "../../constant/color";
 
 const style = {
-  position: "absolute",
+  position: "absolute" as const,
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
   width: { md: 800, sm: 700, xs: "90%" },
   bgcolor: "background.paper",
   borderRadius: 3,
-  //   p: 2,
 };
+
+// keep your old helper (still used as fallback)
+function computePrice(base: number, key: "a4" | "a5" | "us_letter") {
+  if (key === "a5") return base + 2;
+  if (key === "us_letter") return base + 4;
+  return base;
+}
 
 function clearEditorStorage(opts?: { all?: boolean }) {
   if (opts?.all) {
-    try {
-      localStorage.clear();
-      sessionStorage.clear();
-    } catch {/* ignore */ }
+    try { localStorage.clear(); sessionStorage.clear(); } catch { }
     return;
   }
   try {
-    const KEYS = [
-      "selectedSize",
-      "categorieTemplet",
-      "3dModel",
-    ];
+    const KEYS = ["selectedSize", "selectedVariant", "categorieTemplet", "3dModel", "selectedPrices"];
     KEYS.forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem("slides");
-
-    // remove any templet editor drafts (per productId)
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const key = localStorage.key(i);
       if (key && key.startsWith("templetEditor:draft:")) {
         localStorage.removeItem(key);
       }
     }
-  } catch {/* ignore */ }
+  } catch { }
 }
 
 export type LayoutElement = {
@@ -84,120 +81,149 @@ export type CategoryType = {
     textElements?: LayoutElement[];
   };
   openModal?: (cate: CategoryType) => void;
+  // DB pricing (lowercase keys you asked for)
+  a4price?: number;
+  a5price?: number;
+  usletter?: number;
+  // tolerate alternate casings just in case:
+  A4price?: number;
+  A5price?: number;
+  usLetter?: number;
+  imageurl?: string;
+  lastpageimageurl?: string;
+  polygonlayout?: any;
+  cardname?: string;
 };
 
 type ProductsPopTypes = {
   open: boolean;
   onClose: () => void;
   cate?: CategoryType | any;
-  isTempletDesign?: boolean
+  isTempletDesign?: boolean;
+  salePrice?: boolean
 };
 
+const isActivePay = {
+  display: "flex",
+  gap: "4px",
+  justifyContent: "space-between",
+  alignItems: "center",
+  bgcolor: "#cdf0c06a",
+  p: "3px",
+  borderRadius: 2,
+  boxShadow: "3px 7px 8px #eff1f1ff",
+};
 
 const ProductPopup = (props: ProductsPopTypes) => {
-  const { open, onClose, cate, isTempletDesign } = props;
+  const { open, onClose, cate, isTempletDesign, salePrice } = props;
   const [loading, setLoading] = useState(false);
-  const { resetSlide1State } = useSlide1()
-  const { resetSlide2State } = useSlide2()
-  const { resetSlide3State } = useSlide3()
-  const { resetSlide4State } = useSlide4()
+  const { resetSlide1State } = useSlide1();
+  const { resetSlide2State } = useSlide2();
+  const { resetSlide3State } = useSlide3();
+  const { resetSlide4State } = useSlide4();
 
   const { user } = useAuth();
   const navigate = useNavigate();
-
   const { addToCart } = useCartStore();
 
-  const [selectedPlan, setSelectedPlan] = useState<string>("square-card");
+  const [selectedPlan, setSelectedPlan] = useState<"a4" | "a5" | "us_letter">("a4");
   const [isZoomed, setIsZoomed] = useState(false);
+
+  // base fallback (kept)
+  const basePrice: number = useMemo(() => {
+    const p = (cate?.actualPrice ?? cate?.actualprice ?? 2);
+    const n = Number(p);
+    return Number.isFinite(n) ? n : 2;
+  }, [cate]);
+
+  // Read exact DB values (robust to A4/A5 uppercase or usLetter)
+  const a4Price = Number(cate?.a4price ?? cate?.A4price ?? computePrice(basePrice, "a4"));
+  const a5Price = Number(cate?.a5price ?? cate?.A5price ?? computePrice(basePrice, "a5"));
+  const usPrice = Number(cate?.usletter ?? cate?.usLetter ?? computePrice(basePrice, "us_letter"));
+
+  const SaleA4Price = Number(cate?.salea4price ?? cate?.salea4price ?? computePrice(basePrice, "a4"));
+  const SaleA5Price = Number(cate?.salea5price ?? cate?.salea5price ?? computePrice(basePrice, "a5"));
+  const SaleUsPrice = Number(cate?.saleusletter ?? cate?.saleusletter ?? computePrice(basePrice, "us_letter"));
+
+  const sizeOptions: Array<{ key: "a4" | "a5" | "us_letter"; title: string; sub?: string; value: number }> = [
+    { key: "a4", title: "A4", sub: "For the little message", value: a4Price },
+    { key: "a5", title: "A3", sub: "IDEA Favourite", value: a5Price },
+    { key: "us_letter", title: "US Letter", sub: "For a big impression", value: usPrice },
+  ];
 
   const handlePersonalize = () => {
     if (!cate) return;
     setLoading(true);
 
     clearEditorStorage({ all: false });
-    localStorage.removeItem("selectedSize");
-    localStorage.removeItem("categorieTemplet");
-    localStorage.removeItem("3dModel");
-    sessionStorage.removeItem("slides");
+
+    // persist the exact selection AND the full per-size prices for subscription page
+    const picked = sizeOptions.find(s => s.key === selectedPlan);
+    const selectedVariant = {
+      key: selectedPlan,
+      title: picked?.title || selectedPlan,
+      price: picked?.value ?? computePrice(basePrice, selectedPlan),
+      basePrice,
+    };
+    try {
+      localStorage.setItem("selectedVariant", JSON.stringify(selectedVariant));
+      localStorage.setItem("selectedSize", selectedPlan);
+      localStorage.setItem("selectedPrices", JSON.stringify({
+        a4: a4Price,
+        a5: a5Price,
+        us_letter: usPrice,
+      }));
+    } catch { }
+
     resetSlide1State();
     resetSlide2State();
     resetSlide3State();
     resetSlide4State();
 
-    // 🔥 Case 1 — Template Design
     if (isTempletDesign && user) {
-      return setTimeout(() => {
+      setTimeout(() => {
         navigate(`${USER_ROUTES.TEMPLET_EDITORS}/${cate.category}/${cate.id}`, {
-          state: {
-            templetDesing: cate
-          },
+          state: { templetDesign: cate },
         });
         setLoading(false);
-      }, 1000);
+      }, 600);
+      return;
     }
 
-    // 🔥 Case 2 — User logged in
-    else if (user) {
-      return setTimeout(() => {
+    if (user) {
+      setTimeout(() => {
         navigate(`${USER_ROUTES.HOME}/${cate.id}`, {
           state: {
-            poster: cate.imageurl || cate.lastpageimageurl,
+            poster: cate?.imageurl || cate?.lastpageimageurl,
             plan: selectedPlan,
             layout: cate?.polygonlayout,
           },
         });
         setLoading(false);
-      }, 2000);
+      }, 600);
+      return;
     }
 
-    // 🔥 Case 3 — User not logged in
-    else {
-      return setTimeout(() => {
-        toast.error("You need to First Login");
-        navigate(USER_ROUTES.SIGNIN);
-        setLoading(false);
-      }, 2000);
-    }
+    setTimeout(() => {
+      toast.error("You need to First Login");
+      navigate(USER_ROUTES.SIGNIN);
+      setLoading(false);
+    }, 600);
   };
 
-
-  const handleToggleZoom = () => {
-    setIsZoomed((prev) => !prev);
-  };
+  const handleToggleZoom = () => setIsZoomed(prev => !prev);
 
   const handleAddToCard = () => {
+    const picked = sizeOptions.find(s => s.key === selectedPlan);
     addToCart({
       id: cate?.id,
       img: cate?.imageUrl || cate?.lastpageImageUrl,
       category: cate?.cardCategory,
-      price: cate?.actualPrice,
+      price: picked?.value ?? computePrice(basePrice, selectedPlan),
       title: cate?.cardName,
     });
     toast.success("Product add to Cart");
   };
-
-
-  const plans = [
-    {
-      id: "square-card",
-      title: "Square Card",
-      desc: "For the little message",
-      price: cate?.actualprice,
-    },
-    {
-      id: "Medium square card",
-      title: "Medium Square Card",
-      desc: "IDEA Favourite",
-      price: cate?.actualprice + 3,
-    },
-    {
-      id: "large square card",
-      title: "Large Square Card",
-      desc: "IDEA Favourite",
-      price: cate?.actualprice + 5,
-    },
-  ];
-
 
   return (
     <div>
@@ -206,21 +232,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
         onClose={onClose}
         aria-labelledby="keep-mounted-modal-title"
         aria-describedby="keep-mounted-modal-description"
-        BackdropProps={{
-          sx: {
-            backgroundColor: "rgba(10, 10, 10, 0.34)",
-            // height:{md:'auto',sm:'auto',xs:'500px'}
-          },
-        }}
+        BackdropProps={{ sx: { backgroundColor: "rgba(10, 10, 10, 0.34)" } }}
       >
         <Box sx={{ ...style, height: { md: "auto", sm: "auto", xs: "500px" }, overflowY: 'auto' }}>
-          <Box
-            sx={{
-              display: { md: "flex", sm: "flex", xs: "block" },
-              p: 2,
-              gap: 2,
-            }}
-          >
+          <Box sx={{ display: { md: "flex", sm: "flex", xs: "block" }, p: 2, gap: 2 }}>
             <Box
               sx={{
                 width: { md: "400px", sm: "50%", xs: "100%" },
@@ -232,7 +247,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
             >
               <Box
                 component="img"
-                src={cate?.imageurl || cate.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url}
+                src={cate?.imageurl || cate?.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url}
                 onClick={handleToggleZoom}
                 sx={{
                   width: "100%",
@@ -244,33 +259,21 @@ const ProductPopup = (props: ProductsPopTypes) => {
                 }}
               />
             </Box>
+
             <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>
-              <Typography
-                sx={{
-                  fontSize: "20px",
-                  mb: { md: 3, sm: 3, xs: 0 },
-                  fontWeight: "bold",
-                }}
-              >
-                Select Sizes
+              <Typography sx={{ fontSize: "20px", mb: { md: 3, sm: 3, xs: 0 }, fontWeight: "bold" }}>
+                Select Size
               </Typography>
 
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: { md: "20px", sm: "20px", xs: "10px" },
-                }}
-              >
-                {plans.map((plan) => (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: { md: "20px", sm: "20px", xs: "10px" } }}>
+                {sizeOptions.map((opt) => (
                   <Box
-                    key={plan.id}
-                    onClick={() => setSelectedPlan(plan.id)}
+                    key={opt.key}
+                    onClick={() => setSelectedPlan(opt.key)}
                     sx={{
                       ...isActivePay,
                       height: { md: 'auto', sm: 'auto', xs: '60px' },
-                      border: `3px solid ${selectedPlan === plan.id ? COLORS.seconday : "transparent"
-                        }`,
+                      border: `3px solid ${selectedPlan === opt.key ? COLORS.seconday : "transparent"}`,
                       cursor: "pointer",
                     }}
                   >
@@ -278,17 +281,28 @@ const ProductPopup = (props: ProductsPopTypes) => {
                       <input
                         type="radio"
                         name="plan"
-                        checked={selectedPlan === plan.id}
-                        onChange={() => setSelectedPlan(plan.id)}
+                        checked={selectedPlan === opt.key}
+                        onChange={() => setSelectedPlan(opt.key)}
                         style={{ width: "30px", height: "30px" }}
                       />
                       <Box>
-                        <Typography sx={{ fontWeight: 600, fontSize: { md: 'auto', sm: 'auto', xs: '12px' } }}>{plan.title}</Typography>
-                        <Typography fontSize={{ md: "13px", sm: '13px', xs: '10px' }}>{plan.desc}</Typography>
-                        <Typography fontSize={{ md: '18px', sm: '18px', xs: '14px' }}>£{plan.price || '2'}</Typography>
+                        <Typography sx={{ fontWeight: 600, fontSize: { md: 'auto', sm: 'auto', xs: '12px' } }}>
+                          {opt.title}
+                        </Typography>
+                        {opt.sub && <Typography fontSize={{ md: "13px", sm: '13px', xs: '10px' }}>{opt.sub}</Typography>}
                       </Box>
                     </Box>
-                    <Typography variant="h5">£{plan.price || '5'}</Typography>
+                    {
+                      salePrice ? (
+                        <>
+                          {opt.key === "a4" && <Typography variant="h5">£{Number(SaleA4Price).toFixed(2)}</Typography>}
+                          {opt.key === "a5" && <Typography variant="h5">£{Number(SaleA5Price).toFixed(2)}</Typography>}
+                          {opt.key === "us_letter" && <Typography variant="h5">£{Number(SaleUsPrice).toFixed(2)}</Typography>}</>
+                      ) : <>
+                        {opt.key === "a4" && <Typography variant="h5">£{Number(a4Price).toFixed(2)}</Typography>}
+                        {opt.key === "a5" && <Typography variant="h5">£{Number(a5Price).toFixed(2)}</Typography>}
+                        {opt.key === "us_letter" && <Typography variant="h5">£{Number(usPrice).toFixed(2)}</Typography>}</>
+                    }
                   </Box>
                 ))}
 
@@ -307,32 +321,13 @@ const ProductPopup = (props: ProductsPopTypes) => {
                 </Box>
               </Box>
 
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: "15px",
-                  justifyContent: "center",
-                  m: "auto",
-                  mt: 4,
-                }}
-              >
-                <LandingButton
-                  title="Add to basket"
-                  variant="outlined"
-                  width="150px"
-                  personal
-                  onClick={handleAddToCard}
-                />
-                <LandingButton
-                  title="Personalise"
-                  width="150px"
-                  personal
-                  loading={loading}
-                  onClick={handlePersonalize}
-                />
+              <Box sx={{ display: "flex", gap: "15px", justifyContent: "center", m: "auto", mt: 4 }}>
+                <LandingButton title="Add to basket" variant="outlined" width="150px" personal onClick={handleAddToCard} />
+                <LandingButton title="Personalise" width="150px" personal loading={loading} onClick={handlePersonalize} />
               </Box>
             </Box>
           </Box>
+
           <IconButton
             onClick={onClose}
             sx={{ position: "absolute", top: 4, right: 4, bgcolor: "black", color: 'white', width: '30px', height: '30px', p: 1, "&:hover": { bgcolor: '#212121' } }}
@@ -346,15 +341,3 @@ const ProductPopup = (props: ProductsPopTypes) => {
 };
 
 export default ProductPopup;
-
-const isActivePay = {
-  display: "flex",
-  gap: "4px",
-  justifyContent: "space-between",
-  alignItems: "center",
-  bgcolor: "#cdf0c06a",
-  p: "3px",
-  borderRadius: 2,
-  boxShadow: "3px 7px 8px #eff1f1ff",
-};
-

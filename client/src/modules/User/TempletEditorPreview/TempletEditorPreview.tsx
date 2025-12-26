@@ -362,7 +362,7 @@ const TempletEditorPreview: React.FC = () => {
           />
         </Box>
       </Box>
-      <div ref={containerRef} style={{ width: "100%", height: "900px" }} />
+      <div ref={containerRef} style={{ width: "100%", height: "90vh" }} />
       {/* <input
         type="color"
         ref={colorRef}

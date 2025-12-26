@@ -249,6 +249,9 @@ interface Slide2ContextType {
   layout2?: any,
   setLayout2?: any,
   // ------------------------ Adding Admin Editor -------------------------------------------------------------------------------------------
+  bgEdit2: boolean, setBgEdit2: any,
+  bgLocked2: boolean, setBgLocked2: any,
+  bgRect2: any, setBgRect2: any,
   bgColor2: string | null;
   setBgColor2: React.Dispatch<React.SetStateAction<string | null>>;
   bgImage2: string | null;
@@ -301,6 +304,10 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
   const [activeFilterImageId, setActiveFilterImageId] = useState<string | null>(null);
 
   //  ADD for Admin Editor ===============================================================================================================================================================================
+  const [bgEdit2, setBgEdit2] = useState(false);
+  const [bgLocked2, setBgLocked2] = useState<boolean>(false);
+  const [bgRect2, setBgRect2] = useState<any>({ x: 40, y: 40, width: 300, height: 400 });
+
   const [bgColor2, setBgColor2] = useState<string | null>(null);
   const [bgImage2, setBgImage2] = useState<string | null>(null);
   const [selectedShapePath2, setSelectedShapePath2] = useState<string | null>(null);
@@ -696,7 +703,9 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
       bgColor2,
       bgImage2,
-      selectedShapePath2
+      selectedShapePath2,
+      layout2,
+
     };
 
     try {
@@ -735,7 +744,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
     bgColor2,
     bgImage2,
-    selectedShapePath2
+    selectedShapePath2,
+    layout2,
   ]);
 
   // --- 🧹 Clear localStorage ---
@@ -896,6 +906,9 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
         bgColor2, setBgColor2,
         bgImage2, setBgImage2,
+        bgEdit2, setBgEdit2,
+        bgLocked2, setBgLocked2,
+        bgRect2, setBgRect2,
         selectedShapePath2,
         setSelectedShapePath2,
         selectedShapeImageId2,
