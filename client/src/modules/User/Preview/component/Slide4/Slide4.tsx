@@ -6,7 +6,12 @@ type AnyEl = Record<string, any>;
 const safeClip = (cp?: string | null) => (cp && typeof cp === "string" ? cp : "none");
 const safeFilter = (f?: string | null) => (f && typeof f === "string" ? f : "none");
 const val = <T,>(v: T | undefined, d: T) => (v === undefined || v === null ? d : v);
-const Slide4 = () => {
+
+type Slide4Props = {
+  ref?: any
+}
+
+const Slide4 = (props: Slide4Props) => {
   const {
     texts4,
     oneTextValue4,
@@ -34,18 +39,18 @@ const Slide4 = () => {
     letterSpacing4,
     layout4,
     bgColor4,
-    bgImage4,
   } = useSlide4();
-
+  const { ref } = props
   return (
     <Box
+      ref={ref}
       sx={{
         position: "relative",
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        backgroundColor: bgImage4 ? "transparent" : bgColor4 ?? "transparent",
-        backgroundImage: bgImage4 ? `url(${bgImage4})` : "none",
+        backgroundColor:bgColor4 ?? "transparent",
+        // backgroundImage: bgImage4 ? `url(${bgImage4})` : "none",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",

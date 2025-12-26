@@ -166,4 +166,25 @@ export const handleAutoDeletedImage = (
 };
 
 
+// Card Size Control
+export const mmToPx = (mm: number) => (mm / 25.4) * 96;
+export const uuid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36)}`;
 
+// For Admin & Preview
+export function fitCanvas(mmW: number, mmH: number, viewportW: number, viewportH: number, padding = 32) {
+  const pxW = mmToPx(mmW), pxH = mmToPx(mmH);
+  const maxW = Math.max(280, viewportW - padding);
+  const maxH = Math.max(220, viewportH - padding);
+  const scale = Math.min(maxW / pxW, maxH / pxH);
+  return { width: Math.round(pxW * scale), height: Math.round(pxH * scale), scale };
+}
+
+// For User Editor & preview
+export function coverScale(baseW: number, baseH: number, boxW: number, boxH: number) {
+  const scale = Math.max(boxW / baseW, boxH / baseH); // ✅ cover
+  const w = baseW * scale;
+  const h = baseH * scale;
+  const offsetX = (boxW - w) / 2;
+  const offsetY = (boxH - h) / 2;
+  return { scale, w, h, offsetX, offsetY };
+}

@@ -8,7 +8,11 @@ const safeClip = (cp?: string | null) => (cp && typeof cp === "string" ? cp : "n
 const safeFilter = (f?: string | null) => (f && typeof f === "string" ? f : "none");
 const val = <T,>(v: T | undefined, d: T) => (v === undefined || v === null ? d : v);
 
-const Slide2 = () => {
+type Slide2Props = {
+  ref?: any
+}
+
+const Slide2 = (props: Slide2Props) => {
   const {
     texts,
     oneTextValue,
@@ -34,11 +38,13 @@ const Slide2 = () => {
     lineHeight2,
     letterSpacing2,
     layout2,
-    bgColor2, bgImage2
+    bgColor2,
   } = useSlide2();
+  const { ref } = props
 
   return (
     <Box
+    ref={ref}
       sx={{
         position: "relative",
         width: 485,
@@ -46,8 +52,8 @@ const Slide2 = () => {
         overflow: "hidden",
         borderRadius: 2,
         // background fill
-        backgroundColor: bgImage2 ? "transparent" : bgColor2 ?? "transparent",
-        backgroundImage: bgImage2 ? `url(${bgImage2})` : "none",
+        backgroundColor: bgColor2 ?? "transparent",
+        // backgroundImage: bgImage2 ? `url(${bgImage2})` : "none",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",

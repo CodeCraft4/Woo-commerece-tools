@@ -130,27 +130,38 @@ function normalizeSlide(slide: any): {
   if (!slide || typeof slide !== "object") {
     return { bgColor: null, bgImage: null, layout: { elements: [], stickers: [], textElements: [] } };
   }
-  const layout = slide.layout ?? {};
+  // const layout = slide.layout ?? {};
   const user = slide.user ?? {};
   const bg = slide.bg ?? {};
   const flags = slide.flags ?? {};
+  const rect = bg?.rect ?? { x: 0, y: 0, width: 0, height: 0 };
+  const bgEditable = bool(bg?.editable, false);       // default locked
+  const bgLocked = bool(bg?.locked, !bgEditable);
 
   const out: LayoutNorm = { elements: [], stickers: [], textElements: [] };
 
   // bg frames (locked/editable)
-  out.elements.push(...(layout?.bgFrames?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "bg-locked")));
-  out.elements.push(...(layout?.bgFrames?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "bg-edit")));
-  out.textElements.push(
-    ...(user?.freeTexts ?? []).map((o: any, i: number) => toText(o, i, false, "ut"))
-  );
+  // out.elements.push(...(layout?.bgFrames?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "bg-locked")));
+  // out.elements.push(...(layout?.bgFrames?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "bg-edit")));
+  out.textElements.push(...(user?.freeTexts ?? []).map((o: any, i: number) => toText(o, i, !o?.locked, "ut")));
 
   // single bg image
   if (bg?.image) {
     out.elements.push(
       toElement(
-        { id: "bg-image", x: 0, y: 0, width: num(bg?.width, 0), height: num(bg?.height, 0), src: bg?.image, zIndex: 0 },
+        {
+          id: "bg-image",
+          x: num(rect.x, 0),
+          y: num(rect.y, 0),
+          width: num(rect.width, 0),
+          height: num(rect.height, 0),
+          src: bg.image,
+          zIndex: 0,
+          rotation: 0,
+          locked: bgLocked,          // hard lock flag
+        },
         9990,
-        false,
+        bgEditable && !bgLocked,      // isEditable flag for UI
         "bg",
       ),
     );
@@ -161,8 +172,8 @@ function normalizeSlide(slide: any): {
   out.elements.push(...(user?.images?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "uimg-edit")));
 
   // stickers (layout + user + qrVideo)
-  out.stickers.push(...(layout?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "st-locked")));
-  out.stickers.push(...(layout?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "st-edit")));
+  // out.stickers.push(...(layout?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "st-locked")));
+  // out.stickers.push(...(layout?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "st-edit")));
   out.stickers.push(...(user?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "ust-locked")));
   out.stickers.push(...(user?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "ust-edit")));
 
@@ -186,7 +197,7 @@ function normalizeSlide(slide: any): {
   }
 
   // texts
-  out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
+  // out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
   out.textElements.push(...(slide.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, !!o?.isEditable, "mte")));
   if (slide.oneText && str(slide.oneText.value, "").trim().length > 0) {
     out.textElements.push(
@@ -324,6 +335,13 @@ const SlideSpread = ({
     bgImage2,
     setBgColor2,
     setBgImage2,
+    bgEdit2,
+    setBgEdit2,
+    bgLocked2,
+    setBgLocked2,
+    bgRect2,
+    setBgRect2,
+
 
     // selection helpers you already had for images/text
     selectedShapeImageId2,
@@ -334,7 +352,6 @@ const SlideSpread = ({
 
   const location = useLocation();
   const slide2 = location.state?.layout?.slides?.slide2 ?? null;
-  console.log(slide2)
 
   useEffect(() => {
     if (!slide2) return;
@@ -697,6 +714,30 @@ const SlideSpread = ({
   };
 
 
+
+  const placerRef = useRef<HTMLDivElement | null>(null);
+
+  // Esc closes edit
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setBgEdit2(false);
+      if (e.key.toLowerCase() === "l") setBgLocked2((v: any) => !v);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Outside click closes edit
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!bgEdit2) return;
+      if (!placerRef.current) return;
+      if (!placerRef.current.contains(e.target as Node)) setBgEdit2(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [bgEdit2]);
+
   return (
     <Box
       sx={{
@@ -714,11 +755,11 @@ const SlideSpread = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height: '100vh',
+            height: "700px",
             opacity: isSlideActive ? 1 : 0.6,
             pointerEvents: isSlideActive ? "auto" : "none",
-            backgroundColor: bgImage2 ? "transparent" : bgColor2 ?? "transparent",
-            backgroundImage: bgImage2 ? `url(${bgImage2})` : "none",
+            backgroundColor: bgColor2 ?? "transparent",
+            // backgroundImage: bgImage2 ? `url(${bgImage2})` : "none",
             backgroundSize: 'cover',
             "&::after": !isSlideActive
               ? {
@@ -735,6 +776,117 @@ const SlideSpread = ({
               : {},
           }}
         >
+
+          {/* BG */}
+          {isAdminEditor && bgImage2 && (
+            <Rnd
+              size={{ width: bgRect2.width, height: bgRect2.height }}
+              position={{ x: bgRect2.x, y: bgRect2.y }}
+              bounds="parent"
+              enableUserSelectHack={false}
+              // ✅ only draggable when unlocked AND in edit mode
+              disableDragging={!bgEdit2 || bgLocked2}
+              // ✅ only resizable when unlocked AND in edit mode
+              enableResizing={
+                bgEdit2 && !bgLocked2
+                  ? {
+                    top: false,
+                    right: false,
+                    bottom: false,
+                    left: false,
+                    topRight: false,
+                    bottomRight: true,
+                    bottomLeft: false,
+                    topLeft: false,
+                  }
+                  : false
+              }
+              onDragStop={(_, d) => setBgRect2((r: any) => ({ ...r, x: d.x, y: d.y }))}
+              onResizeStop={(_, __, ref, ___, position) =>
+                setBgRect2({
+                  x: position.x,
+                  y: position.y,
+                  width: parseInt(ref.style.width, 10),
+                  height: parseInt(ref.style.height, 10),
+                })
+              }
+              style={{
+                zIndex: 1,
+                outline: bgEdit2 && !bgLocked2 ? "2px solid #1976d2" : "none",
+                cursor: bgEdit2 && !bgLocked2 ? "move" : "default",
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "14px",
+                  height: "14px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "3px",
+                  right: "-7px",
+                  bottom: "-7px",
+                  cursor: "se-resize",
+                  boxShadow: "0 0 2px rgba(0,0,0,.25)",
+                  pointerEvents: bgEdit2 && !bgLocked2 ? "auto" : "none",
+                },
+              }}
+            >
+              <Box
+                ref={placerRef}
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  backgroundColor: bgImage2 ? "transparent" : bgColor2 ?? "transparent",
+                  backgroundImage: bgImage2 ? `url(${bgImage2})` : "none",
+                  backgroundSize: "cover",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
+                  userSelect: "none",
+                }}
+                // ✅ double-click only works when unlocked
+                onDoubleClick={() => {
+                  if (!bgLocked2) setBgEdit2(true);
+                }}
+              >
+                {/* Lock/Unlock toggle (top-left) */}
+                <IconButton
+                  onClick={(e) => { e.stopPropagation(); setBgLocked2((v: any) => !v); if (!bgLocked2) setBgEdit2(false); }}
+                  sx={{
+                    position: "absolute",
+                    top: -5,
+                    right: -5,
+                    bgcolor: "black",
+                    color: "white",
+                    width: 28,
+                    height: 28,
+                    "&:hover": { bgcolor: bgLocked2 ? "#2e7d32" : "#d32f2f" },
+                  }}
+                >
+                  {bgLocked2 ? <LockOutlined fontSize="small" /> : <LockOpenOutlined fontSize="small" />}
+                </IconButton>
+                {/* Small hint when locked */}
+                {bgLocked2 && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      bottom: 6,
+                      left: 6,
+                      px: 1,
+                      py: 0.5,
+                      fontSize: 12,
+                      bgcolor: "rgba(0,0,0,.55)",
+                      color: "white",
+                      borderRadius: 1,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    BG locked
+                  </Box>
+                )}
+              </Box>
+            </Rnd>
+          )}
+
           {/* 🎚 Single selection-based switch (admin only) */}
           {isAdminEditor && (
             <Paper
@@ -1801,26 +1953,70 @@ const SlideSpread = ({
                 layout2 &&
                 <Box sx={{ width: "100%", height: "100%" }}>
                   {/* BG frames */}
-                  {layout2.elements.map((el: any, i: any) => (
-                    <Box key={el.id ?? i}
-                      sx={{ position: "absolute", left: el.x, top: el.y, width: el.width, height: el.height, zIndex: el.zIndex ?? 1, borderRadius: 1, overflow: "visible" }}>
-                      <Box component="img" src={el.src || undefined}
-                        sx={{
-                          width: "100%", height: "100%", objectFit: "fill", borderRadius: 1, display: "block", pointerEvents: "none",
-                          clipPath: el.clipPath || "none", WebkitClipPath: el.clipPath || "none"
-                        }} />
-                      {el.isEditable && (
-                        <Box onClick={() => handleImageUploadClick("bg", i)}
+                  {layout2.elements
+                    ?.slice()
+                    .sort((a: any, b: any) => (a.zIndex ?? 0) - (b.zIndex ?? 0)) // keep BG at the back (zIndex 0)
+                    .map((el: any, index: number) => {
+                      const isEditable = !!el.isEditable;  // <- comes from normalize
+                      const isLocked = !!el.locked;
+
+                      return (
+                        <Box
+                          key={el.id ?? index}
                           sx={{
-                            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-                            backgroundColor: "rgba(0,0,0,0.4)", borderRadius: "50%", width: 40, height: 40,
-                            display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid white", cursor: "pointer"
-                          }}>
-                          <UploadFileRounded sx={{ color: "white" }} />
+                            position: "absolute",
+                            left: el.x,
+                            top: el.y,
+                            width: el.width,
+                            height: el.height,
+                            borderRadius: 1,
+                            overflow: "visible",
+                            cursor: isEditable ? "pointer" : "default",
+                          }}
+                          onClick={() => setSelectedBgIndex2(index)}
+                        >
+                          <Box
+                            component="img"
+                            src={el.src || undefined}
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              borderRadius: 1,
+                              display: "block",
+                              pointerEvents: "none",
+                              clipPath: el.clipPath || "none",
+                              WebkitClipPath: el.clipPath || "none",
+                            }}
+                          />
+                          {/* ✅ Only show upload icon when this frame is editable (NOT when locked) */}
+                          {isEditable && !isLocked && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                backgroundColor: "rgba(0,0,0,0.45)",
+                                borderRadius: "50%",
+                                width: 40,
+                                height: 40,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "1px solid white",
+                                cursor: "pointer",
+                                "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
+                              }}
+                              onClick={() => handleImageUploadClick("bg", index)}
+                              title="Change background image"
+                            >
+                              <UploadFileRounded sx={{ color: "white" }} />
+                            </Box>
+                          )}
                         </Box>
-                      )}
-                    </Box>
-                  ))}
+                      );
+                    })}
 
                   {/* Stickers */}
                   {layout2.stickers.map((st: any, i: any) => (

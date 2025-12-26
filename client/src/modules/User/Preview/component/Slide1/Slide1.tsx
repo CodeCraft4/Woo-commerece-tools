@@ -8,22 +8,29 @@ const safeClip = (cp?: string | null) => (cp && typeof cp === "string" ? cp : "n
 const safeFilter = (f?: string | null) => (f && typeof f === "string" ? f : "none");
 const val = <T,>(v: T | undefined, d: T) => (v === undefined || v === null ? d : v);
 
-const Slide1 = () => {
-  const { layout1, bgColor1, bgImage1 } = useSlide1();
+type Slide1Props = {
+  ref?: any
+}
+
+const Slide1 = (props: Slide1Props) => {
+  const { layout1, bgColor1} = useSlide1();
+
+  const { ref } = props
 
   return (
     <Box
+      ref={ref}
       sx={{
         position: "relative",
-        width: 500,
+        width: '100%',
         height: "100%",
         overflow: "hidden",
-        // background fill
-        backgroundColor: bgImage1 ? "transparent" : bgColor1 ?? "transparent",
-        backgroundImage: bgImage1 ? `url(${bgImage1})` : "none",
+        backgroundColor: bgColor1 ?? "transparent",
+        // backgroundImage: bgImage1 ? `url(${bgImage1})` : "none",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
+        borderRadius:2,
       }}
     >
       {layout1 && (

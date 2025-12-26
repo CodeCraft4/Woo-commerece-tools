@@ -252,6 +252,9 @@ interface Slide1ContextType {
 
 
   // ------------------------ Adding Admin Editor -------------------------------------------------------------------------------------------
+  bgEdit1: boolean, setBgEdit1: any,
+  bgLocked1: boolean, setBgLocked1: any,
+  bgRect1: any, setBgRect1: any,
   bgColor1: string | null;
   setBgColor1: React.Dispatch<React.SetStateAction<string | null>>;
   bgImage1: string | null;
@@ -322,6 +325,9 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
   const [canEditBg1, setCanEditBg1] = useState<boolean>(true);
   const [canEditImages1, setCanEditImages1] = useState<boolean>(true);
   const [canEditStickers1, setCanEditStickers1] = useState<boolean>(true);
+  const [bgEdit1, setBgEdit1] = useState(false);
+  const [bgLocked1, setBgLocked1] = useState<boolean>(false);
+  const [bgRect1, setBgRect1] = useState<any>({ x: 40, y: 40, width: 300, height: 400 });
 
 
   const setEditAll1 = (on: boolean) => {
@@ -485,9 +491,9 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
 
   // ✅ Reset all context state to initial values
   const resetSlide1State = () => {
-    // 🧹 Clear persisted local storage
-    clearSlide1LocalData();
-
+    setBgColor1(null)
+    setBgImage1(null)
+    setLayout1([])
     // Base states
     setActiveIndex1(0);
     setTitle1("Happy Birthday");
@@ -625,6 +631,8 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     setBgColor1(null);
     setBgImage1(null);
     setSelectedShapePath1(null);
+    clearSlide1LocalData();
+
   };
 
 
@@ -634,7 +642,6 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       const saved = localStorage.getItem("slide1_state");
       if (saved) {
         const parsed = JSON.parse(saved);
-
         if (parsed.textElements3) setTextElements1(parsed.textElements1);
         if (parsed.draggableImages1) setDraggableImages1(parsed.draggableImages1);
         if (parsed.images1) setImages1(parsed.images1);
@@ -750,13 +757,14 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     bgColor1,
     bgImage1,
     selectedShapePath1,
-    layout1,
+    layout1
   ]);
 
   // --- 🧹 Clear localStorage ---
   const clearSlide1LocalData = () => {
     try {
       localStorage.removeItem("slide1_state");
+      console.log("🧹 Cleared Slide1 saved state");
     } catch (error) {
       console.error("Error clearing slide1_state:", error);
     }
@@ -888,6 +896,9 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
         // + new background values
         bgColor1, setBgColor1,
         bgImage1, setBgImage1,
+        bgEdit1, setBgEdit1,
+        bgLocked1, setBgLocked1,
+        bgRect1, setBgRect1,
         selectedShapePath1,
         setSelectedShapePath1,
         selectedShapeImageId1,

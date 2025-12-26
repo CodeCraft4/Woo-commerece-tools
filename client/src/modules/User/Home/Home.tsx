@@ -7,7 +7,7 @@ const Home = () => {
 
   return (
     <Applayout>
-       <Box sx={{ height: "100%", minHeight: 0 }}>
+      <Box sx={{ height: "100%", minHeight: 0 }}>
         <WishCard />
       </Box>
     </Applayout>

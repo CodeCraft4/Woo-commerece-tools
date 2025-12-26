@@ -224,6 +224,9 @@ interface Slide3ContextType {
   setLayout3?: any,
 
   // ------------------------ Adding Admin Editor -------------------------------------------------------------------------------------------
+  bgEdit3: boolean, setBgEdit3: any,
+  bgLocked3: boolean, setBgLocked3: any,
+  bgRect3: any, setBgRect3: any,
   bgColor3: string | null;
   setBgColor3: React.Dispatch<React.SetStateAction<string | null>>;
   bgImage3: string | null;
@@ -285,7 +288,9 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   const [imageFilter3, setImageFilter3] = useState(false)
   const [activeFilterImageId3, setActiveFilterImageId3] = useState<string | null>(null);
 
-
+  const [bgEdit3, setBgEdit3] = useState(false);
+  const [bgLocked3, setBgLocked3] = useState<boolean>(false);
+  const [bgRect3, setBgRect3] = useState<any>({ x: 40, y: 40, width: 300, height: 400 });
   const [bgColor3, setBgColor3] = useState<string | null>(null);
   const [bgImage3, setBgImage3] = useState<string | null>(null);
   const [selectedShapePath3, setSelectedShapePath3] = useState<string | null>(null);
@@ -593,6 +598,9 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     setSlide3DataStore3([]);
   };
 
+  const [layout3, setLayout3] = useState<any>(null);
+
+
 
 
   useEffect(() => {
@@ -673,7 +681,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
 
       bgColor3,
       bgImage3,
-      selectedShapePath3
+      selectedShapePath3,
+      layout3
     };
 
     try {
@@ -711,6 +720,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     bgColor3,
     bgImage3,
     selectedShapePath3,
+    layout3
   ]);
 
   // --- 🧹 Clear localStorage ---
@@ -722,7 +732,6 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const [layout3, setLayout3] = useState<any>(null);
 
   return (
     <Slide3Context.Provider
@@ -851,6 +860,9 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
 
         bgColor3, setBgColor3,
         bgImage3, setBgImage3,
+        bgEdit3, setBgEdit3,
+        bgLocked3, setBgLocked3,
+        bgRect3, setBgRect3,
         selectedShapePath3,
         setSelectedShapePath3,
         selectedShapeImageId3,

@@ -149,13 +149,13 @@ const PreviewBookCard = () => {
                 style={{ zIndex: currentLocation > 1 ? 1 : 2 }}
               >
                 <div className="front">
-                  <div className="front-content capture-slide" id="sf1" ref={slideRefs.s1}>
-                    <Slide1 />
+                  <div className="front-content capture-slide" id="sf1">
+                    <Slide1 ref={slideRefs.s1} />
                   </div>
                 </div>
                 <div className="back">
-                  <div className="back-content capture-slide" id="b1" ref={slideRefs.s2}>
-                    <Slide2 />
+                  <div className="back-content capture-slide" id="b1">
+                    <Slide2 ref={slideRefs.s2}  />
                   </div>
                 </div>
               </div>
@@ -165,13 +165,13 @@ const PreviewBookCard = () => {
                 style={{ zIndex: currentLocation > 2 ? 2 : 1 }}
               >
                 <div className="front">
-                  <div className="front-content capture-slide" id="f2" ref={slideRefs.s3}>
-                    <Slide3 />
+                  <div className="front-content capture-slide" id="f2">
+                    <Slide3 ref={slideRefs.s3}  />
                   </div>
                 </div>
                 <div className="back">
-                  <div className="back-content capture-slide" id="b2" ref={slideRefs.s4}>
-                    <Slide4 />
+                  <div className="back-content capture-slide" id="b2">
+                    <Slide4  ref={slideRefs.s4} />
                   </div>
                 </div>
               </div>

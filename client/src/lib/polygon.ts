@@ -1,56 +1,68 @@
-// utils/polygon.ts
+// src/lib/polygon.ts
 import * as htmlToImage from "html-to-image";
 
 /* ----------------------------- Shared helpers ---------------------------- */
 
 const pick = <T = any>(o: any, keys: string[], d?: any): T =>
-  (keys.find(k => o && o[k] !== undefined)
-    ? (o[keys.find(k => o[k] !== undefined)!] as T)
+  (keys.find((k) => o && o[k] !== undefined)
+    ? (o[keys.find((k) => o[k] !== undefined)!] as T)
     : d) as T;
 
 const splitBucket = <T extends { locked?: boolean }>(arr: T[] = []) => ({
-  editable: arr.filter(i => !i.locked),
-  locked:   arr.filter(i =>  i.locked),
+  editable: arr.filter((i) => !i.locked),
+  locked: arr.filter((i) => i.locked),
 });
+
+const call = (ctx: any, fnName: string, ...args: any[]) => {
+  const fn = ctx?.[fnName];
+  if (typeof fn === "function") fn(...args);
+};
 
 /* --------------------------------- Types --------------------------------- */
 
-// Re-usable bucket type
 export type Bucket<T> = {
   editable: T[];
   locked: T[];
 };
 
-// Layout (template) background frame
 export type BgFrame = {
   id: string;
-  x: number; y: number; width: number; height: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   src: string;
   zIndex?: number;
   rotation?: number;
   locked?: boolean;
 };
 
-// User image on canvas
 export type UserImage = {
   id: string;
   src: string;
-  x: number; y: number; width: number; height: number;
-  rotation?: number; zIndex?: number;
-  filter?: string; shapePath?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  zIndex?: number;
+  filter?: string;
+  shapePath?: string;
   locked?: boolean;
 };
 
-// Sticker (layout or user)
 export type Sticker = {
   id?: string;
   sticker: string;
-  x: number; y: number; width: number; height: number;
-  rotation?: number; zIndex?: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  zIndex?: number;
   locked?: boolean;
 };
 
-// Free text (admin/user layer)
 export type FreeText = {
   id: string;
   value: string;
@@ -69,11 +81,13 @@ export type FreeText = {
   locked?: boolean;
 };
 
-// Static text in a template layout (non-RND)
 export type StaticText = {
   id?: string;
   text: string;
-  x: number; y: number; width: number; height: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   textAlign?: "left" | "center" | "right";
   verticalAlign?: "top" | "center" | "bottom";
   fontSize?: number;
@@ -87,27 +101,36 @@ export type StaticText = {
 };
 
 export type QRBox = {
-  x?: number; y?: number; width?: number; height?: number; zIndex?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  zIndex?: number;
   url?: string | null;
 };
 
 export type AIImage = {
-  x?: number; y?: number; width?: number; height?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
   imageUrl?: string | null;
 };
 
 /* -------------------------- Slide payload (v2) --------------------------- */
 
 export type SlidePayloadV2 = {
-  // simple meta for background + toggles
-  bg: { color?: string | null; image?: string | null };
+  bg: {
+    color?: string | null;
+    image?: string | null;
+    rect?: { x: number; y: number; width: number; height: number } | null;
+    locked?: boolean;
+  };
   flags: {
     showOneText?: boolean;
     multipleText?: boolean;
     isAIImage?: boolean;
   };
-
-  // one-text layout styling (optional)
   oneText?: {
     value?: string;
     fontSize?: number;
@@ -120,29 +143,21 @@ export type SlidePayloadV2 = {
     lineHeight?: number;
     letterSpacing?: number | string;
   };
-
-  // multi-text layout slices (your original `texts1` etc.)
   multipleTexts?: Array<any>;
-
-  // layout/template layer (non-RND background frames + static stickers/text)
   layout: {
     bgFrames: Bucket<BgFrame>;
     stickers: Bucket<Sticker>;
     staticText: StaticText[];
   };
-
-  // user/admin editable layer
   user: {
     images: Bucket<UserImage>;
     stickers: Bucket<Sticker>;
     freeTexts: FreeText[];
+    /** Persist selection separately (do NOT filter images when saving). */
+    selectedImageIds?: string[];
   };
-
-  // media (QR)
   qrVideo?: QRBox | null;
   qrAudio?: QRBox | null;
-
-  // AI image box
   ai?: AIImage | null;
 };
 
@@ -156,122 +171,275 @@ export type PolygonLayoutV2 = {
   };
 };
 
+/* -------------------------- Optional: merge helper ------------------------- */
+
+export const mergeBuckets = <T>(b?: Bucket<T>) =>
+  b ? [...(b.editable || []), ...(b.locked || [])] : [];
+
 /* ------------------------------ Normalizer ------------------------------ */
 
 const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
-  // background
+  const rect = pick<any>(
+    ctx,
+    ["bgRect1", "bgRect2", "bgRect3", "bgRect4", "bgRect"],
+    null
+  );
+
   const bg = {
-    color: pick<string>(ctx, ["bgColor1","bgColor2","bgColor3","bgColor4","bgColor"], null),
-    image: pick<string>(ctx, ["bgImage1","bgImage2","bgImage3","bgImage4","bgImage"], null),
+    color: pick<string>(
+      ctx,
+      ["bgColor1", "bgColor2", "bgColor3", "bgColor4", "bgColor"],
+      null
+    ),
+    image: pick<string>(
+      ctx,
+      ["bgImage1", "bgImage2", "bgImage3", "bgImage4", "bgImage"],
+      null
+    ),
+    rect: rect
+      ? {
+          x: rect.x ?? 0,
+          y: rect.y ?? 0,
+          width: rect.width ?? 0,
+          height: rect.height ?? 0,
+        }
+      : null,
+    locked: !!pick(
+      ctx,
+      ["bgLocked1", "bgLocked2", "bgLocked3", "bgLocked4", "bgLocked"],
+      false
+    ),
   };
 
-  // flags
   const flags = {
-    showOneText: !!pick(ctx, [
-      "showOneTextRightSideBox1","showOneTextRightSideBox2",
-      "showOneTextRightSideBox3","showOneTextRightSideBox4","showOneTextRightSideBox"
-    ], false),
-    multipleText: !!pick(ctx, [
-      "multipleTextValue1","multipleTextValue2","multipleTextValue3","multipleTextValue4","multipleTextValue"
-    ], false),
-    isAIImage: !!pick(ctx, ["isAIimage1","isAIimage2","isAIimage3","isAIimage4","isAIimage"], false),
+    showOneText: !!pick(
+      ctx,
+      [
+        "showOneTextRightSideBox1",
+        "showOneTextRightSideBox2",
+        "showOneTextRightSideBox3",
+        "showOneTextRightSideBox4",
+        "showOneTextRightSideBox",
+      ],
+      false
+    ),
+    multipleText: !!pick(
+      ctx,
+      [
+        "multipleTextValue1",
+        "multipleTextValue2",
+        "multipleTextValue3",
+        "multipleTextValue4",
+        "multipleTextValue",
+      ],
+      false
+    ),
+    isAIImage: !!pick(
+      ctx,
+      ["isAIimage1", "isAIimage2", "isAIimage3", "isAIimage4", "isAIimage"],
+      false
+    ),
   };
 
-  // one-text style block
   const oneText = {
-    value: pick<string>(ctx, ["oneTextValue1","oneTextValue2","oneTextValue3","oneTextValue4","oneTextValue"], ""),
-    fontSize: pick<number>(ctx, ["fontSize1","fontSize2","fontSize3","fontSize4","fontSize"]),
-    fontWeight: pick(ctx, ["fontWeight1","fontWeight2","fontWeight3","fontWeight4","fontWeight"]),
-    fontColor: pick<string>(ctx, ["fontColor1","fontColor2","fontColor3","fontColor4","fontColor"]),
-    fontFamily: pick<string>(ctx, ["fontFamily1","fontFamily2","fontFamily3","fontFamily4","fontFamily"]),
-    textAlign: pick(ctx, ["textAlign1","textAlign2","textAlign3","textAlign4","textAlign"]),
-    verticalAlign: pick(ctx, ["verticalAlign1","verticalAlign2","verticalAlign3","verticalAlign4","verticalAlign"]),
-    rotation: pick<number>(ctx, ["rotation1","rotation2","rotation3","rotation4","rotation"], 0),
-    lineHeight: pick<number>(ctx, ["lineHeight1","lineHeight2","lineHeight3","lineHeight4","lineHeight"]),
-    letterSpacing: pick(ctx, ["letterSpacing1","letterSpacing2","letterSpacing3","letterSpacing4","letterSpacing"]),
+    value: pick<string>(
+      ctx,
+      [
+        "oneTextValue1",
+        "oneTextValue2",
+        "oneTextValue3",
+        "oneTextValue4",
+        "oneTextValue",
+      ],
+      ""
+    ),
+    fontSize: pick<number>(ctx, [
+      "fontSize1",
+      "fontSize2",
+      "fontSize3",
+      "fontSize4",
+      "fontSize",
+    ]),
+    fontWeight: pick(ctx, [
+      "fontWeight1",
+      "fontWeight2",
+      "fontWeight3",
+      "fontWeight4",
+      "fontWeight",
+    ]),
+    fontColor: pick<string>(ctx, [
+      "fontColor1",
+      "fontColor2",
+      "fontColor3",
+      "fontColor4",
+      "fontColor",
+    ]),
+    fontFamily: pick<string>(ctx, [
+      "fontFamily1",
+      "fontFamily2",
+      "fontFamily3",
+      "fontFamily4",
+      "fontFamily",
+    ]),
+    textAlign: pick(ctx, [
+      "textAlign1",
+      "textAlign2",
+      "textAlign3",
+      "textAlign4",
+      "textAlign",
+    ]),
+    verticalAlign: pick(ctx, [
+      "verticalAlign1",
+      "verticalAlign2",
+      "verticalAlign3",
+      "verticalAlign4",
+      "verticalAlign",
+    ]),
+    rotation: pick<number>(
+      ctx,
+      ["rotation1", "rotation2", "rotation3", "rotation4", "rotation"],
+      0
+    ),
+    lineHeight: pick<number>(ctx, [
+      "lineHeight1",
+      "lineHeight2",
+      "lineHeight3",
+      "lineHeight4",
+      "lineHeight",
+    ]),
+    letterSpacing: pick(ctx, [
+      "letterSpacing1",
+      "letterSpacing2",
+      "letterSpacing3",
+      "letterSpacing4",
+      "letterSpacing",
+    ]),
   };
 
-  // multi-text slices (keep as-is)
-  const multipleTexts = pick<any[]>(ctx, ["texts1","texts2","texts3","texts4","texts"], [])?.map(t => ({ ...t }));
+  const multipleTexts = pick<any[]>(
+    ctx,
+    ["texts1", "texts2", "texts3", "texts4", "texts"],
+    []
+  )?.map((t) => ({ ...t }));
 
-  // --------------------- layout/template level (bg, stickers, text) ---------------------
-  const layoutRaw = pick<any>(ctx, ["layout1","layout2","layout3","layout4","layout"], null);
+  const layoutRaw = pick<any>(
+    ctx,
+    ["layout1", "layout2", "layout3", "layout4", "layout"],
+    null
+  );
 
-  const layoutBgFramesAll: BgFrame[] = (layoutRaw?.elements ?? []).map((el: any) => ({
-    id: el.id,
-    x: el.x, y: el.y, width: el.width, height: el.height,
-    src: el.src,
-    zIndex: el.zIndex,
-    rotation: el.rotation,
-    locked: !!el.locked,
-  }));
+  const layoutBgFramesAll: BgFrame[] = (layoutRaw?.elements ?? []).map(
+    (el: any) => ({
+      id: el.id,
+      x: el.x,
+      y: el.y,
+      width: el.width,
+      height: el.height,
+      src: el.src,
+      zIndex: el.zIndex,
+      rotation: el.rotation,
+      locked: !!el.locked,
+    })
+  );
 
-  const layoutStickersAll: Sticker[] = (layoutRaw?.stickers ?? []).map((st: any) => ({
-    id: st.id,
-    sticker: st.sticker,
-    x: st.x, y: st.y, width: st.width, height: st.height,
-    rotation: st.rotation,
-    zIndex: st.zIndex,
-    locked: !!st.locked,
-  }));
+  const layoutStickersAll: Sticker[] = (layoutRaw?.stickers ?? []).map(
+    (st: any) => ({
+      id: st.id,
+      sticker: st.sticker,
+      x: st.x,
+      y: st.y,
+      width: st.width,
+      height: st.height,
+      rotation: st.rotation,
+      zIndex: st.zIndex,
+      locked: !!st.locked,
+    })
+  );
 
-  const staticText: StaticText[] = (layoutRaw?.textElements ?? []).map((te: any) => ({
-    id: te.id,
-    text: te.text,
-    x: te.x, y: te.y, width: te.width, height: te.height,
-    textAlign: te.textAlign,
-    verticalAlign: te.verticalAlign,
-    fontSize: te.fontSize,
-    fontFamily: te.fontFamily,
-    color: te.color,
-    fontWeight: te.bold ?? te.fontWeight,
-    italic: te.italic,
-    rotation: te.rotation,
-    zIndex: te.zIndex,
-    locked: !!te.locked,
-  }));
+  const staticText: StaticText[] = (layoutRaw?.textElements ?? []).map(
+    (te: any) => ({
+      id: te.id,
+      text: te.text,
+      x: te.x,
+      y: te.y,
+      width: te.width,
+      height: te.height,
+      textAlign: te.textAlign,
+      verticalAlign: te.verticalAlign,
+      fontSize: te.fontSize,
+      fontFamily: te.fontFamily,
+      color: te.color,
+      fontWeight: te.bold ?? te.fontWeight,
+      italic: te.italic,
+      rotation: te.rotation,
+      zIndex: te.zIndex,
+      locked: !!te.locked,
+    })
+  );
 
-  // split into buckets
   const layout = {
     bgFrames: splitBucket<BgFrame>(layoutBgFramesAll),
     stickers: splitBucket<Sticker>(layoutStickersAll),
     staticText,
   };
 
-  // ------------------------- user/admin editable layer -------------------------
+  // ✅ Keep selection but DON'T filter saved images
   const selectedImg = pick<string[]>(
     ctx,
-    ["selectedImg1","selectedImg2","selectedImg3","selectedImg4","selectedImg"],
+    [
+      "selectedImg1",
+      "selectedImg2",
+      "selectedImg3",
+      "selectedImg4",
+      "selectedImg",
+    ],
     []
   );
 
   const imagesRaw = pick<any[]>(
     ctx,
-    ["draggableImages1","draggableImages2","draggableImages3","draggableImages4","draggableImages"],
+    [
+      "draggableImages1",
+      "draggableImages2",
+      "draggableImages3",
+      "draggableImages4",
+      "draggableImages",
+    ],
     []
   );
 
-  const userImagesAll: UserImage[] = imagesRaw
-    ?.filter((img: any) => (Array.isArray(selectedImg) ? selectedImg.includes(img.id) : true))
-    .map((img: any) => ({
-      id: img.id,
-      src: img.src,
-      x: img.x, y: img.y, width: img.width, height: img.height,
-      rotation: img.rotation,
-      zIndex: img.zIndex,
-      filter: img.filter,
-      shapePath: img.shapePath,
-      locked: !!img.locked,
-    }));
+  // ✅ SAVE ALL images
+  const userImagesAll: UserImage[] = (imagesRaw ?? []).map((img: any) => ({
+    id: img.id,
+    src: img.src,
+    x: img.x,
+    y: img.y,
+    width: img.width,
+    height: img.height,
+    rotation: img.rotation,
+    zIndex: img.zIndex,
+    filter: img.filter,
+    shapePath: img.shapePath,
+    locked: !!img.locked,
+  }));
 
   const userStickersAll: Sticker[] = pick<any[]>(
     ctx,
-    ["selectedStickers1","selectedStickers2","selectedStickers3","selectedStickers4","selectedStickers"],
+    [
+      "selectedStickers1",
+      "selectedStickers2",
+      "selectedStickers3",
+      "selectedStickers4",
+      "selectedStickers",
+    ],
     []
-  )?.map(st => ({
+  )?.map((st) => ({
     id: st.id,
     sticker: st.sticker,
-    x: st.x, y: st.y, width: st.width, height: st.height,
+    x: st.x,
+    y: st.y,
+    width: st.width,
+    height: st.height,
     zIndex: st.zIndex,
     rotation: st.rotation,
     locked: !!st.locked,
@@ -279,9 +447,15 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
 
   const freeTexts: FreeText[] = pick<any[]>(
     ctx,
-    ["textElements1","textElements2","textElements3","textElements4","textElements"],
+    [
+      "textElements1",
+      "textElements2",
+      "textElements3",
+      "textElements4",
+      "textElements",
+    ],
     []
-  )?.map(t => ({
+  )?.map((t) => ({
     id: t.id,
     value: t.value,
     fontSize: t.fontSize,
@@ -303,35 +477,94 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
     images: splitBucket<UserImage>(userImagesAll),
     stickers: splitBucket<Sticker>(userStickersAll),
     freeTexts,
+    selectedImageIds: Array.isArray(selectedImg) ? selectedImg : [],
   };
 
-  // ------------------------------- media / QR -------------------------------
   const selectedVideoUrl = pick<string | null>(
-    ctx, ["selectedVideoUrl1","selectedVideoUrl2","selectedVideoUrl3","selectedVideoUrl4","selectedVideoUrl"], null
+    ctx,
+    [
+      "selectedVideoUrl1",
+      "selectedVideoUrl2",
+      "selectedVideoUrl3",
+      "selectedVideoUrl4",
+      "selectedVideoUrl",
+    ],
+    null
   );
-  const qrPos = pick<any>(ctx, ["qrPosition1","qrPosition2","qrPosition3","qrPosition4","qrPosition"], {});
-  const qrVideo = selectedVideoUrl ? ({
-    url: selectedVideoUrl,
-    x: qrPos?.x, y: qrPos?.y, width: qrPos?.width, height: qrPos?.height, zIndex: qrPos?.zIndex,
-  } as QRBox) : null;
+  const qrPos = pick<any>(
+    ctx,
+    ["qrPosition1", "qrPosition2", "qrPosition3", "qrPosition4", "qrPosition"],
+    {}
+  );
+  const qrVideo = selectedVideoUrl
+    ? ({
+        url: selectedVideoUrl,
+        x: qrPos?.x,
+        y: qrPos?.y,
+        width: qrPos?.width,
+        height: qrPos?.height,
+        zIndex: qrPos?.zIndex,
+      } as QRBox)
+    : null;
 
   const selectedAudioUrl = pick<string | null>(
-    ctx, ["selectedAudioUrl1","selectedAudioUrl2","selectedAudioUrl3","selectedAudioUrl4","selectedAudioUrl"], null
+    ctx,
+    [
+      "selectedAudioUrl1",
+      "selectedAudioUrl2",
+      "selectedAudioUrl3",
+      "selectedAudioUrl4",
+      "selectedAudioUrl",
+    ],
+    null
   );
-  const qrAudioPos = pick<any>(ctx, ["qrAudioPosition1","qrAudioPosition2","qrAudioPosition3","qrAudioPosition4","qrAudioPosition"], {});
-  const qrAudio = selectedAudioUrl ? ({
-    url: selectedAudioUrl,
-    x: qrAudioPos?.x, y: qrAudioPos?.y, width: qrAudioPos?.width, height: qrAudioPos?.height, zIndex: qrAudioPos?.zIndex,
-  } as QRBox) : null;
+  const qrAudioPos = pick<any>(
+    ctx,
+    [
+      "qrAudioPosition1",
+      "qrAudioPosition2",
+      "qrAudioPosition3",
+      "qrAudioPosition4",
+      "qrAudioPosition",
+    ],
+    {}
+  );
+  const qrAudio = selectedAudioUrl
+    ? ({
+        url: selectedAudioUrl,
+        x: qrAudioPos?.x,
+        y: qrAudioPos?.y,
+        width: qrAudioPos?.width,
+        height: qrAudioPos?.height,
+        zIndex: qrAudioPos?.zIndex,
+      } as QRBox)
+    : null;
 
-  // ------------------------------- AI image --------------------------------
   const aiEnabled = !!flags.isAIImage;
-  const aimage = pick<any>(ctx, ["aimage1","aimage2","aimage3","aimage4","aimage"], null);
+  const aimage = pick<any>(
+    ctx,
+    ["aimage1", "aimage2", "aimage3", "aimage4", "aimage"],
+    null
+  );
   const selectedAIimageUrl = pick<string>(
-    ctx, ["selectedAIimageUrl1","selectedAIimageUrl2","selectedAIimageUrl3","selectedAIimageUrl4","selectedAIimageUrl"], null
+    ctx,
+    [
+      "selectedAIimageUrl1",
+      "selectedAIimageUrl2",
+      "selectedAIimageUrl3",
+      "selectedAIimageUrl4",
+      "selectedAIimageUrl",
+    ],
+    null
   );
   const ai: AIImage | null = aiEnabled
-    ? { x: aimage?.x, y: aimage?.y, width: aimage?.width, height: aimage?.height, imageUrl: selectedAIimageUrl }
+    ? {
+        x: aimage?.x,
+        y: aimage?.y,
+        width: aimage?.width,
+        height: aimage?.height,
+        imageUrl: selectedAIimageUrl,
+      }
     : null;
 
   return {
@@ -349,9 +582,14 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
 
 /* --------------------------- Public build function -------------------------- */
 
-export type PolygonLayout = PolygonLayoutV2; // alias for current
+export type PolygonLayout = PolygonLayoutV2;
 
-export const buildPolygonLayout = (s1: any, s2: any, s3: any, s4: any): PolygonLayoutV2 => ({
+export const buildPolygonLayout = (
+  s1: any,
+  s2: any,
+  s3: any,
+  s4: any
+): PolygonLayoutV2 => ({
   version: 2 as const,
   slides: {
     slide1: normalizeSlideV2(s1),
@@ -363,7 +601,10 @@ export const buildPolygonLayout = (s1: any, s2: any, s3: any, s4: any): PolygonL
 
 /* ----------------------------- Capture helper ----------------------------- */
 
-export async function captureNodeToPng(node: HTMLElement, bg?: string): Promise<string> {
+export async function captureNodeToPng(
+  node: HTMLElement,
+  bg?: string
+): Promise<string> {
   return htmlToImage.toPng(node, {
     cacheBust: true,
     pixelRatio: 2,
@@ -371,7 +612,164 @@ export async function captureNodeToPng(node: HTMLElement, bg?: string): Promise<
   });
 }
 
-/* -------------------------- Optional: merge helper ------------------------- */
-/** When hydrating the editor, this helps you merge editable+locked quickly. */
-export const mergeBuckets = <T>(b?: Bucket<T>) =>
-  b ? [ ...(b.editable || []), ...(b.locked || []) ] : [];
+/* ------------------------ Apply (hydrate) helper ------------------------- */
+
+const isV2Layout = (layout: any): layout is PolygonLayoutV2 =>
+  !!layout && layout.version === 2 && !!layout.slides?.slide1;
+
+function applySlideV2ToContext(
+  payload: SlidePayloadV2,
+  slideCtx: any,
+  n: 1 | 2 | 3 | 4
+) {
+  call(slideCtx, `setBgColor${n}`, payload.bg?.color ?? "#fff");
+  call(slideCtx, `setBgImage${n}`, payload.bg?.image ?? "");
+  call(slideCtx, `setBgRect${n}`, payload.bg?.rect ?? null);
+
+  call(
+    slideCtx,
+    `setShowOneTextRightSideBox${n}`,
+    !!payload.flags?.showOneText
+  );
+  call(slideCtx, `setMultipleTextValue${n}`, !!payload.flags?.multipleText);
+
+  call(slideCtx, `setOneTextValue${n}`, payload.oneText?.value ?? "");
+  call(slideCtx, `setFontSize${n}`, payload.oneText?.fontSize);
+  call(slideCtx, `setFontWeight${n}`, payload.oneText?.fontWeight);
+  call(slideCtx, `setFontColor${n}`, payload.oneText?.fontColor);
+  call(slideCtx, `setFontFamily${n}`, payload.oneText?.fontFamily);
+  call(slideCtx, `setTextAlign${n}`, payload.oneText?.textAlign);
+  call(slideCtx, `setVerticalAlign${n}`, payload.oneText?.verticalAlign);
+  call(slideCtx, `setRotation${n}`, payload.oneText?.rotation ?? 0);
+  call(slideCtx, `setLineHeight${n}`, payload.oneText?.lineHeight);
+  call(slideCtx, `setLetterSpacing${n}`, payload.oneText?.letterSpacing);
+
+  call(
+    slideCtx,
+    `setTexts${n}`,
+    Array.isArray(payload.multipleTexts) ? payload.multipleTexts : []
+  );
+  call(
+    slideCtx,
+    `setTextElements${n}`,
+    Array.isArray(payload.user?.freeTexts) ? payload.user.freeTexts : []
+  );
+
+  const images = mergeBuckets(payload.user?.images);
+  call(slideCtx, `setDraggableImages${n}`, Array.isArray(images) ? images : []);
+
+  // ✅ If selection empty, auto-select all so UI renders content
+  const selected = payload.user?.selectedImageIds ?? [];
+  const selectedFinal =
+    Array.isArray(selected) && selected.length > 0
+      ? selected
+      : (images ?? []).map((i: any) => i.id);
+
+  call(slideCtx, `setSelectedImg${n}`, selectedFinal);
+
+  const stickers = mergeBuckets(payload.user?.stickers);
+  call(
+    slideCtx,
+    `setSelectedStickers${n}`,
+    Array.isArray(stickers) ? stickers : []
+  );
+
+  const bgFrames = mergeBuckets(payload.layout?.bgFrames);
+  const layoutStickers = mergeBuckets(payload.layout?.stickers);
+  const staticText = payload.layout?.staticText ?? [];
+  call(slideCtx, `setLayout${n}`, {
+    elements: bgFrames,
+    stickers: layoutStickers,
+    textElements: staticText,
+  });
+
+  call(slideCtx, `setSelectedVideoUrl${n}`, payload.qrVideo?.url ?? "");
+  call(slideCtx, `setQrPosition${n}`, {
+    x: payload.qrVideo?.x ?? slideCtx?.[`qrPosition${n}`]?.x,
+    y: payload.qrVideo?.y ?? slideCtx?.[`qrPosition${n}`]?.y,
+    width: payload.qrVideo?.width ?? slideCtx?.[`qrPosition${n}`]?.width,
+    height: payload.qrVideo?.height ?? slideCtx?.[`qrPosition${n}`]?.height,
+    zIndex: payload.qrVideo?.zIndex ?? slideCtx?.[`qrPosition${n}`]?.zIndex,
+    url: payload.qrVideo?.url ?? slideCtx?.[`qrPosition${n}`]?.url,
+  });
+
+  call(slideCtx, `setSelectedAudioUrl${n}`, payload.qrAudio?.url ?? "");
+  call(slideCtx, `setQrAudioPosition${n}`, {
+    x: payload.qrAudio?.x ?? slideCtx?.[`qrAudioPosition${n}`]?.x,
+    y: payload.qrAudio?.y ?? slideCtx?.[`qrAudioPosition${n}`]?.y,
+    width: payload.qrAudio?.width ?? slideCtx?.[`qrAudioPosition${n}`]?.width,
+    height:
+      payload.qrAudio?.height ?? slideCtx?.[`qrAudioPosition${n}`]?.height,
+    zIndex:
+      payload.qrAudio?.zIndex ?? slideCtx?.[`qrAudioPosition${n}`]?.zIndex,
+    url: payload.qrAudio?.url ?? slideCtx?.[`qrAudioPosition${n}`]?.url,
+  });
+
+  const aiEnabled = !!payload.flags?.isAIImage;
+  call(slideCtx, `setIsAIimage${n}`, aiEnabled);
+  call(slideCtx, `setSelectedAIimageUrl${n}`, payload.ai?.imageUrl ?? "");
+  call(
+    slideCtx,
+    `setAimage${n}`,
+    payload.ai
+      ? {
+          x: payload.ai.x,
+          y: payload.ai.y,
+          width: payload.ai.width,
+          height: payload.ai.height,
+        }
+      : null
+  );
+}
+
+export function applyPolygonLayoutToContexts(
+  polygonlayout: any,
+  slide1: any,
+  slide2: any,
+  slide3: any,
+  slide4: any
+) {
+  if (!polygonlayout) return;
+
+  if (isV2Layout(polygonlayout)) {
+    applySlideV2ToContext(polygonlayout.slides.slide1, slide1, 1);
+    applySlideV2ToContext(polygonlayout.slides.slide2, slide2, 2);
+    applySlideV2ToContext(polygonlayout.slides.slide3, slide3, 3);
+    applySlideV2ToContext(polygonlayout.slides.slide4, slide4, 4);
+    return;
+  }
+
+  // Old layout fallback (keep your legacy logic here if needed)
+  const s1 = polygonlayout?.slide1 ?? polygonlayout?.s1 ?? null;
+  const s2 = polygonlayout?.slide2 ?? polygonlayout?.s2 ?? null;
+  const s3 = polygonlayout?.slide3 ?? polygonlayout?.s3 ?? null;
+  const s4 = polygonlayout?.slide4 ?? polygonlayout?.s4 ?? null;
+
+  if (s1) {
+    slide1?.setBgColor1?.(s1.bgColor1 ?? "#fff");
+    slide1?.setBgImage1?.(s1.bgImage1 ?? "");
+    slide1?.setBgRect1?.(s1.bgRect1 ?? null);
+    slide1?.setTextElements1?.(
+      Array.isArray(s1.textElements1) ? s1.textElements1 : []
+    );
+    slide1?.setDraggableImages1?.(
+      Array.isArray(s1.draggableImages1) ? s1.draggableImages1 : []
+    );
+    slide1?.setSelectedStickers1?.(
+      Array.isArray(s1.selectedStickers1) ? s1.selectedStickers1 : []
+    );
+    slide1?.setSelectedVideoUrl1?.(s1.selectedVideoUrl1 ?? "");
+    slide1?.setSelectedAudioUrl1?.(s1.selectedAudioUrl1 ?? "");
+    slide1?.setQrPosition1?.(s1.qrPosition1 ?? slide1.qrPosition1);
+    slide1?.setQrAudioPosition1?.(
+      s1.qrAudioPosition1 ?? slide1.qrAudioPosition1
+    );
+    slide1?.setIsAIimage1?.(!!s1.isAIimage1);
+    slide1?.setSelectedAIimageUrl1?.(s1.selectedAIimageUrl1 ?? "");
+    slide1?.setAimage1?.(s1.aimage1 ?? null);
+  }
+
+  if (s2) slide2?.hydrateFromLayout?.(s2);
+  if (s3) slide3?.hydrateFromLayout?.(s3);
+  if (s4) slide4?.hydrateFromLayout?.(s4);
+}

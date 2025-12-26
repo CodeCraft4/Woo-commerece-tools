@@ -134,23 +134,34 @@ function normalizeSlide(slide: any): {
   const user = slide.user ?? {};
   const bg = slide.bg ?? {};
   const flags = slide.flags ?? {};
+  const rect = bg?.rect ?? { x: 0, y: 0, width: 0, height: 0 };
+  const bgEditable = bool(bg?.editable, false);       // default locked
+  const bgLocked = bool(bg?.locked, !bgEditable);
 
   const out: LayoutNorm = { elements: [], stickers: [], textElements: [] };
 
   // bg frames (locked/editable)
   out.elements.push(...(layout?.bgFrames?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "bg-locked")));
   out.elements.push(...(layout?.bgFrames?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "bg-edit")));
-  out.textElements.push(
-    ...(user?.freeTexts ?? []).map((o: any, i: number) => toText(o, i, false, "ut"))
-  );
+  out.textElements.push(...(user?.freeTexts ?? []).map((o: any, i: number) => toText(o, i, !o?.locked, "ut")));
 
   // single bg image
   if (bg?.image) {
     out.elements.push(
       toElement(
-        { id: "bg-image", x: 0, y: 0, width: num(bg?.width, 0), height: num(bg?.height, 0), src: bg?.image, zIndex: 0 },
+        {
+          id: "bg-image",
+          x: num(rect.x, 0),
+          y: num(rect.y, 0),
+          width: num(rect.width, 0),
+          height: num(rect.height, 0),
+          src: bg.image,
+          zIndex: 0,
+          rotation: 0,
+          locked: bgLocked,          // hard lock flag
+        },
         9990,
-        false,
+        bgEditable && !bgLocked,      // isEditable flag for UI
         "bg",
       ),
     );
@@ -223,6 +234,8 @@ function normalizeSlide(slide: any): {
 
   return { bgColor: bg?.color ?? null, bgImage: bg?.image ?? null, layout: out };
 }
+
+
 // Helper function to create a new text element
 const createNewTextElement3 = (defaults: any) => ({
   id: `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -321,8 +334,13 @@ const SpreadRightSide = ({
     setBgImage3,
     layout3,
     setLayout3,
+    bgEdit3,
+    setBgEdit3,
+    bgLocked3,
+    setBgLocked3,
+    bgRect3,
+    setBgRect3,
 
-    // selection helpers you already had for images/text
     selectedShapeImageId3,
     setSelectedShapeImageId3,
   } = useSlide3();
@@ -332,16 +350,15 @@ const SpreadRightSide = ({
   const [selectedBgIndex3, setSelectedBgIndex3] = useState<number | null>(null);
 
   const location = useLocation();
-  const slide2 = location.state?.layout?.slides?.slide3 ?? null;
-  console.log(slide2)
+  const slide3 = location.state?.layout?.slides?.slide3 ?? null;
 
   useEffect(() => {
-    if (!slide2) return;
-    const norm = normalizeSlide(slide2);
+    if (!slide3) return;
+    const norm = normalizeSlide(slide3);
     setBgColor3?.(norm.bgColor);
     setBgImage3?.(norm.bgImage);
     setLayout3(norm.layout);
-  }, [slide2, setBgColor3, setBgImage3, setLayout3]);
+  }, [slide3, setBgColor3, setBgImage3, setLayout3]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
@@ -351,12 +368,11 @@ const SpreadRightSide = ({
   const [uploadTarget, setUploadTarget] = useState<{ type: "bg" | "sticker"; index: number } | null>(null);
 
   /* ------------------ user upload handlers (editable only) ------------------ */
-  const handleImageUploadClick = (type: "bg" | "sticker", index: number) => {
+ const handleImageUploadClick = (type: "bg" | "sticker", index: number) => {
     if (type === "bg") setSelectedBgIndex3(index);
     setUploadTarget({ type, index });
     fileInputRef.current?.click();
   };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
@@ -693,6 +709,29 @@ const SpreadRightSide = ({
   };
 
 
+  const placerRef = useRef<HTMLDivElement | null>(null);
+
+  // Esc closes edit
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setBgEdit3(false);
+      if (e.key.toLowerCase() === "l") setBgLocked3((v: any) => !v);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Outside click closes edit
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!bgEdit3) return;
+      if (!placerRef.current) return;
+      if (!placerRef.current.contains(e.target as Node)) setBgEdit3(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [bgEdit3]);
+
   return (
     <Box
       sx={{
@@ -710,11 +749,11 @@ const SpreadRightSide = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height: '100vh',
+            height: "700px",
             opacity: isSlideActive3 ? 1 : 0.6,
             pointerEvents: isSlideActive3 ? "auto" : "none",
-            backgroundColor: bgImage3 ? "transparent" : bgColor3 ?? "transparent",
-            backgroundImage: bgImage3 ? `url(${bgImage3})` : "none",
+            backgroundColor:bgColor3 ?? "transparent",
+            // backgroundImage: bgImage3 ? `url(${bgImage3})` : "none",
             backgroundSize: "cover",
             "&::after": !isSlideActive3
               ? {
@@ -731,6 +770,117 @@ const SpreadRightSide = ({
               : {},
           }}
         >
+
+          {/* BG */}
+          {isAdminEditor && bgImage3 && (
+            <Rnd
+              size={{ width: bgRect3.width, height: bgRect3.height }}
+              position={{ x: bgRect3.x, y: bgRect3.y }}
+              bounds="parent"
+              enableUserSelectHack={false}
+              // ✅ only draggable when unlocked AND in edit mode
+              disableDragging={!bgEdit3 || bgLocked3}
+              // ✅ only resizable when unlocked AND in edit mode
+              enableResizing={
+                bgEdit3 && !bgLocked3
+                  ? {
+                    top: false,
+                    right: false,
+                    bottom: false,
+                    left: false,
+                    topRight: false,
+                    bottomRight: true,
+                    bottomLeft: false,
+                    topLeft: false,
+                  }
+                  : false
+              }
+              onDragStop={(_, d) => setBgRect3((r: any) => ({ ...r, x: d.x, y: d.y }))}
+              onResizeStop={(_, __, ref, ___, position) =>
+                setBgRect3({
+                  x: position.x,
+                  y: position.y,
+                  width: parseInt(ref.style.width, 10),
+                  height: parseInt(ref.style.height, 10),
+                })
+              }
+              style={{
+                zIndex: 1,
+                outline: bgEdit3 && !bgLocked3 ? "2px solid #1976d2" : "none",
+                cursor: bgEdit3 && !bgLocked3 ? "move" : "default",
+              }}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: "14px",
+                  height: "14px",
+                  background: "white",
+                  border: "2px solid #1976d2",
+                  borderRadius: "3px",
+                  right: "-7px",
+                  bottom: "-7px",
+                  cursor: "se-resize",
+                  boxShadow: "0 0 2px rgba(0,0,0,.25)",
+                  pointerEvents: bgEdit3 && !bgLocked3 ? "auto" : "none",
+                },
+              }}
+            >
+              <Box
+                ref={placerRef}
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  backgroundColor: bgImage3 ? "transparent" : bgColor3 ?? "transparent",
+                  backgroundImage: bgImage3 ? `url(${bgImage3})` : "none",
+                  backgroundSize: "cover",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
+                  userSelect: "none",
+                }}
+                // ✅ double-click only works when unlocked
+                onDoubleClick={() => {
+                  if (!bgLocked3) setBgEdit3(true);
+                }}
+              >
+                {/* Lock/Unlock toggle (top-left) */}
+                <IconButton
+                  onClick={(e) => { e.stopPropagation(); setBgLocked3((v: any) => !v); if (!bgLocked3) setBgEdit3(false); }}
+                  sx={{
+                    position: "absolute",
+                    top: -5,
+                    right: -5,
+                    bgcolor: "black",
+                    color: "white",
+                    width: 28,
+                    height: 28,
+                    "&:hover": { bgcolor: bgLocked3 ? "#2e7d32" : "#d32f2f" },
+                  }}
+                >
+                  {bgLocked3 ? <LockOutlined fontSize="small" /> : <LockOpenOutlined fontSize="small" />}
+                </IconButton>
+                {/* Small hint when locked */}
+                {bgLocked3 && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      bottom: 6,
+                      left: 6,
+                      px: 1,
+                      py: 0.5,
+                      fontSize: 12,
+                      bgcolor: "rgba(0,0,0,.55)",
+                      color: "white",
+                      borderRadius: 1,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    BG locked
+                  </Box>
+                )}
+              </Box>
+            </Rnd>
+          )}
+
 
           {isAdminEditor && (
             <Paper
@@ -1795,46 +1945,90 @@ const SpreadRightSide = ({
                 {
                   layout3 &&
                   <Box sx={{ width: "100%", height: "100%" }}>
-                    {/* BG frames */}
-                    {layout3.elements.map((el: any, i: any) => (
-                      <Box key={el.id ?? i}
-                        sx={{ position: "absolute", left: el.x, top: el.y, width: el.width, height: el.height, zIndex: el.zIndex ?? 1, borderRadius: 1, overflow: "visible" }}>
-                        <Box component="img" src={el.src || undefined}
-                          sx={{
-                            width: "100%", height: "100%", objectFit: "fill", borderRadius: 1, display: "block", pointerEvents: "none",
-                            clipPath: el.clipPath || "none", WebkitClipPath: el.clipPath || "none"
-                          }} />
-                        {el.isEditable && (
-                          <Box onClick={() => handleImageUploadClick("bg", i)}
-                            sx={{
-                              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-                              backgroundColor: "rgba(0,0,0,0.4)", borderRadius: "50%", width: 40, height: 40,
-                              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid white", cursor: "pointer"
-                            }}>
-                            <UploadFileRounded sx={{ color: "white" }} />
-                          </Box>
-                        )}
-                      </Box>
-                    ))}
+                  {/* BG frames */}
+                  {layout3.elements
+                    ?.slice()
+                    .sort((a: any, b: any) => (a.zIndex ?? 0) - (b.zIndex ?? 0)) // keep BG at the back (zIndex 0)
+                    .map((el: any, index: number) => {
+                      const isEditable = !!el.isEditable;  // <- comes from normalize
+                      const isLocked = !!el.locked;
 
-                    {/* Stickers */}
-                    {layout3.stickers.map((st: any, i: any) => (
-                      <Box key={st.id ?? i}
-                        sx={{ position: "absolute", left: st.x, top: st.y, zIndex: st.zIndex ?? 1, borderRadius: 1, overflow: "hidden" }}>
-                        <Box component="img" src={st.sticker || undefined}
-                          sx={{ width: st.width, height: st.height, objectFit: "contain", display: "block", pointerEvents: "none" }} />
-                        {st.isEditable && (
-                          <Box onClick={() => handleImageUploadClick("sticker", i)}
+                      return (
+                        <Box
+                          key={el.id ?? index}
+                          sx={{
+                            position: "absolute",
+                            left: el.x,
+                            top: el.y,
+                            width: el.width,
+                            height: el.height,
+                            borderRadius: 1,
+                            overflow: "visible",
+                            cursor: isEditable ? "pointer" : "default",
+                          }}
+                          onClick={() => setSelectedBgIndex3(index)}
+                        >
+                          <Box
+                            component="img"
+                            src={el.src || undefined}
                             sx={{
-                              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-                              backgroundColor: "rgba(0,0,0,0.4)", borderRadius: "50%", width: 36, height: 36,
-                              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid white", cursor: "pointer"
-                            }}>
-                            <UploadFileRounded sx={{ color: "white", fontSize: 18 }} />
-                          </Box>
-                        )}
-                      </Box>
-                    ))}
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              borderRadius: 1,
+                              display: "block",
+                              pointerEvents: "none",
+                              clipPath: el.clipPath || "none",
+                              WebkitClipPath: el.clipPath || "none",
+                            }}
+                          />
+                          {/* ✅ Only show upload icon when this frame is editable (NOT when locked) */}
+                          {isEditable && !isLocked && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                backgroundColor: "rgba(0,0,0,0.45)",
+                                borderRadius: "50%",
+                                width: 40,
+                                height: 40,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "1px solid white",
+                                cursor: "pointer",
+                                "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
+                              }}
+                              onClick={() => handleImageUploadClick("bg", index)}
+                              title="Change background image"
+                            >
+                              <UploadFileRounded sx={{ color: "white" }} />
+                            </Box>
+                          )}
+                        </Box>
+                      );
+                    })}
+
+                  {/* Stickers */}
+                  {layout3.stickers.map((st: any, i: any) => (
+                    <Box key={st.id ?? i}
+                      sx={{ position: "absolute", left: st.x, top: st.y, zIndex: st.zIndex ?? 1, borderRadius: 1, overflow: "hidden" }}>
+                      <Box component="img" src={st.sticker || undefined}
+                        sx={{ width: st.width, height: st.height, objectFit: "contain", display: "block", pointerEvents: "none" }} />
+                      {st.isEditable && (
+                        <Box onClick={() => handleImageUploadClick("sticker", i)}
+                          sx={{
+                            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+                            backgroundColor: "rgba(0,0,0,0.4)", borderRadius: "50%", width: 36, height: 36,
+                            display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid white", cursor: "pointer"
+                          }}>
+                          <UploadFileRounded sx={{ color: "white", fontSize: 18 }} />
+                        </Box>
+                      )}
+                    </Box>
+                  ))}
 
                     {/* Texts (click → border + editable if isEditable) */}
                     {layout3.textElements.map((te: any, i: any) => {

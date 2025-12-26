@@ -87,6 +87,7 @@ import BgChanger3 from "../Slide3/BgChanger3/BgChanger3";
 import ShapeFrames3 from "../Slide3/ShapeFrames3/ShapeFrames3";
 import BgChanger4 from "../Slide4/BgChanger4/BgChanger4";
 import ShapeFrames4 from "../Slide4/ShapeFrames4/ShapeFrames4";
+// import { pdfFileToPngDataUrls } from "../../lib/pdfToPng";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -394,6 +395,7 @@ const WishCard = (props: wishCardType) => {
                     rightBox={true}
                     isCaptureMode={true}
                     isAdminEditor={adminEditor}
+                  // coverPng={coverPng}
                   />
                 ) : e.id === 2 ? (
                   <SlideSpread
@@ -468,11 +470,18 @@ const WishCard = (props: wishCardType) => {
                 // togglePopup={togglePopup("photo")}
                 />
               )}
+              {activePopup === "frames" && (
+                <ShapeFrames
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
+
               {activePopup === "photo" && (
                 <ImageAdjustment1
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
-                  isAdminEditor={!!adminEditor}  // true for admin, false for user
+                  isAdminEditor={!!adminEditor}
                 />
               )}
               {
@@ -486,12 +495,6 @@ const WishCard = (props: wishCardType) => {
 
               {activePopup === "sticker" && (
                 <Sticker1Popup
-                  onClose={() => setActivePopup(null)}
-                  activeIndex={activeIndex}
-                />
-              )}
-              {activePopup === "frames" && (
-                <ShapeFrames
                   onClose={() => setActivePopup(null)}
                   activeIndex={activeIndex}
                 />
@@ -551,6 +554,12 @@ const WishCard = (props: wishCardType) => {
                   isAdminEditor={adminEditor}
                 />
               )}
+              {activePopup === "sticker" && (
+                <StickerPopup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                />
+              )}
               {activePopup === "photo" && (
                 <ImageAdjustment
                   onClose={() => setActivePopup(null)}
@@ -575,13 +584,6 @@ const WishCard = (props: wishCardType) => {
                   />
                 )
               }
-              {activePopup === "sticker" && (
-                <StickerPopup
-                  onClose={() => setActivePopup(null)}
-                  activeIndex={activeIndex}
-                />
-              )}
-
               {activePopup === "video" && (
                 <VideoPopup
                   onClose={() => setActivePopup(null)}
@@ -848,22 +850,6 @@ const WishCard = (props: wishCardType) => {
                     <TitleOutlined fontSize="large" />
                     Text
                   </IconButton>
-                  <IconButton
-                    sx={editingButtonStyle}
-                    onClick={() => togglePopup("photo")}
-                    aria-label="Photo"
-                  >
-                    <CollectionsOutlined fontSize="large" />
-                    Photo
-                  </IconButton>
-                  <IconButton
-                    sx={editingButtonStyle}
-                    onClick={() => togglePopup("sticker")}
-                    aria-label="Sticker"
-                  >
-                    <EmojiEmotionsOutlined fontSize="large" />
-                    Sticker
-                  </IconButton>
                   {
                     adminEditor && (
                       <IconButton sx={editingButtonStyle}
@@ -874,6 +860,44 @@ const WishCard = (props: wishCardType) => {
                       </IconButton>
                     )
                   }
+                  <IconButton
+                    sx={editingButtonStyle}
+                    onClick={() => togglePopup("photo")}
+                    aria-label="Photo"
+                  >
+                    <CollectionsOutlined fontSize="large" />
+                    Photo
+                  </IconButton>
+                  {/* {
+                    adminEditor && (
+                      <IconButton
+                        sx={editingButtonStyle}
+                        onClick={handlePdfIconClick}
+                        aria-label="PDF"
+                      >
+                        <PictureAsPdfOutlined fontSize="large" />
+                        PDF
+                        <input
+                          ref={pdfInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          style={{ display: "none" }}
+                          onChange={handlePdfSelected}
+                        />
+
+                      </IconButton>
+
+                    )
+                  } */}
+                  <IconButton
+                    sx={editingButtonStyle}
+                    onClick={() => togglePopup("sticker")}
+                    aria-label="Sticker"
+                  >
+                    <EmojiEmotionsOutlined fontSize="large" />
+                    Sticker
+                  </IconButton>
+
                   {
                     adminEditor && (
                       <IconButton sx={editingButtonStyle}

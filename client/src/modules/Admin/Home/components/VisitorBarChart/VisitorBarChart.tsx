@@ -7,7 +7,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
+import { Box, CircularProgress, FormControl, MenuItem, Select, Typography } from "@mui/material";
 import { COLORS } from "../../../../../constant/color";
 import { useEffect, useState } from "react";
 
@@ -80,9 +80,7 @@ export default function VisitorMiniChart() {
         </Box>
       </Box>
       {loading ? (
-        <Typography sx={{ color: "#fff", textAlign: "center" }}>
-          Loading analytics...
-        </Typography>
+        <CircularProgress color="secondary" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', m: 'auto' }} />
       ) : (
         <>
           <ResponsiveContainer width="100%" height="100%">

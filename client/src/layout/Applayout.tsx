@@ -14,7 +14,7 @@ const Applayout = ({ children }: Props) => {
   return (
     <Box sx={{ height: "100dvh", display: "flex", flexDirection: "column" }}>
       {location.pathname === USER_ROUTES.SUBSCRIPTION ? null : <Navbar />}
-      <Box component="main" sx={{ flex: 1, minHeight: 0 /* so children can size by height */ }}>
+      <Box component="main" sx={{ flex: 1, minHeight: 0 }}>
         {children}
       </Box>
     </Box>

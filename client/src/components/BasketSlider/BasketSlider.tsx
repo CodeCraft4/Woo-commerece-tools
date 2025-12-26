@@ -12,7 +12,7 @@ import BasketCard from "../BasketCard/BasketCard";
 import { useQuery } from "@tanstack/react-query";
 import { USER_ROUTES } from "../../constant/route";
 import { useNavigate } from "react-router-dom";
-import { fetchAllCardsFromDB, fetchAllCategoriesFromDB } from "../../source/source";
+import { fetchAllCardsFromDB, fetchAllCategoriesFromDB, fetchAllTempletDesigns } from "../../source/source";
 import useModal from "../../hooks/useModal";
 import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
 
@@ -24,6 +24,15 @@ type Props = {
   clothing?: boolean;
 };
 
+const hasSale = (v: any) => {
+  if (v == null) return false;
+  const s = String(v).trim();
+  if (!s) return false;
+  const n = Number(s.replace(/[^\d.]/g, "")); // handles "£12"
+  return Number.isFinite(n) && n > 0;
+};
+
+
 const BasketSlider = ({ title, description, brandSlider, saleSlide, clothing }: Props) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
@@ -31,8 +40,13 @@ const BasketSlider = ({ title, description, brandSlider, saleSlide, clothing }: 
 
   const { open: isDetailModal, openModal: openDetailModal, closeModal: closeDetailModal } = useModal();
 
-  const { data: basketCards, isLoading } = useQuery({
-    queryKey: ["basketCards"],
+  const { data: basketCards = [], isLoading: loadingTemplets } = useQuery({
+    queryKey: ["templetDesign"],
+    queryFn: fetchAllTempletDesigns,
+  });
+
+  const { data: allCards = [], isLoading: loadingCards } = useQuery({
+    queryKey: ["cards"],
     queryFn: fetchAllCardsFromDB,
   });
 
@@ -44,6 +58,16 @@ const BasketSlider = ({ title, description, brandSlider, saleSlide, clothing }: 
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+
+  const allProducts = useMemo(() => {
+    return [
+      ...(basketCards ?? []).map((x: any) => ({ ...x, __type: "template" })),
+      ...(allCards ?? []).map((x: any) => ({ ...x, __type: "card" })),
+    ];
+  }, [basketCards, allCards]);
+
+  const isLoading = loadingTemplets || loadingCards;
 
   // Only show clothing-related tabs when clothing === true
   const filteredTabs = useMemo(() => {
@@ -74,21 +98,38 @@ const BasketSlider = ({ title, description, brandSlider, saleSlide, clothing }: 
 
   const currentCat = filteredTabs[activeTab];
 
+  // const filteredCards = useMemo(() => {
+  //   if (!basketCards || !currentCat) return [];
+  //   return basketCards.filter((card: any) => {
+  //     if (card.categoryId != null && currentCat.id != null) {
+  //       return String(card.categoryId) === String(currentCat.id);
+  //     }
+  //     // fallback: match by name
+  //     return (card.cardcategory || card.cardname) === currentCat.name;
+  //   });
+  // }, [basketCards, currentCat]);
+
   const filteredCards = useMemo(() => {
-    if (!basketCards || !currentCat) return [];
-    return basketCards.filter((card: any) => {
-      if (card.categoryId != null && currentCat.id != null) {
-        return String(card.categoryId) === String(currentCat.id);
-      }
-      // fallback: match by name
-      return (card.cardcategory || card.cardname) === currentCat.name;
+    if (!allProducts.length) return [];
+
+    if (saleSlide) {
+      return allProducts.filter((p: any) => hasSale(p.saleprice));
+    }
+
+    if (!currentCat) return [];
+    return allProducts.filter((p: any) => {
+      const cat = (p.cardcategory ?? p.category ?? "").toString();
+      return cat === currentCat.name;
     });
-  }, [basketCards, currentCat]);
+  }, [allProducts, currentCat, saleSlide]);
+
 
   const handleOpenModal = (cate: CategoryType) => {
     setSelectedCate(cate);
     openDetailModal();
   };
+
+
 
   return (
     <Box sx={{ width: "100%", m: "auto", position: "relative", mt: { md: 8, sm: 8, xs: 0 }, p: { md: 0, sm: 0, xs: 2 } }}>
@@ -153,7 +194,7 @@ const BasketSlider = ({ title, description, brandSlider, saleSlide, clothing }: 
                     id={cate.id}
                     openModal={() => handleOpenModal(cate)}
                     title={cate.cardname}
-                    poster={cate?.imageurl || cate?.lastpageimageurl}
+                    poster={cate?.img_url || cate?.imageurl || cate?.lastpageimageurl}
                     price={cate.actualprice}
                     saleprice={cate.saleprice}
                     sales={saleSlide}
@@ -167,7 +208,13 @@ const BasketSlider = ({ title, description, brandSlider, saleSlide, clothing }: 
 
         {/* Modal */}
         {isDetailModal && selectedCate && (
-          <ProductPopup open={isDetailModal} onClose={closeDetailModal} cate={selectedCate} />
+          <ProductPopup
+            open={isDetailModal}
+            onClose={closeDetailModal}
+            cate={selectedCate}
+            salePrice={saleSlide}
+            isTempletDesign={(selectedCate as any)?.__type === "template"}
+          />
         )}
 
         {/* Custom Navigation Buttons */}

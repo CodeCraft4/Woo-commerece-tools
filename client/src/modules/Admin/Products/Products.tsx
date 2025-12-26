@@ -415,7 +415,6 @@ function TemplateFilterSidebar({
 }
 
 /* ---------------- Page ---------------- */
-
 const Products = () => {
   // state
   const [activeTab, setActiveTab] = useState<ActiveTab>("cards");
@@ -634,6 +633,7 @@ const Products = () => {
   const onEditCard = (row: any) => {
     navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS, {
       state: {
+        mode: "edit",
         id: row.id,
         product: {
           cardName: row.cardname ?? row.cardName,
@@ -642,35 +642,79 @@ const Products = () => {
           subSubCategory: row.subSubCategory ?? row.sub_subcategory ?? "",
           sku: row.sku,
           actualPrice: row.actualprice ?? row.actualPrice,
+          a4price: row.a4price,
+          a5price: row.a5price,
+          usletter: row.usletter,
           salePrice: row.saleprice ?? row.salePrice,
+          salea4price: row.salea4price,
+          salea5price: row.salea5price,
+          saleusletter: row.saleusletter,
           description: row.description ?? "",
           imageUrl: imageForEdit(row),
           polygon_shape: row.polygon_shape ?? "",
           lastpageImageUrl: row.lastpageImageUrl ?? row.lastpageimageurl ?? "",
-          polyganLayout: (row as any).polygonlayout,
+          polyganLayout: row.polygonlayout ?? row.polyganLayout ?? null,
         },
       },
     });
   };
 
+
   // NEW: open TempletForm with prefill + preview in left box
-  const onEditTemplate = (tpl: TemplateDesign & any) => {
-    navigate(ADMINS_DASHBOARD.ADD_NEW_TEMPLETS_CARDS, {
-      state: {
-        imgUrl: tpl.img_url ?? tpl.image_url ?? tpl.imageurl ?? tpl.lastpageImageUrl ?? tpl.lastpageimageurl ?? "",
-        product: {
-          cardname: tpl.title ?? tpl.name ?? "",
-          cardcategory: tpl.category ?? "",
-          subCategory: tpl.subCategory ?? tpl.subcategory ?? "",
-          subSubCategory: tpl.subSubCategory ?? tpl.sub_subcategory ?? "",
-          sku: tpl.sku ?? "",
-          actualprice: tpl.actual_price ?? tpl.actualprice ?? undefined,
-          saleprice: tpl.sale_price ?? tpl.saleprice ?? undefined,
-          description: tpl.description ?? "",
-        },
+  const safeParse = (v: any) => {
+  if (!v) return null;
+  if (typeof v === "object") return v;
+  if (typeof v === "string") {
+    try { return JSON.parse(v); } catch { return null; }
+  }
+  return null;
+};
+
+const onEditTemplate = (tpl: TemplateDesign & any) => {
+  const rawStores = safeParse(
+    tpl.raw_stores ?? tpl.rawStores ?? tpl.rawstores ?? null
+  );
+
+  navigate(ADMINS_DASHBOARD.ADD_NEW_TEMPLETS_CARDS, {
+    state: {
+      mode: "edit",
+      id: tpl.id,
+
+      rawStores, // ✅ normalized
+
+      imgUrl:
+        tpl.img_url ??
+        tpl.image_url ??
+        tpl.imageurl ??
+        tpl.lastpageImageUrl ??
+        tpl.lastpageimageurl ??
+        "",
+
+      product: {
+        cardname: tpl.title ?? tpl.name ?? "",
+        cardcategory: tpl.category ?? "",
+
+        subCategory: tpl.subCategory ?? tpl.subcategory ?? "",
+        subSubCategory: tpl.subSubCategory ?? tpl.sub_subcategory ?? "",
+
+        sku: tpl.sku ?? "",
+        actualprice: tpl.actualprice ?? tpl.actualPrice ?? "",
+        a4price: tpl.a4price ?? "",
+        a5price: tpl.a5price ?? "",
+        usletter: tpl.usletter ?? "",
+
+        saleprice: tpl.saleprice ?? tpl.salePrice ?? "",
+        salea4price: tpl.salea4price ?? "",
+        salea5price: tpl.salea5price ?? "",
+        saleusletter: tpl.saleusletter ?? "",
+
+        description: tpl.description ?? "",
       },
-    });
-  };
+    },
+  });
+};
+
+
 
   // checkbox handlers (cards)
   const toggleSubSub = (name: string) => {
