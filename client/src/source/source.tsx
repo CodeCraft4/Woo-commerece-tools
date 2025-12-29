@@ -9,11 +9,19 @@ export const fetchAllCardsFromDB = async () => {
 };
 
 // Fetch all Categories from Subapase.
+// src/source/source.ts
 export const fetchAllCategoriesFromDB = async () => {
   const { data, error } = await supabase.from("categories").select("*");
   if (error) throw new Error(error.message);
-  return data;
+
+  return (data ?? []).slice().sort((a: any, b: any) =>
+    String(a?.name ?? "").localeCompare(String(b?.name ?? ""), undefined, {
+      sensitivity: "base",
+      numeric: true,
+    })
+  );
 };
+
 
 // Fetch All card Length
 export const fetchCardCount = async () => {

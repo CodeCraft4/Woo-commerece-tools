@@ -169,7 +169,7 @@ const CategoriesEditor = () => {
     if (!selectedTextId) return;
     const n = Number(raw);
     if (!Number.isFinite(n)) return;
-    const clamped = Math.max(6, Math.min(300, n));
+    const clamped = Math.max(6, Math.min(600, n));
     setTextElements(prev => prev.map(te => te.id === selectedTextId ? { ...te, fontSize: clamped } : te));
     setFontSizeInput(String(clamped));
   }, [selectedTextId, setTextElements]);
@@ -1147,7 +1147,7 @@ const CategoriesEditor = () => {
       </Box>
 
       {/* Thumbnails */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: { xs: "96%", md: "46%" }, justifyContent: "center", m: "16px auto 0" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: { xs: "96%", md: "60%" }, justifyContent: "center", m: "16px auto 0" }}>
         <IconButton onClick={slideScrollLeft}><ArrowBackIos /></IconButton>
         <Box
           ref={thumbRef}

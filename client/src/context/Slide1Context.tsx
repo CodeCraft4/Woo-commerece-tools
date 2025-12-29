@@ -719,7 +719,6 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       bgColor1,
       bgImage1,
       selectedShapePath1,
-      layout1
     };
 
     try {

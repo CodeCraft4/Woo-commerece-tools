@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type Dispatch, type SetStateAction, type ChangeEvent } from "react";
 import { Box, IconButton } from "@mui/material";
 import {
   ArrowBackIos,
@@ -9,6 +9,7 @@ import {
   CollectionsOutlined,
   EmojiEmotionsOutlined,
   FilterFramesOutlined,
+  PictureAsPdfOutlined,
   SlideshowOutlined,
   TitleOutlined,
   WallpaperOutlined,
@@ -87,7 +88,7 @@ import BgChanger3 from "../Slide3/BgChanger3/BgChanger3";
 import ShapeFrames3 from "../Slide3/ShapeFrames3/ShapeFrames3";
 import BgChanger4 from "../Slide4/BgChanger4/BgChanger4";
 import ShapeFrames4 from "../Slide4/ShapeFrames4/ShapeFrames4";
-// import { pdfFileToPngDataUrls } from "../../lib/pdfToPng";
+import { pdfFileToPngDataUrls } from "../../lib/pdfToPng";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -95,6 +96,17 @@ const slides = [
   { id: 3, label: "Slide3" },
   { id: 4, label: "Slide4" },
 ];
+
+type SlideKey = "slide1" | "slide2" | "slide3" | "slide4";
+type SlideImageController = {
+  setImages: Dispatch<SetStateAction<any[]>>;
+  setSelected: Dispatch<SetStateAction<number[]>>;
+};
+
+const SLIDE_CANVAS_WIDTH = 470;
+const SLIDE_CANVAS_HEIGHT = 640;
+const PDF_IMAGE_MAX_WIDTH = 360;
+const PDF_IMAGE_MAX_HEIGHT = 520;
 
 type wishCardType = {
   adminEditor?: any
@@ -135,10 +147,49 @@ const WishCard = (props: wishCardType) => {
     "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
-  const { setIsSlideActive1, setTips1, } = useSlide1();
-  const { setTips, setIsSlideActive } = useSlide2();
-  const { setTips3, setIsSlideActive3 } = useSlide3();
-  const { setIsSlideActive4, setTips4 } = useSlide4();
+  const {
+    setIsSlideActive1,
+    setTips1,
+    setDraggableImages1,
+    draggableImages1,
+    setSelectedImage1,
+  } = useSlide1();
+  const {
+    setTips,
+    setIsSlideActive,
+    setDraggableImages: setDraggableImages2,
+    draggableImages: draggableImages2,
+    setSelectedImage: setSelectedImage2,
+  } = useSlide2();
+  const {
+    setTips3,
+    setIsSlideActive3,
+    setDraggableImages3,
+    draggableImages3,
+    setSelectedImage3,
+  } = useSlide3();
+  const {
+    setIsSlideActive4,
+    setTips4,
+    setDraggableImages4,
+    draggableImages4,
+    setSelectedImage4,
+  } = useSlide4();
+
+  const pdfInputRef = useRef<HTMLInputElement | null>(null);
+  const [isPdfProcessing, setIsPdfProcessing] = useState(false);
+  const [pdfImageIds, setPdfImageIds] = useState<Record<SlideKey, string | null>>({
+    slide1: null,
+    slide2: null,
+    slide3: null,
+    slide4: null,
+  });
+  const slideImageControllers: Record<SlideKey, SlideImageController> = {
+    slide1: { setImages: setDraggableImages1, setSelected: setSelectedImage1 },
+    slide2: { setImages: setDraggableImages2, setSelected: setSelectedImage2 },
+    slide3: { setImages: setDraggableImages3, setSelected: setSelectedImage3 },
+    slide4: { setImages: setDraggableImages4, setSelected: setSelectedImage4 },
+  };
 
   // ==============SLIDE STATE MANAGEMENT=======================
   // Function to handle slide changes and manage state
@@ -331,10 +382,201 @@ const WishCard = (props: wishCardType) => {
     setActiveIndex(index);
   };
 
+  const measureImageDimensions = (src: string) =>
+    new Promise<{ width: number; height: number; aspect: number }>((resolve) => {
+      if (typeof window === "undefined") {
+        resolve({
+          width: PDF_IMAGE_MAX_WIDTH,
+          height: PDF_IMAGE_MAX_HEIGHT,
+          aspect: PDF_IMAGE_MAX_WIDTH / PDF_IMAGE_MAX_HEIGHT,
+        });
+        return;
+      }
+      const image = new Image();
+      image.onload = () => {
+        const width = image.naturalWidth || PDF_IMAGE_MAX_WIDTH;
+        const height = image.naturalHeight || PDF_IMAGE_MAX_HEIGHT;
+        resolve({ width, height, aspect: width / Math.max(height, 1) });
+      };
+      image.onerror = () =>
+        resolve({
+          width: PDF_IMAGE_MAX_WIDTH,
+          height: PDF_IMAGE_MAX_HEIGHT,
+          aspect: PDF_IMAGE_MAX_WIDTH / PDF_IMAGE_MAX_HEIGHT,
+        });
+      image.src = src;
+    });
+
+  const clampSizeToBounds = (width: number, height: number) => {
+    if (!width || !height) {
+      return { width: PDF_IMAGE_MAX_WIDTH, height: PDF_IMAGE_MAX_HEIGHT };
+    }
+    const widthScale = PDF_IMAGE_MAX_WIDTH / width;
+    const heightScale = PDF_IMAGE_MAX_HEIGHT / height;
+    const scale = Math.min(widthScale, heightScale, 1);
+    return {
+      width: Math.round(width * scale),
+      height: Math.round(height * scale),
+    };
+  };
+
+  const computeInitialPosition = (width: number, height: number) => ({
+    x: Math.max(10, Math.round((SLIDE_CANVAS_WIDTH - width) / 2)),
+    y: Math.max(10, Math.round((SLIDE_CANVAS_HEIGHT - height) / 2)),
+  });
+
+  const removePdfImageFromSlide = (slideKey: SlideKey, targetId: string | null) => {
+    if (!targetId) return;
+    const controller = slideImageControllers[slideKey];
+    controller.setImages((prev) => prev.filter((img: any) => img.id !== targetId));
+    controller.setSelected((prev) => prev.filter((id: any) => id !== targetId));
+  };
+
+  const addPdfImageToSlide = async (slideKey: SlideKey, dataUrl: string, imageId: string) => {
+    const controller = slideImageControllers[slideKey];
+    const { width: naturalWidth, height: naturalHeight } = await measureImageDimensions(dataUrl);
+    const { width, height } = clampSizeToBounds(naturalWidth, naturalHeight);
+    const position = computeInitialPosition(width, height);
+
+    controller.setImages((prev) => {
+      const filtered = prev.filter((img: any) => img.id !== imageId);
+      const maxZIndex = filtered.reduce(
+        (max: number, img: any) => Math.max(max, Number(img.zIndex ?? 1)),
+        0,
+      );
+      return [
+        ...filtered,
+        {
+          id: imageId,
+          src: dataUrl,
+          x: position.x,
+          y: position.y,
+          width,
+          height,
+          rotation: 0,
+          zIndex: maxZIndex + 1,
+          locked: false,
+          source: "pdf",
+        },
+      ];
+    });
+
+    controller.setSelected((prev:any) => {
+      const filtered = prev.filter((id:any) => id !== imageId);
+      return [...filtered, imageId];
+    });
+  };
+
+  const distributePdfImages = async (pageImages: string[]) => {
+    const slideOrder: SlideKey[] = ["slide1", "slide2", "slide3", "slide4"];
+    const baseId = Date.now();
+    const updatedIds: Record<SlideKey, string | null> = {
+      slide1: null,
+      slide2: null,
+      slide3: null,
+      slide4: null,
+    };
+
+    for (let idx = 0; idx < slideOrder.length; idx += 1) {
+      const slideKey = slideOrder[idx];
+      const existingId = pdfImageIds[slideKey];
+      if (existingId) {
+        removePdfImageFromSlide(slideKey, existingId);
+      }
+
+      const pageSrc = pageImages[idx];
+      if (pageSrc) {
+        const newId = `pdf-${baseId + idx + 1}`;
+        await addPdfImageToSlide(slideKey, pageSrc, newId);
+        updatedIds[slideKey] = newId;
+      } else {
+        updatedIds[slideKey] = null;
+      }
+    }
+
+    setPdfImageIds(updatedIds);
+  };
+
+  const handlePdfIconClick = () => {
+    if (isPdfProcessing) return;
+    pdfInputRef.current?.click();
+  };
+
+  const handlePdfSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+
+    // ✅ user cancelled -> don't show alert
+    if (!file) {
+      input.value = "";
+      return;
+    }
+
+    const isPdf =
+      file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    console.log("type", file.type, "name", file.name);
+
+
+    if (!isPdf) {
+      alert("Please select a PDF file.");
+      input.value = "";
+      return;
+    }
+
+    setIsPdfProcessing(true);
+    try {
+      const pages = await pdfFileToPngDataUrls(file, { pages: "all", scale: 2 });
+
+      if (!pages.length) {
+        alert("No pages were found in the selected PDF.");
+        return;
+      }
+
+      await distributePdfImages(pages.slice(0, 4));
+    } catch (error) {
+      console.error("Failed to process PDF file", error);
+      alert("Unable to process the selected PDF. Please try again.");
+    } finally {
+      setIsPdfProcessing(false);
+      input.value = "";
+    }
+  };
+
+
+  useEffect(() => {
+    setPdfImageIds((prev) => {
+      const mapping: Record<SlideKey, any[]> = {
+        slide1: draggableImages1 ?? [],
+        slide2: draggableImages2 ?? [],
+        slide3: draggableImages3 ?? [],
+        slide4: draggableImages4 ?? [],
+      };
+      let changed = false;
+      const next = { ...prev };
+
+      (Object.keys(mapping) as SlideKey[]).forEach((key) => {
+        const storedId = prev[key];
+        if (storedId && !mapping[key]?.some((img: any) => img.id === storedId)) {
+          next[key] = null;
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [draggableImages1, draggableImages2, draggableImages3, draggableImages4]);
+
 
 
   return (
     <DndProvider backend={HTML5Backend}>
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept="application/pdf"
+        style={{ display: "none" }}
+        onChange={handlePdfSelected}
+      />
       {/* One Box for Tools */}
       <Box
         sx={{
@@ -868,36 +1110,17 @@ const WishCard = (props: wishCardType) => {
                     <CollectionsOutlined fontSize="large" />
                     Photo
                   </IconButton>
-                  {/* {
-                    adminEditor && (
-                      <IconButton
-                        sx={editingButtonStyle}
-                        onClick={handlePdfIconClick}
-                        aria-label="PDF"
-                      >
-                        <PictureAsPdfOutlined fontSize="large" />
-                        PDF
-                        <input
-                          ref={pdfInputRef}
-                          type="file"
-                          accept="application/pdf"
-                          style={{ display: "none" }}
-                          onChange={handlePdfSelected}
-                        />
-
-                      </IconButton>
-
-                    )
-                  } */}
-                  <IconButton
-                    sx={editingButtonStyle}
-                    onClick={() => togglePopup("sticker")}
-                    aria-label="Sticker"
-                  >
-                    <EmojiEmotionsOutlined fontSize="large" />
-                    Sticker
-                  </IconButton>
-
+                  {adminEditor && (
+                    <IconButton
+                      sx={editingButtonStyle}
+                      onClick={handlePdfIconClick}
+                      aria-label="PDF"
+                      disabled={isPdfProcessing}
+                    >
+                      <PictureAsPdfOutlined fontSize="large" />
+                      {isPdfProcessing ? "Loading" : "PDF"}
+                    </IconButton>
+                  )}
                   {
                     adminEditor && (
                       <IconButton sx={editingButtonStyle}
@@ -908,6 +1131,14 @@ const WishCard = (props: wishCardType) => {
                       </IconButton>
                     )
                   }
+                  <IconButton
+                    sx={editingButtonStyle}
+                    onClick={() => togglePopup("sticker")}
+                    aria-label="Sticker"
+                  >
+                    <EmojiEmotionsOutlined fontSize="large" />
+                    Sticker
+                  </IconButton>
                   <IconButton
                     onClick={() => {
                       togglePopup("video");

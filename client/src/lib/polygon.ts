@@ -773,3 +773,68 @@ export function applyPolygonLayoutToContexts(
   if (s3) slide3?.hydrateFromLayout?.(s3);
   if (s4) slide4?.hydrateFromLayout?.(s4);
 }
+
+// src/lib/polygon.ts
+
+export function hasAnyDesignV2(layout: any): boolean {
+  if (!layout || layout.version !== 2 || !layout.slides) return false;
+
+  const slides: SlidePayloadV2[] = [
+    layout.slides.slide1,
+    layout.slides.slide2,
+    layout.slides.slide3,
+    layout.slides.slide4,
+  ].filter(Boolean);
+
+  const hasSlideContent = (s: SlidePayloadV2) => {
+    const bgFrames = mergeBuckets(s.layout?.bgFrames);
+    const layoutStickers = mergeBuckets(s.layout?.stickers);
+    const userImages = mergeBuckets(s.user?.images);
+    const userStickers = mergeBuckets(s.user?.stickers);
+
+    const hasBg = !!s.bg?.image || (!!s.bg?.color && s.bg.color !== "#fff");
+    const hasOneText = !!s.oneText?.value?.trim();
+    const hasMultipleTexts = (s.multipleTexts?.length ?? 0) > 0;
+    const hasStaticText = (s.layout?.staticText?.length ?? 0) > 0;
+
+    const hasFrames = bgFrames.length > 0;
+    const hasLayoutStickers2 = layoutStickers.length > 0;
+
+    const hasImages = userImages.length > 0;
+    const hasStickers = userStickers.length > 0;
+    const hasFreeTexts = (s.user?.freeTexts?.length ?? 0) > 0;
+
+    const hasQr = !!s.qrVideo?.url || !!s.qrAudio?.url;
+    const hasAi = !!s.ai?.imageUrl;
+
+    return (
+      hasBg ||
+      hasOneText ||
+      hasMultipleTexts ||
+      hasStaticText ||
+      hasFrames ||
+      hasLayoutStickers2 ||
+      hasImages ||
+      hasStickers ||
+      hasFreeTexts ||
+      hasQr ||
+      hasAi
+    );
+  };
+
+  return slides.some(hasSlideContent);
+};
+/**
++ * "Meaningful" for v2 means it actually contains design content.
++ * This prevents empty `{version:2, slides:{...}}` from overwriting real designs.
++ */
+export const isMeaningfulPolygonLayout = (layout: any): boolean => {
+  if (!layout) return false;
+  if (isV2Layout(layout)) return hasAnyDesignV2(layout);
+  if (Array.isArray(layout)) return layout.length > 0;
+  if (typeof layout !== "object") return false;
+  return Object.keys(layout).length > 0;
+};
+
+export const pickPolygonLayout = (...candidates: any[]) =>
+  candidates.find(isMeaningfulPolygonLayout) ?? null;

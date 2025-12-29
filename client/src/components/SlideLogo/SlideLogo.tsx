@@ -17,6 +17,7 @@ import { COLORS } from "../../constant/color";
 import { motion } from "framer-motion";
 import { useSlide4 } from "../../context/Slide4Context";
 import { useLocation } from "react-router-dom";
+import mergePreservePdf from "../../utils/mergePreservePdf";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -552,7 +553,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
   /* init draggable images */
   useEffect(() => {
     if (images4.length > 0) {
-      setDraggableImages4((prev: any) => {
+      setDraggableImages4((prev: any[]) => {
         const existingIds = prev.map((img: any) => img.id);
         const newOnes = images4
           .filter((img) => !existingIds.includes(img.id))
@@ -566,10 +567,11 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
             rotation: 0,
           }));
         const stillValid = prev.filter((img: any) => images4.some((incoming) => incoming.id === img.id));
-        return [...stillValid, ...newOnes];
+        const next = [...stillValid, ...newOnes];
+        return mergePreservePdf(prev, next);
       });
     } else {
-      setDraggableImages4([]);
+      setDraggableImages4((prev: any[]) => mergePreservePdf(prev, []));
     }
   }, [images4, setDraggableImages4]);
 

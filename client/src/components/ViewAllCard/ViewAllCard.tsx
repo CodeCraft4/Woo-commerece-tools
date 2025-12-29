@@ -7,8 +7,8 @@ import type { CategoryType } from "../ProductPopup/ProductPopup";
 import ProductPopup from "../ProductPopup/ProductPopup";
 
 type CategoryFilter = {
-  categoryId?: number | string | null;                  // align with ViewAll
-  categoryName?: string | null;                         // align with ViewAll
+  categoryId?: number | string | null;
+  categoryName?: string | null;
   allCategories?: Array<{ id: string | number; name: string }>;
   cardData?: any[];
 };
@@ -16,12 +16,22 @@ type CategoryFilter = {
 const toStr = (v: unknown) => (v == null ? "" : String(v));
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
 
-// normalize card fields
+// ✅ Cards table uses subCategory/subSubCategory.
 const getCardCategoryName = (item: any) =>
-  item?.cardcategory ?? item?.cardcategory ?? item?.cardname ?? "";
+  item?.subCategory ??
+  item?.subcategory ??
+  item?.cardCategory ??
+  item?.cardcategory ??
+  item?.categoryName ??
+  item?.category ??
+  "";
 
 const getCardCategoryId = (item: any) =>
-  item?.categoryId ?? item?.category_id ?? null;
+  item?.categoryId ??
+  item?.category_id ??
+  item?.subCategoryId ??
+  item?.subcategory_id ??
+  null;
 
 const getCardImage = (item: any) =>
   item?.imageUrl ??
@@ -31,64 +41,80 @@ const getCardImage = (item: any) =>
   item?.poster ??
   "";
 
+const VIEW_ALL = "View All Filters";
+
 const ViewAllCard = ({
   categoryId = null,
   categoryName = null,
   allCategories = [],
   cardData = [],
 }: CategoryFilter) => {
-  const {
-    open: isCategoryModal,
-    openModal: openCategoryModal,
-    closeModal: closeCategoryModal,
-  } = useModal();
+  const { open: isCategoryModal, openModal, closeModal } = useModal();
 
-  const [activeTab, setActiveTab] = useState<string>("View All Filters");
+  const [activeTab, setActiveTab] = useState<string>(VIEW_ALL);
   const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>();
 
-  // init active tab from categoryName first, else resolve via categoryId
-  useEffect(() => {
+  // ✅ Resolve the category from route props (id/name) + allCategories
+  const resolvedCategory = useMemo(() => {
     const routeName = (categoryName ?? "").trim();
     if (routeName) {
-      setActiveTab(routeName);
-      return;
+      const hit = allCategories.find((c) => lc(c.name) === lc(routeName));
+      return hit ?? { id: categoryId ?? routeName, name: routeName };
     }
+
     if (categoryId != null) {
       const hit = allCategories.find((c) => toStr(c.id) === toStr(categoryId));
-      if (hit?.name) setActiveTab(hit.name);
+      return hit ?? null;
     }
+
+    return null;
   }, [categoryId, categoryName, allCategories]);
 
-  const selectedCategoryName: string | null = useMemo(() => {
-    if (activeTab !== "View All Filters") return activeTab;
-    if (categoryId != null) {
-      const hit = allCategories.find((c) => toStr(c.id) === toStr(categoryId));
-      return hit?.name ?? null;
+  // ✅ Activate tab only if it exists; otherwise stay on View All
+  useEffect(() => {
+    if (resolvedCategory?.name) {
+      setActiveTab(resolvedCategory.name);
+    } else {
+      setActiveTab(VIEW_ALL);
     }
-    return null;
-  }, [activeTab, allCategories, categoryId]);
+  }, [resolvedCategory?.name]);
 
+  // ✅ If categories list changes and current tab no longer exists, reset
+  useEffect(() => {
+    if (activeTab === VIEW_ALL) return;
+    const ok = allCategories.some((c) => lc(c.name) === lc(activeTab));
+    if (!ok) setActiveTab(VIEW_ALL);
+  }, [allCategories, activeTab]);
+
+  const activeCategoryName = useMemo(() => {
+    if (activeTab !== VIEW_ALL) return activeTab;
+    return resolvedCategory?.name ?? null;
+  }, [activeTab, resolvedCategory?.name]);
+
+  // ✅ Filter: try ID first (if card has ids), otherwise fallback to name/subCategory match
   const filteredData = useMemo(() => {
     const cards = Array.isArray(cardData) ? cardData : [];
 
-    // Prefer ID-based filter when we have categoryId and either:
-    // - user is on "View All Filters", or
-    // - the activeTab matches the resolved name of that id.
+    if (!activeCategoryName && categoryId == null) return cards;
+
+    // 1) Try ID match (only works if your card rows have categoryId/subCategoryId)
     if (categoryId != null) {
-      return cards.filter((item) => toStr(getCardCategoryId(item)) === toStr(categoryId));
+      const byId = cards.filter((item) => toStr(getCardCategoryId(item)) === toStr(categoryId));
+      if (byId.length > 0) return byId;
+      // 2) Fallback to name match if ID not present in card rows
     }
 
-    if (selectedCategoryName) {
-      const want = lc(selectedCategoryName);
+    if (activeCategoryName) {
+      const want = lc(activeCategoryName);
       return cards.filter((item) => lc(getCardCategoryName(item)) === want);
     }
 
     return cards;
-  }, [cardData, categoryId, selectedCategoryName]);
+  }, [cardData, categoryId, activeCategoryName]);
 
   const openCategoryModalPopup = (cate: CategoryType) => {
     setSelectedCate(cate);
-    openCategoryModal();
+    openModal();
   };
 
   return (
@@ -114,14 +140,14 @@ const ViewAllCard = ({
         >
           <Box
             component="div"
-            onClick={() => setActiveTab("View All Filters")}
+            onClick={() => setActiveTab(VIEW_ALL)}
             sx={{
               py: 1,
               px: 3,
               borderRadius: 20,
-              bgcolor: activeTab === "View All Filters" ? COLORS.primary : "transparent",
-              color: activeTab === "View All Filters" ? COLORS.white : COLORS.black,
-              border: activeTab === "View All Filters" ? `1px solid transparent` : `1px solid ${COLORS.black}`,
+              bgcolor: activeTab === VIEW_ALL ? COLORS.primary : "transparent",
+              color: activeTab === VIEW_ALL ? COLORS.white : COLORS.black,
+              border: activeTab === VIEW_ALL ? `1px solid transparent` : `1px solid ${COLORS.black}`,
               cursor: "pointer",
               fontSize: "14px",
               display: "flex",
@@ -129,13 +155,8 @@ const ViewAllCard = ({
               gap: "3px",
             }}
           >
-            <TuneOutlined
-              fontSize="small"
-              sx={{
-                color: activeTab === "View All Filters" ? COLORS.white : COLORS.black,
-              }}
-            />
-            View All Filters
+            <TuneOutlined fontSize="small" sx={{ color: activeTab === VIEW_ALL ? COLORS.white : COLORS.black }} />
+            {VIEW_ALL}
           </Box>
 
           {allCategories.map((e) => (
@@ -147,9 +168,9 @@ const ViewAllCard = ({
                 py: 1,
                 px: 3,
                 borderRadius: 20,
-                bgcolor: activeTab === e.name ? COLORS.primary : "transparent",
-                color: activeTab === e.name ? COLORS.white : COLORS.black,
-                border: activeTab === e.name ? `1px solid transparent` : `1px solid ${COLORS.black}`,
+                bgcolor: lc(activeTab) === lc(e.name) ? COLORS.primary : "transparent",
+                color: lc(activeTab) === lc(e.name) ? COLORS.white : COLORS.black,
+                border: lc(activeTab) === lc(e.name) ? `1px solid transparent` : `1px solid ${COLORS.black}`,
                 cursor: "pointer",
                 fontSize: "14px",
                 display: "flex",
@@ -227,7 +248,7 @@ const ViewAllCard = ({
       </Box>
 
       {isCategoryModal && selectedCate && (
-        <ProductPopup open={isCategoryModal} onClose={closeCategoryModal} cate={selectedCate} />
+        <ProductPopup open={isCategoryModal} onClose={closeModal} cate={selectedCate} />
       )}
     </Box>
   );

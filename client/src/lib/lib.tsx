@@ -188,3 +188,14 @@ export function coverScale(baseW: number, baseH: number, boxW: number, boxH: num
   const offsetY = (boxH - h) / 2;
   return { scale, w, h, offsetX, offsetY };
 }
+
+
+export const preservePdfItems = (prev: any[], next: any[]) => {
+  const prevPdf = (prev ?? []).filter((i) => i?.source === "pdf");
+  const nextNoPdf = (next ?? []).filter((i) => i?.source !== "pdf");
+
+  const nextIds = new Set(nextNoPdf.map((i) => i?.id));
+  const keepPdf = prevPdf.filter((p) => p?.id && !nextIds.has(p.id));
+
+  return [...nextNoPdf, ...keepPdf];
+};
