@@ -27,7 +27,7 @@ import { Rnd } from "react-rnd";
 import { motion } from "framer-motion";
 import QrGenerator from "../QR-code/Qrcode";
 import { COLORS } from "../../constant/color";
-
+import mergePreservePdf from "../../utils/mergePreservePdf";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -249,14 +249,13 @@ function normalizeSlide(slide: any): {
 interface SlideCoverProps {
   textAlign?: "start" | "center" | "end";
   rotation?: number;
-  togglePopup: (name: string | null) => void;
+  togglePopup?: (name: string | null) => void;
   activePopup?: string | null;
   activeIndex?: number;
   addTextRight?: number;
   rightBox?: boolean;
   isCaptureMode?: boolean;
   isAdminEditor?: boolean;
-  coverPng?: any
 }
 
 const createNewTextElement1 = (defaults: any) => ({
@@ -279,10 +278,9 @@ const SlideCover = ({
   activeIndex,
   // togglePopup,
   rightBox,
-  isCaptureMode,
+  // isCaptureMode,
   isAdminEditor,
   addTextRight,
-  coverPng
 }: SlideCoverProps) => {
   const coverRef = useRef<HTMLDivElement>(null);
 
@@ -481,7 +479,7 @@ const SlideCover = ({
   /* ------------------ init draggable state for user images (unchanged) ------------------ */
   useEffect(() => {
     if (images1.length > 0) {
-      setDraggableImages1((prev: any) => {
+      setDraggableImages1((prev: any[]) => {
         const existingIds = prev.map((img: any) => img.id);
         const newOnes = images1
           .filter((img) => !existingIds.includes(img.id)
@@ -498,10 +496,11 @@ const SlideCover = ({
             locked: false,
           }));
         const stillValid = prev.filter((img: any) => images1.some((incoming: any) => incoming.id === img.id));
-        return [...stillValid, ...newOnes];
+        const next = [...stillValid, ...newOnes];
+        return mergePreservePdf(prev, next);
       });
     } else {
-      setDraggableImages1([]);
+      setDraggableImages1((prev: any[]) => mergePreservePdf(prev, []));
     }
   }, [images1, setDraggableImages1]);
 
@@ -708,6 +707,7 @@ const SlideCover = ({
   }, [currentSelection]);
 
   const selectedLocked = getSelectedLocked();
+  const shouldShowLockSwitch = Boolean(isAdminEditor && currentSelection);
 
   const addNewTextElement = () => {
     const z = Array.isArray(textElements1) ? textElements1.length + 1 : 1;
@@ -771,7 +771,7 @@ const SlideCover = ({
             position: "relative",
             height: "700px",
             width: "100%",
-            opacity: isCaptureMode ? 1 : isSlideActive1 ? 1 : 0.6,
+            opacity: isSlideActive1 ? 1 : 0.6,
             pointerEvents: isSlideActive1 ? "auto" : "none",
             backgroundColor: bgColor1 ?? "transparent",
             "&::after": !isSlideActive1
@@ -895,16 +895,9 @@ const SlideCover = ({
             </Rnd>
           )}
 
-          {isAdminEditor && coverPng && (
-            <img
-              src={coverPng}
-              alt="PDF Cover"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          )}
 
           {/* Admin-only lock switch */}
-          {isAdminEditor && (
+          {shouldShowLockSwitch && (
             <Paper
               elevation={2}
               sx={{
@@ -1471,17 +1464,13 @@ const SlideCover = ({
                 </Rnd>
               )}
 
-              {/* USER IMAGES (unchanged) */}
+              {/* USER IMAGES */}
               {draggableImages1
                 .filter((img: any) => selectedImg1.includes(img.id))
                 .map(({ id, src, x, y, width, height, zIndex, rotation = 0, filter, locked }: any) => {
                   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
                   const isSelected = selectedShapeImageId1 === id;
                   const isLocked = !!locked;
-
-                  // read per-item aspect (if already measured)
-                  const me: any = draggableImages1.find((img: any) => img.id === id) || {};
-                  const aspect: number | undefined = me.aspect; // set on image onLoad below
 
                   return (
                     <Rnd
@@ -1493,24 +1482,22 @@ const SlideCover = ({
                       cancel=".non-draggable"
                       disableDragging={isLocked}
                       enableResizing={isLocked ? false : { bottomRight: true }}
-                      // ✅ keep box proportional to image
-                      lockAspectRatio={isLocked ? false : (aspect || true)}
                       onDragStop={(_, d) => {
                         if (isLocked) return;
                         setDraggableImages1((prev) =>
-                          prev.map((img) => (img.id === id ? { ...img, x: d.x, y: d.y } : img)),
+                          prev.map((img) => (img.id === id ? { ...img, x: d.x, y: d.y } : img))
                         );
                       }}
                       onResizeStop={(_, __, ref, ___, position) => {
                         if (isLocked) return;
-                        const newWidth = parseInt(ref.style.width, 10);
-                        const newHeight = parseInt(ref.style.height, 10);
+                        const newWidth = parseInt(ref.style.width);
+                        const newHeight = parseInt(ref.style.height);
                         setDraggableImages1((prev) =>
                           prev.map((img) =>
                             img.id === id
                               ? { ...img, width: newWidth, height: newHeight, x: position.x, y: position.y }
-                              : img,
-                          ),
+                              : img
+                          )
                         );
                       }}
                       style={{
@@ -1556,53 +1543,36 @@ const SlideCover = ({
                             borderRadius: isSelected ? 1 : 0,
                             pointerEvents: "auto",
                             cursor: isLocked ? "default" : "move",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
                           }}
                           onMouseDown={() => setSelectedShapeImageId1(id)}
                         >
                           <img
                             src={src}
                             alt="Uploaded"
-                            // ✅ capture natural size once to compute aspect ratio
-                            onLoad={(e) => {
-                              const el = e.currentTarget;
-                              const nw = el.naturalWidth || 0;
-                              const nh = el.naturalHeight || 0;
-                              if (nw && nh) {
-                                setDraggableImages1((prev) =>
-                                  prev.map((img: any) =>
-                                    img.id === id ? { ...img, naturalW: nw, naturalH: nh, aspect: nw / nh } : img,
-                                  ),
-                                );
-                              }
-                            }}
                             style={{
                               width: "100%",
                               height: "100%",
                               borderRadius: 8,
                               pointerEvents: "none",
-                              objectFit: "contain",        // ✅ no stretch
-                              objectPosition: "center",
+                              objectFit: "fill",
                               filter: filter || "none",
                               zIndex: zIndex,
                               clipPath: ((): string => {
-                                const me = draggableImages1.find((img: any) => img.id === id);
+                                const me = draggableImages1.find((img) => img.id === id);
                                 return me?.shapePath || "none";
                               })(),
-                              imageRendering: "auto",
                             }}
                           />
                         </Box>
 
+                        {/* rotate */}
                         {!isLocked && (
                           <Box
                             className="non-draggable"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDraggableImages1((prev) =>
-                                prev.map((img) => (img.id === id ? { ...img, rotation: (img.rotation || 0) + 15 } : img)),
+                                prev.map((img) => (img.id === id ? { ...img, rotation: (img.rotation || 0) + 15 } : img))
                               );
                             }}
                             sx={{
@@ -1625,12 +1595,16 @@ const SlideCover = ({
                           </Box>
                         )}
 
+                        {/* layer controls */}
                         {!isLocked && (
                           <>
                             <Tooltip title="To Back">
                               <Box
                                 className="non-draggable"
-                                onClick={(e) => { e.stopPropagation(); layerDownAny({ type: 'image', id: id }); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  layerDownAny(id);
+                                }}
                                 sx={{
                                   position: "absolute",
                                   top: -25,
@@ -1654,8 +1628,10 @@ const SlideCover = ({
                             <Tooltip title="To Front">
                               <Box
                                 className="non-draggable"
-                                onClick={(e) => { e.stopPropagation(); layerUpAny({ type: 'image', id: id }); }}
-
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  layerUpAny(id);
+                                }}
                                 sx={{
                                   position: "absolute",
                                   top: -25,
@@ -1678,6 +1654,7 @@ const SlideCover = ({
                           </>
                         )}
 
+                        {/* close */}
                         {!isLocked && (
                           <Box
                             className="non-draggable"

@@ -1,5 +1,3 @@
-
-// src/pages/admin/cards/NewCardsForm.tsx
 import { Box, Typography } from "@mui/material";
 import { useMemo, useRef, useState, useEffect } from "react";
 import CustomInput from "../../../../components/CustomInput/CustomInput";
@@ -20,6 +18,9 @@ import {
   applyPolygonLayoutToContexts,
   buildPolygonLayout,
   captureNodeToPng,
+  // hasAnyDesignV2,
+  isMeaningfulPolygonLayout,
+  pickPolygonLayout,
 } from "../../../../lib/polygon";
 
 type FormValue = {
@@ -82,6 +83,8 @@ type EditFormValue = {
 
 type Props = { editProduct?: EditFormValue };
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 const NewCardsForm = ({ editProduct }: Props) => {
   const slide1 = useSlide1();
   const slide2 = useSlide2();
@@ -91,19 +94,31 @@ const NewCardsForm = ({ editProduct }: Props) => {
   const navigate = useNavigate();
   const location = useLocation();
   const navState = (location.state as any) || {};
-  const { id, product, formData } = navState;
+  const { id, product, formData, mode } = navState;
 
- const editLayout =
-  product?.polygonlayout ??        // ❌ ye purana layout hota hai (DB wala)
-  product?.polyganLayout ??
-  formData?.polygonlayout ??
-  formData?.polyganLayout ??
-  navState?.polygonlayout ??       // ✅ updated layout yahan hota hai
-  navState?.polyganLayout ??
-  null;
+  const isEditMode = Boolean(id) || mode === "edit";
 
+  // ✅ Always prefer most-recent: navState -> formData -> product
+  const editLayout = useMemo(() => {
+    return pickPolygonLayout(
+      navState?.polygonlayout,
+      navState?.polyganLayout,
+      formData?.polygonlayout,
+      formData?.polyganLayout,
+      product?.polygonlayout,
+      product?.polyganLayout
+    );
+  }, [
+    navState?.polygonlayout,
+    navState?.polyganLayout,
+    formData?.polygonlayout,
+    formData?.polyganLayout,
+    product?.polygonlayout,
+    product?.polyganLayout,
+  ]);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Save & Publish
+  const [editLoading, setEditLoading] = useState(false); // Edit/Update Layout (2 sec)
 
   const {
     data: categories = [],
@@ -116,10 +131,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
   });
 
   const cardsRow = useMemo(
-    () =>
-      categories.find(
-        (c) => (c?.name ?? "").trim().toLowerCase() === "cards"
-      ) || null,
+    () => categories.find((c) => (c?.name ?? "").trim().toLowerCase() === "cards") || null,
     [categories]
   );
 
@@ -174,7 +186,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
       description: (src.description ?? fd.description ?? "") as string,
       polygon_shape: (src.polygon_shape ?? fd.polygon_shape ?? "") as string,
       subCategory: (src.subCategory ?? (src as any).subcategory ?? fd.subCategory ?? (fd as any).subcategory ?? "") as string,
-      subSubCategory: (src.subSubCategory ?? (src as any).sub_subcategory ?? fd.subSubCategory ?? (fd as any).sub_subcategory ?? "") as string,
+      subSubCategory:
+        (src.subSubCategory ?? (src as any).sub_subcategory ?? fd.subSubCategory ?? (fd as any).sub_subcategory ?? "") as string,
     } as any;
   }, [editProduct, formData, product]);
 
@@ -190,10 +203,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
 
   const subCategoryOptions = useMemo(() => {
     if (!cardsRow) return [];
-    return (cardsRow.subcategories ?? []).map((sub) => ({
-      label: sub,
-      value: sub,
-    }));
+    return (cardsRow.subcategories ?? []).map((sub) => ({ label: sub, value: sub }));
   }, [cardsRow]);
 
   const subSubCategoryOptions = useMemo(() => {
@@ -204,30 +214,38 @@ const NewCardsForm = ({ editProduct }: Props) => {
 
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // ✅ hydrate ONLY once when editLayout arrives
- useEffect(() => {
-  if (!editLayout) return;
+  // ✅ hydrate when meaningful layout arrives
+  useEffect(() => {
+    if (!isMeaningfulPolygonLayout(editLayout)) return;
 
-  requestAnimationFrame(() => {
-    slide1.resetSlide1State?.();
-    slide2.resetSlide2State?.();
-    slide3.resetSlide3State?.();
-    slide4.resetSlide4State?.();
+    requestAnimationFrame(() => {
+      slide1.resetSlide1State?.();
+      slide2.resetSlide2State?.();
+      slide3.resetSlide3State?.();
+      slide4.resetSlide4State?.();
 
-    applyPolygonLayoutToContexts(editLayout, slide1, slide2, slide3, slide4);
-  });
-}, [editLayout, slide1, slide2, slide3, slide4]);
+      applyPolygonLayoutToContexts(editLayout, slide1, slide2, slide3, slide4);
+    });
+  }, [editLayout]);
 
+  const handleEditLayout = async () => {
+    if (editLoading) return;
+    setEditLoading(true);
 
-  const handleEditLayout = () => {
     const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4);
+    // const layoutToSend = hasAnyDesignV2(layoutNow) ? layoutNow : editLayout;
+    const layoutToSend = pickPolygonLayout(layoutNow, editLayout) ?? editLayout ?? layoutNow;
+
+    await sleep(2000);
+
     navigate(ADMINS_DASHBOARD.ADMIN_EDITOR, {
       state: {
         id,
         product,
         formData: watch(),
-        mode: "edit",
-        polygonlayout: layoutNow ?? editLayout,
+        mode: isEditMode ? "edit" : "create",
+        polygonlayout: layoutToSend,
+        polyganLayout: layoutToSend,
       },
     });
   };
@@ -236,7 +254,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
     try {
       setLoading(true);
 
-      const polygonLayout = buildPolygonLayout(slide1, slide2, slide3, slide4);
+      const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4);
+      const polygonlayout = pickPolygonLayout(layoutNow, editLayout) ?? {};
 
       let imageurl: string | null = null;
       if (previewRef.current) {
@@ -247,11 +266,6 @@ const NewCardsForm = ({ editProduct }: Props) => {
         }
       }
 
-      const toNum = (v: any) => {
-        const n = Number(v);
-        return Number.isFinite(n) ? n : null;
-      };
-
       const payload = {
         cardname: data.cardname,
         cardcategory: "Cards",
@@ -260,18 +274,18 @@ const NewCardsForm = ({ editProduct }: Props) => {
         subCategory: data.subCategory ?? null,
         subSubCategory: data.subSubCategory ?? null,
         polygon_shape: "",
-        polygonlayout: polygonLayout ?? {},
+        polygonlayout,
         lastmessage: "",
         imageurl,
         lastpageimageurl: null,
-        actualprice: toNum(data.actualprice),
-        a4price: toNum(data.a4price),
-        a5price: toNum(data.a5price),
-        usletter: toNum(data.usletter),
-        saleprice: toNum(data.saleprice),
-        salea4price: toNum(data.salea4price),
-        salea5price: toNum(data.salea5price),
-        saleusletter: toNum(data.saleusletter),
+        actualprice: data.actualprice,
+        a4price: data.a4price,
+        a5price: data.a5price,
+        usletter: data.usletter,
+        saleprice: data.saleprice,
+        salea4price: data.salea4price,
+        salea5price: data.salea5price,
+        saleusletter: data.saleusletter,
       };
 
       if (payload.actualprice == null) throw new Error("Actual Price is required");
@@ -326,18 +340,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
         position: "absolute",
         inset: 0,
         display: "flex",
-        justifyContent:
-          verticalAlign1 === "top"
-            ? "flex-start"
-            : verticalAlign1 === "bottom"
-              ? "flex-end"
-              : "center",
-        alignItems:
-          textAlign1 === "start"
-            ? "flex-start"
-            : textAlign1 === "end"
-              ? "flex-end"
-              : "center",
+        justifyContent: verticalAlign1 === "top" ? "flex-start" : verticalAlign1 === "bottom" ? "flex-end" : "center",
+        alignItems: textAlign1 === "start" ? "flex-start" : textAlign1 === "end" ? "flex-end" : "center",
         px: 2,
         zIndex: 5,
       }}
@@ -374,18 +378,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
             width: t.width ?? "100%",
             height: t.height ?? 210,
             display: "flex",
-            alignItems:
-              t.verticalAlign === "top"
-                ? "flex-start"
-                : t.verticalAlign === "bottom"
-                  ? "flex-end"
-                  : "center",
-            justifyContent:
-              t.textAlign === "left"
-                ? "flex-start"
-                : t.textAlign === "right"
-                  ? "flex-end"
-                  : "center",
+            alignItems: t.verticalAlign === "top" ? "flex-start" : t.verticalAlign === "bottom" ? "flex-end" : "center",
+            justifyContent: t.textAlign === "left" ? "flex-start" : t.textAlign === "right" ? "flex-end" : "center",
             px: 1,
             zIndex: t.zIndex ?? 50,
           }}
@@ -412,12 +406,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
   );
 
   const showAllImages = !Array.isArray(selectedImg1) || selectedImg1.length === 0;
-
-  const shouldRenderOneText =
-    !!oneTextValue1 || !!showOneTextRightSideBox1;
-
-  const shouldRenderMultiple =
-    Array.isArray(texts1) && texts1.length > 0;
+  const shouldRenderOneText = !!oneTextValue1 || !!showOneTextRightSideBox1;
+  const shouldRenderMultiple = Array.isArray(texts1) && texts1.length > 0;
 
   return (
     <Box>
@@ -484,18 +474,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
                   width: t.size?.width,
                   height: t.size?.height,
                   display: "flex",
-                  alignItems:
-                    t.verticalAlign === "top"
-                      ? "flex-start"
-                      : t.verticalAlign === "bottom"
-                        ? "flex-end"
-                        : "center",
-                  justifyContent:
-                    t.textAlign === "start"
-                      ? "flex-start"
-                      : t.textAlign === "end"
-                        ? "flex-end"
-                        : "center",
+                  alignItems: t.verticalAlign === "top" ? "flex-start" : t.verticalAlign === "bottom" ? "flex-end" : "center",
+                  justifyContent: t.textAlign === "start" ? "flex-start" : t.textAlign === "end" ? "flex-end" : "center",
                   transform: `rotate(${t.rotation || 0}deg)`,
                   transformOrigin: "center",
                   zIndex: t.zIndex ?? 2000,
@@ -509,17 +489,9 @@ const NewCardsForm = ({ editProduct }: Props) => {
                     fontWeight: t.fontWeight,
                     color: t.fontColor || "#000",
                     fontFamily: t.fontFamily || "Roboto",
-                    textAlign:
-                      t.textAlign === "start"
-                        ? "left"
-                        : t.textAlign === "end"
-                          ? "right"
-                          : "center",
+                    textAlign: t.textAlign === "start" ? "left" : t.textAlign === "end" ? "right" : "center",
                     lineHeight: t.lineHeight || 1.5,
-                    letterSpacing:
-                      typeof t.letterSpacing === "number"
-                        ? `${t.letterSpacing}px`
-                        : "0px",
+                    letterSpacing: typeof t.letterSpacing === "number" ? `${t.letterSpacing}px` : "0px",
                     overflow: "hidden",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
@@ -579,12 +551,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
                   zIndex: st.zIndex ?? 1,
                 }}
               >
-                <Box
-                  component="img"
-                  src={st.sticker}
-                  alt=""
-                  sx={{ width: "100%", height: "100%", objectFit: "contain" }}
-                />
+                <Box component="img" src={st.sticker} alt="" sx={{ width: "100%", height: "100%", objectFit: "contain" }} />
               </Box>
             ))}
 
@@ -603,25 +570,11 @@ const NewCardsForm = ({ editProduct }: Props) => {
                 zIndex: slide1.qrPosition1.zIndex || 1,
               }}
             >
-              <Box
-                component="img"
-                src="/assets/images/video-qr-tips.png"
-                sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }}
-              />
+              <Box component="img" src="/assets/images/video-qr-tips.png" sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }} />
               <Box sx={{ position: "absolute", top: 33, height: 10, width: 15, left: 28, borderRadius: 2 }}>
                 <QrGenerator url={slide1.qrPosition1.url || selectedVideoUrl1} size={Math.min(68, 70)} />
               </Box>
-              <Typography
-                sx={{
-                  position: "absolute",
-                  top: 60,
-                  right: 40,
-                  zIndex: 99,
-                  color: "black",
-                  fontSize: "10px",
-                  width: "105px",
-                }}
-              >
+              <Typography sx={{ position: "absolute", top: 60, right: 40, zIndex: 99, color: "black", fontSize: "10px", width: "105px" }}>
                 {`${selectedVideoUrl1.slice(0, 20)}.....`}
               </Typography>
             </Box>
@@ -642,25 +595,11 @@ const NewCardsForm = ({ editProduct }: Props) => {
                 zIndex: slide1.qrAudioPosition1.zIndex || 1,
               }}
             >
-              <Box
-                component="img"
-                src="/assets/images/audio-qr-tips.png"
-                sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }}
-              />
+              <Box component="img" src="/assets/images/audio-qr-tips.png" sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }} />
               <Box sx={{ position: "absolute", top: 33, height: 10, width: 15, left: 28, borderRadius: 2 }}>
                 <QrGenerator url={slide1.qrAudioPosition1.url || selectedAudioUrl1} size={Math.min(68, 70)} />
               </Box>
-              <Typography
-                sx={{
-                  position: "absolute",
-                  top: 60,
-                  right: 40,
-                  zIndex: 99,
-                  color: "black",
-                  fontSize: "10px",
-                  width: "105px",
-                }}
-              >
+              <Typography sx={{ position: "absolute", top: 60, right: 40, zIndex: 99, color: "black", fontSize: "10px", width: "105px" }}>
                 {`${selectedAudioUrl1.slice(0, 20)}.....`}
               </Typography>
             </Box>
@@ -679,12 +618,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
                 borderRadius: 1,
               }}
             >
-              <Box
-                component="img"
-                src={String(selectedAIimageUrl1 || "")}
-                alt="AI"
-                sx={{ width: "100%", height: "100%", objectFit: "fill" }}
-              />
+              <Box component="img" src={String(selectedAIimageUrl1 || "")} alt="AI" sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
             </Box>
           )}
         </Box>
@@ -710,13 +644,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
               <CustomInput
                 label="Card Category"
                 type="select"
-                placeholder={
-                  isLoadingCats
-                    ? "Loading categories..."
-                    : isErrorCats
-                      ? "Failed to load categories"
-                      : "Cards"
-                }
+                placeholder={isLoadingCats ? "Loading categories..." : isErrorCats ? "Failed to load categories" : "Cards"}
                 value={field.value || "Cards"}
                 onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
                 error={errors.cardcategory?.message}
@@ -732,11 +660,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
               <CustomInput
                 label="Sub Category"
                 type="select"
-                placeholder={
-                  subCategoryOptions.length === 0
-                    ? "No sub categories"
-                    : "Select sub category (optional)"
-                }
+                placeholder={subCategoryOptions.length === 0 ? "No sub categories" : "Select sub category (optional)"}
                 value={field.value ?? ""}
                 onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
                 error={errors.subCategory?.message}
@@ -781,71 +705,19 @@ const NewCardsForm = ({ editProduct }: Props) => {
               placeholder="Actual price"
               defaultValue=""
               type="number"
-              register={register("actualprice", {
-                required: "Actual Price is required",
-                valueAsNumber: true,
-              })}
+              register={register("actualprice", { required: "Actual Price is required", valueAsNumber: true })}
               error={errors.actualprice?.message}
             />
-            <CustomInput
-              label="A4 Price"
-              placeholder="A4 price"
-              defaultValue=""
-              type="number"
-              register={register("a4price", { valueAsNumber: true })}
-              error={errors.a4price?.message}
-            />
-            <CustomInput
-              label="A5 Price"
-              placeholder="A5 price"
-              defaultValue=""
-              type="number"
-              register={register("a5price", { valueAsNumber: true })}
-              error={errors.a5price?.message}
-            />
-            <CustomInput
-              label="US Letter"
-              placeholder="US Letter"
-              defaultValue=""
-              type="number"
-              register={register("usletter", { valueAsNumber: true })}
-              error={errors.usletter?.message}
-            />
+            <CustomInput label="A4 Price" placeholder="A4 price" defaultValue="" type="number" register={register("a4price", { valueAsNumber: true })} error={errors.a4price?.message} />
+            <CustomInput label="A5 Price" placeholder="A5 price" defaultValue="" type="number" register={register("a5price", { valueAsNumber: true })} error={errors.a5price?.message} />
+            <CustomInput label="US Letter" placeholder="US Letter" defaultValue="" type="number" register={register("usletter", { valueAsNumber: true })} error={errors.usletter?.message} />
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-            <CustomInput
-              label="Sale Price"
-              placeholder="Sale price"
-              type="number"
-              defaultValue=""
-              register={register("saleprice", { valueAsNumber: true })}
-              error={errors.saleprice?.message}
-            />
-            <CustomInput
-              label="Sale A4 Price"
-              placeholder="A4 Price"
-              type="number"
-              defaultValue=""
-              register={register("salea4price", { valueAsNumber: true })}
-              error={errors.salea4price?.message}
-            />
-            <CustomInput
-              label="Sale A5 Price"
-              placeholder="A5 Price"
-              type="number"
-              defaultValue=""
-              register={register("salea5price", { valueAsNumber: true })}
-              error={errors.salea5price?.message}
-            />
-            <CustomInput
-              label="Sale US Letter"
-              placeholder="US Letter"
-              type="number"
-              defaultValue=""
-              register={register("saleusletter", { valueAsNumber: true })}
-              error={errors.saleusletter?.message}
-            />
+            <CustomInput label="Sale Price" placeholder="Sale price" type="number" defaultValue="" register={register("saleprice", { valueAsNumber: true })} error={errors.saleprice?.message} />
+            <CustomInput label="Sale A4 Price" placeholder="A4 Price" type="number" defaultValue="" register={register("salea4price", { valueAsNumber: true })} error={errors.salea4price?.message} />
+            <CustomInput label="Sale A5 Price" placeholder="A5 Price" type="number" defaultValue="" register={register("salea5price", { valueAsNumber: true })} error={errors.salea5price?.message} />
+            <CustomInput label="Sale US Letter" placeholder="US Letter" type="number" defaultValue="" register={register("saleusletter", { valueAsNumber: true })} error={errors.saleusletter?.message} />
           </Box>
 
           <CustomInput
@@ -858,9 +730,15 @@ const NewCardsForm = ({ editProduct }: Props) => {
           />
 
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
-            <LandingButton title={id ? "Update Layout" : "Edit Layout"} personal width="200px" onClick={handleEditLayout} />
             <LandingButton
-              title={id ? "Update & Publish" : "Save & Publish"}
+              title={isEditMode ? "Update Layout" : "Edit Layout"}
+              personal
+              width="200px"
+              onClick={handleEditLayout}
+              loading={editLoading}
+            />
+            <LandingButton
+              title={isEditMode ? "Update & Publish" : "Save & Publish"}
               personal
               variant="outlined"
               width="250px"

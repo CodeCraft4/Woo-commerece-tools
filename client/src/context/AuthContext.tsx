@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .from("Users")
         .select("id")
         .eq("auth_id", authUser.id)
-        .single();
+        .maybeSingle();
 
       if (!existing) {
         await supabase.from("Users").insert([
@@ -101,26 +101,45 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signUp = async ({ fullName, phone, email, password }: SignUpInput) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName, phone } },
-    });
-    if (error) throw error;
-    if (data.user) await upsertUser(data.user);
-    return data;
-  };
+ const signUp = async ({ fullName, phone, email, password }: SignUpInput) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName, phone },
+      // ✅ VERY IMPORTANT for email confirmation link redirect
+      emailRedirectTo: `${window.location.origin}/`,
+    },
+  });
 
-  const signIn = async ({ email, password }: SignInInput) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
-    if (data.user) await upsertUser(data.user);
-    return data;
-  };
+  if (error) throw error;
+
+  if (data.user) await upsertUser(data.user);
+
+  // ✅ correct UX
+  if (!data.session) {
+    toast.success("Account created. Please check your email to confirm your account.");
+  } else {
+    toast.success("Account created & logged in!");
+  }
+
+  return data;
+};
+
+
+ const signIn = async ({ email, password }: SignInInput) => {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    toast.error(error.message); // ✅ show exact reason (Email not confirmed etc.)
+    throw error;
+  }
+
+  if (data.user) await upsertUser(data.user);
+  toast.success("Logged in successfully");
+  return data;
+};
+
 
   const signInWithGoogle = async (): Promise<void> => {
     // why: signInWithOAuth will navigate away; only show success after we return authenticated

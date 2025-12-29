@@ -54,6 +54,8 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
     staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+        refetchOnMount: false,
+
   });
 
   // Only "Cards" category subcategories

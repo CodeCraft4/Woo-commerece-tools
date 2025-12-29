@@ -17,6 +17,7 @@ import { COLORS } from "../../constant/color";
 import { useSlide2 } from "../../context/Slide2Context";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
+import mergePreservePdf from "../../utils/mergePreservePdf";
 
 
 /* ===================== helpers + types ===================== */
@@ -348,10 +349,13 @@ const SlideSpread = ({
     setSelectedShapeImageId2,
   } = useSlide2();
 
+  console.log(layout2, '--')
+
   const [selectedBgIndex2, setSelectedBgIndex2] = useState<number | null>(null);
 
   const location = useLocation();
   const slide2 = location.state?.layout?.slides?.slide2 ?? null;
+
 
   useEffect(() => {
     if (!slide2) return;
@@ -443,7 +447,7 @@ const SlideSpread = ({
   // Add this handler to initialize draggable state for images (omitted for brevity)
   useEffect(() => {
     if (images.length > 0) {
-      setDraggableImages((prev: any) => {
+      setDraggableImages((prev: any[]) => {
         const existingIds = prev.map((img: any) => img.id);
         const newOnes = images
           .filter((img) => !existingIds.includes(img.id))
@@ -461,10 +465,11 @@ const SlideSpread = ({
           images.some((incoming) => incoming.id === img.id)
         );
 
-        return [...stillValid, ...newOnes];
+        const next = [...stillValid, ...newOnes];
+        return mergePreservePdf(prev, next);
       });
     } else {
-      setDraggableImages([]);
+      setDraggableImages((prev: any[]) => mergePreservePdf(prev, []));
     }
   }, [images, setDraggableImages]);
 

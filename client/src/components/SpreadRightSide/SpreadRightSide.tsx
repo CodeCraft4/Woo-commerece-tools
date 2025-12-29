@@ -17,6 +17,7 @@ import { COLORS } from "../../constant/color";
 import { useSlide3 } from "../../context/Slide3Context";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
+import mergePreservePdf from "../../utils/mergePreservePdf";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -368,7 +369,7 @@ const SpreadRightSide = ({
   const [uploadTarget, setUploadTarget] = useState<{ type: "bg" | "sticker"; index: number } | null>(null);
 
   /* ------------------ user upload handlers (editable only) ------------------ */
- const handleImageUploadClick = (type: "bg" | "sticker", index: number) => {
+  const handleImageUploadClick = (type: "bg" | "sticker", index: number) => {
     if (type === "bg") setSelectedBgIndex3(index);
     setUploadTarget({ type, index });
     fileInputRef.current?.click();
@@ -439,7 +440,7 @@ const SpreadRightSide = ({
   // Add this handler to initialize draggable state for images (omitted for brevity)
   useEffect(() => {
     if (images3.length > 0) {
-      setDraggableImages3((prev: any) => {
+      setDraggableImages3((prev: any[]) => {
         const existingIds = prev.map((img: any) => img.id);
         const newOnes = images3
           .filter((img) => !existingIds.includes(img.id))
@@ -457,10 +458,11 @@ const SpreadRightSide = ({
           images3.some((incoming) => incoming.id === img.id)
         );
 
-        return [...stillValid, ...newOnes];
+        const next = [...stillValid, ...newOnes];
+        return mergePreservePdf(prev, next);
       });
     } else {
-      setDraggableImages3([]);
+      setDraggableImages3((prev: any[]) => mergePreservePdf(prev, []));
     }
   }, [images3, setDraggableImages3]);
 
@@ -587,15 +589,14 @@ const SpreadRightSide = ({
     if (selectedStickerIndex2 !== null) return { type: "sticker", index: selectedStickerIndex2 };
     if (selectedBgIndex3 !== null) return { type: "bg", index: selectedBgIndex3 };
     return null;
-    // }, [selectedTextId3, selectedShapeImageId3, selectedStickerIndex2, selectedBgIndex2]);
-  }, [selectedTextId3, selectedShapeImageId3, selectedStickerIndex2]);
+  }, [selectedTextId3, selectedShapeImageId3, selectedStickerIndex2, selectedBgIndex3]);
 
   const getSelectedLocked = (): boolean => {
     if (!currentSelection) return false;
-    // if (currentSelection.type === "text") {
-    //   const t: any = textElements1.find((x) => x.id === currentSelection.id);
-    //   return !!t?.locked;
-    // }
+    if (currentSelection.type === "text") {
+      const t: any = textElements3.find((x: any) => x.id === currentSelection.id);
+      return !!t?.locked;
+    }
     if (currentSelection.type === "image") {
       const i: any = draggableImages3.find((x) => x.id === currentSelection.id);
       return !!i?.locked;
@@ -603,6 +604,10 @@ const SpreadRightSide = ({
     if (currentSelection.type === "sticker") {
       const s: any = selectedStickers3?.[currentSelection.index];
       return !!s?.locked;
+    }
+    if (currentSelection.type === "bg") {
+      const el = layout3?.elements?.[currentSelection.index];
+      return !!el?.locked;
     }
     return false;
   };
@@ -633,17 +638,17 @@ const SpreadRightSide = ({
       }
       return;
     }
-    // if (currentSelection.type === "bg") {
-    //   const index = currentSelection.index;
-    //   setLayout1((prev: any) => {
-    //     if (!prev?.elements) return prev;
-    //     const elements = [...prev.elements];
-    //     elements[index] = { ...elements[index], locked };
-    //     return { ...prev, elements };
-    //   });
-    //   if (locked) setSelectedBgIndex2(null);
-    //   return;
-    // }
+    if (currentSelection.type === "bg") {
+      const index = currentSelection.index;
+      setLayout3((prev: any) => {
+        if (!prev?.elements) return prev;
+        const elements = [...prev.elements];
+        elements[index] = { ...elements[index], locked };
+        return { ...prev, elements };
+      });
+      if (locked) setSelectedBgIndex3(null);
+      return;
+    }
   };
 
   const selectionLabel = useMemo(() => {
@@ -752,7 +757,7 @@ const SpreadRightSide = ({
             height: "700px",
             opacity: isSlideActive3 ? 1 : 0.6,
             pointerEvents: isSlideActive3 ? "auto" : "none",
-            backgroundColor:bgColor3 ?? "transparent",
+            backgroundColor: bgColor3 ?? "transparent",
             // backgroundImage: bgImage3 ? `url(${bgImage3})` : "none",
             backgroundSize: "cover",
             "&::after": !isSlideActive3
@@ -1945,90 +1950,90 @@ const SpreadRightSide = ({
                 {
                   layout3 &&
                   <Box sx={{ width: "100%", height: "100%" }}>
-                  {/* BG frames */}
-                  {layout3.elements
-                    ?.slice()
-                    .sort((a: any, b: any) => (a.zIndex ?? 0) - (b.zIndex ?? 0)) // keep BG at the back (zIndex 0)
-                    .map((el: any, index: number) => {
-                      const isEditable = !!el.isEditable;  // <- comes from normalize
-                      const isLocked = !!el.locked;
+                    {/* BG frames */}
+                    {layout3.elements
+                      ?.slice()
+                      .sort((a: any, b: any) => (a.zIndex ?? 0) - (b.zIndex ?? 0)) // keep BG at the back (zIndex 0)
+                      .map((el: any, index: number) => {
+                        const isEditable = !!el.isEditable;  // <- comes from normalize
+                        const isLocked = !!el.locked;
 
-                      return (
-                        <Box
-                          key={el.id ?? index}
-                          sx={{
-                            position: "absolute",
-                            left: el.x,
-                            top: el.y,
-                            width: el.width,
-                            height: el.height,
-                            borderRadius: 1,
-                            overflow: "visible",
-                            cursor: isEditable ? "pointer" : "default",
-                          }}
-                          onClick={() => setSelectedBgIndex3(index)}
-                        >
+                        return (
                           <Box
-                            component="img"
-                            src={el.src || undefined}
+                            key={el.id ?? index}
                             sx={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
+                              position: "absolute",
+                              left: el.x,
+                              top: el.y,
+                              width: el.width,
+                              height: el.height,
                               borderRadius: 1,
-                              display: "block",
-                              pointerEvents: "none",
-                              clipPath: el.clipPath || "none",
-                              WebkitClipPath: el.clipPath || "none",
+                              overflow: "visible",
+                              cursor: isEditable ? "pointer" : "default",
                             }}
-                          />
-                          {/* ✅ Only show upload icon when this frame is editable (NOT when locked) */}
-                          {isEditable && !isLocked && (
+                            onClick={() => setSelectedBgIndex3(index)}
+                          >
                             <Box
+                              component="img"
+                              src={el.src || undefined}
                               sx={{
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                transform: "translate(-50%, -50%)",
-                                backgroundColor: "rgba(0,0,0,0.45)",
-                                borderRadius: "50%",
-                                width: 40,
-                                height: 40,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                border: "1px solid white",
-                                cursor: "pointer",
-                                "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                borderRadius: 1,
+                                display: "block",
+                                pointerEvents: "none",
+                                clipPath: el.clipPath || "none",
+                                WebkitClipPath: el.clipPath || "none",
                               }}
-                              onClick={() => handleImageUploadClick("bg", index)}
-                              title="Change background image"
-                            >
-                              <UploadFileRounded sx={{ color: "white" }} />
-                            </Box>
-                          )}
-                        </Box>
-                      );
-                    })}
+                            />
+                            {/* ✅ Only show upload icon when this frame is editable (NOT when locked) */}
+                            {isEditable && !isLocked && (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: "50%",
+                                  left: "50%",
+                                  transform: "translate(-50%, -50%)",
+                                  backgroundColor: "rgba(0,0,0,0.45)",
+                                  borderRadius: "50%",
+                                  width: 40,
+                                  height: 40,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  border: "1px solid white",
+                                  cursor: "pointer",
+                                  "&:hover": { backgroundColor: "rgba(0,0,0,0.6)" },
+                                }}
+                                onClick={() => handleImageUploadClick("bg", index)}
+                                title="Change background image"
+                              >
+                                <UploadFileRounded sx={{ color: "white" }} />
+                              </Box>
+                            )}
+                          </Box>
+                        );
+                      })}
 
-                  {/* Stickers */}
-                  {layout3.stickers.map((st: any, i: any) => (
-                    <Box key={st.id ?? i}
-                      sx={{ position: "absolute", left: st.x, top: st.y, zIndex: st.zIndex ?? 1, borderRadius: 1, overflow: "hidden" }}>
-                      <Box component="img" src={st.sticker || undefined}
-                        sx={{ width: st.width, height: st.height, objectFit: "contain", display: "block", pointerEvents: "none" }} />
-                      {st.isEditable && (
-                        <Box onClick={() => handleImageUploadClick("sticker", i)}
-                          sx={{
-                            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-                            backgroundColor: "rgba(0,0,0,0.4)", borderRadius: "50%", width: 36, height: 36,
-                            display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid white", cursor: "pointer"
-                          }}>
-                          <UploadFileRounded sx={{ color: "white", fontSize: 18 }} />
-                        </Box>
-                      )}
-                    </Box>
-                  ))}
+                    {/* Stickers */}
+                    {layout3.stickers.map((st: any, i: any) => (
+                      <Box key={st.id ?? i}
+                        sx={{ position: "absolute", left: st.x, top: st.y, zIndex: st.zIndex ?? 1, borderRadius: 1, overflow: "hidden" }}>
+                        <Box component="img" src={st.sticker || undefined}
+                          sx={{ width: st.width, height: st.height, objectFit: "contain", display: "block", pointerEvents: "none" }} />
+                        {st.isEditable && (
+                          <Box onClick={() => handleImageUploadClick("sticker", i)}
+                            sx={{
+                              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+                              backgroundColor: "rgba(0,0,0,0.4)", borderRadius: "50%", width: 36, height: 36,
+                              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid white", cursor: "pointer"
+                            }}>
+                            <UploadFileRounded sx={{ color: "white", fontSize: 18 }} />
+                          </Box>
+                        )}
+                      </Box>
+                    ))}
 
                     {/* Texts (click → border + editable if isEditable) */}
                     {layout3.textElements.map((te: any, i: any) => {
