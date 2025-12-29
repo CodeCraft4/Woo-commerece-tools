@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { useMemo, useRef, useState, useEffect } from "react";
 import CustomInput from "../../../../components/CustomInput/CustomInput";
 import LandingButton from "../../../../components/LandingButton/LandingButton";
@@ -13,7 +13,6 @@ import { useSlide1 } from "../../../../context/Slide1Context";
 import { useSlide2 } from "../../../../context/Slide2Context";
 import { useSlide3 } from "../../../../context/Slide3Context";
 import { useSlide4 } from "../../../../context/Slide4Context";
-import QrGenerator from "../../../../components/QR-code/Qrcode";
 import {
   applyPolygonLayoutToContexts,
   buildPolygonLayout,
@@ -22,6 +21,7 @@ import {
   isMeaningfulPolygonLayout,
   pickPolygonLayout,
 } from "../../../../lib/polygon";
+import Slide1PreviewBox from "./FirstSlidePreview/FirstSlidePreview";
 
 type FormValue = {
   cardname: string;
@@ -97,6 +97,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
   const { id, product, formData, mode } = navState;
 
   const isEditMode = Boolean(id) || mode === "edit";
+  const toFloat = (v: any) => (v === "" || v == null ? undefined : parseFloat(String(v)));
 
   // ✅ Always prefer most-recent: navState -> formData -> product
   const editLayout = useMemo(() => {
@@ -228,27 +229,30 @@ const NewCardsForm = ({ editProduct }: Props) => {
     });
   }, [editLayout]);
 
-  const handleEditLayout = async () => {
-    if (editLoading) return;
-    setEditLoading(true);
+  // AddNewCards page
+const handleEditLayout = async () => {
+  if (editLoading) return;
+  setEditLoading(true);
 
-    const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4);
-    // const layoutToSend = hasAnyDesignV2(layoutNow) ? layoutNow : editLayout;
-    const layoutToSend = pickPolygonLayout(layoutNow, editLayout) ?? editLayout ?? layoutNow;
+  await sleep(2000);
 
-    await sleep(2000);
+  const layout =
+    product?.polygonLayout ??
+    product?.polygonlayout ??
+    product?.polyganLayout ??
+    null;
 
-    navigate(ADMINS_DASHBOARD.ADMIN_EDITOR, {
-      state: {
-        id,
-        product,
-        formData: watch(),
-        mode: isEditMode ? "edit" : "create",
-        polygonlayout: layoutToSend,
-        polyganLayout: layoutToSend,
-      },
-    });
-  };
+  navigate(ADMINS_DASHBOARD.ADMIN_EDITOR, {
+    state: {
+      mode: id ? "edit" : "create",
+      id,
+      design: layout,
+    },
+  });
+
+  setEditLoading(false);
+};
+
 
   const onSubmit = async (data: FormValue) => {
     try {
@@ -294,10 +298,20 @@ const NewCardsForm = ({ editProduct }: Props) => {
         const { error } = await supabase.from("cards").update(payload).eq("id", id);
         if (error) throw error;
         toast.success("Card updated successfully!");
+        // reset()
+        // slide1.resetSlide1State?.();
+        // slide2.resetSlide2State?.();
+        // slide3.resetSlide3State?.();
+        // slide4.resetSlide4State?.();
       } else {
         const { error } = await supabase.from("cards").insert([payload]);
         if (error) throw error;
         toast.success("Card saved successfully!");
+        reset()
+        slide1.resetSlide1State?.();
+        slide2.resetSlide2State?.();
+        slide3.resetSlide3State?.();
+        slide4.resetSlide4State?.();
       }
     } catch (err: any) {
       toast.error("Failed to save card: " + (err?.message || "Unknown error"));
@@ -306,108 +320,6 @@ const NewCardsForm = ({ editProduct }: Props) => {
     }
   };
 
-  // ======== Slide-1 Preview Render (context-only) ========
-  const {
-    bgImage1,
-    bgColor1,
-    bgRect1,
-    showOneTextRightSideBox1,
-    oneTextValue1,
-    fontSize1,
-    fontWeight1,
-    fontColor1,
-    fontFamily1,
-    textAlign1,
-    verticalAlign1,
-    rotation1,
-    lineHeight1,
-    letterSpacing1,
-    texts1,
-    textElements1,
-    draggableImages1,
-    selectedImg1,
-    selectedStickers1,
-    selectedVideoUrl1,
-    selectedAudioUrl1,
-    isAIimage1,
-    aimage1,
-    selectedAIimageUrl1,
-  } = slide1;
-
-  const renderOneText = () => (
-    <Box
-      sx={{
-        position: "absolute",
-        inset: 0,
-        display: "flex",
-        justifyContent: verticalAlign1 === "top" ? "flex-start" : verticalAlign1 === "bottom" ? "flex-end" : "center",
-        alignItems: textAlign1 === "start" ? "flex-start" : textAlign1 === "end" ? "flex-end" : "center",
-        px: 2,
-        zIndex: 5,
-      }}
-    >
-      <Typography
-        sx={{
-          fontSize: fontSize1,
-          fontWeight: fontWeight1,
-          color: fontColor1,
-          fontFamily: fontFamily1,
-          textAlign: textAlign1 as any,
-          transform: `rotate(${rotation1 || 0}deg)`,
-          lineHeight: lineHeight1,
-          letterSpacing: letterSpacing1,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          width: "100%",
-        }}
-      >
-        {oneTextValue1}
-      </Typography>
-    </Box>
-  );
-
-  const renderMultipleText = () => (
-    <>
-      {(texts1 ?? []).map((t: any, i: number) => (
-        <Box
-          key={t?.id ?? i}
-          sx={{
-            position: "absolute",
-            left: t.x ?? 0,
-            top: t.y ?? i * 220,
-            width: t.width ?? "100%",
-            height: t.height ?? 210,
-            display: "flex",
-            alignItems: t.verticalAlign === "top" ? "flex-start" : t.verticalAlign === "bottom" ? "flex-end" : "center",
-            justifyContent: t.textAlign === "left" ? "flex-start" : t.textAlign === "right" ? "flex-end" : "center",
-            px: 1,
-            zIndex: t.zIndex ?? 50,
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: t.fontSize1 ?? t.fontSize,
-              fontWeight: t.fontWeight1 ?? t.fontWeight,
-              color: t.fontColor1 ?? t.fontColor,
-              fontFamily: t.fontFamily1 ?? t.fontFamily,
-              textAlign: (t.textAlign ?? "center") as any,
-              lineHeight: t.lineHeight ?? 1.4,
-              letterSpacing: t.letterSpacing ?? 0,
-              width: "100%",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            }}
-          >
-            {t.value}
-          </Typography>
-        </Box>
-      ))}
-    </>
-  );
-
-  const showAllImages = !Array.isArray(selectedImg1) || selectedImg1.length === 0;
-  const shouldRenderOneText = !!oneTextValue1 || !!showOneTextRightSideBox1;
-  const shouldRenderMultiple = Array.isArray(texts1) && texts1.length > 0;
 
   return (
     <Box>
@@ -432,195 +344,11 @@ const NewCardsForm = ({ editProduct }: Props) => {
             overflow: "hidden",
             borderRadius: "12px",
             boxShadow: "3px 5px 8px rgba(0,0,0,0.25)",
-            backgroundColor: bgColor1 ?? "#fff",
-            backgroundImage: !bgRect1 && bgImage1 ? `url(${bgImage1})` : "none",
-            backgroundSize: "cover",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
             pointerEvents: "none",
             userSelect: "none",
           }}
         >
-          {bgImage1 && bgRect1 && (
-            <Box
-              sx={{
-                position: "absolute",
-                left: bgRect1.x,
-                top: bgRect1.y,
-                width: bgRect1.width,
-                height: bgRect1.height,
-                zIndex: 0,
-                borderRadius: 1,
-                overflow: "hidden",
-                backgroundImage: `url(${bgImage1})`,
-                backgroundSize: "cover",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "center",
-              }}
-            />
-          )}
-
-          {shouldRenderOneText && renderOneText()}
-          {shouldRenderMultiple && renderMultipleText()}
-
-          {Array.isArray(textElements1) &&
-            textElements1.map((t: any) => (
-              <Box
-                key={t.id}
-                sx={{
-                  position: "absolute",
-                  left: t.position?.x,
-                  top: t.position?.y,
-                  width: t.size?.width,
-                  height: t.size?.height,
-                  display: "flex",
-                  alignItems: t.verticalAlign === "top" ? "flex-start" : t.verticalAlign === "bottom" ? "flex-end" : "center",
-                  justifyContent: t.textAlign === "start" ? "flex-start" : t.textAlign === "end" ? "flex-end" : "center",
-                  transform: `rotate(${t.rotation || 0}deg)`,
-                  transformOrigin: "center",
-                  zIndex: t.zIndex ?? 2000,
-                }}
-              >
-                <Typography
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    fontSize: t.fontSize,
-                    fontWeight: t.fontWeight,
-                    color: t.fontColor || "#000",
-                    fontFamily: t.fontFamily || "Roboto",
-                    textAlign: t.textAlign === "start" ? "left" : t.textAlign === "end" ? "right" : "center",
-                    lineHeight: t.lineHeight || 1.5,
-                    letterSpacing: typeof t.letterSpacing === "number" ? `${t.letterSpacing}px` : "0px",
-                    overflow: "hidden",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {t.value}
-                </Typography>
-              </Box>
-            ))}
-
-          {Array.isArray(draggableImages1) &&
-            draggableImages1
-              .filter((img: any) => showAllImages || (selectedImg1 ?? []).includes(img.id))
-              .map((img: any) => (
-                <Box
-                  key={img.id}
-                  sx={{
-                    position: "absolute",
-                    left: img.x,
-                    top: img.y,
-                    width: img.width,
-                    height: img.height,
-                    transform: `rotate(${img.rotation || 0}deg)`,
-                    transformOrigin: "center",
-                    zIndex: img.zIndex ?? 1,
-                    overflow: "hidden",
-                    borderRadius: 1,
-                  }}
-                >
-                  <img
-                    src={img.src}
-                    alt=""
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "fill",
-                      filter: img.filter || "none",
-                      clipPath: img.shapePath || "none",
-                      display: "block",
-                    }}
-                  />
-                </Box>
-              ))}
-
-          {Array.isArray(selectedStickers1) &&
-            selectedStickers1.map((st: any, i: number) => (
-              <Box
-                key={st.id ?? `st-${i}`}
-                sx={{
-                  position: "absolute",
-                  left: st.x,
-                  top: st.y,
-                  width: st.width,
-                  height: st.height,
-                  transform: `rotate(${st.rotation || 0}deg)`,
-                  transformOrigin: "center",
-                  zIndex: st.zIndex ?? 1,
-                }}
-              >
-                <Box component="img" src={st.sticker} alt="" sx={{ width: "100%", height: "100%", objectFit: "contain" }} />
-              </Box>
-            ))}
-
-          {selectedVideoUrl1 && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: slide1.qrPosition1.y,
-                left: slide1.qrPosition1.x,
-                width: 400,
-                height: 180,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "flex-end",
-                textAlign: "center",
-                zIndex: slide1.qrPosition1.zIndex || 1,
-              }}
-            >
-              <Box component="img" src="/assets/images/video-qr-tips.png" sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }} />
-              <Box sx={{ position: "absolute", top: 33, height: 10, width: 15, left: 28, borderRadius: 2 }}>
-                <QrGenerator url={slide1.qrPosition1.url || selectedVideoUrl1} size={Math.min(68, 70)} />
-              </Box>
-              <Typography sx={{ position: "absolute", top: 60, right: 40, zIndex: 99, color: "black", fontSize: "10px", width: "105px" }}>
-                {`${selectedVideoUrl1.slice(0, 20)}.....`}
-              </Typography>
-            </Box>
-          )}
-
-          {selectedAudioUrl1 && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: slide1.qrAudioPosition1.y,
-                left: slide1.qrAudioPosition1.x,
-                width: 400,
-                height: 180,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "flex-end",
-                textAlign: "center",
-                zIndex: slide1.qrAudioPosition1.zIndex || 1,
-              }}
-            >
-              <Box component="img" src="/assets/images/audio-qr-tips.png" sx={{ width: 350, height: 200, objectFit: "fill", borderRadius: "6px" }} />
-              <Box sx={{ position: "absolute", top: 33, height: 10, width: 15, left: 28, borderRadius: 2 }}>
-                <QrGenerator url={slide1.qrAudioPosition1.url || selectedAudioUrl1} size={Math.min(68, 70)} />
-              </Box>
-              <Typography sx={{ position: "absolute", top: 60, right: 40, zIndex: 99, color: "black", fontSize: "10px", width: "105px" }}>
-                {`${selectedAudioUrl1.slice(0, 20)}.....`}
-              </Typography>
-            </Box>
-          )}
-
-          {isAIimage1 && (
-            <Box
-              sx={{
-                position: "absolute",
-                left: aimage1?.x ?? 0,
-                top: aimage1?.y ?? 0,
-                width: aimage1?.width ?? 200,
-                height: aimage1?.height ?? 200,
-                zIndex: 10,
-                overflow: "hidden",
-                borderRadius: 1,
-              }}
-            >
-              <Box component="img" src={String(selectedAIimageUrl1 || "")} alt="AI" sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
-            </Box>
-          )}
+          <Slide1PreviewBox width={500} height={700} scale={1} />
         </Box>
 
         {/* Right — Form */}
@@ -705,19 +433,19 @@ const NewCardsForm = ({ editProduct }: Props) => {
               placeholder="Actual price"
               defaultValue=""
               type="number"
-              register={register("actualprice", { required: "Actual Price is required", valueAsNumber: true })}
+              register={register("actualprice", { required: "Actual Price is required", setValueAs: toFloat, })}
               error={errors.actualprice?.message}
             />
-            <CustomInput label="A4 Price" placeholder="A4 price" defaultValue="" type="number" register={register("a4price", { valueAsNumber: true })} error={errors.a4price?.message} />
-            <CustomInput label="A5 Price" placeholder="A5 price" defaultValue="" type="number" register={register("a5price", { valueAsNumber: true })} error={errors.a5price?.message} />
-            <CustomInput label="US Letter" placeholder="US Letter" defaultValue="" type="number" register={register("usletter", { valueAsNumber: true })} error={errors.usletter?.message} />
+            <CustomInput label="A4 Price" placeholder="A4 price" defaultValue="" type="number" register={register("a4price", { required: "A4 Price is required", setValueAs: toFloat, })} error={errors.a4price?.message} />
+            <CustomInput label="A5 Price" placeholder="A5 price" defaultValue="" type="number" register={register("a5price", { required: "A5 Price is required", setValueAs: toFloat, })} error={errors.a5price?.message} />
+            <CustomInput label="US Letter" placeholder="US Letter" defaultValue="" type="number" register={register("usletter", { required: "US Letter Price is required", setValueAs: toFloat, })} error={errors.usletter?.message} />
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-            <CustomInput label="Sale Price" placeholder="Sale price" type="number" defaultValue="" register={register("saleprice", { valueAsNumber: true })} error={errors.saleprice?.message} />
-            <CustomInput label="Sale A4 Price" placeholder="A4 Price" type="number" defaultValue="" register={register("salea4price", { valueAsNumber: true })} error={errors.salea4price?.message} />
-            <CustomInput label="Sale A5 Price" placeholder="A5 Price" type="number" defaultValue="" register={register("salea5price", { valueAsNumber: true })} error={errors.salea5price?.message} />
-            <CustomInput label="Sale US Letter" placeholder="US Letter" type="number" defaultValue="" register={register("saleusletter", { valueAsNumber: true })} error={errors.saleusletter?.message} />
+            <CustomInput label="Sale Price" placeholder="Sale price" type="number" defaultValue="" register={register("saleprice", { setValueAs: toFloat })} error={errors.saleprice?.message} />
+            <CustomInput label="Sale A4 Price" placeholder="A4 Price" type="number" defaultValue="" register={register("salea4price", { setValueAs: toFloat })} error={errors.salea4price?.message} />
+            <CustomInput label="Sale A5 Price" placeholder="A5 Price" type="number" defaultValue="" register={register("salea5price", { setValueAs: toFloat })} error={errors.salea5price?.message} />
+            <CustomInput label="Sale US Letter" placeholder="US Letter" type="number" defaultValue="" register={register("saleusletter", { setValueAs: toFloat })} error={errors.saleusletter?.message} />
           </Box>
 
           <CustomInput
