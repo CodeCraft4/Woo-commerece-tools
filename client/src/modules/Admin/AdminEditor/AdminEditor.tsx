@@ -33,13 +33,15 @@ const AdminEditor = () => {
   const slide4 = useSlide4();
 
   const navState = (location.state as AdminEditorNavState) || {};
-  const { id, product, formData, mode } = navState;
+  const { id, product, formData, mode, polygonlayout } = navState;
+  console.log(polygonlayout,'layout')
 
   const isEditMode = mode === "edit" || Boolean(id);
 
   const incomingLayout = useMemo(() => {
     return pickPolygonLayout(navState.polygonlayout, navState.polyganLayout);
   }, [navState.polygonlayout, navState.polyganLayout]);
+
 
   useEffect(() => {
     if (!isMeaningfulPolygonLayout(incomingLayout)) return;
