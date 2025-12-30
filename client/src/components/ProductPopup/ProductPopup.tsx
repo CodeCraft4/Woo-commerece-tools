@@ -169,9 +169,9 @@ const ProductPopup = (props: ProductsPopTypes) => {
       localStorage.setItem("selectedVariant", JSON.stringify(selectedVariant));
       localStorage.setItem("selectedSize", selectedPlan);
       localStorage.setItem("selectedPrices", JSON.stringify({
-        a4: a4Price,
-        a5: a5Price,
-        us_letter: usPrice,
+        a4: salePrice ? SaleA4Price : a4Price,
+        a5: salePrice ? SaleA5Price : a5Price,
+        us_letter: salePrice ? SaleUsPrice : usPrice,
       }));
     } catch { }
 
