@@ -83,7 +83,7 @@ const Slide3 = (props:Slide3Props) => {
                   sx={{
                     width: "100%",
                     height: "100%",
-                    objectFit: el.objectFit || "fill",
+                    objectFit: el.objectFit || "cover",
                     borderRadius: 1,
                     display: "block",
                     pointerEvents: "none",

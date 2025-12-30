@@ -171,6 +171,10 @@ export type PolygonLayoutV2 = {
   };
 };
 
+type BuildOptions = {
+  onlySelectedImages?: boolean; // ✅ new
+};
+
 /* -------------------------- Optional: merge helper ------------------------- */
 
 export const mergeBuckets = <T>(b?: Bucket<T>) =>
@@ -178,7 +182,7 @@ export const mergeBuckets = <T>(b?: Bucket<T>) =>
 
 /* ------------------------------ Normalizer ------------------------------ */
 
-const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
+const normalizeSlideV2 = (ctx: any, opts?: BuildOptions): SlidePayloadV2 => {
   const rect = pick<any>(
     ctx,
     ["bgRect1", "bgRect2", "bgRect3", "bgRect4", "bgRect"],
@@ -408,8 +412,20 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
     []
   );
 
-  // ✅ SAVE ALL images
-  const userImagesAll: UserImage[] = (imagesRaw ?? []).map((img: any) => ({
+  // ✅ IMPORTANT: if selection empty, treat as "all selected"
+  const selectedFinalIds =
+    Array.isArray(selectedImg) && selectedImg.length > 0
+      ? selectedImg
+      : (imagesRaw ?? []).map((i: any) => i.id);
+
+  const selectedSet = new Set(selectedFinalIds);
+
+  // ✅ Filter ONLY for DB save (optional)
+  const imagesForSave = opts?.onlySelectedImages
+    ? (imagesRaw ?? []).filter((img: any) => selectedSet.has(img.id))
+    : imagesRaw ?? [];
+
+  const userImagesAll: UserImage[] = (imagesForSave ?? []).map((img: any) => ({
     id: img.id,
     src: img.src,
     x: img.x,
@@ -473,13 +489,6 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
     locked: !!t.locked,
   }));
 
-  const user = {
-    images: splitBucket<UserImage>(userImagesAll),
-    stickers: splitBucket<Sticker>(userStickersAll),
-    freeTexts,
-    selectedImageIds: Array.isArray(selectedImg) ? selectedImg : [],
-  };
-
   const selectedVideoUrl = pick<string | null>(
     ctx,
     [
@@ -491,6 +500,14 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
     ],
     null
   );
+
+  const user = {
+    images: splitBucket<UserImage>(userImagesAll),
+    stickers: splitBucket<Sticker>(userStickersAll),
+    freeTexts,
+    selectedImageIds: selectedFinalIds, // ✅ keep consistent
+  };
+
   const qrPos = pick<any>(
     ctx,
     ["qrPosition1", "qrPosition2", "qrPosition3", "qrPosition4", "qrPosition"],
@@ -588,14 +605,15 @@ export const buildPolygonLayout = (
   s1: any,
   s2: any,
   s3: any,
-  s4: any
+  s4: any,
+  opts?: BuildOptions
 ): PolygonLayoutV2 => ({
   version: 2 as const,
   slides: {
-    slide1: normalizeSlideV2(s1),
-    slide2: normalizeSlideV2(s2),
-    slide3: normalizeSlideV2(s3),
-    slide4: normalizeSlideV2(s4),
+    slide1: normalizeSlideV2(s1, opts),
+    slide2: normalizeSlideV2(s2, opts),
+    slide3: normalizeSlideV2(s3, opts),
+    slide4: normalizeSlideV2(s4, opts),
   },
 });
 
@@ -823,7 +841,7 @@ export function hasAnyDesignV2(layout: any): boolean {
   };
 
   return slides.some(hasSlideContent);
-};
+}
 /**
 + * "Meaningful" for v2 means it actually contains design content.
 + * This prevents empty `{version:2, slides:{...}}` from overwriting real designs.
@@ -839,17 +857,19 @@ export const isMeaningfulPolygonLayout = (layout: any): boolean => {
 export const pickPolygonLayout = (...candidates: any[]) =>
   candidates.find(isMeaningfulPolygonLayout) ?? null;
 
-
-
-
 const suffixFor = (n: 1 | 2 | 3 | 4) => (n === 2 ? "" : String(n));
 const fnName = (base: string, n: 1 | 2 | 3 | 4) => `${base}${suffixFor(n)}`;
 
 const getCtxProp = (ctx: any, base: string, n: 1 | 2 | 3 | 4) =>
   ctx?.[`${base}${suffixFor(n)}`] ?? ctx?.[base];
 
-function applySlideV2ToContext(payload: SlidePayloadV2, slideCtx: any, n: 1 | 2 | 3 | 4) {
-  const callFn = (base: string, ...args: any[]) => call(slideCtx, fnName(base, n), ...args);
+function applySlideV2ToContext(
+  payload: SlidePayloadV2,
+  slideCtx: any,
+  n: 1 | 2 | 3 | 4
+) {
+  const callFn = (base: string, ...args: any[]) =>
+    call(slideCtx, fnName(base, n), ...args);
   const callFnAlt = (bases: string[], ...args: any[]) => {
     for (const b of bases) {
       const name = n === 2 ? b : `${b}${n}`;
@@ -883,8 +903,14 @@ function applySlideV2ToContext(payload: SlidePayloadV2, slideCtx: any, n: 1 | 2 
   callFn("setLetterSpacing", payload.oneText?.letterSpacing);
 
   // Multi texts + free texts
-  callFn("setTexts", Array.isArray(payload.multipleTexts) ? payload.multipleTexts : []);
-  callFn("setTextElements", Array.isArray(payload.user?.freeTexts) ? payload.user.freeTexts : []);
+  callFn(
+    "setTexts",
+    Array.isArray(payload.multipleTexts) ? payload.multipleTexts : []
+  );
+  callFn(
+    "setTextElements",
+    Array.isArray(payload.user?.freeTexts) ? payload.user.freeTexts : []
+  );
 
   // Images
   const images = mergeBuckets(payload.user?.images);
@@ -893,7 +919,9 @@ function applySlideV2ToContext(payload: SlidePayloadV2, slideCtx: any, n: 1 | 2 
   // ✅ Selection (THIS is why images weren't showing)
   const selected = payload.user?.selectedImageIds ?? [];
   const selectedFinal =
-    Array.isArray(selected) && selected.length > 0 ? selected : (images ?? []).map((i: any) => i.id);
+    Array.isArray(selected) && selected.length > 0
+      ? selected
+      : (images ?? []).map((i: any) => i.id);
 
   // contexts naming:
   // slide1: setSelectedImage1
@@ -911,7 +939,11 @@ function applySlideV2ToContext(payload: SlidePayloadV2, slideCtx: any, n: 1 | 2 
   const bgFrames = mergeBuckets(payload.layout?.bgFrames);
   const layoutStickers = mergeBuckets(payload.layout?.stickers);
   const staticText = payload.layout?.staticText ?? [];
-  callFn("setLayout", { elements: bgFrames, stickers: layoutStickers, textElements: staticText });
+  callFn("setLayout", {
+    elements: bgFrames,
+    stickers: layoutStickers,
+    textElements: staticText,
+  });
 
   // QR Video
   callFnAlt(["setSelectedVideoUrl"], payload.qrVideo?.url ?? null);
@@ -941,5 +973,15 @@ function applySlideV2ToContext(payload: SlidePayloadV2, slideCtx: any, n: 1 | 2 
   const aiEnabled = !!payload.flags?.isAIImage;
   callFn("setIsAIimage", aiEnabled);
   callFn("setSelectedAIimageUrl", payload.ai?.imageUrl ?? "");
-  callFn("setAimage", payload.ai ? { x: payload.ai.x, y: payload.ai.y, width: payload.ai.width, height: payload.ai.height } : null);
+  callFn(
+    "setAimage",
+    payload.ai
+      ? {
+          x: payload.ai.x,
+          y: payload.ai.y,
+          width: payload.ai.width,
+          height: payload.ai.height,
+        }
+      : null
+  );
 }

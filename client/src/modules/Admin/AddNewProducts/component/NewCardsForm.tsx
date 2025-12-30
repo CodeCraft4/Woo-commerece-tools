@@ -18,7 +18,7 @@ import {
   buildPolygonLayout,
   captureNodeToPng,
   // hasAnyDesignV2,
-  isMeaningfulPolygonLayout,
+  // isMeaningfulPolygonLayout,
   pickPolygonLayout,
 } from "../../../../lib/polygon";
 import Slide1PreviewBox from "./FirstSlidePreview/FirstSlidePreview";
@@ -149,6 +149,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
     reset,
     control,
     setValue,
+    getValues,
   } = useForm<FormValue>({
     defaultValues: {
       cardname: "",
@@ -217,48 +218,42 @@ const NewCardsForm = ({ editProduct }: Props) => {
 
   // ✅ hydrate when meaningful layout arrives
   useEffect(() => {
-    if (!isMeaningfulPolygonLayout(editLayout)) return;
-
-    requestAnimationFrame(() => {
-      slide1.resetSlide1State?.();
-      slide2.resetSlide2State?.();
-      slide3.resetSlide3State?.();
-      slide4.resetSlide4State?.();
-
-      applyPolygonLayoutToContexts(editLayout, slide1, slide2, slide3, slide4);
-    });
+    applyPolygonLayoutToContexts(editLayout, slide1, slide2, slide3, slide4);
   }, [editLayout]);
 
   // AddNewCards page
-const handleEditLayout = async () => {
-  if (editLoading) return;
-  setEditLoading(true);
+  const handleEditLayout = async () => {
+    if (editLoading) return;
+    setEditLoading(true);
 
-  await sleep(2000);
+    await sleep(300);
 
-  const layout =
-    product?.polygonLayout ??
-    product?.polygonlayout ??
-    product?.polyganLayout ??
-    null;
+    // ✅ snapshot of current form (so nothing is lost)
+    const formSnapshot = getValues();
 
-  navigate(ADMINS_DASHBOARD.ADMIN_EDITOR, {
-    state: {
-      mode: id ? "edit" : "create",
-      id,
-      design: layout,
-    },
-  });
+    // ✅ send latest layout
+    const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4);
+    const designToSend = pickPolygonLayout(layoutNow, editLayout) ?? null;
 
-  setEditLoading(false);
-};
+    // ⚠️ setLoading false BEFORE navigate (component unmount ho jata hai)
+    setEditLoading(false);
+
+    navigate(ADMINS_DASHBOARD.ADMIN_EDITOR, {
+      state: {
+        mode: id ? "edit" : "create",
+        id,
+        design: designToSend,
+        formData: formSnapshot,
+      },
+    });
+  };
 
 
   const onSubmit = async (data: FormValue) => {
     try {
       setLoading(true);
 
-      const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4);
+      const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4, { onlySelectedImages: true });
       const polygonlayout = pickPolygonLayout(layoutNow, editLayout) ?? {};
 
       let imageurl: string | null = null;
@@ -298,11 +293,11 @@ const handleEditLayout = async () => {
         const { error } = await supabase.from("cards").update(payload).eq("id", id);
         if (error) throw error;
         toast.success("Card updated successfully!");
-        // reset()
-        // slide1.resetSlide1State?.();
-        // slide2.resetSlide2State?.();
-        // slide3.resetSlide3State?.();
-        // slide4.resetSlide4State?.();
+        reset()
+        slide1.resetSlide1State?.();
+        slide2.resetSlide2State?.();
+        slide3.resetSlide3State?.();
+        slide4.resetSlide4State?.();
       } else {
         const { error } = await supabase.from("cards").insert([payload]);
         if (error) throw error;

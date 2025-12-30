@@ -49,7 +49,7 @@ const Slide4 = (props: Slide4Props) => {
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        backgroundColor:bgColor4 ?? "transparent",
+        backgroundColor: bgColor4 ?? "transparent",
         // backgroundImage: bgImage4 ? `url(${bgImage4})` : "none",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
@@ -83,7 +83,7 @@ const Slide4 = (props: Slide4Props) => {
                   sx={{
                     width: "100%",
                     height: "100%",
-                    objectFit: el.objectFit || "fill",
+                    objectFit: el.objectFit || "cover",
                     borderRadius: 1,
                     display: "block",
                     pointerEvents: "none",

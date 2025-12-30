@@ -1,4 +1,3 @@
-// File: src/pages/Admin/AddNewCards/components/Slide1PreviewBox.tsx
 import { useMemo } from "react";
 import { Box, Typography } from "@mui/material";
 import { CollectionsOutlined } from "@mui/icons-material";
@@ -61,8 +60,8 @@ export default function Slide1PreviewBox({
     const images: any[] = Array.isArray(draggableImages1) ? draggableImages1 : [];
     const selectedIds = new Set(Array.isArray(selectedImg1) ? selectedImg1 : []);
     images
-      .filter((img) => selectedIds.size === 0 || selectedIds.has(img.id))
-      .forEach((img) => {
+      .filter((img: any) => selectedIds.has(img.id))
+      .forEach((img: any) => {
         out.push({
           kind: "image",
           id: str(img.id),
@@ -70,6 +69,9 @@ export default function Slide1PreviewBox({
           node: img,
         });
       });
+
+    console.log(images.filter((e) => selectedIds.has(e.id)).map((i) => i), '----aldjfad')
+
 
     const stickers: any[] = Array.isArray(selectedStickers1) ? selectedStickers1 : [];
     stickers.forEach((st, idx) => {
@@ -141,7 +143,7 @@ export default function Slide1PreviewBox({
       overflow: "hidden",
       transform: `scale(${scale})`,
       transformOrigin: "top left",
-    //   borderRadius,
+      //   borderRadius,
       bgcolor: bgColor1 ?? "transparent",
     }),
     [width, height, scale, borderRadius, bgColor1],
