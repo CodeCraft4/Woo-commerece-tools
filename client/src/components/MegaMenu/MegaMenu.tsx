@@ -36,7 +36,7 @@ const MegaMenu = ({
   onSelect,
 }: {
   data: MegaMenuItem;
-  onSelect: () => void;
+  onSelect?: (payload: { parent: string; label: string }) => void;
 }) => {
   const columns = useMemo(() => {
     const cats = data?.categories ?? [];
@@ -217,7 +217,7 @@ const MegaMenu = ({
                     "&:hover": { bgcolor: "transparent" },
                   }}
                   disableRipple
-                  onClick={onSelect}
+                  onClick={() => onSelect?.({ parent: data.title, label: link })}
                 >
                   <ListItemText
                     primary={link}
@@ -243,7 +243,7 @@ const MegaMenu = ({
                         "&:hover": { bgcolor: "transparent" },
                       }}
                       disableRipple
-                      onClick={onSelect}
+                      onClick={() => onSelect?.({ parent: data.title, label: link })}
                     >
                       <ListItemText
                         primary={link}

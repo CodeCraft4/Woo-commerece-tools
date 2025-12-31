@@ -116,6 +116,15 @@ export default function Header(props: Props) {
     return map;
   }, [navCategories]);
 
+  const categoryIdByName = React.useMemo(() => {
+    const map = new Map<string, string | number>();
+    navCategories.forEach((c: any) => {
+      const key = String(c?.name ?? "").trim().toLowerCase();
+      if (key) map.set(key, c?.id);
+    });
+    return map;
+  }, [navCategories]);
+
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
   };
@@ -123,11 +132,28 @@ export default function Header(props: Props) {
   const [hoveredMenuItem, setHoveredMenuItem] = React.useState<string | null>(null);
   const handleMouseEnter = (item: string) => setHoveredMenuItem(item);
   const handleMouseLeave = () => setHoveredMenuItem(null);
-  const handleSelect = () => setHoveredMenuItem(null);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const { listRef, canLeft, canRight, scrollByAmount } = useHScrollArrows();
 
+  const isShopAll = (label: string) => /shop all/i.test(label) || /^all\b/i.test(label);
+
+  const handleCategoryNavigate = React.useCallback(
+    (label: string, parent?: string) => {
+      const target = isShopAll(label) ? (parent || label) : label;
+      if (!target) return;
+      const key = String(target).trim().toLowerCase();
+      const categoryId = categoryIdByName.get(key);
+      const path = `${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(target)}`;
+      if (categoryId != null) {
+        navigate(path, { state: { categoryId } });
+      } else {
+        navigate(path);
+      }
+      setHoveredMenuItem(null);
+    },
+    [navigate, categoryIdByName]
+  );
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -662,7 +688,8 @@ export default function Header(props: Props) {
                 sx={{ flex: "0 0 auto", width: "auto" }}
               >
                 <Link
-                  href={`${USER_ROUTES.VIEW_ALL}/${name}`}
+                  component="button"
+                  onClick={() => handleCategoryNavigate(name)}
                   sx={{
                     m: 0,
                     p: 0,
@@ -673,6 +700,8 @@ export default function Header(props: Props) {
                     textDecoration: "none",
                     whiteSpace: "nowrap",
                     "&:hover": { color: "rgba(46, 46, 46, 1)" },
+                    background: "none",
+                    border: "none",
                   }}
                 >
                   {name}
@@ -690,7 +719,10 @@ export default function Header(props: Props) {
             }}
           >
             {hoveredMenuItem && megaMenuMap[hoveredMenuItem] && (
-              <MegaMenu data={megaMenuMap[hoveredMenuItem]} onSelect={handleSelect} />
+              <MegaMenu
+                data={megaMenuMap[hoveredMenuItem]}
+                onSelect={({ parent, label }) => handleCategoryNavigate(label, parent)}
+              />
             )}
           </Box>
         </Box>

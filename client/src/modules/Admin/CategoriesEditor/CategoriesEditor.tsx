@@ -113,6 +113,8 @@ const CategoriesEditor = () => {
   const [mirrorBySlide, setMirrorBySlide] = useState<Record<number, boolean>>({});
   const thumbRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const scrollSyncRaf = useRef<number | null>(null);
+  const lastSyncedIndex = useRef<number>(0);
 
   // const isDraggingMain = useRef(false);
   // const startXMain = useRef(0);
@@ -177,6 +179,14 @@ const CategoriesEditor = () => {
   const handleFontSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => setFontSizeInput(e.target.value);
 
   /* ---------------- Slides ---------------- */
+  const scrollThumbToIndex = (index: number, behavior: ScrollBehavior = "smooth") => {
+    if (!thumbRef.current) return;
+    const child = thumbRef.current.children[index] as HTMLElement | undefined;
+    if (!child) return;
+    const left = child.offsetLeft - (thumbRef.current.clientWidth - child.offsetWidth) / 2;
+    thumbRef.current.scrollTo({ left: Math.max(0, left), behavior });
+  };
+
   const scrollToSlide = (index: number) => {
     const container = mainScrollerRef.current;
     if (!container) {
@@ -189,6 +199,7 @@ const CategoriesEditor = () => {
     if (!child) return;
     const slideWidth = child.offsetWidth + 40;
     container.scrollTo({ left: slideWidth * index, behavior: "smooth" });
+    scrollThumbToIndex(index);
     setSelectedSlide(index);
     setSelectedTextId(null);
     setSelectedImageId(null);
@@ -320,13 +331,71 @@ const CategoriesEditor = () => {
   const onThumbMouseLeave = () => (isDraggingThumb.current = false);
   const onThumbMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDraggingThumb.current || !thumbRef.current) return;
+    e.preventDefault();
     const x = e.pageX - thumbRef.current.offsetLeft;
     const walk = x - startXThumb.current;
     thumbRef.current.scrollLeft = scrollLeftThumb.current - walk;
   };
 
-  const slideScrollLeft = () => thumbRef.current && (thumbRef.current.scrollLeft -= 120);
-  const slideScrollRight = () => thumbRef.current && (thumbRef.current.scrollLeft += 120);
+  const onMainWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const container = mainScrollerRef.current;
+    if (!container) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    if (container.scrollWidth <= container.clientWidth) return;
+    e.preventDefault();
+    container.scrollLeft += e.deltaY;
+  };
+
+  const onMainScroll = () => {
+    const container = mainScrollerRef.current;
+    if (!container || scrollSyncRaf.current != null) return;
+    scrollSyncRaf.current = window.requestAnimationFrame(() => {
+      scrollSyncRaf.current = null;
+      const children = Array.from(container.children) as HTMLElement[];
+      if (!children.length) return;
+      const center = container.scrollLeft + container.clientWidth / 2;
+      let bestIndex = 0;
+      let bestDist = Number.POSITIVE_INFINITY;
+      children.forEach((child, index) => {
+        const childCenter = child.offsetLeft + child.offsetWidth / 2;
+        const dist = Math.abs(childCenter - center);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIndex = index;
+        }
+      });
+      if (bestIndex !== lastSyncedIndex.current) {
+        lastSyncedIndex.current = bestIndex;
+        setSelectedSlide(bestIndex);
+        setSelectedTextId(null);
+        setSelectedImageId(null);
+        scrollThumbToIndex(bestIndex, "auto");
+      }
+    });
+  };
+
+  const onThumbWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!thumbRef.current) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    e.preventDefault();
+    thumbRef.current.scrollLeft += e.deltaY;
+  };
+
+  useEffect(() => {
+    scrollThumbToIndex(selectedSlide);
+  }, [selectedSlide, slides.length]);
+
+  const slideScrollLeft = () => {
+    const nextIndex = Math.max(0, selectedSlide - 1);
+    scrollToSlide(nextIndex);
+    scrollThumbToIndex(nextIndex);
+  };
+
+  const slideScrollRight = () => {
+    const nextIndex = Math.min(slides.length - 1, selectedSlide + 1);
+    scrollToSlide(nextIndex);
+    scrollThumbToIndex(nextIndex);
+  };
 
   // ====== Align helpers ======
   type TextAlignVal = "left" | "center" | "right";
@@ -696,6 +765,8 @@ const CategoriesEditor = () => {
       {/* MAIN SLIDE SCROLLER */}
       <Box
         ref={mainScrollerRef}
+        onWheel={onMainWheel}
+        onScroll={onMainScroll}
         // onMouseDown={onMainMouseDown}
         // onMouseUp={onMainMouseUp}
         // onMouseLeave={onMainMouseLeave}
@@ -1151,11 +1222,24 @@ const CategoriesEditor = () => {
         <IconButton onClick={slideScrollLeft}><ArrowBackIos /></IconButton>
         <Box
           ref={thumbRef}
+          onWheel={onThumbWheel}
           onMouseDown={onThumbMouseDown}
           onMouseUp={onThumbMouseUp}
           onMouseLeave={onThumbMouseLeave}
           onMouseMove={onThumbMouseMove}
-          sx={{ display: "flex", overflowX: "auto", gap: 1, width: "64%", "&::-webkit-scrollbar": { display: "none" }, cursor: "grab", justifyContent: "center" }}
+          sx={{
+            display: "flex",
+            overflowX: "auto",
+            gap: 1,
+            flex: 1,
+            minWidth: 0,
+            px: 1,
+            alignItems: "center",
+            scrollBehavior: "smooth",
+            "&::-webkit-scrollbar": { display: "none" },
+            cursor: "grab",
+            justifyContent: "flex-start",
+          }}
         >
           {slides.map((s, index) => {
             const mirrored = !!mirrorBySlide[s.id as number];
