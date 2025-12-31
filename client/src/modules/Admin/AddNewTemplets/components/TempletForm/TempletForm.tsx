@@ -58,6 +58,11 @@ const TempletForm = ({ editProduct }: Props) => {
     const templateId = navState?.id;
     const prevImg = navState?.imgUrl
     const isEditMode = mode === "edit" || !!templateId;
+    const toOptional = (value?: string) => {
+        if (value == null) return undefined;
+        const trimmed = value.trim();
+        return trimmed === "" ? undefined : trimmed;
+    };
 
 
     const [rawStoresState, setRawStoresState] = useState<any>(null);
@@ -246,14 +251,14 @@ const TempletForm = ({ editProduct }: Props) => {
             cardcategory: data.cardcategory,
             subCategory: data.subCategory,
             subSubCategory: data.subSubCategory,
-            actualprice: data.actualprice || "",
-            a4price: data.a4price || "",
-            a5price: data.a5price || "",
-            usletter: data.usletter || "",
-            saleprice: data.saleprice || "",
-            salea4price: data.salea4price || "",
-            salea5price: data.salea5price || "",
-            saleusletter: data.saleusletter || "",
+            actualprice: toOptional(data.actualprice),
+            a4price: toOptional(data.a4price),
+            a5price: toOptional(data.a5price),
+            usletter: toOptional(data.usletter),
+            saleprice: toOptional(data.saleprice),
+            salea4price: toOptional(data.salea4price),
+            salea5price: toOptional(data.salea5price),
+            saleusletter: toOptional(data.saleusletter),
             description: data.description,
             sku: data.sku,
             imgUrl: captured ?? previewUrl,
@@ -549,6 +554,7 @@ const TempletForm = ({ editProduct }: Props) => {
                                 required: false,
                             })}
                             error={errors.saleprice?.message}
+                            showRequiredAsterisk={false}
                         />
                         <CustomInput
                             label="Sale A4 Price"
@@ -558,6 +564,7 @@ const TempletForm = ({ editProduct }: Props) => {
                                 required: false,
                             })}
                             error={errors.salea4price?.message}
+                            showRequiredAsterisk={false}
                         />
                         <CustomInput
                             label="Sale A5 Price"
@@ -567,6 +574,7 @@ const TempletForm = ({ editProduct }: Props) => {
                                 required: false,
                             })}
                             error={errors.salea5price?.message}
+                            showRequiredAsterisk={false}
                         />
                         <CustomInput
                             label="US Letter"
@@ -576,6 +584,7 @@ const TempletForm = ({ editProduct }: Props) => {
                                 required: false,
                             })}
                             error={errors.saleusletter?.message}
+                            showRequiredAsterisk={false}
                         />
                     </Box>
 

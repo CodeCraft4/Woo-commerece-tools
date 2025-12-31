@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type Dispatch, type SetStateAction, type ChangeEvent } from "react";
+﻿import { useState, useRef, useEffect, type Dispatch, type SetStateAction, type ChangeEvent } from "react";
 import { Box, IconButton } from "@mui/material";
 import {
   ArrowBackIos,
@@ -210,13 +210,13 @@ const WishCard = (props: wishCardType) => {
       newIndex = activeIndex < slides.length - 1 ? activeIndex + 1 : 0;
     }
 
-    // ✅ Deactivate all slides first
+    // âœ… Deactivate all slides first
     setIsSlideActive1(false);
     setIsSlideActive(false);
     setIsSlideActive3(false);
     setIsSlideActive4(false);
 
-    // ✅ Activate only the current slide
+    // âœ… Activate only the current slide
     if (newIndex === 0) setIsSlideActive1(true);
     if (newIndex === 1) setIsSlideActive(true);
     if (newIndex === 2) setIsSlideActive3(true);
@@ -367,13 +367,13 @@ const WishCard = (props: wishCardType) => {
 
     slide.scrollIntoView({ behavior: "smooth", inline: "center" });
 
-    // ✅ Deactivate all slides first
+    // âœ… Deactivate all slides first
     setIsSlideActive1(false);
     setIsSlideActive(false);
     setIsSlideActive3(false);
     setIsSlideActive4(false);
 
-    // ✅ Activate only the clicked/target slide
+    // âœ… Activate only the clicked/target slide
     if (index === 0) setIsSlideActive1(true);
     if (index === 1) setIsSlideActive(true);
     if (index === 2) setIsSlideActive3(true);
@@ -506,7 +506,7 @@ const WishCard = (props: wishCardType) => {
     const input = event.currentTarget;
     const file = input.files?.[0];
 
-    // ✅ user cancelled -> don't show alert
+    // âœ… user cancelled -> don't show alert
     if (!file) {
       input.value = "";
       return;
@@ -584,7 +584,8 @@ const WishCard = (props: wishCardType) => {
           textAlign: "center",
           userSelect: "none",
           position: "relative",
-          height: '100%',
+          height: "100%",
+          pb: { xs: 12, sm: 2 },
           // p: 1
         }}
       >
@@ -1048,7 +1049,7 @@ const WishCard = (props: wishCardType) => {
                 <Box
                   sx={{
                     height: { md: "600px", sm: "600px", xs: "80px" },
-                    width: { md: "auto", sm: "auto", xs: "95%" },
+                    width: { md: "auto", sm: "auto", xs: "min(95vw, 560px)" },
                     bgcolor: "white",
                     borderRadius: "4px",
                     p: 1,
@@ -1056,10 +1057,12 @@ const WishCard = (props: wishCardType) => {
                     flexDirection: { md: "column", sm: "column", xs: "row" },
                     overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                     gap: "15px",
-                    position: "absolute",
-                    top: { md: 40, sm: 40, xs: '100%' },
-                    left: { md: "28.5%", sm: "14%", xs: 10 },
-                    zIndex: { md: 10, sm: 10, xs: 99999 },
+                    position: { xs: "fixed", sm: "absolute" },
+                    top: { md: 40, sm: 40, xs: "auto" },
+                    bottom: { xs: 96, sm: "auto" },
+                    left: { md: "28.5%", sm: "14%", xs: "50%" },
+                    transform: { xs: "translateX(-50%)", sm: "none" },
+                    zIndex: { md: 10, sm: 10, xs: 1300 },
                     boxShadow: 3,
                     "&::-webkit-scrollbar": {
                       height: "6px",
@@ -1177,7 +1180,7 @@ const WishCard = (props: wishCardType) => {
             <Box
               sx={{
                 height: { md: "600px", sm: "600px", xs: "80px" },
-                width: { md: "auto", sm: "auto", xs: "95%" },
+                width: { md: "auto", sm: "auto", xs: "min(95vw, 560px)" },
                 bgcolor: "white",
                 borderRadius: "4px",
                 p: 1,
@@ -1185,22 +1188,24 @@ const WishCard = (props: wishCardType) => {
                 flexDirection: { md: "column", sm: "column", xs: "row" },
                 overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
-                position: "absolute",
-                top: { md: 50, sm: 50, xs: '100%' },
+                position: { xs: "fixed", sm: "absolute" },
+                top: { md: 50, sm: 50, xs: "auto" },
+                bottom: { xs: 96, sm: "auto" },
                 left: adminEditor ? {
-                  xs: 10,
+                  xs: "50%",
                   sm: "14%",
                   md: "18%",
                   lg: "27%",
                   xl: "28%",
                 } : {
-                  xs: 10,
+                  xs: "50%",
                   sm: "14%",
                   md: "18%",
                   lg: "27%",
                   xl: "33%",
                 },
-                zIndex: { md: 10, sm: 10, xs: 99999 },
+                transform: { xs: "translateX(-50%)", sm: "none" },
+                zIndex: { md: 10, sm: 10, xs: 1300 },
                 boxShadow: 3,
                 "&::-webkit-scrollbar": {
                   height: "6px",
@@ -1306,7 +1311,7 @@ const WishCard = (props: wishCardType) => {
             <Box
               sx={{
                 height: { md: "600px", sm: "600px", xs: "80px" },
-                width: { md: "auto", sm: "auto", xs: "95%" },
+                width: { md: "auto", sm: "auto", xs: "min(95vw, 560px)" },
                 bgcolor: "white",
                 borderRadius: "4px",
                 p: 1,
@@ -1314,10 +1319,12 @@ const WishCard = (props: wishCardType) => {
                 flexDirection: { md: "column", sm: "column", xs: "row" },
                 overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                 gap: "15px",
-                position: "absolute",
-                top: { md: 50, sm: 50, xs: '100%' },
-                left: adminEditor ? { xl: "28.5%", lg: '27%', md: "18%", sm: "14%", xs: 10 } : { xl: "39%", lg: '27%', md: "18%", sm: "14%", xs: 10 },
-                zIndex: { md: 10, sm: 10, xs: 99999 },
+                position: { xs: "fixed", sm: "absolute" },
+                top: { md: 50, sm: 50, xs: "auto" },
+                bottom: { xs: 96, sm: "auto" },
+                left: adminEditor ? { xl: "28.5%", lg: "27%", md: "18%", sm: "14%", xs: "50%" } : { xl: "39%", lg: "27%", md: "18%", sm: "14%", xs: "50%" },
+                transform: { xs: "translateX(-50%)", sm: "none" },
+                zIndex: { md: 10, sm: 10, xs: 1300 },
                 boxShadow: 3,
                 "&::-webkit-scrollbar": {
                   height: "6px",
@@ -1425,7 +1432,7 @@ const WishCard = (props: wishCardType) => {
                 <Box
                   sx={{
                     height: { md: "600px", sm: "600px", xs: "80px" },
-                    width: { md: "auto", sm: "auto", xs: "95%" },
+                    width: { md: "auto", sm: "auto", xs: "min(95vw, 560px)" },
                     bgcolor: "white",
                     borderRadius: "4px",
                     p: 1,
@@ -1433,10 +1440,12 @@ const WishCard = (props: wishCardType) => {
                     flexDirection: { md: "column", sm: "column", xs: "row" },
                     overflowX: { md: "hidden", sm: "hidden", xs: "scroll" },
                     gap: "15px",
-                    position: "absolute",
-                    top: { md: 40, sm: 40, xs: '100%' },
-                    left: { md: "35%", sm: "54%", xs: 10 },
-                    zIndex: { md: 10, sm: 10, xs: 99999 },
+                    position: { xs: "fixed", sm: "absolute" },
+                    top: { md: 40, sm: 40, xs: "auto" },
+                    bottom: { xs: 96, sm: "auto" },
+                    left: { md: "35%", sm: "54%", xs: "50%" },
+                    transform: { xs: "translateX(-50%)", sm: "none" },
+                    zIndex: { md: 10, sm: 10, xs: 1300 },
                     boxShadow: 3,
                     "&::-webkit-scrollbar": {
                       height: "6px",
@@ -1537,7 +1546,8 @@ const WishCard = (props: wishCardType) => {
             justifyContent: "center",
             gap: 1,
             position: "relative",
-            bottom: { md: 20, sm: 20, xs: -10 },
+            bottom: { md: 20, sm: 20, xs: 0 },
+            mt: { xs: 2, sm: 0 },
             width: '100%',
             userSelect: "none",
             background: "transparent",
@@ -1636,3 +1646,5 @@ const editingButtonStyle = {
     color: "#3a7bd5",
   },
 };
+
+

@@ -1,4 +1,4 @@
-// DHeader.tsx
+﻿// DHeader.tsx
 import { Box, Typography } from "@mui/material";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 
@@ -14,15 +14,15 @@ const DHeader = (props: Props) => {
   const { title, exportBtn, addBtn, onClick, onExportClick } = props;
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1.5, sm: 2 }, mb: 3 }}>
       <Typography sx={{ fontSize: { md: 35, sm: 27, xs: 20 } }}>{title}</Typography>
 
-      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+      <Box sx={{ display: "flex", gap: 1, alignItems: "center", width: { xs: "100%", sm: "auto" }, flexWrap: "wrap" }}>
         {exportBtn && (
           <LandingButton
             variant="outlined"
             title={exportBtn}
-            onClick={onExportClick}   // ✅ ADD THIS
+            onClick={onExportClick}   // âœ… ADD THIS
             width="140px"
           />
         )}
@@ -34,3 +34,4 @@ const DHeader = (props: Props) => {
 };
 
 export default DHeader;
+

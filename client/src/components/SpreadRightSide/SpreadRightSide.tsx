@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -503,7 +503,7 @@ const SpreadRightSide = ({
     }
   };
 
-  // 👇 Auto-reset multipleTextValue when all multiple texts are deleted
+  // ðŸ‘‡ Auto-reset multipleTextValue when all multiple texts are deleted
   useEffect(() => {
     // When user re-selects the multipleTextValue layout
     if (multipleTextValue3) {
@@ -532,7 +532,7 @@ const SpreadRightSide = ({
     setTexts3((prev) => {
       const updated = prev.filter((_, i) => i !== index);
 
-      // ✅ If all boxes are deleted → reset layout
+      // âœ… If all boxes are deleted â†’ reset layout
       if (updated.length === 0) {
         setMultipleTextValue3(false);
         setSelectedLayout3("blank");
@@ -542,7 +542,7 @@ const SpreadRightSide = ({
     });
   };
 
-  // ✅ Place this useEffect HERE (below your state definitions)
+  // âœ… Place this useEffect HERE (below your state definitions)
   useEffect(() => {
     if (editingIndex3 !== null && editingIndex3 !== undefined) {
       setTexts3((prev) =>
@@ -754,7 +754,7 @@ const SpreadRightSide = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height: "700px",
+            height: { md: "700px", sm: "600px", xs: "70vh" },
             opacity: isSlideActive3 ? 1 : 0.6,
             pointerEvents: isSlideActive3 ? "auto" : "none",
             backgroundColor: bgColor3 ?? "transparent",
@@ -783,9 +783,9 @@ const SpreadRightSide = ({
               position={{ x: bgRect3.x, y: bgRect3.y }}
               bounds="parent"
               enableUserSelectHack={false}
-              // ✅ only draggable when unlocked AND in edit mode
+              // âœ… only draggable when unlocked AND in edit mode
               disableDragging={!bgEdit3 || bgLocked3}
-              // ✅ only resizable when unlocked AND in edit mode
+              // âœ… only resizable when unlocked AND in edit mode
               enableResizing={
                 bgEdit3 && !bgLocked3
                   ? {
@@ -842,7 +842,7 @@ const SpreadRightSide = ({
                   backgroundPosition: "center",
                   userSelect: "none",
                 }}
-                // ✅ double-click only works when unlocked
+                // âœ… double-click only works when unlocked
                 onDoubleClick={() => {
                   if (!bgLocked3) setBgEdit3(true);
                 }}
@@ -1039,7 +1039,7 @@ const SpreadRightSide = ({
                                 height: "100%",
                               }}
                             >
-                              {/* ✅ Close Button */}
+                              {/* âœ… Close Button */}
                               <IconButton
                                 size="small"
                                 className="no-drag"
@@ -1110,7 +1110,7 @@ const SpreadRightSide = ({
                                   zIndex: textElement.zIndex
                                 }}
                               >
-                                {/* ✅ Editable Text */}
+                                {/* âœ… Editable Text */}
                                 <TextField
                                   variant="standard"
                                   value={textElement.value}
@@ -1523,7 +1523,7 @@ const SpreadRightSide = ({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      height: { md: "675px", sm: "575px", xs: "575px" },
+                      height: { md: "675px", sm: "575px", xs: "60vh" },
                       width: { md: "470px", sm: "370px", xs: "90%" },
                       border: "3px dashed #3a7bd5",
                       position: "absolute",
@@ -1987,7 +1987,7 @@ const SpreadRightSide = ({
                                 WebkitClipPath: el.clipPath || "none",
                               }}
                             />
-                            {/* ✅ Only show upload icon when this frame is editable (NOT when locked) */}
+                            {/* âœ… Only show upload icon when this frame is editable (NOT when locked) */}
                             {isEditable && !isLocked && (
                               <Box
                                 sx={{
@@ -2035,7 +2035,7 @@ const SpreadRightSide = ({
                       </Box>
                     ))}
 
-                    {/* Texts (click → border + editable if isEditable) */}
+                    {/* Texts (click â†’ border + editable if isEditable) */}
                     {layout3.textElements.map((te: any, i: any) => {
                       const isActive = editingIndex3 === i;        // reuse your existing editingIndex
                       return (
@@ -2047,7 +2047,7 @@ const SpreadRightSide = ({
                             display: "flex",
                             alignItems: te.verticalAlign === "top" ? "flex-start" : te.verticalAlign === "bottom" ? "flex-end" : "center",
                             justifyContent: te.textAlign === "left" ? "flex-start" : te.textAlign === "right" ? "flex-end" : "center",
-                            outline: te.isEditable && isActive ? "2px solid #1976d2" : "none",   // ✅ blue border on select
+                            outline: te.isEditable && isActive ? "2px solid #1976d2" : "none",   // âœ… blue border on select
                             borderRadius: "6px",
                           }}>
                           <TextField
@@ -2055,7 +2055,7 @@ const SpreadRightSide = ({
                             onFocus={te.isEditable ? () => handleTextFocus(i, te) : undefined}
                             onChange={te.isEditable ? (e) => handleTextChange(e.target.value, i) : undefined}
                             InputProps={{
-                              readOnly: !te.isEditable || !isActive,      // ✅ only editable when selected
+                              readOnly: !te.isEditable || !isActive,      // âœ… only editable when selected
                               disableUnderline: true,
                               style: {
                                 fontSize: te.fontSize,
@@ -2258,7 +2258,7 @@ const SpreadRightSide = ({
                           <TextField
                             variant="standard"
                             value={textElement.value}
-                            className="text-edit"         // ✅ used by cancel when editing
+                            className="text-edit"         // âœ… used by cancel when editing
                             placeholder="Add Text"
                             multiline
                             fullWidth
@@ -2279,7 +2279,7 @@ const SpreadRightSide = ({
                                 display: "flex",
                                 alignItems: vAlign,
                                 justifyContent: hAlign,
-                                // ✅ drag by default, only interact with text in edit mode
+                                // âœ… drag by default, only interact with text in edit mode
                                 pointerEvents: textElement.isEditing ? "auto" : "none",
                               },
                             }}
@@ -2326,7 +2326,7 @@ const SpreadRightSide = ({
                     }}
                   >
                     <motion.div
-                      key={selectedVideoUrl3} // ✅ unique key triggers re-animation on change
+                      key={selectedVideoUrl3} // âœ… unique key triggers re-animation on change
                       initial={{ opacity: 0, x: 100 }} // start off-screen (right)
                       animate={{ opacity: 1, x: 0 }} // slide in
                       exit={{ opacity: 0, x: -100 }} // slide out left
@@ -2394,7 +2394,7 @@ const SpreadRightSide = ({
                         <IconButton
                           className="no-drag"
                           onClick={(e) => {
-                            e.stopPropagation(); // ✅ Prevent parent drag/touch interception
+                            e.stopPropagation(); // âœ… Prevent parent drag/touch interception
                             setSelectedVideoUrl3(null);
                           }}
                           sx={{
@@ -2403,9 +2403,9 @@ const SpreadRightSide = ({
                             right: 0,
                             bgcolor: COLORS.black,
                             color: COLORS.white,
-                            zIndex: 9999, // ✅ Make sure it's above other layers
-                            pointerEvents: "auto", // ✅ Ensure it's clickable on touch devices
-                            touchAction: "manipulation", // ✅ Allow touch tap
+                            zIndex: 9999, // âœ… Make sure it's above other layers
+                            pointerEvents: "auto", // âœ… Ensure it's clickable on touch devices
+                            touchAction: "manipulation", // âœ… Allow touch tap
                             "&:hover": { bgcolor: "red" },
                           }}
                         >
@@ -2447,7 +2447,7 @@ const SpreadRightSide = ({
                     }}
                   >
                     <motion.div
-                      key={selectedAudioUrl3} // ✅ unique key triggers re-animation on change
+                      key={selectedAudioUrl3} // âœ… unique key triggers re-animation on change
                       initial={{ opacity: 0, x: 100 }} // start off-screen (right)
                       animate={{ opacity: 1, x: 0 }} // slide in
                       exit={{ opacity: 0, x: -100 }} // slide out left
@@ -2630,7 +2630,7 @@ const SpreadRightSide = ({
 
                           {/* Rotate button */}
                           <Box
-                            className="non-draggable" // ✅ ensures RND doesn’t hijack
+                            className="non-draggable" // âœ… ensures RND doesnâ€™t hijack
                             onClick={(e) => {
                               e.stopPropagation();
                               setDraggableImages3((prev) =>
@@ -2715,7 +2715,7 @@ const SpreadRightSide = ({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      height: { md: "675px", sm: "575px", xs: '575px' },
+                      height: { md: "675px", sm: "575px", xs: "60vh" },
                       width: { md: "470px", sm: "370px", xs: "90%" },
                       border: "3px dashed #3a7bd5",
                       position: "absolute",
@@ -2909,7 +2909,7 @@ const SpreadRightSide = ({
                                 );
                               }
 
-                              // ✅ Then select new box
+                              // âœ… Then select new box
                               setEditingIndex3(index);
                               setFontSize3(textObj.fontSize3);
                               setFontFamily3(textObj.fontFamily3);
@@ -3014,7 +3014,7 @@ const SpreadRightSide = ({
                       justifyContent: "stretch",
                     }}
                   >
-                    {/* ✅ Ensure the container fills RND box */}
+                    {/* âœ… Ensure the container fills RND box */}
                     <Box
                       sx={{
                         position: "relative",
@@ -3023,7 +3023,7 @@ const SpreadRightSide = ({
                         display: "flex",
                       }}
                     >
-                      {/* ✅ Make image fill fully */}
+                      {/* âœ… Make image fill fully */}
                       <Box
                         component="img"
                         src={`${selectedAIimageUrl3}`}
@@ -3069,8 +3069,8 @@ const SpreadRightSide = ({
                       size={{ width: sticker.width, height: sticker.height }}
                       position={{ x: sticker.x, y: sticker.y }}
                       bounds="parent"
-                      enableUserSelectHack={false} // ✅ allows touch events
-                      cancel=".non-draggable" // ✅ prevents RND drag hijack on buttons
+                      enableUserSelectHack={false} // âœ… allows touch events
+                      cancel=".non-draggable" // âœ… prevents RND drag hijack on buttons
                       onDragStop={(_, d) =>
                         updateSticker3(index, {
                           x: d.x,
@@ -3105,7 +3105,7 @@ const SpreadRightSide = ({
                       style={{
                         zIndex: sticker.zIndex,
                         position: "absolute",
-                        touchAction: "none", // ✅ allow touch drag + taps
+                        touchAction: "none", // âœ… allow touch drag + taps
                       }}
                     >
                       <Box
@@ -3132,7 +3132,7 @@ const SpreadRightSide = ({
 
                         {/* Close Button */}
                         <IconButton
-                          className="non-draggable" // ✅ prevent drag capture
+                          className="non-draggable" // âœ… prevent drag capture
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -3198,3 +3198,4 @@ const SpreadRightSide = ({
 };
 
 export default SpreadRightSide;
+

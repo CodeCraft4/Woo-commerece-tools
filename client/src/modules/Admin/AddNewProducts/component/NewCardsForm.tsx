@@ -97,7 +97,11 @@ const NewCardsForm = ({ editProduct }: Props) => {
   const { id, product, formData, mode } = navState;
 
   const isEditMode = Boolean(id) || mode === "edit";
-  const toFloat = (v: any) => (v === "" || v == null ? undefined : parseFloat(String(v)));
+  const toFloat = (v: any) => {
+    if (v === "" || v == null) return null;
+    const num = parseFloat(String(v));
+    return Number.isNaN(num) ? null : num;
+  };
 
   // ✅ Always prefer most-recent: navState -> formData -> product
   const editLayout = useMemo(() => {
@@ -437,10 +441,10 @@ const NewCardsForm = ({ editProduct }: Props) => {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-            <CustomInput label="Sale Price" placeholder="Sale price" type="number" defaultValue="" register={register("saleprice", { setValueAs: toFloat })} error={errors.saleprice?.message} />
-            <CustomInput label="Sale A4 Price" placeholder="A4 Price" type="number" defaultValue="" register={register("salea4price", { setValueAs: toFloat })} error={errors.salea4price?.message} />
-            <CustomInput label="Sale A5 Price" placeholder="A5 Price" type="number" defaultValue="" register={register("salea5price", { setValueAs: toFloat })} error={errors.salea5price?.message} />
-            <CustomInput label="Sale US Letter" placeholder="US Letter" type="number" defaultValue="" register={register("saleusletter", { setValueAs: toFloat })} error={errors.saleusletter?.message} />
+            <CustomInput label="Sale Price" placeholder="Sale price" type="number" defaultValue="" register={register("saleprice", { setValueAs: toFloat })} error={errors.saleprice?.message} showRequiredAsterisk={false} />
+            <CustomInput label="Sale A4 Price" placeholder="A4 Price" type="number" defaultValue="" register={register("salea4price", { setValueAs: toFloat })} error={errors.salea4price?.message} showRequiredAsterisk={false} />
+            <CustomInput label="Sale A5 Price" placeholder="A5 Price" type="number" defaultValue="" register={register("salea5price", { setValueAs: toFloat })} error={errors.salea5price?.message} showRequiredAsterisk={false} />
+            <CustomInput label="Sale US Letter" placeholder="US Letter" type="number" defaultValue="" register={register("saleusletter", { setValueAs: toFloat })} error={errors.saleusletter?.message} showRequiredAsterisk={false} />
           </Box>
 
           <CustomInput

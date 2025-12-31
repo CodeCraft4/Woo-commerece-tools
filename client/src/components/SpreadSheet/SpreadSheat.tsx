@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -294,7 +294,7 @@ const SlideSpread = ({
     }
   };
 
-  // 👇 Auto-reset multipleTextValue when all multiple texts are deleted
+  // ðŸ‘‡ Auto-reset multipleTextValue when all multiple texts are deleted
   useEffect(() => {
     // When user re-selects the multipleTextValue layout
     if (multipleTextValue) {
@@ -323,7 +323,7 @@ const SlideSpread = ({
     setTexts((prev) => {
       const updated = prev.filter((_, i) => i !== index);
 
-      // ✅ If all boxes are deleted → reset layout
+      // âœ… If all boxes are deleted â†’ reset layout
       if (updated.length === 0) {
         setMultipleTextValue(false);
         setSelectedLayout("blank");
@@ -334,7 +334,7 @@ const SlideSpread = ({
   };
 
 
-  // ✅ Place this useEffect HERE (below your state definitions)
+  // âœ… Place this useEffect HERE (below your state definitions)
   useEffect(() => {
     if (editingIndex !== null && editingIndex !== undefined) {
       setTexts((prev) =>
@@ -544,7 +544,7 @@ const SlideSpread = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height: "700px",
+            height: { md: "700px", sm: "600px", xs: "70vh" },
             opacity: isSlideActive ? 1 : 0.6,
             pointerEvents: isSlideActive ? "auto" : "none",
             backgroundColor: bgColor2 ?? "transparent",
@@ -573,9 +573,9 @@ const SlideSpread = ({
               position={{ x: bgRect2.x, y: bgRect2.y }}
               bounds="parent"
               enableUserSelectHack={false}
-              // ✅ only draggable when unlocked AND in edit mode
+              // âœ… only draggable when unlocked AND in edit mode
               disableDragging={!bgEdit2 || bgLocked2}
-              // ✅ only resizable when unlocked AND in edit mode
+              // âœ… only resizable when unlocked AND in edit mode
               enableResizing={
                 bgEdit2 && !bgLocked2
                   ? {
@@ -632,7 +632,7 @@ const SlideSpread = ({
                   backgroundPosition: "center",
                   userSelect: "none",
                 }}
-                // ✅ double-click only works when unlocked
+                // âœ… double-click only works when unlocked
                 onDoubleClick={() => {
                   if (!bgLocked2) setBgEdit2(true);
                 }}
@@ -676,7 +676,7 @@ const SlideSpread = ({
             </Rnd>
           )}
 
-          {/* 🎚 Single selection-based switch (admin only) */}
+          {/* ðŸŽš Single selection-based switch (admin only) */}
           {isAdminEditor && (
             <Paper
               elevation={2}
@@ -869,7 +869,7 @@ const SlideSpread = ({
                             transform: `rotate(${textElement.rotation || 0}deg)`,
                             border: textElement.id === selectedTextId ? "2px solid #1976d2" : "1px dashed #4a7bd5",
                             zIndex: textElement.zIndex,
-                            cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
+                            cursor: textElement.isEditing ? "text" : "move", // âœ… keep move cursor
                           }}
                           onDoubleClick={() => {
                             setSelectedTextId(textElement.id);
@@ -879,7 +879,7 @@ const SlideSpread = ({
                           <TextField
                             variant="standard"
                             value={textElement.value}
-                            className="text-edit"         // ✅ used by cancel when editing
+                            className="text-edit"         // âœ… used by cancel when editing
                             placeholder="Add Text"
                             multiline
                             fullWidth
@@ -900,7 +900,7 @@ const SlideSpread = ({
                                 display: "flex",
                                 alignItems: vAlign,
                                 justifyContent: hAlign,
-                                // ✅ drag by default, only interact with text in edit mode
+                                // âœ… drag by default, only interact with text in edit mode
                                 pointerEvents: textElement.isEditing ? "auto" : "none",
                               },
                             }}
@@ -1269,7 +1269,7 @@ const SlideSpread = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    height: { md: "675px", sm: "575px", xs: "575px" },
+                    height: { md: "675px", sm: "575px", xs: "60vh" },
                     width: { md: "470px", sm: "370px", xs: "90%" },
                     border: "3px dashed #3a7bd5",
                     position: "absolute",
@@ -1734,7 +1734,7 @@ const SlideSpread = ({
                               WebkitClipPath: el.clipPath || "none",
                             }}
                           />
-                          {/* ✅ Only show upload icon when this frame is editable (NOT when locked) */}
+                          {/* âœ… Only show upload icon when this frame is editable (NOT when locked) */}
                           {isEditable && !isLocked && (
                             <Box
                               sx={{
@@ -1797,14 +1797,14 @@ const SlideSpread = ({
                           height: isActive ? 'auto' : te.height,
                           zIndex: (te.zIndex ?? 1) + 1000,
 
-                          // ✅ easiest way to center the block itself
+                          // âœ… easiest way to center the block itself
                           display: "grid",
                           placeItems: "center",
 
-                          // ✅ cursor
+                          // âœ… cursor
                           cursor: !isEditable ? "not-allowed" : (isActive ? "text" : "pointer"),
 
-                          // ✅ border
+                          // âœ… border
                           border: isEditable
                             ? (isActive ? "1px dashed #1976d2" : "1px dashed rgba(25,118,210,.35)")
                             : "none",
@@ -1846,7 +1846,7 @@ const SlideSpread = ({
                             width: "100%",
                             height: "100%",
 
-                            // ✅ make sure both single & multiline inputs are centered
+                            // âœ… make sure both single & multiline inputs are centered
                             "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                               textAlign: "center",
                               textAlignLast: "center",
@@ -1990,7 +1990,7 @@ const SlideSpread = ({
                               height: "100%",
                             }}
                           >
-                            {/* ✅ Close Button */}
+                            {/* âœ… Close Button */}
                             <IconButton
                               size="small"
                               className="no-drag"
@@ -2061,7 +2061,7 @@ const SlideSpread = ({
                                 zIndex: textElement.zIndex
                               }}
                             >
-                              {/* ✅ Editable Text */}
+                              {/* âœ… Editable Text */}
                               <TextField
                                 variant="standard"
                                 value={textElement.value}
@@ -2265,7 +2265,7 @@ const SlideSpread = ({
                   }}
                 >
                   <motion.div
-                    key={selectedVideoUrl} // ✅ unique key triggers re-animation on change
+                    key={selectedVideoUrl} // âœ… unique key triggers re-animation on change
                     initial={{ opacity: 0, x: 100 }} // start off-screen (right)
                     animate={{ opacity: 1, x: 0 }} // slide in
                     exit={{ opacity: 0, x: -100 }} // slide out left
@@ -2533,7 +2533,7 @@ const SlideSpread = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    height: { md: "675px", sm: "575px", xs: '575px' },
+                    height: { md: "675px", sm: "575px", xs: "60vh" },
                     width: { md: "470px", sm: "370px", xs: "100%" },
                     border: "3px dashed #3a7bd5",
                     bgcolor: "#6183cc36",
@@ -2714,7 +2714,7 @@ const SlideSpread = ({
                               );
                             }
 
-                            // ✅ Then select new box
+                            // âœ… Then select new box
                             setEditingIndex(index);
                             setFontSize(textObj.fontSize);
                             setFontFamily(textObj.fontFamily);
@@ -2815,12 +2815,12 @@ const SlideSpread = ({
                   style={{
                     zIndex: 10,
                     border: "2px solid #1976d2",
-                    display: "flex", // ✅ make content fill
+                    display: "flex", // âœ… make content fill
                     alignItems: "stretch",
                     justifyContent: "stretch",
                   }}
                 >
-                  {/* ✅ Ensure the container fills RND box */}
+                  {/* âœ… Ensure the container fills RND box */}
                   <Box
                     sx={{
                       position: "relative",
@@ -2829,7 +2829,7 @@ const SlideSpread = ({
                       display: "flex",
                     }}
                   >
-                    {/* ✅ Make image fill fully */}
+                    {/* âœ… Make image fill fully */}
                     <Box
                       component="img"
                       src={`${selectedAIimageUrl2}`}
@@ -2876,8 +2876,8 @@ const SlideSpread = ({
                     size={{ width: sticker.width, height: sticker.height }}
                     position={{ x: sticker.x, y: sticker.y }}
                     bounds="parent"
-                    enableUserSelectHack={false} // ✅ allows touch events
-                    cancel=".non-draggable" // ✅ prevents RND drag hijack on buttons
+                    enableUserSelectHack={false} // âœ… allows touch events
+                    cancel=".non-draggable" // âœ… prevents RND drag hijack on buttons
                     onDragStop={(_, d) =>
                       updateSticker2(index, {
                         x: d.x,
@@ -2912,7 +2912,7 @@ const SlideSpread = ({
                     style={{
                       zIndex: sticker.zIndex,
                       position: "absolute",
-                      touchAction: "none", // ✅ allow touch drag + taps
+                      touchAction: "none", // âœ… allow touch drag + taps
                     }}
                   >
                     <Box
@@ -2939,7 +2939,7 @@ const SlideSpread = ({
 
                       {/* Close Button */}
                       <IconButton
-                        className="non-draggable" // ✅ prevent drag capture
+                        className="non-draggable" // âœ… prevent drag capture
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -3006,3 +3006,4 @@ const SlideSpread = ({
 };
 
 export default SlideSpread;
+

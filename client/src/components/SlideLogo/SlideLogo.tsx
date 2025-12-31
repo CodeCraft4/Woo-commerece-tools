@@ -1,4 +1,4 @@
-// SlideLogo.tsx
+﻿// SlideLogo.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
@@ -258,7 +258,7 @@ interface SlideLogoProps {
   togglePopup?: (name: string | null) => void;
   activePopup?: string | null;
   activeIndex?: number;
-  addTextRight?: number; // ⬅ comes from your popup counter
+  addTextRight?: number; // â¬… comes from your popup counter
   rightBox?: boolean;
   isAdminEditor?: boolean;
 }
@@ -268,7 +268,7 @@ const SlideLogo = ({
   activeIndex,
   rightBox,
   isAdminEditor,
-  addTextRight, // ⬅ receive it here
+  addTextRight, // â¬… receive it here
 }: SlideLogoProps) => {
 
 
@@ -657,7 +657,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
     if (!currentSelection) return false;
     if (currentSelection.type === "text") {
       const t: any = (textElements4 || []).find((x: any) => x.id === currentSelection.id);
-      return !!t?.locked; // ✅ include text
+      return !!t?.locked; // âœ… include text
     }
     if (currentSelection.type === "image") {
       const i: any = draggableImages4.find((x) => x.id === currentSelection.id);
@@ -772,7 +772,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
         zIndex: 10,
         p: 2,
         position: "relative",
-        height: "700px",
+        height: { md: "700px", sm: "600px", xs: "70vh" },
         opacity: isSlideActive4 ? 1 : 0.6,
         pointerEvents: isSlideActive4 ? "auto" : "none",
         backgroundColor:bgColor4 ?? "transparent",
@@ -798,9 +798,9 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
           position={{ x: bgRect4.x, y: bgRect4.y }}
           bounds="parent"
           enableUserSelectHack={false}
-          // ✅ only draggable when unlocked AND in edit mode
+          // âœ… only draggable when unlocked AND in edit mode
           disableDragging={!bgEdit4 || bgLocked4}
-          // ✅ only resizable when unlocked AND in edit mode
+          // âœ… only resizable when unlocked AND in edit mode
           enableResizing={
             bgEdit4 && !bgLocked4
               ? {
@@ -857,7 +857,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
               backgroundPosition: "center",
               userSelect: "none",
             }}
-            // ✅ double-click only works when unlocked
+            // âœ… double-click only works when unlocked
             onDoubleClick={() => {
               if (!bgLocked4) setBgEdit4(true);
             }}
@@ -1079,7 +1079,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
                             transform: `rotate(${textElement.rotation || 0}deg)`,
                             border: textElement.id === selectedTextId4 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
                             zIndex: textElement.zIndex,
-                            cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
+                            cursor: textElement.isEditing ? "text" : "move", // âœ… keep move cursor
                           }}
                           onDoubleClick={() => {
                             setSelectedTextId4(textElement.id);
@@ -1089,7 +1089,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
                           <TextField
                             variant="standard"
                             value={textElement.value}
-                            className="text-edit"         // ✅ used by cancel when editing
+                            className="text-edit"         // âœ… used by cancel when editing
                             placeholder="Add Text"
                             multiline
                             fullWidth
@@ -1110,7 +1110,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
                                 display: "flex",
                                 alignItems: vAlign,
                                 justifyContent: hAlign,
-                                // ✅ drag by default, only interact with text in edit mode
+                                // âœ… drag by default, only interact with text in edit mode
                                 pointerEvents: textElement.isEditing ? "auto" : "none",
                               },
                             }}
@@ -1404,7 +1404,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            height: { md: "675px", sm: "575px", xs: "575px" },
+            height: { md: "675px", sm: "575px", xs: "60vh" },
             width: { md: "470px", sm: "370px", xs: "90%" },
             border: "3px dashed #3a7bd5",
             position: "absolute",
@@ -1741,3 +1741,4 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
 };
 
 export default SlideLogo;
+

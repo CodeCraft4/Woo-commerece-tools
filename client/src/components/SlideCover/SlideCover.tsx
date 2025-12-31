@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+﻿import { useEffect, useRef, useState, useMemo } from "react";
 import {
   Box,
   IconButton,
@@ -464,7 +464,7 @@ const SlideCover = ({
 
       updated[editingIndex] = {
         ...te,
-        // only overwrite when a value exists; otherwise keep element’s own value
+        // only overwrite when a value exists; otherwise keep elementâ€™s own value
         fontSize: fontSize1 ?? te.fontSize,
         fontFamily: fontFamily1 ?? te.fontFamily,
         color: fontColor1 ?? te.color,
@@ -475,7 +475,7 @@ const SlideCover = ({
       return { ...prev, textElements: updated };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fontSize1, fontFamily1, fontColor1, fontWeight1]); // ← removed editingIndex
+  }, [fontSize1, fontFamily1, fontColor1, fontWeight1]); // â† removed editingIndex
 
   /* ------------------ init draggable state for user images (unchanged) ------------------ */
   useEffect(() => {
@@ -770,7 +770,7 @@ const SlideCover = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height: "700px",
+            height: { md: "700px", sm: "600px", xs: "70vh" },
             width: "100%",
             opacity: isSlideActive1 ? 1 : 0.6,
             pointerEvents: isSlideActive1 ? "auto" : "none",
@@ -793,9 +793,9 @@ const SlideCover = ({
               position={{ x: bgRect1.x, y: bgRect1.y }}
               bounds="parent"
               enableUserSelectHack={false}
-              // ✅ only draggable when unlocked AND in edit mode
+              // âœ… only draggable when unlocked AND in edit mode
               disableDragging={!bgEdit1 || bgLocked1}
-              // ✅ only resizable when unlocked AND in edit mode
+              // âœ… only resizable when unlocked AND in edit mode
               enableResizing={
                 bgEdit1 && !bgLocked1
                   ? {
@@ -852,7 +852,7 @@ const SlideCover = ({
                   backgroundPosition: "center",
                   userSelect: "none",
                 }}
-                // ✅ double-click only works when unlocked
+                // âœ… double-click only works when unlocked
                 onDoubleClick={() => {
                   if (!bgLocked1) setBgEdit1(true);
                 }}
@@ -968,7 +968,7 @@ const SlideCover = ({
                             WebkitClipPath: el.clipPath || "none",
                           }}
                         />
-                        {/* ✅ Only show upload icon when this frame is editable (NOT when locked) */}
+                        {/* âœ… Only show upload icon when this frame is editable (NOT when locked) */}
                         {isEditable && !isLocked && (
                           <Box
                             sx={{
@@ -1067,14 +1067,14 @@ const SlideCover = ({
                         height: 'auto',
                         zIndex: (te.zIndex ?? 1) + 1000,
 
-                        // ✅ easiest way to center the block itself
+                        // âœ… easiest way to center the block itself
                         display: "grid",
                         placeItems: "center",
 
-                        // ✅ cursor
+                        // âœ… cursor
                         cursor: !isEditable ? "not-allowed" : (isActive ? "text" : "pointer"),
 
-                        // ✅ border
+                        // âœ… border
                         border: isEditable
                           ? (isActive ? "1px dashed #1976d2" : "1px dashed rgba(25,118,210,.35)")
                           : "none",
@@ -1116,7 +1116,7 @@ const SlideCover = ({
                           width: "100%",
                           height: "100%",
 
-                          // ✅ make sure both single & multiline inputs are centered
+                          // âœ… make sure both single & multiline inputs are centered
                           "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                             textAlign: "center",
                             textAlignLast: "center",
@@ -1297,7 +1297,7 @@ const SlideCover = ({
                             transform: `rotate(${textElement.rotation || 0}deg)`,
                             border: textElement.id === selectedTextId1 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
                             zIndex: textElement.zIndex,
-                            cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
+                            cursor: textElement.isEditing ? "text" : "move", // âœ… keep move cursor
                           }}
                           onDoubleClick={() => {
                             setSelectedTextId1(textElement.id);
@@ -1307,7 +1307,7 @@ const SlideCover = ({
                           <TextField
                             variant="standard"
                             value={textElement.value}
-                            className="text-edit"         // ✅ used by cancel when editing
+                            className="text-edit"         // âœ… used by cancel when editing
                             placeholder="Add Text"
                             multiline
                             fullWidth
@@ -1328,7 +1328,7 @@ const SlideCover = ({
                                 display: "flex",
                                 alignItems: vAlign,
                                 justifyContent: hAlign,
-                                // ✅ drag by default, only interact with text in edit mode
+                                // âœ… drag by default, only interact with text in edit mode
                                 pointerEvents: textElement.isEditing ? "auto" : "none",
                               },
                             }}
@@ -1698,7 +1698,7 @@ const SlideCover = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    height: { md: "675px", sm: "575px", xs: "575px" },
+                    height: { md: "675px", sm: "575px", xs: "60vh" },
                     width: { md: "470px", sm: "370px", xs: "90%" },
                     border: "3px dashed #3a7bd5",
                     position: "absolute",
@@ -2123,3 +2123,4 @@ const SlideCover = ({
 };
 
 export default SlideCover;
+
