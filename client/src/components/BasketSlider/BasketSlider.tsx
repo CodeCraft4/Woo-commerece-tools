@@ -193,7 +193,7 @@ const BasketSlider = ({ title, description, brandSlider, saleSlide, clothing }: 
                   <BasketCard
                     id={cate.id}
                     openModal={() => handleOpenModal(cate)}
-                    title={cate.cardname}
+                    title={cate.cardname || cate.title}
                     poster={cate?.img_url || cate?.imageurl || cate?.lastpageimageurl}
                     price={cate.actualprice}
                     saleprice={cate.saleprice}

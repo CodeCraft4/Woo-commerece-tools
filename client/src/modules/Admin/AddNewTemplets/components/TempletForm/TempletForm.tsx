@@ -545,36 +545,28 @@ const TempletForm = ({ editProduct }: Props) => {
                             label="Sale Price"
                             placeholder="Enter your sale price"
                             defaultValue=""
-                            register={register("saleprice", {
-                                required: false,
-                            })}
+                            register={register("saleprice")}
                             error={errors.saleprice?.message}
                         />
                         <CustomInput
                             label="Sale A4 Price"
                             placeholder="Sale A4 price"
                             defaultValue=""
-                            register={register("salea4price", {
-                                required: false,
-                            })}
+                            register={register("salea4price")}
                             error={errors.salea4price?.message}
                         />
                         <CustomInput
                             label="Sale A5 Price"
                             placeholder="Sale A5 Price"
                             defaultValue=""
-                            register={register("salea5price", {
-                                required: false,
-                            })}
+                            register={register("salea5price")}
                             error={errors.salea5price?.message}
                         />
                         <CustomInput
                             label="US Letter"
                             placeholder="US letter"
                             defaultValue=""
-                            register={register("saleusletter", {
-                                required: false,
-                            })}
+                            register={register("saleusletter")}
                             error={errors.saleusletter?.message}
                         />
                     </Box>
