@@ -171,6 +171,10 @@ export type PolygonLayoutV2 = {
   };
 };
 
+type BuildOptions = {
+  onlySelectedImages?: boolean; // ✅ new
+};
+
 /* -------------------------- Optional: merge helper ------------------------- */
 
 export const mergeBuckets = <T>(b?: Bucket<T>) =>
@@ -178,7 +182,7 @@ export const mergeBuckets = <T>(b?: Bucket<T>) =>
 
 /* ------------------------------ Normalizer ------------------------------ */
 
-const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
+const normalizeSlideV2 = (ctx: any, opts?: BuildOptions): SlidePayloadV2 => {
   const rect = pick<any>(
     ctx,
     ["bgRect1", "bgRect2", "bgRect3", "bgRect4", "bgRect"],
@@ -408,8 +412,20 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
     []
   );
 
-  // ✅ SAVE ALL images
-  const userImagesAll: UserImage[] = (imagesRaw ?? []).map((img: any) => ({
+  // ✅ IMPORTANT: if selection empty, treat as "all selected"
+  const selectedFinalIds =
+    Array.isArray(selectedImg) && selectedImg.length > 0
+      ? selectedImg
+      : (imagesRaw ?? []).map((i: any) => i.id);
+
+  const selectedSet = new Set(selectedFinalIds);
+
+  // ✅ Filter ONLY for DB save (optional)
+  const imagesForSave = opts?.onlySelectedImages
+    ? (imagesRaw ?? []).filter((img: any) => selectedSet.has(img.id))
+    : imagesRaw ?? [];
+
+  const userImagesAll: UserImage[] = (imagesForSave ?? []).map((img: any) => ({
     id: img.id,
     src: img.src,
     x: img.x,
@@ -473,13 +489,6 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
     locked: !!t.locked,
   }));
 
-  const user = {
-    images: splitBucket<UserImage>(userImagesAll),
-    stickers: splitBucket<Sticker>(userStickersAll),
-    freeTexts,
-    selectedImageIds: Array.isArray(selectedImg) ? selectedImg : [],
-  };
-
   const selectedVideoUrl = pick<string | null>(
     ctx,
     [
@@ -491,6 +500,14 @@ const normalizeSlideV2 = (ctx: any): SlidePayloadV2 => {
     ],
     null
   );
+
+  const user = {
+    images: splitBucket<UserImage>(userImagesAll),
+    stickers: splitBucket<Sticker>(userStickersAll),
+    freeTexts,
+    selectedImageIds: selectedFinalIds, // ✅ keep consistent
+  };
+
   const qrPos = pick<any>(
     ctx,
     ["qrPosition1", "qrPosition2", "qrPosition3", "qrPosition4", "qrPosition"],
@@ -588,14 +605,15 @@ export const buildPolygonLayout = (
   s1: any,
   s2: any,
   s3: any,
-  s4: any
+  s4: any,
+  opts?: BuildOptions
 ): PolygonLayoutV2 => ({
   version: 2 as const,
   slides: {
-    slide1: normalizeSlideV2(s1),
-    slide2: normalizeSlideV2(s2),
-    slide3: normalizeSlideV2(s3),
-    slide4: normalizeSlideV2(s4),
+    slide1: normalizeSlideV2(s1, opts),
+    slide2: normalizeSlideV2(s2, opts),
+    slide3: normalizeSlideV2(s3, opts),
+    slide4: normalizeSlideV2(s4, opts),
   },
 });
 
@@ -617,110 +635,110 @@ export async function captureNodeToPng(
 const isV2Layout = (layout: any): layout is PolygonLayoutV2 =>
   !!layout && layout.version === 2 && !!layout.slides?.slide1;
 
-function applySlideV2ToContext(
-  payload: SlidePayloadV2,
-  slideCtx: any,
-  n: 1 | 2 | 3 | 4
-) {
-  call(slideCtx, `setBgColor${n}`, payload.bg?.color ?? "#fff");
-  call(slideCtx, `setBgImage${n}`, payload.bg?.image ?? "");
-  call(slideCtx, `setBgRect${n}`, payload.bg?.rect ?? null);
+// function applySlideV2ToContext(
+//   payload: SlidePayloadV2,
+//   slideCtx: any,
+//   n: 1 | 2 | 3 | 4
+// ) {
+//   call(slideCtx, `setBgColor${n}`, payload.bg?.color ?? "#fff");
+//   call(slideCtx, `setBgImage${n}`, payload.bg?.image ?? "");
+//   call(slideCtx, `setBgRect${n}`, payload.bg?.rect ?? null);
 
-  call(
-    slideCtx,
-    `setShowOneTextRightSideBox${n}`,
-    !!payload.flags?.showOneText
-  );
-  call(slideCtx, `setMultipleTextValue${n}`, !!payload.flags?.multipleText);
+//   call(
+//     slideCtx,
+//     `setShowOneTextRightSideBox${n}`,
+//     !!payload.flags?.showOneText
+//   );
+//   call(slideCtx, `setMultipleTextValue${n}`, !!payload.flags?.multipleText);
 
-  call(slideCtx, `setOneTextValue${n}`, payload.oneText?.value ?? "");
-  call(slideCtx, `setFontSize${n}`, payload.oneText?.fontSize);
-  call(slideCtx, `setFontWeight${n}`, payload.oneText?.fontWeight);
-  call(slideCtx, `setFontColor${n}`, payload.oneText?.fontColor);
-  call(slideCtx, `setFontFamily${n}`, payload.oneText?.fontFamily);
-  call(slideCtx, `setTextAlign${n}`, payload.oneText?.textAlign);
-  call(slideCtx, `setVerticalAlign${n}`, payload.oneText?.verticalAlign);
-  call(slideCtx, `setRotation${n}`, payload.oneText?.rotation ?? 0);
-  call(slideCtx, `setLineHeight${n}`, payload.oneText?.lineHeight);
-  call(slideCtx, `setLetterSpacing${n}`, payload.oneText?.letterSpacing);
+//   call(slideCtx, `setOneTextValue${n}`, payload.oneText?.value ?? "");
+//   call(slideCtx, `setFontSize${n}`, payload.oneText?.fontSize);
+//   call(slideCtx, `setFontWeight${n}`, payload.oneText?.fontWeight);
+//   call(slideCtx, `setFontColor${n}`, payload.oneText?.fontColor);
+//   call(slideCtx, `setFontFamily${n}`, payload.oneText?.fontFamily);
+//   call(slideCtx, `setTextAlign${n}`, payload.oneText?.textAlign);
+//   call(slideCtx, `setVerticalAlign${n}`, payload.oneText?.verticalAlign);
+//   call(slideCtx, `setRotation${n}`, payload.oneText?.rotation ?? 0);
+//   call(slideCtx, `setLineHeight${n}`, payload.oneText?.lineHeight);
+//   call(slideCtx, `setLetterSpacing${n}`, payload.oneText?.letterSpacing);
 
-  call(
-    slideCtx,
-    `setTexts${n}`,
-    Array.isArray(payload.multipleTexts) ? payload.multipleTexts : []
-  );
-  call(
-    slideCtx,
-    `setTextElements${n}`,
-    Array.isArray(payload.user?.freeTexts) ? payload.user.freeTexts : []
-  );
+//   call(
+//     slideCtx,
+//     `setTexts${n}`,
+//     Array.isArray(payload.multipleTexts) ? payload.multipleTexts : []
+//   );
+//   call(
+//     slideCtx,
+//     `setTextElements${n}`,
+//     Array.isArray(payload.user?.freeTexts) ? payload.user.freeTexts : []
+//   );
 
-  const images = mergeBuckets(payload.user?.images);
-  call(slideCtx, `setDraggableImages${n}`, Array.isArray(images) ? images : []);
+//   const images = mergeBuckets(payload.user?.images);
+//   call(slideCtx, `setDraggableImages${n}`, Array.isArray(images) ? images : []);
 
-  // ✅ If selection empty, auto-select all so UI renders content
-  const selected = payload.user?.selectedImageIds ?? [];
-  const selectedFinal =
-    Array.isArray(selected) && selected.length > 0
-      ? selected
-      : (images ?? []).map((i: any) => i.id);
+//   // ✅ If selection empty, auto-select all so UI renders content
+//   const selected = payload.user?.selectedImageIds ?? [];
+//   const selectedFinal =
+//     Array.isArray(selected) && selected.length > 0
+//       ? selected
+//       : (images ?? []).map((i: any) => i.id);
 
-  call(slideCtx, `setSelectedImg${n}`, selectedFinal);
+//   call(slideCtx, `setSelectedImg${n}`, selectedFinal);
 
-  const stickers = mergeBuckets(payload.user?.stickers);
-  call(
-    slideCtx,
-    `setSelectedStickers${n}`,
-    Array.isArray(stickers) ? stickers : []
-  );
+//   const stickers = mergeBuckets(payload.user?.stickers);
+//   call(
+//     slideCtx,
+//     `setSelectedStickers${n}`,
+//     Array.isArray(stickers) ? stickers : []
+//   );
 
-  const bgFrames = mergeBuckets(payload.layout?.bgFrames);
-  const layoutStickers = mergeBuckets(payload.layout?.stickers);
-  const staticText = payload.layout?.staticText ?? [];
-  call(slideCtx, `setLayout${n}`, {
-    elements: bgFrames,
-    stickers: layoutStickers,
-    textElements: staticText,
-  });
+//   const bgFrames = mergeBuckets(payload.layout?.bgFrames);
+//   const layoutStickers = mergeBuckets(payload.layout?.stickers);
+//   const staticText = payload.layout?.staticText ?? [];
+//   call(slideCtx, `setLayout${n}`, {
+//     elements: bgFrames,
+//     stickers: layoutStickers,
+//     textElements: staticText,
+//   });
 
-  call(slideCtx, `setSelectedVideoUrl${n}`, payload.qrVideo?.url ?? "");
-  call(slideCtx, `setQrPosition${n}`, {
-    x: payload.qrVideo?.x ?? slideCtx?.[`qrPosition${n}`]?.x,
-    y: payload.qrVideo?.y ?? slideCtx?.[`qrPosition${n}`]?.y,
-    width: payload.qrVideo?.width ?? slideCtx?.[`qrPosition${n}`]?.width,
-    height: payload.qrVideo?.height ?? slideCtx?.[`qrPosition${n}`]?.height,
-    zIndex: payload.qrVideo?.zIndex ?? slideCtx?.[`qrPosition${n}`]?.zIndex,
-    url: payload.qrVideo?.url ?? slideCtx?.[`qrPosition${n}`]?.url,
-  });
+//   call(slideCtx, `setSelectedVideoUrl${n}`, payload.qrVideo?.url ?? "");
+//   call(slideCtx, `setQrPosition${n}`, {
+//     x: payload.qrVideo?.x ?? slideCtx?.[`qrPosition${n}`]?.x,
+//     y: payload.qrVideo?.y ?? slideCtx?.[`qrPosition${n}`]?.y,
+//     width: payload.qrVideo?.width ?? slideCtx?.[`qrPosition${n}`]?.width,
+//     height: payload.qrVideo?.height ?? slideCtx?.[`qrPosition${n}`]?.height,
+//     zIndex: payload.qrVideo?.zIndex ?? slideCtx?.[`qrPosition${n}`]?.zIndex,
+//     url: payload.qrVideo?.url ?? slideCtx?.[`qrPosition${n}`]?.url,
+//   });
 
-  call(slideCtx, `setSelectedAudioUrl${n}`, payload.qrAudio?.url ?? "");
-  call(slideCtx, `setQrAudioPosition${n}`, {
-    x: payload.qrAudio?.x ?? slideCtx?.[`qrAudioPosition${n}`]?.x,
-    y: payload.qrAudio?.y ?? slideCtx?.[`qrAudioPosition${n}`]?.y,
-    width: payload.qrAudio?.width ?? slideCtx?.[`qrAudioPosition${n}`]?.width,
-    height:
-      payload.qrAudio?.height ?? slideCtx?.[`qrAudioPosition${n}`]?.height,
-    zIndex:
-      payload.qrAudio?.zIndex ?? slideCtx?.[`qrAudioPosition${n}`]?.zIndex,
-    url: payload.qrAudio?.url ?? slideCtx?.[`qrAudioPosition${n}`]?.url,
-  });
+//   call(slideCtx, `setSelectedAudioUrl${n}`, payload.qrAudio?.url ?? "");
+//   call(slideCtx, `setQrAudioPosition${n}`, {
+//     x: payload.qrAudio?.x ?? slideCtx?.[`qrAudioPosition${n}`]?.x,
+//     y: payload.qrAudio?.y ?? slideCtx?.[`qrAudioPosition${n}`]?.y,
+//     width: payload.qrAudio?.width ?? slideCtx?.[`qrAudioPosition${n}`]?.width,
+//     height:
+//       payload.qrAudio?.height ?? slideCtx?.[`qrAudioPosition${n}`]?.height,
+//     zIndex:
+//       payload.qrAudio?.zIndex ?? slideCtx?.[`qrAudioPosition${n}`]?.zIndex,
+//     url: payload.qrAudio?.url ?? slideCtx?.[`qrAudioPosition${n}`]?.url,
+//   });
 
-  const aiEnabled = !!payload.flags?.isAIImage;
-  call(slideCtx, `setIsAIimage${n}`, aiEnabled);
-  call(slideCtx, `setSelectedAIimageUrl${n}`, payload.ai?.imageUrl ?? "");
-  call(
-    slideCtx,
-    `setAimage${n}`,
-    payload.ai
-      ? {
-          x: payload.ai.x,
-          y: payload.ai.y,
-          width: payload.ai.width,
-          height: payload.ai.height,
-        }
-      : null
-  );
-}
+//   const aiEnabled = !!payload.flags?.isAIImage;
+//   call(slideCtx, `setIsAIimage${n}`, aiEnabled);
+//   call(slideCtx, `setSelectedAIimageUrl${n}`, payload.ai?.imageUrl ?? "");
+//   call(
+//     slideCtx,
+//     `setAimage${n}`,
+//     payload.ai
+//       ? {
+//           x: payload.ai.x,
+//           y: payload.ai.y,
+//           width: payload.ai.width,
+//           height: payload.ai.height,
+//         }
+//       : null
+//   );
+// }
 
 export function applyPolygonLayoutToContexts(
   polygonlayout: any,
@@ -823,7 +841,7 @@ export function hasAnyDesignV2(layout: any): boolean {
   };
 
   return slides.some(hasSlideContent);
-};
+}
 /**
 + * "Meaningful" for v2 means it actually contains design content.
 + * This prevents empty `{version:2, slides:{...}}` from overwriting real designs.
@@ -838,3 +856,132 @@ export const isMeaningfulPolygonLayout = (layout: any): boolean => {
 
 export const pickPolygonLayout = (...candidates: any[]) =>
   candidates.find(isMeaningfulPolygonLayout) ?? null;
+
+const suffixFor = (n: 1 | 2 | 3 | 4) => (n === 2 ? "" : String(n));
+const fnName = (base: string, n: 1 | 2 | 3 | 4) => `${base}${suffixFor(n)}`;
+
+const getCtxProp = (ctx: any, base: string, n: 1 | 2 | 3 | 4) =>
+  ctx?.[`${base}${suffixFor(n)}`] ?? ctx?.[base];
+
+function applySlideV2ToContext(
+  payload: SlidePayloadV2,
+  slideCtx: any,
+  n: 1 | 2 | 3 | 4
+) {
+  const callFn = (base: string, ...args: any[]) =>
+    call(slideCtx, fnName(base, n), ...args);
+  const callFnAlt = (bases: string[], ...args: any[]) => {
+    for (const b of bases) {
+      const name = n === 2 ? b : `${b}${n}`;
+      if (typeof slideCtx?.[name] === "function") {
+        slideCtx[name](...args);
+        return;
+      }
+    }
+  };
+
+  // BG
+  callFn("setBgColor", payload.bg?.color ?? "#fff");
+  callFn("setBgImage", payload.bg?.image ?? "");
+  callFn("setBgRect", payload.bg?.rect ?? null);
+  callFn("setBgLocked", !!payload.bg?.locked);
+
+  // Flags
+  callFn("setShowOneTextRightSideBox", !!payload.flags?.showOneText);
+  callFn("setMultipleTextValue", !!payload.flags?.multipleText);
+
+  // OneText
+  callFn("setOneTextValue", payload.oneText?.value ?? "");
+  callFn("setFontSize", payload.oneText?.fontSize);
+  callFn("setFontWeight", payload.oneText?.fontWeight);
+  callFn("setFontColor", payload.oneText?.fontColor);
+  callFn("setFontFamily", payload.oneText?.fontFamily);
+  callFn("setTextAlign", payload.oneText?.textAlign);
+  callFn("setVerticalAlign", payload.oneText?.verticalAlign);
+  callFn("setRotation", payload.oneText?.rotation ?? 0);
+  callFn("setLineHeight", payload.oneText?.lineHeight);
+  callFn("setLetterSpacing", payload.oneText?.letterSpacing);
+
+  // Multi texts + free texts
+  callFn(
+    "setTexts",
+    Array.isArray(payload.multipleTexts) ? payload.multipleTexts : []
+  );
+  callFn(
+    "setTextElements",
+    Array.isArray(payload.user?.freeTexts) ? payload.user.freeTexts : []
+  );
+
+  // Images
+  const images = mergeBuckets(payload.user?.images);
+  callFn("setDraggableImages", Array.isArray(images) ? images : []);
+
+  // ✅ Selection (THIS is why images weren't showing)
+  const selected = payload.user?.selectedImageIds ?? [];
+  const selectedFinal =
+    Array.isArray(selected) && selected.length > 0
+      ? selected
+      : (images ?? []).map((i: any) => i.id);
+
+  // contexts naming:
+  // slide1: setSelectedImage1
+  // slide2: setSelectedImage
+  // slide3: setSelectedImage3
+  // slide4: setSelectedImage4
+  callFnAlt(["setSelectedImage"], selectedFinal);
+  callFnAlt(["setSelectedImg"], selectedFinal); // keep if any old ctx has this
+
+  // Stickers
+  const stickers = mergeBuckets(payload.user?.stickers);
+  callFn("setSelectedStickers", Array.isArray(stickers) ? stickers : []);
+
+  // Layout frames + layout stickers + static text
+  const bgFrames = mergeBuckets(payload.layout?.bgFrames);
+  const layoutStickers = mergeBuckets(payload.layout?.stickers);
+  const staticText = payload.layout?.staticText ?? [];
+  callFn("setLayout", {
+    elements: bgFrames,
+    stickers: layoutStickers,
+    textElements: staticText,
+  });
+
+  // QR Video
+  callFnAlt(["setSelectedVideoUrl"], payload.qrVideo?.url ?? null);
+  const qrPosPrev = getCtxProp(slideCtx, "qrPosition", n) ?? {};
+  callFnAlt(["setQrPosition"], {
+    x: payload.qrVideo?.x ?? qrPosPrev?.x,
+    y: payload.qrVideo?.y ?? qrPosPrev?.y,
+    width: payload.qrVideo?.width ?? qrPosPrev?.width,
+    height: payload.qrVideo?.height ?? qrPosPrev?.height,
+    zIndex: payload.qrVideo?.zIndex ?? qrPosPrev?.zIndex,
+    url: payload.qrVideo?.url ?? qrPosPrev?.url,
+  });
+
+  // QR Audio
+  callFnAlt(["setSelectedAudioUrl"], payload.qrAudio?.url ?? null);
+  const qrAudioPrev = getCtxProp(slideCtx, "qrAudioPosition", n) ?? {};
+  callFnAlt(["setQrAudioPosition"], {
+    x: payload.qrAudio?.x ?? qrAudioPrev?.x,
+    y: payload.qrAudio?.y ?? qrAudioPrev?.y,
+    width: payload.qrAudio?.width ?? qrAudioPrev?.width,
+    height: payload.qrAudio?.height ?? qrAudioPrev?.height,
+    zIndex: payload.qrAudio?.zIndex ?? qrAudioPrev?.zIndex,
+    url: payload.qrAudio?.url ?? qrAudioPrev?.url,
+  });
+
+  // AI
+  const aiEnabled = !!payload.flags?.isAIImage;
+  callFn("setIsAIimage", aiEnabled);
+  callFn("setSelectedAIimageUrl", payload.ai?.imageUrl ?? "");
+  callFn(
+    "setAimage",
+    payload.ai
+      ? {
+          x: payload.ai.x,
+          y: payload.ai.y,
+          width: payload.ai.width,
+          height: payload.ai.height,
+        }
+      : null
+  );
+}

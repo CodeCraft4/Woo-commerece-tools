@@ -84,7 +84,7 @@ type LayoutNorm = {
   textElements: TextEl[];
 };
 
-const toElement = (obj: any, i: number, editable: boolean, prefix = "bg"): ElementEl => ({
+export const toElement = (obj: any, i: number, editable: boolean, prefix = "bg"): ElementEl => ({
   id: idOrIdx(obj, i, prefix),
   x: num(obj?.x, 0),
   y: num(obj?.y, 0),
@@ -97,7 +97,7 @@ const toElement = (obj: any, i: number, editable: boolean, prefix = "bg"): Eleme
   locked: bool(obj?.locked, !editable),
   clipPath: obj?.clipPath ?? obj?.shapePath ?? null,
 });
-const toSticker = (obj: any, i: number, editable: boolean, prefix = "st"): StickerEl => ({
+export const toSticker = (obj: any, i: number, editable: boolean, prefix = "st"): StickerEl => ({
   id: idOrIdx(obj, i, prefix),
   x: num(obj?.x, 0),
   y: num(obj?.y, 0),
@@ -109,7 +109,7 @@ const toSticker = (obj: any, i: number, editable: boolean, prefix = "st"): Stick
   isEditable: editable,
   locked: bool(obj?.locked, !editable),
 });
-const toText = (obj: any, i: number, editable: boolean, prefix = "te"): TextEl => {
+export const toText = (obj: any, i: number, editable: boolean, prefix = "te"): TextEl => {
   const tAlign = str(obj?.textAlign, "center");
   const vAlign = str(obj?.verticalAlign, "center");
   return {
@@ -132,7 +132,7 @@ const toText = (obj: any, i: number, editable: boolean, prefix = "te"): TextEl =
   };
 };
 
-function normalizeSlide(slide: any): {
+export function normalizeSlide(slide: any): {
   bgColor: string | null;
   bgImage: string | null;
   layout: LayoutNorm;
@@ -140,7 +140,7 @@ function normalizeSlide(slide: any): {
   if (!slide || typeof slide !== "object") {
     return { bgColor: null, bgImage: null, layout: { elements: [], stickers: [], textElements: [] } };
   }
-  // const layout = slide.layout ?? {};
+  const layout = slide.layout ?? {};
   const user = slide.user ?? {};
   const bg = slide.bg ?? {};
   const flags = slide.flags ?? {};
@@ -151,8 +151,8 @@ function normalizeSlide(slide: any): {
   const out: LayoutNorm = { elements: [], stickers: [], textElements: [] };
 
   // bg frames (locked/editable)
-  // out.elements.push(...(layout?.bgFrames?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "bg-locked")));
-  // out.elements.push(...(layout?.bgFrames?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "bg-edit")));
+  out.elements.push(...(layout?.bgFrames?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "bg-locked")));
+  out.elements.push(...(layout?.bgFrames?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "bg-edit")));
   out.textElements.push(...(user?.freeTexts ?? []).map((o: any, i: number) => toText(o, i, !o?.locked, "ut")));
 
   // single bg image
@@ -373,7 +373,8 @@ const SlideCover = ({
 
   const location = useLocation();
   const slide1 = location.state?.layout?.slides?.slide1 ?? null;
-  // console.log(slide1?.layout, '---')
+
+  console.log(layout1, '---')
 
   /* ------------------ normalize slide1 -> user view state ------------------ */
   useEffect(() => {
@@ -711,7 +712,7 @@ const SlideCover = ({
 
   const addNewTextElement = () => {
     const z = Array.isArray(textElements1) ? textElements1.length + 1 : 1;
-    const newTextElement = createNewTextElement1({ /* ... */ zIndex: z });
+    const newTextElement = createNewTextElement1({ zIndex: z });
     setTextElements1(prev => Array.isArray(prev) ? [...prev, newTextElement] : [newTextElement]);
     setSelectedTextId1(newTextElement.id);
   };
@@ -933,9 +934,9 @@ const SlideCover = ({
                 {/* BG frames */}
                 {layout1.elements
                   ?.slice()
-                  .sort((a: any, b: any) => (a.zIndex ?? 0) - (b.zIndex ?? 0)) // keep BG at the back (zIndex 0)
+                  .sort((a: any, b: any) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
                   .map((el: any, index: number) => {
-                    const isEditable = !!el.isEditable;  // <- comes from normalize
+                    const isEditable = !!el.isEditable;
                     const isLocked = !!el.locked;
 
                     return (
@@ -1539,7 +1540,7 @@ const SlideCover = ({
                             transform: `rotate(${rotation}deg)`,
                             transformOrigin: "center center",
                             border: "2px solid #1976d2",
-                            outline: isSelected ? "2px solid #cf57ffff" : "none",
+                            outline: isSelected ? "1px solid #cf57ffff" : "none",
                             borderRadius: isSelected ? 1 : 0,
                             pointerEvents: "auto",
                             cursor: isLocked ? "default" : "move",
@@ -1552,7 +1553,7 @@ const SlideCover = ({
                             style={{
                               width: "100%",
                               height: "100%",
-                              borderRadius: 8,
+                              borderRadius: 2,
                               pointerEvents: "none",
                               objectFit: "fill",
                               filter: filter || "none",

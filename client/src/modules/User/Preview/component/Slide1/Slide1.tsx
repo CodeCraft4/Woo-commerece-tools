@@ -13,7 +13,7 @@ type Slide1Props = {
 }
 
 const Slide1 = (props: Slide1Props) => {
-  const { layout1, bgColor1} = useSlide1();
+  const { layout1, bgColor1 } = useSlide1();
 
   const { ref } = props
 
@@ -30,7 +30,7 @@ const Slide1 = (props: Slide1Props) => {
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
-        borderRadius:2,
+        borderRadius: 2,
       }}
     >
       {layout1 && (
@@ -60,7 +60,7 @@ const Slide1 = (props: Slide1Props) => {
                   sx={{
                     width: "100%",
                     height: "100%",
-                    objectFit: el.objectFit || "fill",
+                    objectFit: el.objectFit || "cover",
                     borderRadius: 1,
                     display: "block",
                     pointerEvents: "none",

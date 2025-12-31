@@ -1,27 +1,38 @@
-
-import { useEffect, useMemo } from "react";
+// AdminEditor.tsx
 import { Box } from "@mui/material";
+import { useEffect, useMemo } from "react";
 import DashboardLayout from "../../../layout/DashboardLayout";
 import WishCard from "../../../components/WishCard/WishCard";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
-import { applyPolygonLayoutToContexts, buildPolygonLayout } from "../../../lib/polygon";
 import { useSlide1 } from "../../../context/Slide1Context";
 import { useSlide2 } from "../../../context/Slide2Context";
 import { useSlide3 } from "../../../context/Slide3Context";
 import { useSlide4 } from "../../../context/Slide4Context";
-import { pickPolygonLayout, isMeaningfulPolygonLayout } from "../../../lib/polygon";
+import {
+  applyPolygonLayoutToContexts,
+  buildPolygonLayout,
+  // isMeaningfulPolygonLayout,
+  pickPolygonLayout,
+} from "../../../lib/polygon";
 
 type AdminEditorNavState = {
   id?: string;
-  product?: any;
-  formData?: any;
+  design?: any; 
   mode?: "edit" | "create" | string;
   polygonlayout?: any;
   polyganLayout?: any;
+  formData?: any;
 };
 
-
+const safeParse = (v: any) => {
+  if (typeof v !== "string") return v;
+  try {
+    return JSON.parse(v);
+  } catch {
+    return null;
+  }
+};
 
 const AdminEditor = () => {
   const navigate = useNavigate();
@@ -33,44 +44,52 @@ const AdminEditor = () => {
   const slide4 = useSlide4();
 
   const navState = (location.state as AdminEditorNavState) || {};
-  const { id, product, formData, mode, polygonlayout } = navState;
-  console.log(polygonlayout,'layout')
+  const { id, design, mode, formData } = navState;
 
   const isEditMode = mode === "edit" || Boolean(id);
 
+  const parsedDesign = useMemo(() => safeParse(design), [design]);
+
   const incomingLayout = useMemo(() => {
-    return pickPolygonLayout(navState.polygonlayout, navState.polyganLayout);
-  }, [navState.polygonlayout, navState.polyganLayout]);
+    // priority: explicit polygonlayout -> polyganLayout -> design
+    return pickPolygonLayout(
+      navState.polygonlayout,
+      navState.polyganLayout,
+      parsedDesign,
+      design
+    );
+  }, [navState.polygonlayout, navState.polyganLayout, parsedDesign, design]);
 
 
   useEffect(() => {
-    if (!isMeaningfulPolygonLayout(incomingLayout)) return;
+    // if (!isMeaningfulPolygonLayout(incomingLayout)) return;
 
-    requestAnimationFrame(() => {
-      slide1.resetSlide1State?.();
-      slide2.resetSlide2State?.();
-      slide3.resetSlide3State?.();
-      slide4.resetSlide4State?.();
+    // requestAnimationFrame(() => {
+    //   slide1.resetSlide1State?.();
+    //   slide2.resetSlide2State?.();
+    //   slide3.resetSlide3State?.();
+    //   slide4.resetSlide4State?.();
 
-      applyPolygonLayoutToContexts(incomingLayout, slide1, slide2, slide3, slide4);
-    });
+    // });
+
+    applyPolygonLayoutToContexts(incomingLayout, slide1, slide2, slide3, slide4);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incomingLayout]);
 
- const handleSaveDesign = () => {
-  const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4);
-  const safeLayout = pickPolygonLayout(layoutNow, incomingLayout) ?? incomingLayout ?? layoutNow;
+  const handleSaveDesign = () => {
+    // ✅ build current editor layout and send back to AddNewCardsForm
+    const polygonlayout = buildPolygonLayout(slide1, slide2, slide3, slide4);
 
-  navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS, {
-    state: {
-      id,
-      product: { ...(product ?? {}), polygonlayout: safeLayout, polyganLayout: safeLayout },
-      formData: { ...(formData ?? {}), polygonlayout: safeLayout, polyganLayout: safeLayout },
-      mode: isEditMode ? "edit" : "create",
-      polygonlayout: safeLayout,
-      polyganLayout: safeLayout,
-    },
-  });
-};
+    navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS, {
+      state: {
+        mode: mode ?? (id ? "edit" : "create"),
+        id,
+        polygonlayout,  
+        formData,      
+      },
+      replace: true,
+    });
+  };
 
   return (
     <DashboardLayout
