@@ -60,6 +60,7 @@ const AdminEditor = () => {
     );
   }, [navState.polygonlayout, navState.polyganLayout, parsedDesign, design]);
 
+
   useEffect(() => {
     // if (!isMeaningfulPolygonLayout(incomingLayout)) return;
 
