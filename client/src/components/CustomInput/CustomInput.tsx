@@ -7,26 +7,31 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
 type Option = { label: string; value: string | number };
 
 type InputTypes = {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  value?: string | number;                   // <-- add value for controlled mode
+  value?: string | number;
   type?: "text" | "number" | "password" | "select" | "email";
   label: string;
   placeholder?: string;
   icon?: string;
-  register?: UseFormRegisterReturn;          
+  register?: UseFormRegisterReturn;
   error?: string;
   options?: Option[];
   description?: boolean;
-  defaultValue?: string | number;           
+  defaultValue?: string | number;
   multiline?: boolean;
   showRequiredAsterisk?: boolean;
   showSelectPlaceholder?: boolean;
+
+  // ✅ add these for number inputs
+  step?: number | "any";
+  min?: number;
+  max?: number;
 };
 
 const CustomInput = (props: InputTypes) => {
@@ -45,10 +50,30 @@ const CustomInput = (props: InputTypes) => {
     options = [],
     showRequiredAsterisk = true,
     showSelectPlaceholder = true,
+    step,
+    min,
+    max,
   } = props;
 
   const [showPassword, setShowPassword] = useState(false);
   const inputType = type === "password" && showPassword ? "text" : type;
+
+  const isControlled = value !== undefined;
+
+  const mergedOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    register?.onChange?.(e);
+    onChange?.(e);
+  };
+
+  const numberInputProps = useMemo(() => {
+    if (type !== "number") return undefined;
+    return {
+      step: step ?? "any", // ✅ allow floats like 2.5
+      min,
+      max,
+      inputMode: "decimal",
+    } as const;
+  }, [type, step, min, max]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", textAlign: "left", mb: 1.5 }}>
@@ -62,15 +87,14 @@ const CustomInput = (props: InputTypes) => {
           select
           fullWidth
           variant="standard"
-          value={value}
+          value={value ?? ""}
           onChange={(e) => onChange?.(e as unknown as React.ChangeEvent<HTMLInputElement>)}
           error={Boolean(error)}
           helperText={error || " "}
           sx={{
-            // py: "10px",
             px: "12px",
-            display:'flex',
-            alignItems:'center',
+            display: "flex",
+            alignItems: "center",
             borderRadius: "12px",
             border: "1px solid",
             borderColor: error ? "red" : "#ccc",
@@ -109,17 +133,25 @@ const CustomInput = (props: InputTypes) => {
             fullWidth
             type={inputType}
             placeholder={placeholder}
-            defaultValue={defaultValue}
-            onChange={onChange}
-            value={value as any}
+            // ✅ avoid controlled/uncontrolled warning
+            defaultValue={!isControlled ? defaultValue : undefined}
+            value={isControlled ? (value as any) : undefined}
+            onChange={mergedOnChange}
             rows={multiline ? 6 : 0}
             multiline={multiline}
-            {...register}
+            inputProps={numberInputProps}
+            name={register?.name}
+            inputRef={register?.ref}
             sx={{ py: "10px", px: "12px", "&:focus": { outline: "none" } }}
           />
 
           {type === "password" && !description && (
-            <IconButton onClick={() => setShowPassword((s) => !s)} edge="end" size="small" sx={{ color: "grey.600" }}>
+            <IconButton
+              onClick={() => setShowPassword((s) => !s)}
+              edge="end"
+              size="small"
+              sx={{ color: "grey.600" }}
+            >
               {showPassword ? <VisibilityOff /> : <Visibility />}
             </IconButton>
           )}

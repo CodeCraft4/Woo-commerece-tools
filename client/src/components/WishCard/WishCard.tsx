@@ -461,8 +461,8 @@ const WishCard = (props: wishCardType) => {
       ];
     });
 
-    controller.setSelected((prev:any) => {
-      const filtered = prev.filter((id:any) => id !== imageId);
+    controller.setSelected((prev: any) => {
+      const filtered = prev.filter((id: any) => id !== imageId);
       return [...filtered, imageId];
     });
   };
@@ -514,7 +514,7 @@ const WishCard = (props: wishCardType) => {
 
     const isPdf =
       file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-    console.log("type", file.type, "name", file.name);
+    // console.log("type", file.type, "name", file.name);
 
 
     if (!isPdf) {
@@ -565,7 +565,6 @@ const WishCard = (props: wishCardType) => {
       return changed ? next : prev;
     });
   }, [draggableImages1, draggableImages2, draggableImages3, draggableImages4]);
-
 
 
   return (
