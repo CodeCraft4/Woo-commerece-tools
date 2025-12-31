@@ -78,7 +78,7 @@ const MegaMenu = ({
     >
       <Box
         sx={{
-          width: { lg: 1660, md: "100%", sm: "100%", xs: "100%" },
+          width: { lg: 1340, md: "100%", sm: "100%", xs: "100%" },
           bgcolor: "#fff",
           p: 3,
           boxShadow: 3,
