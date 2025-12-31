@@ -576,124 +576,126 @@ export default function Header(props: Props) {
       </Box>
       {
         location.pathname === USER_ROUTES.USER_PROFILE ? null :
-         <Box
-          sx={{
-            width: "100%",
-            display: { md: "flex", sm: "flex", xs: "none" },
-            m: "auto",
-            flexDirection: "column",
-            position: "relative",
-            bgcolor: COLORS.primary,
-            mt: "3px",
-          }}
-          onMouseLeave={handleMouseLeave}
-        >
-          {/* Left arrow */}
-          <IconButton
-            onClick={() => scrollByAmount("left")}
-            disabled={!canLeft}
-            sx={{
-              position: "absolute",
-              left: { lg: 100, md: 60, sm: 30, xs: 0 },
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 2,
-              bgcolor: "rgba(255,255,255,0.95)",
-              border: "1px solid #e5e7eb",
-              boxShadow: 1,
-              "&:hover": { bgcolor: "#fff" },
-              opacity: canLeft ? 1 : 0.5,
-              pointerEvents: canLeft ? "auto" : "none",
-            }}
-          >
-            <ChevronLeft />
-          </IconButton>
-
-          {/* Right arrow */}
-          <IconButton
-            onClick={() => scrollByAmount("right")}
-            disabled={!canRight}
-            sx={{
-              position: "absolute",
-              right: { lg: 100, md: 60, sm: 30, xs: 0 },
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 2,
-              bgcolor: "rgba(255,255,255,0.95)",
-              border: "1px solid #e5e7eb",
-              boxShadow: 1,
-              "&:hover": { bgcolor: "#fff" },
-              opacity: canRight ? 1 : 0.5,
-              pointerEvents: canRight ? "auto" : "none",
-            }}
-          >
-            <ChevronRight />
-          </IconButton>
-
-          <List
-            ref={listRef}
-            disablePadding
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              p: 3,
-              m: "auto",
-              flexWrap: "nowrap",
-              overflowX: "auto",
-              scrollBehavior: "smooth",
-              width: { lg: 1440, md: '1024px', sm: '700px', xs: "100%" },
-              // Hide scrollbar
-              scrollbarWidth: "none",
-              "&::-webkit-scrollbar": { display: "none" },
-              position: "relative",
-              maskImage:
-                "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
-            }}
-          >
-            {isLoading && <Box sx={{ pt: 2, textAlign: "center", justifyContent: 'center', display: 'flex', m: 'auto' }}>Loading...</Box>}
-
-            {mainCategoryNames.map((name) => (
-              <ListItem
-                key={name}
-                disableGutters
-                disablePadding
-                onMouseEnter={() => handleMouseEnter(name)}
-                sx={{ flex: "0 0 auto", width: "auto" }}
-              >
-                <Link
-                  href={`${USER_ROUTES.VIEW_ALL}/${name}`}
-                  sx={{
-                    m: 0,
-                    p: 0,
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                    fontSize: 16,
-                    color: COLORS.black,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                    "&:hover": { color: "rgba(46, 46, 46, 1)" },
-                  }}
-                >
-                  {name}
-                </Link>
-              </ListItem>
-            ))}
-          </List>
-
           <Box
             sx={{
-              width: { lg: "1340px", md: "100%", sm: "", xs: "auto" },
-              display: "flex",
+              width: "100%",
+              display: { md: "flex", sm: "flex", xs: "none" },
               m: "auto",
-              justifyContent: "center",
+              flexDirection: "column",
+              position: "relative",
+              bgcolor: COLORS.primary,
+              mt: "3px",
             }}
           >
-            {hoveredMenuItem && megaMenuMap[hoveredMenuItem] && (
-              <MegaMenu data={megaMenuMap[hoveredMenuItem]} onSelect={handleSelect} />
-            )}
+
+              {/* Left arrow */}
+              <IconButton
+                onClick={() => scrollByAmount("left")}
+                disabled={!canLeft}
+                sx={{
+                  position: "absolute",
+                  left: { lg: 0 },
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 2,
+                  bgcolor: "rgba(255,255,255,0.95)",
+                  border: "1px solid #e5e7eb",
+                  boxShadow: 1,
+                  "&:hover": { bgcolor: "#fff" },
+                  opacity: canLeft ? 1 : 0.5,
+                  pointerEvents: canLeft ? "auto" : "none",
+                }}
+              >
+                <ChevronLeft />
+              </IconButton>
+
+              {/* Right arrow */}
+              <IconButton
+                onClick={() => scrollByAmount("right")}
+                disabled={!canRight}
+                sx={{
+                  position: "absolute",
+                  right: { lg: 0 },
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 2,
+                  bgcolor: "rgba(255,255,255,0.95)",
+                  border: "1px solid #e5e7eb",
+                  boxShadow: 1,
+                  "&:hover": { bgcolor: "#fff" },
+                  opacity: canRight ? 1 : 0.5,
+                  pointerEvents: canRight ? "auto" : "none",
+                }}
+              >
+                <ChevronRight />
+              </IconButton>
+
+            <List
+              ref={listRef}
+              disablePadding
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                p: 3,
+                m: "auto",
+                flexWrap: "nowrap",
+                overflowX: "auto",
+                scrollBehavior: "smooth",
+                width: { lg: 1300, md: '100%', sm: '100%', xs: "100%" },
+                // Hide scrollbar
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": { display: "none" },
+                position: "relative",
+                maskImage:
+                  "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
+              }}
+              onMouseLeave={handleMouseLeave}
+            >
+
+              {isLoading && <Box sx={{ pt: 2, textAlign: "center", justifyContent: 'center', display: 'flex', m: 'auto' }}>Loading...</Box>}
+
+              {mainCategoryNames.map((name) => (
+                <ListItem
+                  key={name}
+                  disableGutters
+                  disablePadding
+                  onMouseEnter={() => handleMouseEnter(name)}
+                  sx={{ flex: "0 0 auto", width: "auto" }}
+                >
+                  <Link
+                    href={`${USER_ROUTES.VIEW_ALL}/${name}`}
+                    sx={{
+                      m: 0,
+                      p: 0,
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                      color: COLORS.black,
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                      "&:hover": { color: "rgba(46, 46, 46, 1)" },
+                    }}
+                  >
+                    {name}
+                  </Link>
+                </ListItem>
+              ))}
+            </List>
+
+            <Box
+              sx={{
+                width: { lg: "1340px", md: "100%", sm: "", xs: "auto" },
+                display: "flex",
+                m: "auto",
+                justifyContent: "center",
+              }}
+            >
+              {hoveredMenuItem && megaMenuMap[hoveredMenuItem] && (
+                <MegaMenu data={megaMenuMap[hoveredMenuItem]} onSelect={handleSelect} />
+              )}
+            </Box>
           </Box>
-        </Box>
       }
 
 

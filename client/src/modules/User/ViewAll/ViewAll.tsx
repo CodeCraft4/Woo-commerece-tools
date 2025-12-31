@@ -76,10 +76,7 @@ const ViewAll = () => {
         </Box>
 
         <ViewAllCard
-          categoryId={categoryId}
-          categoryName={routeCategoryName}
-          allCategories={allCategories}
-          cardData={allCards}
+          
         />
 
         <Box sx={{ height: 200 }} />

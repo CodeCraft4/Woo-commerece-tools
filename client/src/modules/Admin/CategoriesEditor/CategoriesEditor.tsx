@@ -114,13 +114,6 @@ const CategoriesEditor = () => {
   const thumbRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // const isDraggingMain = useRef(false);
-  // const startXMain = useRef(0);
-  // const scrollLeftMain = useRef(0);
-  const isDraggingThumb = useRef(false);
-  const startXThumb = useRef(0);
-  const scrollLeftThumb = useRef(0);
-
   // ====== Viewport-aware canvas sizing ======
   const [viewport, setViewport] = useState({ w: 1200, h: 800 });
   useEffect(() => {
@@ -294,39 +287,80 @@ const CategoriesEditor = () => {
   );
 
   /* ---------- Drag scrolling ---------- */
-  // const onMainMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-  //   const el = mainScrollerRef.current;
-  //   if (!el) return;
-  //   isDraggingMain.current = true;
-  //   startXMain.current = e.pageX - el.offsetLeft;
-  //   scrollLeftMain.current = el.scrollLeft;
-  // };
-  // const onMainMouseUp = () => (isDraggingMain.current = false);
-  // const onMainMouseLeave = () => (isDraggingMain.current = false);
-  // const onMainMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-  //   const el = mainScrollerRef.current;
-  //   if (!isDraggingMain.current || !el) return;
-  //   const x = e.pageX - el.offsetLeft;
-  //   const walk = x - startXMain.current;
-  //   el.scrollLeft = scrollLeftMain.current - walk;
-  // };
-  const onThumbMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!thumbRef.current) return;
-    isDraggingThumb.current = true;
-    startXThumb.current = e.pageX - thumbRef.current.offsetLeft;
-    scrollLeftThumb.current = thumbRef.current.scrollLeft;
-  };
-  const onThumbMouseUp = () => (isDraggingThumb.current = false);
-  const onThumbMouseLeave = () => (isDraggingThumb.current = false);
-  const onThumbMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDraggingThumb.current || !thumbRef.current) return;
-    const x = e.pageX - thumbRef.current.offsetLeft;
-    const walk = x - startXThumb.current;
-    thumbRef.current.scrollLeft = scrollLeftThumb.current - walk;
+
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  // measure: visible chips + arrow enabled/disabled
+  const recalc = () => {
+    const el = thumbRef.current;
+    if (!el) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+
+    // arrow states
+    const left = scrollLeft > 0;
+    const right = scrollLeft + clientWidth < scrollWidth - 1; // -1 tolerance
+    setCanLeft(left);
+    setCanRight(right);
+
+    // visibleCount
+    const firstChip = el.firstElementChild as HTMLElement | null;
+    if (!firstChip) {
+      // setVisibleCount(0);
+      return;
+    }
+
+    // chip width + gap
+    const chipRect = firstChip.getBoundingClientRect();
+    const styles = window.getComputedStyle(el);
+    const gap = parseFloat(styles.columnGap || styles.gap || "0") || 0;
+
+    const chipW = chipRect.width + gap;
+    if (chipW <= 0) {
+      // setVisibleCount(0);
+      return;
+    }
   };
 
-  const slideScrollLeft = () => thumbRef.current && (thumbRef.current.scrollLeft -= 120);
-  const slideScrollRight = () => thumbRef.current && (thumbRef.current.scrollLeft += 120);
+  useEffect(() => {
+    recalc();
+    const el = thumbRef.current;
+    if (!el) return;
+
+    const onScroll = () => recalc();
+    el.addEventListener("scroll", onScroll, { passive: true });
+
+    const onResize = () => recalc();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
+    // slides length affects scrollWidth; selectedSlide doesn’t necessarily
+  }, [slides.length]);
+
+  // scroll by 1 chip
+  const scrollByOne = (dir: "left" | "right") => {
+    const el = thumbRef.current;
+    if (!el) return;
+
+    const firstChip = el.firstElementChild as HTMLElement | null;
+    if (!firstChip) return;
+
+    const chipRect = firstChip.getBoundingClientRect();
+    const styles = window.getComputedStyle(el);
+    const gap = parseFloat(styles.columnGap || styles.gap || "0") || 0;
+
+    const step = chipRect.width + gap || 120;
+    el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
+  };
+
+
+  // Pick one:
+  const slideScrollLeft = () => scrollByOne("left"); // or scrollByPage("left")
+  const slideScrollRight = () => scrollByOne("right"); // or scrollByPage("right")
 
   // ====== Align helpers ======
   type TextAlignVal = "left" | "center" | "right";
@@ -1147,27 +1181,57 @@ const CategoriesEditor = () => {
       </Box>
 
       {/* Thumbnails */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: { xs: "96%", md: "60%" }, justifyContent: "center", m: "16px auto 0" }}>
-        <IconButton onClick={slideScrollLeft}><ArrowBackIos /></IconButton>
+     <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 3,
+        width: { xs: "96%", md: "60%" },
+        justifyContent: "center",
+        m: "16px auto 0",
+        flexDirection: "column",
+      }}
+    >
+
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%", justifyContent: "center" }}>
+        <IconButton onClick={slideScrollLeft} disabled={!canLeft}>
+          <ArrowBackIos />
+        </IconButton>
+
         <Box
           ref={thumbRef}
-          onMouseDown={onThumbMouseDown}
-          onMouseUp={onThumbMouseUp}
-          onMouseLeave={onThumbMouseLeave}
-          onMouseMove={onThumbMouseMove}
-          sx={{ display: "flex", overflowX: "auto", gap: 1, width: "64%", "&::-webkit-scrollbar": { display: "none" }, cursor: "grab", justifyContent: "center" }}
+          sx={{
+            display: "flex",
+            overflowX: "auto",
+            gap: 1,
+            width: "64%",
+            "&::-webkit-scrollbar": { display: "none" },
+            cursor: "grab",
+            justifyContent: "flex-start",
+            scrollBehavior: "smooth",
+          }}
         >
           {slides.map((s, index) => {
             const mirrored = !!mirrorBySlide[s.id as number];
             return (
               <Box
-                key={s.id}
+                key={s.id ?? index}
                 sx={{
-                  px: 1.5, height: 40, minWidth: 60,
+                  px: 1.5,
+                  height: 40,
+                  minWidth: 60,
                   bgcolor: index === selectedSlide ? "#1976d2" : "#eceff1",
                   color: index === selectedSlide ? "white" : "#263238",
-                  borderRadius: 2, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
-                  fontWeight: 600, flexShrink: 0, cursor: "pointer", transition: ".2s", position: "relative",
+                  borderRadius: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  fontWeight: 600,
+                  flexShrink: 0,
+                  cursor: "pointer",
+                  transition: ".2s",
+                  position: "relative",
                   boxShadow: index === selectedSlide ? 4 : 0,
                 }}
                 onClick={() => scrollToSlide(index)}
@@ -1175,10 +1239,25 @@ const CategoriesEditor = () => {
                 <Typography variant="body2">
                   {config.slideLabels?.[index] ?? `Slide ${index + 1}`} {mirrored ? "⟲" : ""}
                 </Typography>
+
                 {slides.length > 1 && (
                   <IconButton
-                    onClick={(e) => { e.stopPropagation(); deleteSlide(index); }}
-                    sx={{ position: "absolute", top: 0, right: -8, width: 18, height: 18, bgcolor: "#263238", color: "white", borderRadius: "50%", "&:hover": { bgcolor: "#c62828" }, zIndex: 5 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSlide(index);
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: -8,
+                      width: 18,
+                      height: 18,
+                      bgcolor: "#263238",
+                      color: "white",
+                      borderRadius: "50%",
+                      "&:hover": { bgcolor: "#c62828" },
+                      zIndex: 5,
+                    }}
                   >
                     <Close fontSize="small" />
                   </IconButton>
@@ -1187,8 +1266,12 @@ const CategoriesEditor = () => {
             );
           })}
         </Box>
-        <IconButton onClick={slideScrollRight}><ArrowForwardIos /></IconButton>
+
+        <IconButton onClick={slideScrollRight} disabled={!canRight}>
+          <ArrowForwardIos />
+        </IconButton>
       </Box>
+    </Box>
     </DashboardLayout>
   );
 };

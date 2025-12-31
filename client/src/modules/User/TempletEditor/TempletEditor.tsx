@@ -338,13 +338,13 @@ export default function TempletEditor() {
     }, [productId, state?.templetDesign]);
 
     // ✅ Persist on every change
-    useEffect(() => {
-        // if (!adminDesign) return;
-        sessionStorage?.setItem(
-            storageKey(productId),
-            JSON.stringify({ adminDesign, userSlides, activeSlide, selectedElId })
-        );
-    }, [adminDesign, userSlides, activeSlide, selectedElId, productId]);
+    // useEffect(() => {
+    //     // if (!adminDesign) return;
+    //     sessionStorage?.setItem(
+    //         storageKey(productId),
+    //         JSON.stringify({ adminDesign, userSlides, activeSlide, selectedElId })
+    //     );
+    // }, [adminDesign, userSlides, activeSlide, selectedElId, productId]);
 
     const scrollToSlide = (index: number) => {
         setActiveSlide(index);
@@ -516,7 +516,10 @@ export default function TempletEditor() {
 
 
                         return (
-                            <Box key={slide.id} sx={{ position: "relative", display: "flex", gap: 2, flex: "0 0 auto" }}>
+                            <Box key={slide.id} sx={{
+                                position: "relative", display: "flex", gap: 2, flex: "0 0 auto",
+                                ml: i === 0 ? 350 : 0,
+                            }}>
                                 {/* TOOLBAR */}
                                 {i === activeSlide && (
                                     <Box
@@ -598,7 +601,7 @@ export default function TempletEditor() {
                                         borderRadius: 3,
                                         position: "relative",
                                         overflow: "hidden",
-                                        bgcolor: "#ffffffff",
+                                        bgcolor: "rgba(255, 255, 255, 1)",
                                         boxShadow: 2,
                                         // border: '1px solid red',
                                         flex: "0 0 auto",
@@ -710,7 +713,7 @@ export default function TempletEditor() {
                                                                 InputProps={{
                                                                     disableUnderline: true,
                                                                     sx: {
-                                                                        height: el.height,
+                                                                        height: 'auto',
                                                                         p: 0.5,
                                                                         "& .MuiInputBase-inputMultiline": {
                                                                             padding: 0,
@@ -728,7 +731,7 @@ export default function TempletEditor() {
                                                                         fontSize: t.fontSize * scale,
                                                                         fontFamily: t.fontFamily,
                                                                         color: t.color,
-                                                                        lineHeight: 2,
+                                                                        lineHeight: 1,
 
                                                                     },
                                                                 }}

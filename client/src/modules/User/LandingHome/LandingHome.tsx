@@ -173,11 +173,6 @@ const LandingHome = () => {
             ))}
           </Box>
         </Box>
-
-        <VisualSection />
-
-        <VideoSection />
-
         {/* Birthday Slider CArd */}
         <BirthdaySlider
           title="Make it a Birthday to Remember!..."
@@ -185,8 +180,7 @@ const LandingHome = () => {
           personalised magic without the stress of delivery or high prices`}
         />
 
-        {/* VIP Funkey just for offer */}
-        <VIPFunky />
+        <VisualSection />
 
 
         {/* Basket Slider Cards */}
@@ -195,18 +189,23 @@ const LandingHome = () => {
           description="Get into the summer mood with a selection of our favourite seasonal flowers and top picks."
         />
 
-        {/* Personal Gift */}
-        <PersonalGift />
-
-        {/* Basket Card Sales */}
-        <BasketSlider title="Sale!" saleSlide={true} />
-
+        <VideoSection />
 
         <BasketSlider
           title="Clothing"
           description="Get into the summer mood with a selection of our favourite seasonal Clothing and top picks."
           clothing
         />
+
+        {/* VIP Funkey just for offer */}
+        <VIPFunky />
+
+        {/* Personal Gift */}
+        <PersonalGift />
+
+        {/* Basket Card Sales */}
+        <BasketSlider title="Sale!" saleSlide={true} />
+
 
         {/* Templet Slider CArd */}
         <TempletsCardSlider

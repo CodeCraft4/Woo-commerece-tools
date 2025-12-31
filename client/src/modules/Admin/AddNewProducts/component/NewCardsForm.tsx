@@ -431,16 +431,61 @@ const NewCardsForm = ({ editProduct }: Props) => {
               register={register("actualprice", { required: "Actual Price is required", setValueAs: toFloat, })}
               error={errors.actualprice?.message}
             />
-            <CustomInput label="A4 Price" placeholder="A4 price" defaultValue="" type="number" register={register("a4price", { required: "A4 Price is required", setValueAs: toFloat, })} error={errors.a4price?.message} />
-            <CustomInput label="A5 Price" placeholder="A5 price" defaultValue="" type="number" register={register("a5price", { required: "A5 Price is required", setValueAs: toFloat, })} error={errors.a5price?.message} />
-            <CustomInput label="US Letter" placeholder="US Letter" defaultValue="" type="number" register={register("usletter", { required: "US Letter Price is required", setValueAs: toFloat, })} error={errors.usletter?.message} />
+            <CustomInput
+              label="A4 Price"
+              placeholder="A4 price" defaultValue=""
+              type="number"
+              register={register("a4price", { required: "A4 Price is required", setValueAs: toFloat, })}
+              error={errors.a4price?.message}
+            />
+            <CustomInput
+              label="A5 Price"
+              placeholder="A5 price" defaultValue=""
+              type="number"
+              register={register("a5price", { required: "A5 Price is required", setValueAs: toFloat, })}
+              error={errors.a5price?.message}
+            />
+            <CustomInput
+              label="US Letter" placeholder="US Letter" defaultValue=""
+              type="number"
+              register={register("usletter", { required: "US Letter Price is required", setValueAs: toFloat, })}
+              error={errors.usletter?.message}
+            />
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-            <CustomInput label="Sale Price" placeholder="Sale price" type="number" defaultValue="" register={register("saleprice", { setValueAs: toFloat })} error={errors.saleprice?.message} />
-            <CustomInput label="Sale A4 Price" placeholder="A4 Price" type="number" defaultValue="" register={register("salea4price", { setValueAs: toFloat })} error={errors.salea4price?.message} />
-            <CustomInput label="Sale A5 Price" placeholder="A5 Price" type="number" defaultValue="" register={register("salea5price", { setValueAs: toFloat })} error={errors.salea5price?.message} />
-            <CustomInput label="Sale US Letter" placeholder="US Letter" type="number" defaultValue="" register={register("saleusletter", { setValueAs: toFloat })} error={errors.saleusletter?.message} />
+            <CustomInput
+              label="Sale Price"
+              placeholder="Sale price"
+              type="number"
+              defaultValue=""
+              register={register("saleprice", { setValueAs: toFloat })}
+              error={errors.saleprice?.message}
+            />
+            <CustomInput
+              label="Sale A4 Price"
+              placeholder="A4 Price"
+              type="number"
+              defaultValue=""
+              register={register("salea4price", { setValueAs: toFloat })}
+              error={errors.salea4price?.message}
+            />
+            <CustomInput
+              label="Sale A5 Price"
+              placeholder="A5 Price"
+              type="number"
+              defaultValue=""
+              register={register("salea5price", { setValueAs: toFloat })}
+              error={errors.salea5price?.message}
+            />
+            <CustomInput
+              label="Sale US Letter"
+              placeholder="US Letter"
+              type="number"
+              defaultValue=""
+              register={register("saleusletter", { setValueAs: toFloat })}
+              error={errors.saleusletter?.message}
+            />
           </Box>
 
           <CustomInput
