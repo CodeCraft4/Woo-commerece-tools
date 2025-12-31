@@ -123,7 +123,7 @@ export default function Header(props: Props) {
   const [hoveredMenuItem, setHoveredMenuItem] = React.useState<string | null>(null);
   const handleMouseEnter = (item: string) => setHoveredMenuItem(item);
   const handleMouseLeave = () => setHoveredMenuItem(null);
-  const handleSelect = () => setHoveredMenuItem(null);
+  // const handleSelect = () => setHoveredMenuItem(null);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const { listRef, canLeft, canRight, scrollByAmount } = useHScrollArrows();
@@ -586,49 +586,50 @@ export default function Header(props: Props) {
               bgcolor: COLORS.primary,
               mt: "3px",
             }}
+            onMouseLeave={handleMouseLeave}
           >
 
-              {/* Left arrow */}
-              <IconButton
-                onClick={() => scrollByAmount("left")}
-                disabled={!canLeft}
-                sx={{
-                  position: "absolute",
-                  left: { lg: 0 },
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  zIndex: 2,
-                  bgcolor: "rgba(255,255,255,0.95)",
-                  border: "1px solid #e5e7eb",
-                  boxShadow: 1,
-                  "&:hover": { bgcolor: "#fff" },
-                  opacity: canLeft ? 1 : 0.5,
-                  pointerEvents: canLeft ? "auto" : "none",
-                }}
-              >
-                <ChevronLeft />
-              </IconButton>
+            {/* Left arrow */}
+            <IconButton
+              onClick={() => scrollByAmount("left")}
+              disabled={!canLeft}
+              sx={{
+                position: "absolute",
+                left: { lg: 0 },
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 2,
+                bgcolor: "rgba(255,255,255,0.95)",
+                border: "1px solid #e5e7eb",
+                boxShadow: 1,
+                "&:hover": { bgcolor: "#fff" },
+                opacity: canLeft ? 1 : 0.5,
+                pointerEvents: canLeft ? "auto" : "none",
+              }}
+            >
+              <ChevronLeft />
+            </IconButton>
 
-              {/* Right arrow */}
-              <IconButton
-                onClick={() => scrollByAmount("right")}
-                disabled={!canRight}
-                sx={{
-                  position: "absolute",
-                  right: { lg: 0 },
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  zIndex: 2,
-                  bgcolor: "rgba(255,255,255,0.95)",
-                  border: "1px solid #e5e7eb",
-                  boxShadow: 1,
-                  "&:hover": { bgcolor: "#fff" },
-                  opacity: canRight ? 1 : 0.5,
-                  pointerEvents: canRight ? "auto" : "none",
-                }}
-              >
-                <ChevronRight />
-              </IconButton>
+            {/* Right arrow */}
+            <IconButton
+              onClick={() => scrollByAmount("right")}
+              disabled={!canRight}
+              sx={{
+                position: "absolute",
+                right: { lg: 0 },
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 2,
+                bgcolor: "rgba(255,255,255,0.95)",
+                border: "1px solid #e5e7eb",
+                boxShadow: 1,
+                "&:hover": { bgcolor: "#fff" },
+                opacity: canRight ? 1 : 0.5,
+                pointerEvents: canRight ? "auto" : "none",
+              }}
+            >
+              <ChevronRight />
+            </IconButton>
 
             <List
               ref={listRef}
@@ -650,7 +651,6 @@ export default function Header(props: Props) {
                 maskImage:
                   "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
               }}
-              onMouseLeave={handleMouseLeave}
             >
 
               {isLoading && <Box sx={{ pt: 2, textAlign: "center", justifyContent: 'center', display: 'flex', m: 'auto' }}>Loading...</Box>}
@@ -692,7 +692,12 @@ export default function Header(props: Props) {
               }}
             >
               {hoveredMenuItem && megaMenuMap[hoveredMenuItem] && (
-                <MegaMenu data={megaMenuMap[hoveredMenuItem]} onSelect={handleSelect} />
+                <MegaMenu data={megaMenuMap[hoveredMenuItem]} onSelect={({ tabName, subCategory, subSubCategory }) => {
+                  navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(tabName)}`, {
+                    state: { categoryName: tabName, subCategory, subSubCategory },
+                  });
+                }}
+                />
               )}
             </Box>
           </Box>

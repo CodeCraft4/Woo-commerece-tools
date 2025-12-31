@@ -1,4 +1,4 @@
-// File: src/components/MegaMenu/MegaMenu.tsx
+import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   List,
@@ -7,17 +7,24 @@ import {
   Typography,
 } from "@mui/material";
 import { COLORS } from "../../constant/color";
-import React, { useMemo, useState } from "react";
 
 interface Category {
-  name: string;
-  links: string[];
+  name: string;      // main category
+  links: string[];   // subCategories or "sub > subSub" strings (optional)
 }
 
 interface MegaMenuItem {
   title: string;
   categories: Category[];
 }
+
+type MegaSelectPayload = {
+  tabName: string;                 // main category (active.name)
+  subCategory?: string | null;     // selected subCategory
+  subSubCategory?: string | null;  // selected subSubCategory (optional)
+  isFooter?: boolean;              // shop all / footer link
+  label?: string;                  // clicked label
+};
 
 const splitFooters = (links: string[] = []) => {
   const footers = links.filter((l) => /shop all/i.test(l) || /all .*$/i.test(l));
@@ -31,12 +38,27 @@ const distributeIntoThree = <T,>(arr: T[]) => {
   return cols;
 };
 
+// if your data already comes like "Birthday Cards > Funny"
+// then this parser will split it.
+// Otherwise it will treat whole string as subCategory.
+const parseLink = (link: string) => {
+  const parts = link
+    .split(/>|\/|-/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return {
+    subCategory: parts[0] ?? link,
+    subSubCategory: parts[1] ?? null,
+  };
+};
+
 const MegaMenu = ({
   data,
   onSelect,
 }: {
   data: MegaMenuItem;
-  onSelect: () => void;
+  onSelect: (payload: MegaSelectPayload) => void;
 }) => {
   const columns = useMemo(() => {
     const cats = data?.categories ?? [];
@@ -48,18 +70,88 @@ const MegaMenu = ({
 
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // why: keep active index valid when data changes
-  React.useEffect(() => {
+  // hovered subCategory + list of subSubCategory
+  const [activeSub, setActiveSub] = useState<string | null>(null);
+  const [subSubList, setSubSubList] = useState<string[]>([]);
+
+  useEffect(() => {
     if (activeIdx >= columns.length) setActiveIdx(0);
   }, [columns.length, activeIdx]);
 
   const active = columns[activeIdx];
 
-  // 3 columns of names (balanced)
-  const [colA, colB, colC] = useMemo(
-    () => distributeIntoThree(columns),
-    [columns]
-  );
+  // when main category changes, reset sub/subSub
+  useEffect(() => {
+    setActiveSub(null);
+    setSubSubList([]);
+  }, [activeIdx]);
+
+  const [colA, colB, colC] = useMemo(() => distributeIntoThree(columns), [columns]);
+
+  // derive "sub categories" list from active.items
+  // - if active.items contain "Sub > SubSub" strings:
+  //   we build unique subCategory list, and on hover show subSub list for that subCategory.
+  // - if active.items are plain strings:
+  //   then subSubList will be empty unless your data supports it.
+  const subCategories = useMemo(() => {
+    const list = active?.items ?? [];
+    const map = new Map<string, string[]>();
+
+    list.forEach((raw) => {
+      const { subCategory, subSubCategory } = parseLink(raw);
+      if (!map.has(subCategory)) map.set(subCategory, []);
+      if (subSubCategory) {
+        map.get(subCategory)!.push(subSubCategory);
+      }
+    });
+
+    // remove duplicates in subSub arrays
+    for (const [k, arr] of map.entries()) {
+      map.set(k, Array.from(new Set(arr)));
+    }
+
+    return Array.from(map.entries()).map(([name, subs]) => ({
+      name,
+      subs,
+    }));
+  }, [active?.items]);
+
+  const handleSubHover = (subName: string) => {
+    setActiveSub(subName);
+
+    const found = subCategories.find((s) => s.name === subName);
+    setSubSubList(found?.subs ?? []);
+  };
+
+  const handleSubClick = (subName: string) => {
+    onSelect({
+      tabName: active?.name ?? "",
+      subCategory: subName,
+      subSubCategory: null,
+      isFooter: false,
+      label: subName,
+    });
+  };
+
+  const handleSubSubClick = (subSub: string) => {
+    onSelect({
+      tabName: active?.name ?? "",
+      subCategory: activeSub,
+      subSubCategory: subSub,
+      isFooter: false,
+      label: subSub,
+    });
+  };
+
+  const handleFooterClick = (label: string) => {
+    onSelect({
+      tabName: active?.name ?? "",
+      subCategory: null,
+      subSubCategory: null,
+      isFooter: true,
+      label,
+    });
+  };
 
   return (
     <Box
@@ -85,7 +177,7 @@ const MegaMenu = ({
           position: "absolute",
           top: 0,
           minHeight: 240,
-          maxHeight: 480,
+          maxHeight: 520,
           overflowY: "auto",
           "&::-webkit-scrollbar": { height: "6px", width: 6 },
           "&::-webkit-scrollbar-track": {
@@ -99,13 +191,14 @@ const MegaMenu = ({
           display: "grid",
           gap: 3,
           gridTemplateColumns: {
-            xs: "1fr", // stack on mobile
-            sm: "1fr", // stack on small
-            md: "repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr)", // 3 name cols + 1 list col
+            xs: "1fr",
+            sm: "1fr",
+            // 3 columns for main category names, then subCategories, then subSubCategories
+            md: "repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr) minmax(0, 1.2fr)",
           },
         }}
       >
-        {/* Column 1 — category names */}
+        {/* Column 1 */}
         <Box role="list" aria-label="Categories column 1">
           {colA.map((category, idx) => {
             const realIdx = columns.indexOf(category);
@@ -133,7 +226,7 @@ const MegaMenu = ({
           })}
         </Box>
 
-        {/* Column 2 — category names */}
+        {/* Column 2 */}
         <Box role="list" aria-label="Categories column 2">
           {colB.map((category, idx) => {
             const realIdx = columns.indexOf(category);
@@ -161,7 +254,7 @@ const MegaMenu = ({
           })}
         </Box>
 
-        {/* Column 3 — category names */}
+        {/* Column 3 */}
         <Box role="list" aria-label="Categories column 3">
           {colC.map((category, idx) => {
             const realIdx = columns.indexOf(category);
@@ -189,9 +282,111 @@ const MegaMenu = ({
           })}
         </Box>
 
-        {/* Column 4 — active category links */}
+        {/* Column 4 — SubCategories */}
         <Box>
           {active ? (
+            <>
+              <Typography sx={{ fontWeight: 700, mb: 1, color: COLORS.seconday }}>
+                {active.name}
+              </Typography>
+
+              <List
+                dense
+                disablePadding
+                sx={{
+                  p: 0,
+                  m: 0,
+                  overflow: "auto",
+                  maxHeight: 360,
+                  "&::-webkit-scrollbar": { width: 6 },
+                  "&::-webkit-scrollbar-thumb": {
+                    backgroundColor: "#ddd",
+                    borderRadius: 10,
+                  },
+                }}
+                aria-label={`Subcategories of ${active.name}`}
+              >
+                {subCategories.map((sc, i) => {
+                  const isActiveSub = sc.name === activeSub;
+                  return (
+                    <ListItemButton
+                      key={`sub-${active.name}-${sc.name}-${i}`}
+                      sx={{
+                        py: 0.25,
+                        px: 0,
+                        "&:hover": { bgcolor: "transparent" },
+                      }}
+                      disableRipple
+                      onMouseEnter={() => handleSubHover(sc.name)}
+                      onFocus={() => handleSubHover(sc.name)}
+                      onClick={() => handleSubClick(sc.name)} // ✅ navigate with tab + subCategory
+                    >
+                      <ListItemText
+                        primary={sc.name}
+                        primaryTypographyProps={{
+                          fontSize: 14,
+                          color: isActiveSub ? COLORS.primary : "#212121",
+                          fontWeight: isActiveSub ? 700 : 400,
+                        }}
+                        sx={{
+                          m: 0,
+                          "& .MuiListItemText-primary:hover": {
+                            textDecoration: "underline",
+                          },
+                        }}
+                      />
+                    </ListItemButton>
+                  );
+                })}
+
+                {/* Footers */}
+                {active.footers.length > 0 && (
+                  <Box sx={{ pt: 0.75 }}>
+                    {active.footers.map((link, i) => (
+                      <ListItemButton
+                        key={`footer-${active.name}-${link}-${i}`}
+                        sx={{
+                          py: 0.25,
+                          px: 0,
+                          "&:hover": { bgcolor: "transparent" },
+                        }}
+                        disableRipple
+                        onClick={() => handleFooterClick(link)} // ✅ shop all => only tab
+                      >
+                        <ListItemText
+                          primary={link}
+                          primaryTypographyProps={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: COLORS.primary,
+                          }}
+                          sx={{
+                            m: 0,
+                            "& .MuiListItemText-primary:hover": {
+                              textDecoration: "underline",
+                            },
+                          }}
+                        />
+                      </ListItemButton>
+                    ))}
+                  </Box>
+                )}
+              </List>
+            </>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No subcategories
+            </Typography>
+          )}
+        </Box>
+
+        {/* Column 5 — SubSubCategories */}
+        <Box>
+          <Typography sx={{ fontWeight: 700, mb: 1, color: COLORS.seconday }}>
+            {activeSub ? activeSub : " "}
+          </Typography>
+
+          {subSubList.length > 0 ? (
             <List
               dense
               disablePadding
@@ -206,21 +401,21 @@ const MegaMenu = ({
                   borderRadius: 10,
                 },
               }}
-              aria-label={`Subcategories of ${active.name}`}
+              aria-label={`Sub-subcategories of ${activeSub ?? ""}`}
             >
-              {active.items.map((link, linkIndex: number) => (
+              {subSubList.map((ss, i) => (
                 <ListItemButton
-                  key={`item-${active.name}-${link}-${linkIndex}`}
+                  key={`subsub-${active?.name}-${activeSub}-${ss}-${i}`}
                   sx={{
                     py: 0.25,
                     px: 0,
                     "&:hover": { bgcolor: "transparent" },
                   }}
                   disableRipple
-                  onClick={onSelect}
+                  onClick={() => handleSubSubClick(ss)} // ✅ navigate with tab + sub + subSub
                 >
                   <ListItemText
-                    primary={link}
+                    primary={ss}
                     primaryTypographyProps={{ fontSize: 14, color: "#212121" }}
                     sx={{
                       m: 0,
@@ -231,42 +426,10 @@ const MegaMenu = ({
                   />
                 </ListItemButton>
               ))}
-
-              {active.footers.length > 0 && (
-                <Box sx={{ pt: 0.75 }}>
-                  {active.footers.map((link, i) => (
-                    <ListItemButton
-                      key={`footer-${active.name}-${link}-${i}`}
-                      sx={{
-                        py: 0.25,
-                        px: 0,
-                        "&:hover": { bgcolor: "transparent" },
-                      }}
-                      disableRipple
-                      onClick={onSelect}
-                    >
-                      <ListItemText
-                        primary={link}
-                        primaryTypographyProps={{
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: COLORS.primary,
-                        }}
-                        sx={{
-                          m: 0,
-                          "& .MuiListItemText-primary:hover": {
-                            textDecoration: "underline",
-                          },
-                        }}
-                      />
-                    </ListItemButton>
-                  ))}
-                </Box>
-              )}
             </List>
           ) : (
             <Typography variant="body2" color="text.secondary">
-              No subcategories
+              {activeSub ? "No sub-subcategories" : "Hover a subcategory"}
             </Typography>
           )}
         </Box>

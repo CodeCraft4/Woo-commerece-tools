@@ -14,6 +14,7 @@ import { useSlide2 } from "../../../../context/Slide2Context";
 import { useSlide3 } from "../../../../context/Slide3Context";
 import { useSlide4 } from "../../../../context/Slide4Context";
 import {
+  applyPolygonLayoutToContexts,
   buildPolygonLayout,
   captureNodeToPng,
   // hasAnyDesignV2,
@@ -267,7 +268,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
     if (editLoading) return;
     setEditLoading(true);
 
-    await sleep(300);
+    // await sleep(300);
 
     // ✅ snapshot of current form (so nothing is lost)
     const formSnapshot = getValues();
