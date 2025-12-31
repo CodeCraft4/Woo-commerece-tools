@@ -14,6 +14,7 @@ import { useCartStore } from "../../../stores";
 
 const AddToCart = () => {
   const { cart, removeFromCart, clearCart } = useCartStore();
+  console.log(cart,'store.')
   const navigate = useNavigate();
 
   // for Total Produts coutn & Total Price

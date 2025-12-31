@@ -10,16 +10,24 @@ type CategoryType = {
   borderColor?: string;
   seasonalCard?: boolean,
   key?: number
+  
 };
 
 const CategoryCard = (props: CategoryType) => {
   const { id, poster, title, borderColor, seasonalCard } = props;
   const navigate = useNavigate();
 
+   const go = () => {
+    const name = title || "";
+    navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(name)}`, {
+      state: { categoryId: id ?? null, categoryName: name },
+    });
+  };
+
   return (
     <Box
       component={"div"}
-      onClick={() => navigate(`${USER_ROUTES.VIEW_ALL}/${encodeURIComponent(title || "")}`)}
+     onClick={go}
       key={id}
       sx={{
         border: "3px solid lightgray",
