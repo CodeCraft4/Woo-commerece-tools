@@ -20,6 +20,8 @@ import WhyChoose from "./components/WhyChoose/WhyChoose";
 import VisualSection from "./components/VisualSection/VisualSection";
 import VideoSection from "./components/VideoSection/VideoSection";
 import BalloonSticker from "./components/BalloonSticker/BalloonSticker";
+import { useAuth } from "../../../context/AuthContext";
+import DraftSlider from "../../../components/SaveDraftCardSlider/SaveDraftCardSlider";
 
 const AdverstisementCard = [
   {
@@ -43,6 +45,7 @@ const AdverstisementCard = [
 ];
 
 const LandingHome = () => {
+  const { user } = useAuth();
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ["categories"],
@@ -181,6 +184,10 @@ const LandingHome = () => {
         />
 
         <VisualSection />
+
+        {
+          user && <DraftSlider />
+        }
 
 
         {/* Basket Slider Cards */}

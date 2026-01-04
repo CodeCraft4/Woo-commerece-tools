@@ -422,8 +422,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
                   isLoadingCats
                     ? "Loading categories..."
                     : isErrorCats
-                    ? "Failed to load categories"
-                    : "Cards"
+                      ? "Failed to load categories"
+                      : "Cards"
                 }
                 value={field.value || "Cards"}
                 onChange={(e) =>
@@ -468,8 +468,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
                   !watch("subCategory")
                     ? "Select sub category first (optional)"
                     : subSubCategoryOptions.length === 0
-                    ? "No sub-sub categories"
-                    : "Select sub-sub category (optional)"
+                      ? "No sub-sub categories"
+                      : "Select sub-sub category (optional)"
                 }
                 value={field.value ?? ""}
                 onChange={(e) =>
@@ -513,10 +513,10 @@ const NewCardsForm = ({ editProduct }: Props) => {
               error={errors.a4price?.message}
             />
             <CustomInput
-              label="A5 Price"
-              placeholder="A5 price" defaultValue=""
+              label="A3 Price"
+              placeholder="A3 price" defaultValue=""
               type="number"
-              register={register("a5price", { required: "A5 Price is required", setValueAs: toFloat, })}
+              register={register("a5price", { required: "A3 Price is required", setValueAs: toFloat, })}
               error={errors.a5price?.message}
             />
             <CustomInput
@@ -545,8 +545,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
               error={errors.salea4price?.message}
             />
             <CustomInput
-              label="Sale A5 Price"
-              placeholder="A5 Price"
+              label="Sale A3 Price"
+              placeholder="A3 Price"
               type="number"
               defaultValue=""
               register={register("salea5price", { setValueAs: toFloat })}

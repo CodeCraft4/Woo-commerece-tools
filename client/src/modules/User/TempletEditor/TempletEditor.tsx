@@ -1,4 +1,3 @@
-// src/pages/TempletEditor.tsx
 import {
     Box,
     IconButton,
@@ -8,7 +7,6 @@ import {
     Stack,
     CircularProgress,
     Tooltip,
-    Button,
     Divider,
 } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -26,6 +24,7 @@ import { fetchTempletDesignById } from "../../../source/source";
 import * as htmlToImage from "html-to-image";
 import { COLORS } from "../../../constant/color";
 import { coverScale, mmToPx } from "../../../lib/lib";
+import LandingButton from "../../../components/LandingButton/LandingButton";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -169,7 +168,6 @@ export default function TempletEditor() {
     const [userSlides, setUserSlides] = useState<Slide[]>([]);
     const [activeSlide, setActiveSlide] = useState(0);
     const [selectedElId, setSelectedElId] = useState<string | null>(null);
-
     const selectedEl = useMemo(() => {
         const s = userSlides[activeSlide];
         if (!s || !selectedElId) return null;
@@ -296,46 +294,47 @@ export default function TempletEditor() {
     }, [productId]);
 
     // ✅ Load only if not restored
-    useEffect(() => {
-        if (didRestoreRef.current) return;
+useEffect(() => {
+  if (didRestoreRef.current) return;
 
-        const load = async () => {
-            setLoading(true);
-            try {
-                if (state?.templetDesign) {
-                    const { design, slides } = buildSlidesFromRawStores(state.templetDesign);
-                    setAdminDesign(design);
-                    setUserSlides(slides);
-                    setActiveSlide(0);
-                    setSelectedElId(null);
-                    return;
-                }
+  const load = async () => {
+    setLoading(true);
+    try {
+      if (state?.templetDesign) {
+        const { design, slides } = buildSlidesFromRawStores(state.templetDesign);
+        setAdminDesign(design);
+        setUserSlides(slides);
+        setActiveSlide(0);
+        setSelectedElId(null);
+        return;
+      }
 
-                if (productId) {
-                    const row: any = await fetchTempletDesignById(productId);
-                    const raw = row?.raw_stores ?? row;
-                    const { design, slides } = buildSlidesFromRawStores(raw);
-                    setAdminDesign(design);
-                    setUserSlides(slides);
-                    setActiveSlide(0);
-                    setSelectedElId(null);
-                    return;
-                }
+      if (productId) {
+        const row: any = await fetchTempletDesignById(productId);
+        const raw = row?.raw_stores ?? row;
+        const { design, slides } = buildSlidesFromRawStores(raw);
+        setAdminDesign(design);
+        setUserSlides(slides);
+        setActiveSlide(0);
+        setSelectedElId(null);
+        return;
+      }
 
-                setAdminDesign(null);
-                setUserSlides([]);
-            } catch (e) {
-                console.error("Failed to load template:", e);
-                setAdminDesign(null);
-                setUserSlides([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+      setAdminDesign(null);
+      setUserSlides([]);
+    } catch (e) {
+      console.error("Failed to load template:", e);
+      setAdminDesign(null);
+      setUserSlides([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productId, state?.templetDesign]);
+  load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [productId, state?.templetDesign]);
+
 
     // ✅ Persist on every change
     // useEffect(() => {
@@ -383,11 +382,12 @@ export default function TempletEditor() {
         });
     };
 
-    const is3DCategory = (cat?: string) => cat === "Mugs" || cat === "Tote Bags" || cat === "Apparel";
+    const is3DCategory = (cat?: string) => cat === "Mugs" || cat === "Tote Bags B" || cat === "Apparel T";
     const isMugCategory = (cat?: string) => cat === "Mugs";
 
     const handleNavigatePrview = async () => {
         if (!adminDesign?.category) return;
+        setLoading(true);
         const category = encodeURIComponent(adminDesign.category);
 
         const navStateBase = {
@@ -429,6 +429,7 @@ export default function TempletEditor() {
         } else {
             navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, { state: navStateBase });
         }
+        setLoading(false);
     };
 
     const canEditSelected = !!selectedEl && selectedEl.editable !== false;
@@ -463,9 +464,7 @@ export default function TempletEditor() {
                     <Chip label={`${adminDesign.config.mmWidth} × ${adminDesign.config.mmHeight} mm`} size="small" />
                     {/* <Chip label={`Canvas: ${canvasW} × ${canvasH} px`} size="small" /> */}
                     <Box flexGrow={1} />
-                    <Button variant="contained" onClick={handleNavigatePrview}>
-                        Preview
-                    </Button>
+                    <LandingButton title="Preview" onClick={handleNavigatePrview} />
                 </Stack>
             </Box>
 
@@ -518,7 +517,7 @@ export default function TempletEditor() {
                         return (
                             <Box key={slide.id} sx={{
                                 position: "relative", display: "flex", gap: 2, flex: "0 0 auto",
-                                ml: i === 0 ? 350 : 0,
+                                // ml: i === 0 ? 350 : 0,
                             }}>
                                 {/* TOOLBAR */}
                                 {i === activeSlide && (
@@ -528,7 +527,7 @@ export default function TempletEditor() {
                                             position: "sticky",
                                             top: 0,
                                             alignSelf: "flex-start",
-                                            height: 'auto', // ✅ use displayH
+                                            height: 'auto',
                                             width: 64,
                                             borderRadius: 2,
                                             bgcolor: "#fff",
@@ -594,7 +593,7 @@ export default function TempletEditor() {
                                 <Box
                                     ref={setSlideRef(i)}
                                     sx={{
-                                        width: w * scale + 0,
+                                        width: w * scale,
                                         height: h * scale,
                                         left: 0,
                                         top: 0,
@@ -602,7 +601,7 @@ export default function TempletEditor() {
                                         position: "relative",
                                         overflow: "hidden",
                                         bgcolor: "rgba(255, 255, 255, 1)",
-                                        boxShadow: 2,
+                                        boxShadow: 1,
                                         // border: '1px solid red',
                                         flex: "0 0 auto",
                                     }}
@@ -713,7 +712,7 @@ export default function TempletEditor() {
                                                                 InputProps={{
                                                                     disableUnderline: true,
                                                                     sx: {
-                                                                        height: 'auto',
+                                                                        height: el.height * scale - 1,
                                                                         p: 0.5,
                                                                         "& .MuiInputBase-inputMultiline": {
                                                                             padding: 0,
@@ -731,7 +730,7 @@ export default function TempletEditor() {
                                                                         fontSize: t.fontSize * scale,
                                                                         fontFamily: t.fontFamily,
                                                                         color: t.color,
-                                                                        lineHeight: 1,
+                                                                        lineHeight: 1.5,
 
                                                                     },
                                                                 }}
@@ -741,7 +740,7 @@ export default function TempletEditor() {
                                                             <Typography
                                                                 sx={{
                                                                     width: "100%",
-                                                                    height: "100%",
+                                                                    height: 'auto',
                                                                     display: "flex",
                                                                     alignItems: "center",
                                                                     justifyContent:

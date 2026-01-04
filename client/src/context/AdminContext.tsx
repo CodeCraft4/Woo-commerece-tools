@@ -41,6 +41,10 @@ function writeLocalAdmin(admin: Admin | null) {
   else localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(admin));
 }
 
+const isUuid = (v: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+
+
 export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
   // initialize from localStorage synchronously to avoid flicker
   const initialAdmin = useMemo(() => (typeof window !== "undefined" ? readLocalAdmin() : null), []);
@@ -51,29 +55,31 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Optional: sanity-refresh admin row on mount if you want
   useEffect(() => {
-    let mounted = true;
-    const refresh = async () => {
-      if (!initialAdmin?.id) return;
-      try {
-        const { data } = await supabase
-          .from("admins")
-          .select("id, role, first_name, last_name, email, password, profile_image")
-          .eq("id", initialAdmin.id)
-          .single();
-        if (mounted && data) {
-          setAdmin(data as Admin);
-          setIsAdmin(true);
-          writeLocalAdmin(data as Admin);
-        }
-      } catch {
-        /* ignore */
-      }
-    };
-    refresh();
-    return () => {
-      mounted = false;
-    };
-  }, [initialAdmin?.id]);
+  let mounted = true;
+
+  const refresh = async () => {
+    if (!initialAdmin?.id) return;
+
+    // ✅ skip DB call for local/non-uuid ids
+    if (!isUuid(initialAdmin.id)) return;
+
+    const { data, error } = await supabase
+      .from("admins")
+      .select("id, role, first_name, last_name, email, profile_image")
+      .eq("id", initialAdmin.id)
+      .single();
+
+    if (!error && mounted && data) {
+      setAdmin(data as Admin);
+      setIsAdmin(true);
+      writeLocalAdmin(data as Admin);
+    }
+  };
+
+  refresh();
+  return () => { mounted = false; };
+}, [initialAdmin?.id]);
+
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {

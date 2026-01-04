@@ -21,7 +21,7 @@ const ViewAll = () => {
     refetchOnWindowFocus: false,
   });
 
-  console.log(allCards,'---')
+  console.log(allCards, '---')
 
   const { data: allCategories = [] } = useQuery({
     queryKey: ["allCategories"],
@@ -50,7 +50,7 @@ const ViewAll = () => {
           width: { lg: "1340px", md: "100%", sm: "100%", xs: "100%" },
           justifyContent: "center",
           m: "auto",
-          p: { lg: 3, md: 3, sm: 3, xs: 1 },
+          p: { lg: 1, md: 1, sm: 3, xs: 1 },
         }}
       >
         <Box
@@ -58,7 +58,7 @@ const ViewAll = () => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: 250,
+            height: 100,
             flexDirection: "column",
             m: "auto",
           }}
@@ -76,7 +76,6 @@ const ViewAll = () => {
         </Box>
 
         <ViewAllCard
-          
         />
 
         <Box sx={{ height: 200 }} />

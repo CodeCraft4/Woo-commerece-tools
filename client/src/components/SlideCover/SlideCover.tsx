@@ -278,7 +278,7 @@ const SlideCover = ({
   activeIndex,
   // togglePopup,
   rightBox,
-  // isCaptureMode,
+  isCaptureMode,
   isAdminEditor,
   addTextRight,
 }: SlideCoverProps) => {
@@ -761,6 +761,8 @@ const SlideCover = ({
   }, [bgEdit1]);
 
   /* ------------------ UI ------------------ */
+  // Draft capture 
+  const captureClean = !!isCaptureMode || !!isAdminEditor;
   return (
     <Box ref={coverRef} id="slide-cover-capture" sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}>
       {activeIndex === 0 && rightBox && (
@@ -772,15 +774,15 @@ const SlideCover = ({
             position: "relative",
             height: "700px",
             width: "100%",
-            opacity: isSlideActive1 ? 1 : 0.6,
-            pointerEvents: isSlideActive1 ? "auto" : "none",
+            opacity: captureClean ? 1 : (isSlideActive1 ? 1 : 0.6),
+            pointerEvents: captureClean ? "auto" : (isSlideActive1 ? "auto" : "none"),
             backgroundColor: bgColor1 ?? "transparent",
             "&::after": !isSlideActive1
               ? {
                 content: '""',
                 position: "absolute",
                 inset: 0,
-                backgroundColor: "rgba(105,105,105,0.51)",
+                backgroundColor: captureClean ? 'transparent' : "rgba(105,105,105,0.51)",
                 zIndex: 1000,
                 pointerEvents: "none",
               }

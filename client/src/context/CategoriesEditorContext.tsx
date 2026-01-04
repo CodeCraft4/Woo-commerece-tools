@@ -73,15 +73,15 @@ export type PublishMeta = {
   subCategory?: string;
   subSubCategory?: string;
 
-  actualprice?: string;
-  a4price?: string;
-  a5price?: string;
-  usletter?: string;
+  actualprice?: any;
+  a4price?: any;
+  a5price?: any;
+  usletter?: any;
 
-  saleprice?: string;
-  salea4price?: string;
-  salea5price?: string;
-  saleusletter?: string;
+  saleprice?: any;
+  salea4price?: any;
+  salea5price?: any;
+  saleusletter?: any;
 
   description?: string;
   sku?: string;
@@ -449,7 +449,8 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
         console.error("DB save failed:", error);
         toast.error("Save failed");
       } else {
-        toast.success("✅ Saved template");
+        toast.success(isEdit ? "✅ Updated template Design" : "✅ Saved template Design");
+        reset();
       }
     } catch (e) {
       console.error("Save error:", e);

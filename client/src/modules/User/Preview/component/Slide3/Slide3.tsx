@@ -354,54 +354,46 @@ const Slide3 = (props:Slide3Props) => {
         ))}
 
       {multipleTextValue3 &&
-        texts3.map((e, index) => (
+        texts3.map((e: any, index: number) => (
           <Box
             key={index}
             sx={{
-              position: "relative",
-              height: { md: 210, sm: "175px", xs: "175px" }, // ✅ match editable container height
-              width: "100%",
-              mb: 2,
+              position: "absolute",
+              left: 8,
+              right: 8,
+              top: 8 + index * 220, // stack blocks like editor; adjust spacing
+              height: 210,
+              borderRadius: "6px",
               display: "flex",
-              justifyContent:
+              alignItems:
                 e.verticalAlign === "top"
                   ? "flex-start"
                   : e.verticalAlign === "center"
                     ? "center"
                     : "flex-end",
-              alignItems: "center",
-              border: "3px dashed transparent", // ✅ visually matches editable version but invisible
-              borderRadius: "6px",
+              justifyContent:
+                e.textAlign === "left"
+                  ? "flex-start"
+                  : e.textAlign === "right"
+                    ? "flex-end"
+                    : "center",
               p: 1,
+              zIndex: 9999,
+              pointerEvents: "none",
             }}
           >
             <Typography
               sx={{
-                textAlign: e.textAlign,
-                fontSize: e.fontSize3,
-                fontWeight: e.fontWeight3,
-                color: e.fontColor3,
-                fontFamily: e.fontFamily3,
-                lineHeight: e.lineHeight,
-                letterSpacing: e.letterSpacing,
-                wordBreak: "break-word",
-                whiteSpace: "pre-line",
+                fontSize: e.fontSize3 ?? 16,
+                fontWeight: e.fontWeight3 ?? 400,
+                color: e.fontColor3 ?? "#000",
+                fontFamily: e.fontFamily3 ?? "Roboto, sans-serif",
+                textAlign: e.textAlign3 ?? "center",
+                lineHeight: e.lineHeight3 ?? 1.2,
+                letterSpacing: e.letterSpacing3 ?? 0,
                 width: "100%",
-                height: "80%",
-                display: "flex",
-                alignItems:
-                  e.verticalAlign === "top"
-                    ? "flex-start"
-                    : e.verticalAlign === "bottom"
-                      ? "flex-end"
-                      : "center",
-                justifyContent:
-                  e.textAlign === "left"
-                    ? "flex-start"
-                    : e.textAlign === "right"
-                      ? "flex-end"
-                      : "center",
-                m: "auto",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
               }}
             >
               {e.value}

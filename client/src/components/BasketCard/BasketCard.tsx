@@ -1,8 +1,7 @@
 import { Box, Typography } from "@mui/material";
-import LandingButton from "../LandingButton/LandingButton";
+// import LandingButton from "../LandingButton/LandingButton";
 import type { CategoryType } from "../ProductPopup/ProductPopup";
-import toast from "react-hot-toast";
-import { useCartStore } from "../../stores";
+
 
 type BasketType = {
   id?: string | number;
@@ -16,22 +15,20 @@ type BasketType = {
 };
 
 const BasketCard = (props: BasketType) => {
-  const { poster, price, sales, id, title, category, saleprice, openModal } =
+  const { poster, price, sales, id, saleprice, openModal } =
     props;
 
-  const { addToCart } = useCartStore();
-
   // Store Card in the context API.
-  const handleAddToCart = () => {
-    addToCart({
-      id: id,
-      img: poster,
-      title: title,
-      price: price,
-      category: category ? category : "default",
-    });
-    toast.success("Product add to store");
-  };
+  // const handleAddToCart = () => {
+  //   addToCart({
+  //     id: id,
+  //     img: poster,
+  //     title: title,
+  //     price: price,
+  //     category: category ? category : "default",
+  //   });
+  //   toast.success("Product add to store");
+  // };
 
   return (
     <Box
@@ -55,7 +52,7 @@ const BasketCard = (props: BasketType) => {
         alt="backetImg"
         sx={{
           width: { md: "100%", sm: "100%", xs: "100%" },
-          height: { lg: '200px', md: "200px", sm: "200px", xs: "350px" },
+          height: { lg: '250px', md: "250px", sm: "200px", xs: "350px" },
           objectFit: "fill",
           borderRadius: 2,
           "&:hover": { transform: "scale(1.03)" },
@@ -90,12 +87,12 @@ const BasketCard = (props: BasketType) => {
         )} */}
       </Box>
 
-      <LandingButton
+      {/* <LandingButton
         title="Add To Basket"
         width="100%"
         variant="outlined"
         onClick={handleAddToCart}
-      />
+      /> */}
     </Box>
   );
 };
