@@ -1,46 +1,85 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-type Product = {
-  id?: number | string;
+export type SizeKey = "a4" | "a3" | "us_letter";
+
+export type PriceTable = Record<SizeKey, number>;
+
+export type CartItem = {
+  id: string | number;
+  type: "card" | "template";
   img?: string;
   title?: string;
   category?: string;
-  price?: number | string;
+
+  selectedSize: SizeKey;
+
+  prices: {
+    actual: PriceTable;
+    sale?: Partial<PriceTable>;
+  };
+
+  isOnSale: boolean;
+  displayPrice: number;
+
+   polygonlayout?: any;      // card editor
+  rawStores?: any;          // template editor (your rawStores)
+  templetDesign?: any; 
 };
 
-interface CartState {
-  cart: Product[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (id: string | number) => void;
+type AddResult = { ok: true } | { ok: false; reason: "exists" | "invalid" };
+
+type CartState = {
+  cart: CartItem[];
+  addToCart: (item: CartItem) => AddResult;
+  updateCartItem: (
+    id: string | number,
+    type: CartItem["type"],
+    patch: Partial<CartItem>
+  ) => void;
+  removeFromCart: (id: string | number, type?: CartItem["type"]) => void;
   clearCart: () => void;
-  setCart: (cart: Product[]) => void;
-}
+  hasItem: (id: string | number, type: CartItem["type"]) => boolean;
+};
 
 export const useCartStore = create<CartState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       cart: [],
 
-      setCart: (cart) => set({ cart }),
+      hasItem: (id, type) =>
+        get().cart.some((x) => String(x.id) === String(id) && x.type === type),
 
-      addToCart: (product: Product) => {
-        set((state) => ({ cart: [...state.cart, product] }));
+      addToCart: (item) => {
+        if (!item?.id) return { ok: false, reason: "invalid" };
+        if (get().hasItem(item.id, item.type))
+          return { ok: false, reason: "exists" };
+        set((s) => ({ cart: [...s.cart, item] }));
+        return { ok: true };
       },
 
-      removeFromCart: (id: string | number) => {
-        set((state) => ({
-          cart: state.cart.filter((item) => item.id !== id)
+      updateCartItem: (id, type, patch) => {
+        set((s) => ({
+          cart: s.cart.map((x) => {
+            if (String(x.id) !== String(id) || x.type !== type) return x;
+            return { ...x, ...patch };
+          }),
         }));
       },
 
-      clearCart: () => {
-        set({ cart: [] });
+      removeFromCart: (id, type) => {
+        set((s) => ({
+          cart: s.cart.filter((x) => {
+            const sameId = String(x.id) === String(id);
+            if (!sameId) return true;
+            if (!type) return false;
+            return x.type !== type;
+          }),
+        }));
       },
+
+      clearCart: () => set({ cart: [] }),
     }),
-    {
-      name: 'cart-storage',
-      partialize: (state) => ({ cart: state.cart }),
-    }
+    { name: "cart-store-v2" }
   )
 );

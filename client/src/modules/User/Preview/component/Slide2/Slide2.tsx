@@ -44,7 +44,7 @@ const Slide2 = (props: Slide2Props) => {
 
   return (
     <Box
-    ref={ref}
+      ref={ref}
       sx={{
         position: "relative",
         width: 485,
@@ -357,60 +357,53 @@ const Slide2 = (props: Slide2Props) => {
         ))}
 
       {multipleTextValue &&
-        texts.map((e, index) => (
+        texts.map((e: any, index: number) => (
           <Box
             key={index}
             sx={{
-              position: "relative",
-              height: { md: 210, sm: '175px', xs: '174px' },
-              width: "100%",
-              mb: 2,
+              position: "absolute",
+              left: 8,
+              right: 8,
+              top: 8 + index * 220, // stack blocks like editor; adjust spacing
+              height: 210,
+              borderRadius: "6px",
               display: "flex",
-              justifyContent:
+              alignItems:
                 e.verticalAlign === "top"
                   ? "flex-start"
                   : e.verticalAlign === "center"
                     ? "center"
                     : "flex-end",
-              alignItems: "center",
-              border: "3px dashed transparent", // ✅ visually matches editable version but invisible
-              borderRadius: "6px",
+              justifyContent:
+                e.textAlign === "left"
+                  ? "flex-start"
+                  : e.textAlign === "right"
+                    ? "flex-end"
+                    : "center",
               p: 1,
+              zIndex: 9999,
+              pointerEvents: "none",
             }}
           >
             <Typography
               sx={{
-                textAlign: e.textAlign,
-                fontSize: e.fontSize1,
-                fontWeight: e.fontWeight,
-                color: e.fontColor,
-                fontFamily: e.fontFamily,
-                lineHeight: e.lineHeight,
-                letterSpacing: e.letterSpacing,
-                wordBreak: "break-word",
-                whiteSpace: "pre-line",
+                fontSize: e.fontSize ?? 16,
+                fontWeight: e.fontWeight ?? 400,
+                color: e.fontColor ?? "#000",
+                fontFamily: e.fontFamily ?? "Roboto, sans-serif",
+                textAlign: e.textAlign ?? "center",
+                lineHeight: e.lineHeight ?? 1.2,
+                letterSpacing: e.letterSpacing ?? 0,
                 width: "100%",
-                height: "80%",
-                display: "flex",
-                alignItems:
-                  e.verticalAlign === "top"
-                    ? "flex-start"
-                    : e.verticalAlign === "bottom"
-                      ? "flex-end"
-                      : "center",
-                justifyContent:
-                  e.textAlign === "left"
-                    ? "flex-start"
-                    : e.textAlign === "right"
-                      ? "flex-end"
-                      : "center",
-                m: "auto",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
               }}
             >
               {e.value}
             </Typography>
           </Box>
         ))}
+
 
       {/* 📝 Single Text Layout */}
       {selectedLayout === "oneText" && (

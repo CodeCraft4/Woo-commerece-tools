@@ -47,6 +47,16 @@ type Props = { editProduct?: EditFormValue };
 
 /* ========= Component ========= */
 
+const normalizeNumberInput = (v: unknown) =>
+    typeof v === "string" ? v.replace(/,/g, "").trim() : String(v ?? "").trim();
+
+const toRequiredFloat = (v?: string) => Number(normalizeNumberInput(v));
+const toOptionalFloatOrNull = (v?: string) => {
+    const raw = normalizeNumberInput(v);
+    if (raw === "") return null;
+    return Number(raw);
+};
+
 const TempletForm = ({ editProduct }: Props) => {
     const { saveDesign, loading, setLoading } = useCategoriesEditorState();
     const navigate = useNavigate()
@@ -246,14 +256,16 @@ const TempletForm = ({ editProduct }: Props) => {
             cardcategory: data.cardcategory,
             subCategory: data.subCategory,
             subSubCategory: data.subSubCategory,
-            actualprice: data.actualprice || "",
-            a4price: data.a4price || "",
-            a5price: data.a5price || "",
-            usletter: data.usletter || "",
-            saleprice: data.saleprice || "",
-            salea4price: data.salea4price || "",
-            salea5price: data.salea5price || "",
-            saleusletter: data.saleusletter || "",
+            actualprice: toRequiredFloat(data.actualprice),
+            a4price: toRequiredFloat(data.a4price),
+            a5price: toRequiredFloat(data.a5price),
+            usletter: toRequiredFloat(data.usletter),
+
+            // ✅ optional floats (null when empty)
+            saleprice: toOptionalFloatOrNull(data.saleprice),
+            salea4price: toOptionalFloatOrNull(data.salea4price),
+            salea5price: toOptionalFloatOrNull(data.salea5price),
+            saleusletter: toOptionalFloatOrNull(data.saleusletter),
             description: data.description,
             sku: data.sku,
             imgUrl: captured ?? previewUrl,
@@ -521,8 +533,8 @@ const TempletForm = ({ editProduct }: Props) => {
                             error={errors.a4price?.message}
                         />
                         <CustomInput
-                            label="A5 Price"
-                            placeholder="A5 price"
+                            label="A3 Price"
+                            placeholder="A3 price"
                             defaultValue=""
                             register={register("a5price", {
                                 required: !editProduct ? "Actual Price is required" : false,
@@ -556,8 +568,8 @@ const TempletForm = ({ editProduct }: Props) => {
                             error={errors.salea4price?.message}
                         />
                         <CustomInput
-                            label="Sale A5 Price"
-                            placeholder="Sale A5 Price"
+                            label="Sale A3 Price"
+                            placeholder="Sale A3 Price"
                             defaultValue=""
                             register={register("salea5price")}
                             error={errors.salea5price?.message}

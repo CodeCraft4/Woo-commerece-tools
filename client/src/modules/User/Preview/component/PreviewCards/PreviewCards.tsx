@@ -17,7 +17,7 @@ const PreviewBookCard = () => {
   const [currentLocation, setCurrentLocation] = useState(1);
   // single index for mobile 1..4
   const [mobileIndex, setMobileIndex] = useState(1);
-  const [loading,setLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
 
@@ -70,38 +70,38 @@ const PreviewBookCard = () => {
 
   console.log(slideImages, '--')
 
- const captureSlides = async () => {
-  setLoading(true)
-  const results: any = {};
+  const captureSlides = async () => {
+    setLoading(true)
+    const results: any = {};
 
-  // 1️⃣ Disable transform ONLY on slide sections
-  const slidesForCapture = document.querySelectorAll(".capture-slide");
-  slidesForCapture.forEach((el) => {
-    el.classList.add("capture-no-transform");
-  });
-
-  // 2️⃣ Capture each slide
-  for (let key of ["s1", "s2", "s3", "s4"]) {
-    const node = slideRefs[key].current;
-    if (!node) continue;
-
-    const dataUrl = await toPng(node, {
-      cacheBust: true,
-      pixelRatio: 2,
+    // 1️⃣ Disable transform ONLY on slide sections
+    const slidesForCapture = document.querySelectorAll(".capture-slide");
+    slidesForCapture.forEach((el) => {
+      el.classList.add("capture-no-transform");
     });
 
-    results[key.replace("s", "slide")] = dataUrl;
-  }
+    // 2️⃣ Capture each slide
+    for (let key of ["s1", "s2", "s3", "s4"]) {
+      const node = slideRefs[key].current;
+      if (!node) continue;
 
-  // 3️⃣ Restore transforms
-  slidesForCapture.forEach((el) => {
-    el.classList.remove("capture-no-transform");
-  });
+      const dataUrl = await toPng(node, {
+        cacheBust: true,
+        pixelRatio: 2,
+      });
 
-  setSlideImages(results);
-  setLoading(false)
-  return results;
-};
+      results[key.replace("s", "slide")] = dataUrl;
+    }
+
+    // 3️⃣ Restore transforms
+    slidesForCapture.forEach((el) => {
+      el.classList.remove("capture-no-transform");
+    });
+
+    setSlideImages(results);
+    setLoading(false)
+    return results;
+  };
 
 
 
@@ -155,7 +155,7 @@ const PreviewBookCard = () => {
                 </div>
                 <div className="back">
                   <div className="back-content capture-slide" id="b1">
-                    <Slide2 ref={slideRefs.s2}  />
+                    <Slide2 ref={slideRefs.s2} />
                   </div>
                 </div>
               </div>
@@ -166,12 +166,12 @@ const PreviewBookCard = () => {
               >
                 <div className="front">
                   <div className="front-content capture-slide" id="f2">
-                    <Slide3 ref={slideRefs.s3}  />
+                    <Slide3 ref={slideRefs.s3} />
                   </div>
                 </div>
                 <div className="back">
                   <div className="back-content capture-slide" id="b2">
-                    <Slide4  ref={slideRefs.s4} />
+                    <Slide4 ref={slideRefs.s4} />
                   </div>
                 </div>
               </div>

@@ -22,9 +22,9 @@ import { Avatar, Badge, Link, ListItemIcon, Menu, MenuItem } from "@mui/material
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { useAuth } from "../../../context/AuthContext";
-import RemindersDrawer from "../../../components/RemindersDrawer/RemindersDrawer";
 import { fetchAllCategoriesFromDB } from "../../../source/source";
 import { useQuery } from "@tanstack/react-query";
+import RemindersDrawer from "../../../components/RemindersDrawer/RemindersDrawer";
 
 interface Props {
   window?: () => Window;
@@ -84,7 +84,7 @@ export default function Header(props: Props) {
   const { data: navCategories = [], isLoading, isError } = useQuery<any[]>({
     queryKey: ["navCategories"],
     queryFn: fetchAllCategoriesFromDB,
-    staleTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

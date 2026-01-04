@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Box, CircularProgress } from "@mui/material";
 import { COLORS } from "../../constant/color";
-import {TuneOutlined } from "@mui/icons-material";
+import { TuneOutlined } from "@mui/icons-material";
 import useModal from "../../hooks/useModal";
 import type { CategoryType } from "../ProductPopup/ProductPopup";
 import ProductPopup from "../ProductPopup/ProductPopup";
@@ -66,7 +66,7 @@ const ViewAllCard = () => {
 
   // (optional) search box later
   const [searchText, setSearchText] = useState("");
-  console.log(setSearchText,'-')
+  console.log(setSearchText, '-')
   const query = lc(searchText);
 
   // ✅ categories (tabs)
@@ -205,7 +205,7 @@ const ViewAllCard = () => {
       {/* Tabs */}
       <Box
         sx={{
-          mt: { md: 8 },
+          mt: { md: 2 },
           display: "flex",
           gap: "14px",
           alignItems: "center",
@@ -309,7 +309,8 @@ const ViewAllCard = () => {
                   height: 300,
                   objectFit: "cover",
                   borderRadius: 2,
-                  border: "2px solid lightGray",
+                  // border: "1px solid lightGray",
+                  boxShadow: 3,
                   cursor: "pointer",
                 }}
               />

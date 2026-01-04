@@ -10,23 +10,40 @@ import LandingButton from "../LandingButton/LandingButton";
 const RemindersDrawer = () => {
   const [open, setOpen] = React.useState(false);
 
-  const toggleDrawer = (newOpen: boolean) => () => {
-    setOpen(newOpen);
+  const toggleDrawer = (newOpen: boolean) => () => setOpen(newOpen);
+
+  const openGoogleCalendar = () => {
+    // You can later replace these with real selected event details
+    const title = "DIY Personalisation";
+    const details = "Create your personalised design in time — don’t leave it last minute!";
+    const location = "DIY Personalisation";
+
+    // Optional: Set a default date/time (example: tomorrow 9am for 1 hour)
+    // Google expects YYYYMMDDTHHMMSSZ (UTC) OR without Z for local-ish
+    // If you don’t want date/time, remove &dates=... completely
+    // const start = "20260103T090000Z";
+    // const end = "20260103T100000Z";
+
+    const url =
+      "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+      `&text=${encodeURIComponent(title)}` +
+      `&details=${encodeURIComponent(details)}` +
+      `&location=${encodeURIComponent(location)}`;
+      // + `&dates=${start}/${end}`;
+
+    setOpen(false); // ✅ actually closes drawer
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const DrawerList = (
-    <Box sx={{ width: 450, p: 2 }} role="presentation">
+    <Box sx={{ width: 350, p: 2 }} role="presentation">
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
         }}
       >
-        <Typography sx={{ fontSize: "20px", fontWeight: "bold" }}>
-          Notification
-        </Typography>
-
         {/* ✅ Close only on this button */}
         <IconButton onClick={toggleDrawer(false)}>
           <Close />
@@ -43,7 +60,7 @@ const RemindersDrawer = () => {
           width: "100%",
           height: "60vh",
           textAlign: "center",
-          mt: 8,
+          mt: 6,
           justifyContent: "center",
           alignItems: "center",
         }}
@@ -51,36 +68,22 @@ const RemindersDrawer = () => {
         <Box
           component={"img"}
           src="/assets/icons/reminder-calender.svg"
-          sx={{
-            width: 130,
-            height: 130,
-          }}
+          sx={{ width: 130, height: 130 }}
         />
 
-        <Typography sx={{ fontSize: "24px", fontWeight: 700, pb: 2 }}>
-          80% of our customers have got a reminder.
+        <Typography sx={{ fontSize: "24px", fontWeight: 700, pb: 1 }}>
+          Set a reminder
         </Typography>
-        <Typography>
-          Set a reminder below and never forget an important occasion again –
-          phew!
-        </Typography>
-        <Typography sx={{ fontSize: "20px", fontWeight: 700, pb: 2 }}>
-          Get 20% off on the DIY Personalisation app now when you set 3
-          reminders!
+
+        <Typography sx={{ maxWidth: 360 }}>
+          Add an event to your Google Calendar so you never miss birthdays, anniversaries, or special occasions again.
         </Typography>
 
         <LandingButton
-          title="Set Reminders"
-          width="400px"
+          title="Set Reminder"
+          width="300px"
           personal
-          onClick={toggleDrawer(false)}
-        />
-        <LandingButton
-          title="View All Reminders"
-          width="400px"
-          personal
-          variant="outlined"
-          onClick={toggleDrawer(false)}
+          onClick={openGoogleCalendar}
         />
       </Box>
     </Box>
@@ -98,15 +101,11 @@ const RemindersDrawer = () => {
         <Box
           component="img"
           src="/assets/icons/Reminders.svg"
-          sx={{
-            width: 35,
-            height: 35,
-          }}
+          sx={{ width: 35, height: 35 }}
         />
         <Typography fontSize="12px">Reminders</Typography>
       </IconButton>
 
-      {/* ✅ Drawer closes only on outside click or Close button */}
       <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}>
         {DrawerList}
       </Drawer>
