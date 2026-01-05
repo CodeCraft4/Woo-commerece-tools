@@ -291,7 +291,7 @@ const CategoriesWisePreview: React.FC = () => {
                 </Typography>
 
                 <Box sx={{ display: "flex", gap: 2 }}>
-                    <LandingButton title="Add to basket" variant="outlined" />
+                    {/* <LandingButton title="Add to basket" variant="outlined" /> */}
                     <LandingButton
                         title="Download"
                         loading={downloading}

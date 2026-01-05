@@ -372,12 +372,19 @@ const SlideCover = ({
   /* ------------------ pull slide1 from route ------------------ */
 
   const location = useLocation();
+  const draftFull = location.state?.draftFull ?? null;
   const slide1 = location.state?.layout?.slides?.slide1 ?? null;
 
-  console.log(layout1, '---')
+  // console.log(layout1, '---')
 
   /* ------------------ normalize slide1 -> user view state ------------------ */
   useEffect(() => {
+    if (draftFull?.slide1) {
+      // bgColor/bgImage base se hi rakho (agar chaho)
+      // but elements/stickers/textElements draft se load karo
+      setLayout1?.(draftFull.slide1);
+      return;
+    }
     if (!slide1) return;
     const norm = normalizeSlide(slide1);
     setBgColor1?.(norm.bgColor);
@@ -962,7 +969,7 @@ const SlideCover = ({
                           sx={{
                             width: "100%",
                             height: "100%",
-                            objectFit: "cover",
+                            objectFit: "fill",
                             borderRadius: 1,
                             display: "block",
                             pointerEvents: "none",

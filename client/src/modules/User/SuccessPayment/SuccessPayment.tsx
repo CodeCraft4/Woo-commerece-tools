@@ -44,19 +44,48 @@ const SuccessPayment = () => {
 
   const sessionId = useMemo(() => searchParams.get("session_id"), [searchParams]);
 
+  // ✅ Read slides from sessionStorage (and fallback to localStorage backup if you add it)
+  const getRawSlidesString = () => {
+    return sessionStorage.getItem("slides") || localStorage.getItem("slides_backup");
+  };
+
+  const normalizeSlidesToArray = (slides: any): string[] => {
+    // If already array, keep it
+    if (Array.isArray(slides)) {
+      return slides
+        .map((x) => {
+          if (typeof x === "string") return x;
+          if (x && typeof x === "object") return x.image ?? x.src ?? x.png ?? x.dataUrl ?? "";
+          return "";
+        })
+        .filter(Boolean);
+    }
+
+    // ✅ If object: { slide1, slide2, slide3, slide4 }
+    if (slides && typeof slides === "object") {
+      return [slides.slide1, slides.slide2, slides.slide3, slides.slide4].filter(Boolean);
+    }
+
+    return [];
+  };
+
   const getCleanedSlides = () => {
     let slides: any = null;
-    const raw = sessionStorage.getItem("slides");
+    const raw = getRawSlidesString();
 
     if (raw && raw !== "undefined") {
       try {
         slides = JSON.parse(raw);
-      } catch {
+      } catch (e) {
+        console.log("🟥 JSON parse error:", e);
         slides = null;
       }
     }
 
-    const cleanedSlides = Array.isArray(slides) ? slides.filter(isNonEmptySlide) : [];
+    console.log("🟦 Parsed slides:", slides);
+
+    const slidesArray = normalizeSlidesToArray(slides);
+    const cleanedSlides = slidesArray.filter(isNonEmptySlide);
     return cleanedSlides;
   };
 
@@ -78,19 +107,15 @@ const SuccessPayment = () => {
     }
 
     try {
-      const res = await fetch(
-        // ✅ use your deployed backend in prod, localhost in dev
-        "https://diypersonalisation.com/api/send-pdf-after-success",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sessionId,
-            cardSize: localStorage.getItem("selectedSize"),
-            slides: cleanedSlides,
-          }),
-        }
-      );
+      const res = await fetch("https://diypersonalisation.com/api/send-pdf-after-success", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          cardSize: localStorage.getItem("selectedSize"),
+          slides: cleanedSlides,
+        }),
+      });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -101,9 +126,7 @@ const SuccessPayment = () => {
       setStatus("success");
       toast.success("Payment successful! PDF has been emailed to you.");
     } catch (e: any) {
-      const msg =
-        e?.message ||
-        "We couldn't generate your PDF right now. Please try again.";
+      const msg = e?.message || "We couldn't generate your PDF right now. Please try again.";
 
       setStatus("error");
       setErrorMsg(msg);
@@ -125,15 +148,15 @@ const SuccessPayment = () => {
     // ✅ block close only while loading
     if (status === "loading") return;
     closePDFModal();
-    navigate(-3);
+    navigate(-4);
   };
 
   const modalTitle =
     status === "loading"
       ? "Generating your PDF…"
       : status === "success"
-      ? "✅ PDF generated & sent to your email"
-      : "❌ PDF was not generated";
+        ? "✅ PDF generated & sent to your email"
+        : "❌ PDF was not generated";
 
   const modalIcon =
     status === "loading" ? (
@@ -145,11 +168,7 @@ const SuccessPayment = () => {
     );
 
   const modalBtnText =
-    status === "loading"
-      ? "Please wait…"
-      : status === "success"
-      ? "Open Gmail"
-      : "Try Again";
+    status === "loading" ? "Please wait…" : status === "success" ? "Open Gmail" : "Try Again";
 
   const handlePrimaryClick = () => {
     if (status === "success") openGmail();
@@ -176,12 +195,12 @@ const SuccessPayment = () => {
           icon={modalIcon}
           btnText={modalBtnText}
           onClick={handlePrimaryClick}
-          // ✅ if your ConfirmModal supports "description" prop, use it
-          // description={status === "error" ? errorMsg : undefined}
+        // ✅ If your ConfirmModal supports description prop, uncomment:
+        // description={status === "error" ? errorMsg : undefined}
         />
       )}
 
-      {/* ✅ If ConfirmModal doesn't have description prop, show message outside it */}
+      {/* ✅ If ConfirmModal doesn't support description prop, show error below */}
       {isPDFModal && status === "error" && (
         <Box
           sx={{

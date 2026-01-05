@@ -46,6 +46,7 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     const KEYS = ["selectedSize", "selectedVariant", "categorieTemplet", "3dModel", "selectedPrices"];
     KEYS.forEach((k) => localStorage.removeItem(k));
     sessionStorage.removeItem("slides");
+    sessionStorage.removeItem("slides_backup");
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const key = localStorage.key(i);
       if (key && key.startsWith("templetEditor:draft:")) localStorage.removeItem(key);
@@ -228,9 +229,9 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
       const isContinueDraft = Boolean((cate as any).__draft === true);
 
-    const draftId = isContinueDraft
-      ? ensureDraftCardId(String(cate?.id ?? "")) // id is draft card_id uuid
-      : (() => {
+      const draftId = isContinueDraft
+        ? ensureDraftCardId(String(cate?.id ?? "")) // id is draft card_id uuid
+        : (() => {
           // ✅ New card: force new id so it creates a NEW draft later
           const id = newUuid();
           setDraftCardId(id);
