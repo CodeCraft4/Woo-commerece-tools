@@ -213,6 +213,7 @@ interface Slide3ContextType {
 
   // For Sticker
   selectedStickers3: StickerItem[];
+  setSelectedStickers3: any;
   addSticker3: (
     sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex">
   ) => void;
@@ -785,6 +786,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         setImages3,
         addSticker3,
         selectedStickers3,
+        setSelectedStickers3,
         updateSticker3,
         removeSticker3,
 

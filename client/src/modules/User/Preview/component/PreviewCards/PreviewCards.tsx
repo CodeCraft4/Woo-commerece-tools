@@ -119,6 +119,7 @@ const PreviewBookCard = () => {
             onClick={async () => {
               const slidesCaptured = await captureSlides();
               sessionStorage.setItem("slides", JSON.stringify(slidesCaptured));
+              localStorage.setItem("slides_backup", JSON.stringify(slidesCaptured));
               navigate(USER_ROUTES.SUBSCRIPTION);
             }}
 

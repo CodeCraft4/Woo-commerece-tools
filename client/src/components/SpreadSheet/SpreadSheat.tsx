@@ -102,11 +102,13 @@ const SlideSpread = ({
     setIsAIimage2,
     selectedAIimageUrl2,
     selectedStickers2,
+    setSelectedStickers2,
     updateSticker2,
     removeSticker2,
     aimage2,
     setAIImage2,
     setSelectedLayout,
+    setSelectedAIimageUrl2,
 
     setImageFilter,
     setActiveFilterImageId,
@@ -138,16 +140,65 @@ const SlideSpread = ({
   const [selectedBgIndex2, setSelectedBgIndex2] = useState<number | null>(null);
 
   const location = useLocation();
-  const slide2 = location.state?.layout?.slides?.slide2 ?? null;
-
+  const slide2Template = location.state?.layout?.slides?.slide2 ?? null;
+  const draftSlide2 = location.state?.draftFull?.slide2 ?? null;
 
   useEffect(() => {
-    if (!slide2) return;
-    const norm = normalizeSlide(slide2);
+    // ✅ 1) If draft exists => restore FULL user draft (and STOP)
+    if (draftSlide2) {
+      setLayout2?.(draftSlide2.layout ?? null);
+      setBgColor2?.(draftSlide2.bgColor ?? null);
+      setBgImage2?.(draftSlide2.bgImage ?? null);
+
+      // ✅ restore layout type
+      const type = draftSlide2.layoutType ?? "blank";
+      setSelectedLayout?.(type);
+
+      // ✅ restore one text
+      setShowOneTextRightSideBox?.(type === "oneText");
+      setOneTextValue?.(draftSlide2.oneTextLayout?.value ?? "");
+
+      // ✅ restore multiple text boxes + their content
+      setMultipleTextValue?.(type === "multipleText");
+      setTexts?.(draftSlide2.multipleTextLayout ?? []);
+
+      // ✅ restore free user edits (MOST IMPORTANT)
+      setTextElements?.(draftSlide2.textElements ?? []);
+      setDraggableImages?.(draftSlide2.draggableImages ?? []);
+      setQrPosition?.(draftSlide2.qrPosition ?? { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" });
+      setQrAudioPosition?.(draftSlide2.qrAudioPosition ?? { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" });
+
+      setSelectedVideoUrl?.(draftSlide2.selectedVideoUrl ?? null);
+      setSelectedAudioUrl?.(draftSlide2.selectedAudioUrl ?? null);
+
+      // stickers that user placed (Rnd stickers)
+      // agar tumhare context me setter hai:
+      setSelectedStickers2?.(draftSlide2.selectedStickers2 ?? []);
+
+      // AI image
+      if (draftSlide2.aiImage) {
+        setAIImage2?.({
+          x: draftSlide2.aiImage.x,
+          y: draftSlide2.aiImage.y,
+          width: draftSlide2.aiImage.width,
+          height: draftSlide2.aiImage.height,
+        });
+        setIsAIimage2?.(!!draftSlide2.aiImage.active);
+        // selectedAIimageUrl2 usually setter se bhi set karna hoga
+        setSelectedAIimageUrl2?.(draftSlide2.aiImage.url ?? "");
+      }
+
+      return; // ✅ IMPORTANT: stop here, don't normalize template
+    }
+
+    // ✅ 2) If no draft => use template normalize
+    if (!slide2Template) return;
+    const norm = normalizeSlide(slide2Template);
     setBgColor2?.(norm.bgColor);
     setBgImage2?.(norm.bgImage);
-    setLayout2(norm.layout);
-  }, [slide2, setBgColor2, setBgImage2, setLayout2]);
+    setLayout2?.(norm.layout);
+  }, [draftSlide2, slide2Template]);
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
@@ -1726,7 +1777,7 @@ const SlideSpread = ({
                             sx={{
                               width: "100%",
                               height: "100%",
-                              objectFit: "cover",
+                              objectFit: "fill",
                               borderRadius: 1,
                               display: "block",
                               pointerEvents: "none",

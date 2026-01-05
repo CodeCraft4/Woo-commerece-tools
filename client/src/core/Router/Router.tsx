@@ -36,6 +36,7 @@ import BlogsEditor from "../../modules/Admin/BlogsEditor/BlogsEditor";
 import UploadToturial from "../../modules/Admin/UploadToturial/UploadToturial";
 import UserProfile from "../../modules/User/UserProfile/UserProfile";
 import AddNewTemplets from "../../modules/Admin/AddNewTemplets/AddNewTemplets";
+import Draft from "../../modules/User/Drafts/Draft";
 
 const Router = () => {
   return (
@@ -60,6 +61,7 @@ const Router = () => {
       />
       <Route path={USER_ROUTES.PREVIEW} element={<Preview />} />
       <Route path={`${USER_ROUTES.VIEW_ALL}/:search`} element={<ViewAll />} />
+      <Route path={`${USER_ROUTES.USER_DRAFTS_CARDS}`} element={<Draft />} />
       <Route path={USER_ROUTES.ADD_TO_CART} element={<AddToCart />} />
       <Route path={USER_ROUTES.SUBSCRIPTION} element={<Subscription />} />
       <Route path={USER_ROUTES.COMMUNITY_HUB} element={<CommunityHub />} />

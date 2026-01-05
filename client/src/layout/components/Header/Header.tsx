@@ -13,7 +13,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
 import LOGO from "/assets/images/blackLOGO.png";
-import { ChevronLeft, ChevronRight, Close, Logout, Person, Search, Settings } from "@mui/icons-material";
+import { ChevronLeft, ChevronRight, Close, Drafts, Logout, Person, Search, Settings } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 import MegaMenu from "../../../components/MegaMenu/MegaMenu";
@@ -487,6 +487,17 @@ export default function Header(props: Props) {
 
                         <MenuItem
                           onClick={() => {
+                            navigate(USER_ROUTES.USER_DRAFTS_CARDS);
+                            handleCloseMenu();
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Drafts fontSize="small" />
+                          </ListItemIcon>
+                          <Typography>Draft Card</Typography>
+                        </MenuItem>
+                        {/* <MenuItem
+                          onClick={() => {
                             // navigate(USER_ROUTES.SETTINGS);
                             handleCloseMenu();
                           }}
@@ -495,7 +506,7 @@ export default function Header(props: Props) {
                             <Settings fontSize="small" />
                           </ListItemIcon>
                           <Typography>Settings</Typography>
-                        </MenuItem>
+                        </MenuItem> */}
 
                         <MenuItem onClick={handleLogout}>
                           <ListItemIcon>

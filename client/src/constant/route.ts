@@ -8,6 +8,7 @@ export const USER_ROUTES = {
   OUR_BLOGS_DETAILS: "/blogs-details",
   OUR_SUSTAIANIBILITY: "/sustainability",
   VIEW_ALL: "/view-all",
+  USER_DRAFTS_CARDS: "/drafts",
   ADD_TO_CART: "add-to-cart",
   COMMUNITY_HUB: "/community-hub",
   SUBSCRIPTION: "/subscription",

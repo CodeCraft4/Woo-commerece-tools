@@ -35,6 +35,64 @@ const isUuid = (v: string) =>
 
 const makeUuid = () => globalThis.crypto.randomUUID();
 
+/* ===================== FONT STYLE NORMALIZERS ===================== */
+// picks first defined key
+const pick = (obj: any, keys: string[], fallback: any) => {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null) return v;
+  }
+  return fallback;
+};
+
+// returns BOTH canonical + legacy keys, so any UI variant restores correctly
+const normTextBox = (t: any, g: any) => {
+  const fontSize = pick(t, ["fontSize", "fontSize1", "fontSize2", "fontSize3"], g.fontSize);
+  const fontWeight = pick(t, ["fontWeight", "fontWeight1", "fontWeight2", "fontWeight3"], g.fontWeight);
+  const fontFamily = pick(t, ["fontFamily", "fontFamily1", "fontFamily2", "fontFamily3"], g.fontFamily);
+  const fontColor = pick(t, ["fontColor", "fontColor1", "fontColor2", "fontColor3", "color"], g.fontColor);
+  const textAlign = pick(t, ["textAlign", "textAlign1", "textAlign2", "textAlign3"], g.textAlign);
+  const verticalAlign = pick(t, ["verticalAlign", "verticalAlign1", "verticalAlign2", "verticalAlign3"], g.verticalAlign);
+  const lineHeight = pick(t, ["lineHeight", "lineHeight1", "lineHeight2", "lineHeight3"], g.lineHeight);
+  const letterSpacing = pick(
+    t,
+    ["letterSpacing", "letterSpacing1", "letterSpacing2", "letterSpacing3"],
+    g.letterSpacing
+  );
+  const rotation = pick(t, ["rotation", "rotation1", "rotation2", "rotation3"], g.rotation ?? 0);
+
+  return {
+    value: t?.value ?? "",
+
+    // canonical
+    fontSize,
+    fontWeight,
+    fontFamily,
+    fontColor,
+    textAlign,
+    verticalAlign,
+    lineHeight,
+    letterSpacing,
+    rotation,
+
+    // legacy mirrors (many components use these)
+    fontSize1: fontSize,
+    fontWeight1: fontWeight,
+    fontFamily1: fontFamily,
+    fontColor1: fontColor,
+    textAlign1: textAlign,
+    verticalAlign1: verticalAlign,
+
+    fontSize3: fontSize,
+    fontWeight3: fontWeight,
+    fontFamily3: fontFamily,
+    fontColor3: fontColor,
+    textAlign3: textAlign,
+    verticalAlign3: verticalAlign,
+  };
+};
+/* ================================================================ */
+
 const Navbar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -47,17 +105,26 @@ const Navbar = () => {
 
   const isCardEditorRoute = location.pathname.startsWith(`${USER_ROUTES.HOME}/`);
 
-  const {
-    open: isDraftModal,
-    openModal: openDraftModal,
-    closeModal: closeDraftModal,
-  } = useModal();
+  const { open: isDraftModal, openModal: openDraftModal, closeModal: closeDraftModal } = useModal();
 
-  // ✅ cart
-  // ✅ Admin base polygonlayout is coming in location.state.layout
+  // ✅ Admin base polygonlayout can come from:
+  // - location.state.layout  (normal flow)
+  // - location.state.draftFull.layout (resume draft flow)
   const adminLayout = useMemo(() => {
     const st: any = location.state;
-    return st?.layout ?? null; // polygonlayout object
+    return st?.layout ?? st?.draftFull?.layout ?? null;
+  }, [location.state]);
+
+  // ✅ meta can come from:
+  // - location.state (normal flow)
+  // - location.state.draftFull (resume draft flow)
+  const meta = useMemo(() => {
+    const st: any = location.state;
+    return {
+      title: st?.title ?? st?.draftFull?.title ?? st?.cardname ?? "",
+      category: st?.category ?? st?.draftFull?.category ?? st?.cardcategory ?? "",
+      description: st?.description ?? st?.draftFull?.description ?? "",
+    };
   }, [location.state]);
 
   // ✅ slide contexts
@@ -88,6 +155,11 @@ const Navbar = () => {
     letterSpacing2,
     selectedVideoUrl,
     selectedAudioUrl,
+
+    // ✅ IMPORTANT: for draft show
+    layout2,
+    bgColor2,
+    bgImage2,
   } = useSlide2();
 
   const {
@@ -106,11 +178,27 @@ const Navbar = () => {
     aimage3,
     isAIimage3,
     selectedAIimageUrl3,
+
+    // ✅ ADD style + layout state for slide3
+    texts3,
+    showOneTextRightSideBox3,
+    fontSize3,
+    fontFamily3,
+    fontColor3,
+    fontWeight3,
+    textAlign3,
+    verticalAlign3,
+    rotation3,
+    lineHeight3,
+    letterSpacing3,
+
+    // ✅ IMPORTANT: for draft show (same idea as slide2)
+    layout3,
+    bgColor3,
+    bgImage3,
   } = useSlide3();
 
   // ✅ Ensure the URL always has a valid UUID draft id
-  // - If user personalized a NEW card but route param isn't UUID, we replace it with a generated UUID.
-  // - This prevents the "invalid uuid: 20" error + prevents overwrite across different cards.
   const draftId = useMemo(() => {
     if (routeId && isUuid(routeId)) return routeId;
     return "";
@@ -198,7 +286,135 @@ const Navbar = () => {
     };
   };
 
-  // ✅ Build slide4 json
+  // ✅ Slide2 draft (now includes normalized layout + bg + full fontStyle for one/multiple)
+  const buildSlide2Draft = () => {
+    const g2 = {
+      fontSize,
+      fontWeight,
+      fontFamily,
+      fontColor,
+      textAlign,
+      verticalAlign,
+      rotation,
+      lineHeight: lineHeight2,
+      letterSpacing: letterSpacing2,
+    };
+
+    const oneTextLayout = showOneTextRightSideBox
+      ? normTextBox(
+        {
+          value: oneTextValue,
+          fontSize,
+          fontWeight,
+          fontFamily,
+          fontColor,
+          textAlign,
+          verticalAlign,
+          lineHeight: lineHeight2,
+          letterSpacing: letterSpacing2,
+          rotation,
+        },
+        g2
+      )
+      : null;
+
+    const multipleTextLayout = multipleTextValue ? (texts ?? []).map((t: any) => normTextBox(t, g2)) : null;
+
+    return {
+      // ✅ the part your UI needs to show draft properly
+      layout: layout2 ?? null,
+      bgColor: bgColor2 ?? null,
+      bgImage: bgImage2 ?? null,
+
+      // ✅ existing data
+      layoutType: multipleTextValue ? "multipleText" : showOneTextRightSideBox ? "oneText" : "blank",
+      oneTextLayout,
+      multipleTextLayout,
+
+      // ✅ keep raw texts too (safe for any restore logic)
+      texts,
+
+      textElements,
+      draggableImages,
+      qrPosition,
+      qrAudioPosition,
+
+      aiImage: { ...aimage2, url: selectedAIimageUrl2, active: isAIimage2 },
+      selectedStickers2,
+
+      selectedVideoUrl,
+      selectedAudioUrl,
+    };
+  };
+
+  // ✅ Slide3 draft (include layout3 + bg + full fontStyle for one/multiple)
+  const buildSlide3Draft = () => {
+    const g3 = {
+      fontSize: fontSize3,
+      fontWeight: fontWeight3,
+      fontFamily: fontFamily3,
+      fontColor: fontColor3,
+      textAlign: textAlign3,
+      verticalAlign: verticalAlign3,
+      rotation: rotation3,
+      lineHeight: lineHeight3,
+      letterSpacing: letterSpacing3,
+    };
+
+    const oneTextLayout = showOneTextRightSideBox3
+      ? normTextBox(
+        {
+          value: oneTextValue3,
+          fontSize: fontSize3,
+          fontWeight: fontWeight3,
+          fontFamily: fontFamily3,
+          fontColor: fontColor3,
+          textAlign: textAlign3,
+          verticalAlign: verticalAlign3,
+          lineHeight: lineHeight3,
+          letterSpacing: letterSpacing3,
+          rotation: rotation3,
+        },
+        g3
+      )
+      : null;
+
+    const multipleTextLayout = multipleTextValue3 ? (texts3 ?? []).map((t: any) => normTextBox(t, g3)) : null;
+
+    return {
+      // ✅ the part your UI needs to show draft properly
+      layout: layout3 ?? null,
+      bgColor: bgColor3 ?? null,
+      bgImage: bgImage3 ?? null,
+
+      // ✅ layout type (optional but helpful)
+      layoutType: multipleTextValue3 ? "multipleText" : showOneTextRightSideBox3 ? "oneText" : "blank",
+      oneTextLayout,
+      multipleTextLayout,
+
+      // ✅ keep raw texts too
+      texts3,
+
+      // ✅ existing data you were saving
+      textElements3,
+      draggableImages3,
+      images3,
+      selectedImg3,
+      selectedVideoUrl3,
+      selectedAudioUrl3,
+      selectedLayout3,
+      oneTextValue3,
+      multipleTextValue3,
+      selectedStickers3,
+      qrPosition3,
+      qrAudioPosition3,
+      aimage3,
+      isAIimage3,
+      selectedAIimageUrl3,
+    };
+  };
+
+  // ✅ Build slide4 json (already fine)
   const buildSlide4Draft = () => {
     if (!layout4) return null;
 
@@ -249,77 +465,6 @@ const Navbar = () => {
     };
   };
 
-  // ✅ Slide2 draft (your existing structure)
-  const buildSlide2Draft = () => {
-    const oneTextLayout = showOneTextRightSideBox
-      ? {
-        value: oneTextValue,
-        fontSize,
-        fontWeight,
-        fontFamily,
-        fontColor,
-        textAlign,
-        verticalAlign,
-        lineHeight: lineHeight2,
-        letterSpacing: letterSpacing2,
-        rotation,
-      }
-      : null;
-
-    const multipleTextLayout = multipleTextValue
-      ? texts.map((t: any) => ({
-        value: t.value,
-        fontSize: t.fontSize,
-        fontWeight: t.fontWeight,
-        fontFamily: t.fontFamily,
-        fontColor: t.fontColor,
-        textAlign: t.textAlign,
-        verticalAlign: t.verticalAlign,
-        lineHeight: t.lineHeight,
-        letterSpacing: t.letterSpacing,
-      }))
-      : null;
-
-    return {
-      layoutType: multipleTextValue ? "multipleText" : showOneTextRightSideBox ? "oneText" : "blank",
-      oneTextLayout,
-      multipleTextLayout,
-      textElements,
-      draggableImages,
-      qrPosition,
-      qrAudioPosition,
-      aiImage: {
-        ...aimage2,
-        url: selectedAIimageUrl2,
-        active: isAIimage2,
-      },
-      selectedStickers2,
-      selectedVideoUrl,
-      selectedAudioUrl,
-    };
-  };
-
-  // ✅ Slide3 draft
-  const buildSlide3Draft = () => {
-    return {
-      textElements3,
-      draggableImages3,
-      images3,
-      selectedImg3,
-      selectedVideoUrl3,
-      selectedAudioUrl3,
-      selectedLayout3,
-      oneTextValue3,
-      multipleTextValue3,
-      selectedStickers3,
-      qrPosition3,
-      qrAudioPosition3,
-      aimage3,
-      isAIimage3,
-      selectedAIimageUrl3,
-    };
-  };
-
   // ✅ Draft Save (upsert)
   const saveDraftToDb = async () => {
     if (!user) {
@@ -354,17 +499,9 @@ const Navbar = () => {
       const selectedVariant = safeParse<SelectedVariant>(localStorage.getItem("selectedVariant"));
       const selectedPrices = safeParse<any>(localStorage.getItem("selectedPrices"));
 
-      // OPTIONAL: store title/category/description if you already keep them somewhere
-      // You can also pass from location.state if you want
-      const st: any = location.state;
-      const title = st?.title ?? st?.cardname ?? "";
-      const category = st?.category ?? st?.cardcategory ?? "";
-      const description = st?.description ?? "";
-
       const prices = selectedPrices ?? null;
       const displayPrice = typeof selectedVariant?.price === "number" ? selectedVariant.price : null;
 
-      // If you want to compute sale:
       const isOnSale = false;
 
       const { error } = await supabase
@@ -384,10 +521,10 @@ const Navbar = () => {
             slide3: slide3Draft,
             slide4: slide4Draft,
 
-            // ✅ meta
-            title,
-            category,
-            description,
+            // ✅ meta (supports draftFull too)
+            title: meta.title,
+            category: meta.category,
+            description: meta.description,
             selected_size: selectedSize,
             prices,
             display_price: displayPrice,
@@ -408,69 +545,6 @@ const Navbar = () => {
       setLoadingDrafts(false);
     }
   };
-
-  // ✅ Add to Basket from editor
-  // const handleAddToBasket = async () => {
-  //   if (!user) {
-  //     toast.error("Please login first");
-  //     return;
-  //   }
-
-  //   const idInUrl = (window.location.pathname.split("/").pop() || "").trim();
-  //   if (!isUuid(idInUrl)) {
-  //     toast.error("Invalid draft id for basket");
-  //     return;
-  //   }
-
-  //   setLoadingDrafts(true);
-  //   try {
-  //     const coverScreenshot = await captureSlideCover();
-
-  //     const selectedSize = localStorage.getItem("selectedSize") ?? "a4";
-  //     const selectedVariant = safeParse<SelectedVariant>(localStorage.getItem("selectedVariant"));
-  //     const selectedPrices = safeParse<any>(localStorage.getItem("selectedPrices"));
-
-  //     const st: any = location.state;
-  //     const title = st?.title ?? st?.cardname ?? "Untitled";
-  //     const category = st?.category ?? st?.cardcategory ?? "default";
-  //     const description = st?.description ?? "";
-
-  //     // You may already keep actual/sale split; here we store whatever you have:
-  //     const prices = selectedPrices ?? null;
-  //     const displayPrice = typeof selectedVariant?.price === "number" ? selectedVariant.price : 0;
-
-  //     const payload:any = {
-  //       id: idInUrl,
-  //       type: "card" as const,
-  //       img: coverScreenshot ?? st?.poster ?? st?.imageurl ?? "",
-  //       title,
-  //       category,
-  //       description,
-  //       selectedSize,
-  //       prices, // json (your cart can decide)
-  //       isOnSale: false,
-  //       displayPrice,
-
-  //       // ✅ important: editor base layout for slide1/slide4
-  //       polygonlayout: adminLayout,
-  //     };
-
-  //     const res = addToCart(payload);
-
-  //     if (!res?.ok && res?.reason === "exists") {
-  //       toast.error("Already exists in basket ❌");
-  //       return;
-  //     }
-
-  //     toast.success("Added to basket ✅");
-  //     // navigate(USER_ROUTES.BASKET) // if you have basket route
-  //   } catch (e: any) {
-  //     console.error("addToBasket failed:", e);
-  //     toast.error(e?.message ?? "Add to basket failed");
-  //   } finally {
-  //     setLoadingDrafts(false);
-  //   }
-  // };
 
   return (
     <Box>
@@ -503,7 +577,6 @@ const Navbar = () => {
 
           {isCardEditorRoute ? (
             <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              {/* <LandingButton title="Add to Basket" variant="outlined" onClick={handleAddToBasket} loading={loadingDrafts} /> */}
               <LandingButton title="Preview" onClick={() => navigate(USER_ROUTES.PREVIEW)} />
             </Box>
           ) : (

@@ -60,7 +60,7 @@ const Slide1 = (props: Slide1Props) => {
                   sx={{
                     width: "100%",
                     height: "100%",
-                    objectFit: el.objectFit || "cover",
+                    objectFit: el.objectFit || "fill",
                     borderRadius: 1,
                     display: "block",
                     pointerEvents: "none",

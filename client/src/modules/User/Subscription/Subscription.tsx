@@ -3,14 +3,16 @@ import Applayout from "../../../layout/Applayout";
 import { useMemo, useState, useEffect } from "react";
 import TableBgImg from "/assets/images/table.png";
 import LandingButton from "../../../components/LandingButton/LandingButton";
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe } from "@stripe/stripe-js";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
 import { ArrowBackIos } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { COLORS } from "../../../constant/color";
 
-const stripePromise = loadStripe("pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK");
+const stripePromise = loadStripe(
+  "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK"
+);
 
 type SizeKey = "a4" | "a5" | "us_letter";
 type SelectedVariant = { key: SizeKey; title: string; price: number; basePrice: number };
@@ -57,9 +59,15 @@ const Subscription = () => {
   const [loading, setLoading] = useState(false);
   const [selectedPrices, setSelectedPrices] = useState<{ a4?: number; a5?: number; us_letter?: number } | null>(null);
 
+  // ✅ REQUIRED TERMS
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
   const slides = useMemo(() => {
-    try { return JSON.parse(sessionStorage.getItem("slides") || "{}"); }
-    catch { return {}; }
+    try {
+      return JSON.parse(sessionStorage.getItem("slides") || "{}");
+    } catch {
+      return {};
+    }
   }, []);
   const firstSlideUrl: string | undefined = slides?.slide1;
 
@@ -122,6 +130,7 @@ const Subscription = () => {
           metadata: { variantKey: selectedPlan },
         }),
       });
+
       if (!res.ok) throw new Error("checkout failed");
       const { id } = await res.json();
 
@@ -132,6 +141,20 @@ const Subscription = () => {
       toast.error("Payment failed!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayClick = () => {
+    // ✅ block if not accepted
+    if (!termsAccepted) {
+      toast.error("Please accept Terms & Conditions first.");
+      return;
+    }
+
+    const plan = plans.find((p) => p.id === selectedPlan);
+    if (plan) {
+      localStorage.setItem("selectedSize", selectedPlan);
+      handleStripeOrder({ title: plan.title, price: plan.price });
     }
   };
 
@@ -158,7 +181,7 @@ const Subscription = () => {
           }}
         >
           <IconButton onClick={() => navigate(-1)}>
-            <ArrowBackIos fontSize='large' sx={{ color: 'black' }} />
+            <ArrowBackIos fontSize="large" sx={{ color: "black" }} />
           </IconButton>{" "}
           Go big and upgrade your card!
         </Typography>
@@ -191,7 +214,12 @@ const Subscription = () => {
                   borderRadius: 2,
                 }}
               >
-                <Box component={"img"} src={"/assets/images/A4.svg"} alt="Sheet" sx={{ width: "100%", height: "100%", borderRadius: 2, display: "block" }} />
+                <Box
+                  component={"img"}
+                  src={"/assets/images/A4.svg"}
+                  alt="Sheet"
+                  sx={{ width: "100%", height: "100%", borderRadius: 2, display: "block" }}
+                />
                 <Typography
                   sx={{
                     position: "absolute",
@@ -203,7 +231,7 @@ const Subscription = () => {
                     userSelect: "none",
                     fontSize: { md: 20, sm: 18, xs: 16 },
                     color: COLORS.seconday,
-                    whiteSpace: 'nowrap'
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {preview.frameLabel}
@@ -221,7 +249,21 @@ const Subscription = () => {
                   transition: "all 0.3s ease",
                 }}
               >
-                <Box component="img" src={"/assets/images/A4.svg"} alt="Preview frame" sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", borderRadius: 2, display: "block", pointerEvents: "none", userSelect: "none" }} />
+                <Box
+                  component="img"
+                  src={"/assets/images/A4.svg"}
+                  alt="Preview frame"
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 2,
+                    display: "block",
+                    pointerEvents: "none",
+                    userSelect: "none",
+                  }}
+                />
                 <Box
                   component="img"
                   src={firstSlideUrl || ""}
@@ -247,7 +289,10 @@ const Subscription = () => {
             </Grid>
 
             {/* Right Side - Plans */}
-            <Grid size={{ md: 5, sm: 5, xs: 12 }} sx={{ display: "flex", flexDirection: "column", gap: "25px", textAlign: "start" }}>
+            <Grid
+              size={{ md: 5, sm: 5, xs: 12 }}
+              sx={{ display: "flex", flexDirection: "column", gap: "25px", textAlign: "start" }}
+            >
               <Box sx={{ p: { md: 2, sm: 2, xs: "5px" }, bgcolor: "#b7f7f4ff", borderRadius: 2 }}>
                 <Typography variant="h5">🎉 We’ve saved your card design!</Typography>
               </Box>
@@ -262,7 +307,7 @@ const Subscription = () => {
                         key: plan.id as SizeKey,
                         title: plan.title,
                         price: plan.price,
-                        basePrice, // keep for fallback
+                        basePrice,
                       };
                       localStorage.setItem("selectedVariant", JSON.stringify(newSel));
                       localStorage.setItem("selectedSize", plan.id);
@@ -285,17 +330,24 @@ const Subscription = () => {
                     <Box>
                       <Typography sx={{ fontWeight: { md: 900, sm: 900, xs: 700 } }}>{plan.title}</Typography>
                       <Typography sx={{ fontSize: "13px", sm: "13px", xs: "10px" }}>{plan.desc}</Typography>
-                      <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" } }}>£{plan.price.toFixed(2)}</Typography>
+                      <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" } }}>
+                        £{plan.price.toFixed(2)}
+                      </Typography>
                     </Box>
                   </Box>
                   <Typography variant="h5">£{plan.price.toFixed(2)}</Typography>
                 </Box>
               ))}
 
-              {/* Terms */}
+              {/* ✅ Terms (required) */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <input type="checkbox" style={{ width: "20px", height: "20px" }} />
-                <Typography sx={{ fontSize: "14px", color: "gray" }}>
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  style={{ width: "20px", height: "20px" }}
+                />
+                <Typography sx={{ fontSize: "14px", color: termsAccepted ? "gray" : "#d32f2f" }}>
                   I accept the Terms & Conditions and give my consent to proceed with the order.
                 </Typography>
               </Box>
@@ -306,13 +358,7 @@ const Subscription = () => {
                 width="100%"
                 personal
                 loading={loading}
-                onClick={() => {
-                  const plan = plans.find((p) => p.id === selectedPlan);
-                  if (plan) {
-                    localStorage.setItem("selectedSize", selectedPlan);
-                    handleStripeOrder({ title: plan.title, price: plan.price });
-                  }
-                }}
+                onClick={handlePayClick}
               />
             </Grid>
           </Grid>

@@ -317,6 +317,7 @@ const SpreadRightSide = ({
     setIsAIimage3,
     selectedAIimageUrl3,
     selectedStickers3,
+    setSelectedStickers3,
     updateSticker3,
     removeSticker3,
     aimage3,
@@ -333,6 +334,7 @@ const SpreadRightSide = ({
     bgImage3,
     setBgColor3,
     setBgImage3,
+    setSelectedAIimageUrl3,
     layout3,
     setLayout3,
     bgEdit3,
@@ -350,16 +352,100 @@ const SpreadRightSide = ({
   const [selectedStickerIndex2, setSelectedStickerIndex2] = useState<number | null>(null);
   const [selectedBgIndex3, setSelectedBgIndex3] = useState<number | null>(null);
 
-  const location = useLocation();
-  const slide3 = location.state?.layout?.slides?.slide3 ?? null;
 
-  useEffect(() => {
-    if (!slide3) return;
-    const norm = normalizeSlide(slide3);
-    setBgColor3?.(norm.bgColor);
-    setBgImage3?.(norm.bgImage);
-    setLayout3(norm.layout);
-  }, [slide3, setBgColor3, setBgImage3, setLayout3]);
+  const location = useLocation();
+  const slide3Template = location.state?.layout?.slides?.slide3 ?? null;
+  const draftSlide3 = location.state?.draftFull?.slide3 ?? null;
+
+  console.log(draftSlide3, 'slide3')
+
+  const restoredDraftRef = useRef(false);
+
+useEffect(() => {
+  // ✅ 1) Draft restore
+  if (draftSlide3) {
+    restoredDraftRef.current = true;
+
+    setLayout3?.(draftSlide3.layout ?? null);
+    setBgColor3?.(draftSlide3.bgColor ?? null);
+    setBgImage3?.(draftSlide3.bgImage ?? null);
+
+    setSelectedLayout3?.(draftSlide3.selectedLayout3 ?? "blank");
+
+    // ✅ oneText restore
+    setOneTextValue3?.(draftSlide3.oneTextValue3 ?? "");
+    // (agar tum showOneTextRightSideBox3 ko layout se drive karte ho)
+    setShowOneTextRightSideBox3?.(draftSlide3.selectedLayout3 === "oneText" || !!draftSlide3.showOneTextRightSideBox3);
+
+    // ✅ multipleText restore (IMPORTANT)
+    setMultipleTextValue3?.(!!draftSlide3.multipleTextValue3);
+
+    // ✅ MULTIPLE TEXT BOXES CONTENT restore (VERY IMPORTANT)
+    // kisi projects me keys different hoti hain, is liye fallbacks:
+    const restoredTexts =
+      draftSlide3.texts3 ??
+      draftSlide3.multipleTextLayout ??
+      draftSlide3.texts ??
+      [];
+    setTexts3?.(Array.isArray(restoredTexts) ? restoredTexts : []);
+
+    // ✅ free user texts restore (draft saved textElements)
+    setTextElements3?.(draftSlide3.textElements3 ?? draftSlide3.textElements ?? []);
+
+    // ✅ user draggable images restore
+    setDraggableImages3?.(draftSlide3.draggableImages3 ?? draftSlide3.draggableImages ?? []);
+
+    // ✅ selected ids restore (warna filter ki wajah se images show nahi hoti)
+    const idsFromDraftImages = (draftSlide3.draggableImages3 ?? draftSlide3.draggableImages ?? []).map((x: any) => x.id);
+    setSelectedImage3?.(
+      Array.isArray(draftSlide3.selectedImg3)
+        ? draftSlide3.selectedImg3
+        : idsFromDraftImages
+    );
+
+    // ✅ stickers restore
+    setSelectedStickers3?.(
+      draftSlide3.selectedStickers3 ??
+      draftSlide3.selectedStickers2 ??
+      draftSlide3.selectedStickers ??
+      []
+    );
+
+    // ✅ video/audio restore + QR positions
+    setSelectedVideoUrl3?.(draftSlide3.selectedVideoUrl3 ?? draftSlide3.selectedVideoUrl ?? null);
+    setSelectedAudioUrl3?.(draftSlide3.selectedAudioUrl3 ?? draftSlide3.selectedAudioUrl ?? null);
+
+    setQrPosition3?.(
+      draftSlide3.qrPosition3 ??
+      draftSlide3.qrPosition ??
+      { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" }
+    );
+
+    setQrAudioPosition3?.(
+      draftSlide3.qrAudioPosition3 ??
+      draftSlide3.qrAudioPosition ??
+      { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" }
+    );
+
+    // ✅ AI image restore
+    setIsAIimage3?.(!!(draftSlide3.isAIimage3 ?? draftSlide3.isAIimage));
+    setSelectedAIimageUrl3?.(draftSlide3.selectedAIimageUrl3 ?? draftSlide3.selectedAIimageUrl ?? "");
+    setAIImage3?.(draftSlide3.aimage3 ?? draftSlide3.aiImage ?? { x: 0, y: 0, width: 200, height: 200 });
+
+    return; // ✅ IMPORTANT: draft restore ke baad template normalize mat chalao
+  }
+
+  // ✅ 2) Not a draft => template mode (new card)
+  restoredDraftRef.current = false;
+
+  if (!slide3Template) return;
+  const norm = normalizeSlide(slide3Template);
+  setBgColor3?.(norm.bgColor);
+  setBgImage3?.(norm.bgImage);
+  setLayout3?.(norm.layout);
+}, [draftSlide3, slide3Template]);
+
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
@@ -402,7 +488,6 @@ const SpreadRightSide = ({
     setUploadTarget(null);
   };
 
-
   /* ------------------ static text edit bindings (editable only) ------------------ */
   const handleTextChange = (newText: string, index: number) => {
     setLayout3((prev: any) => {
@@ -439,32 +524,38 @@ const SpreadRightSide = ({
 
   // Add this handler to initialize draggable state for images (omitted for brevity)
   useEffect(() => {
-    if (images3.length > 0) {
-      setDraggableImages3((prev: any[]) => {
-        const existingIds = prev.map((img: any) => img.id);
-        const newOnes = images3
-          .filter((img) => !existingIds.includes(img.id))
-          .map((img) => ({
-            id: img.id,
-            src: img.src,
-            x: 50,
-            y: 50,
-            width: 150,
-            height: 150,
-            rotation: 0,
-          }));
+  // ✅ Draft restore hua hai aur images3 abhi empty hai => wipe mat karo
+  if (restoredDraftRef.current && images3.length === 0) return;
 
-        const stillValid = prev.filter((img: any) =>
-          images3.some((incoming) => incoming.id === img.id)
-        );
+  if (images3.length > 0) {
+    setDraggableImages3((prev: any[]) => {
+      const existingIds = prev.map((img: any) => img.id);
 
-        const next = [...stillValid, ...newOnes];
-        return mergePreservePdf(prev, next);
-      });
-    } else {
-      setDraggableImages3((prev: any[]) => mergePreservePdf(prev, []));
-    }
-  }, [images3, setDraggableImages3]);
+      const newOnes = images3
+        .filter((img) => !existingIds.includes(img.id))
+        .map((img) => ({
+          id: img.id,
+          src: img.src,
+          x: 50,
+          y: 50,
+          width: 150,
+          height: 150,
+          rotation: 0,
+        }));
+
+      const stillValid = prev.filter((img: any) =>
+        images3.some((incoming) => incoming.id === img.id)
+      );
+
+      const next = [...stillValid, ...newOnes];
+      return mergePreservePdf(prev, next);
+    });
+  } else {
+    // ✅ new card me jab user saari images delete kare => clear hona chahiye
+    setDraggableImages3((prev: any[]) => mergePreservePdf(prev, []));
+  }
+}, [images3, setDraggableImages3]);
+
 
   // Function to add new text element
   const addNewTextElement = () => {
@@ -1979,7 +2070,7 @@ const SpreadRightSide = ({
                               sx={{
                                 width: "100%",
                                 height: "100%",
-                                objectFit: "cover",
+                                objectFit: "fill",
                                 borderRadius: 1,
                                 display: "block",
                                 pointerEvents: "none",
@@ -2090,211 +2181,211 @@ const SpreadRightSide = ({
                   </Box>
                 }
 
-                 {!(multipleTextValue3 || showOneTextRightSideBox3) &&
-                textElements3?.map((textElement) => {
-                  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+                {!(multipleTextValue3 || showOneTextRightSideBox3) &&
+                  textElements3?.map((textElement) => {
+                    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
-                  const hAlign =
-                    textElement.textAlign === "top"
-                      ? "flex-start"
-                      : textElement.textAlign === "end"
-                        ? "flex-end"
-                        : "center";
-                  const vAlign =
-                    textElement.verticalAlign === "top"
-                      ? "flex-start"
-                      : textElement.verticalAlign === "bottom"
-                        ? "flex-end"
-                        : "center";
+                    const hAlign =
+                      textElement.textAlign === "top"
+                        ? "flex-start"
+                        : textElement.textAlign === "end"
+                          ? "flex-end"
+                          : "center";
+                    const vAlign =
+                      textElement.verticalAlign === "top"
+                        ? "flex-start"
+                        : textElement.verticalAlign === "bottom"
+                          ? "flex-end"
+                          : "center";
 
-                  let touchStartTime = 0;
-                  let lastTap = 0;
+                    let touchStartTime = 0;
+                    let lastTap = 0;
 
-                  return (
-                    <Rnd
-                      key={textElement.id}
-                      cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
-                      enableUserSelectHack={false}
-                      enableResizing={{ bottomRight: true }}
-                      size={{ width: textElement.size.width, height: textElement.size.height }}
-                      position={{ x: textElement.position.x, y: textElement.position.y }}
-                      bounds="parent"
-                      style={{
-                        transform: `rotate(${textElement.rotation || 0}deg)`,
-                        zIndex: textElement.zIndex,
-                        display: "flex",
-                        alignItems: vAlign,
-                        justifyContent: hAlign,
-                        touchAction: "none",
-                        transition: "border 0.2s ease",
-                        cursor: textElement.isEditing ? "text" : "move",
-                      }}
-                      onTouchStart={() => { touchStartTime = Date.now(); }}
-                      onTouchEnd={() => {
-                        const now = Date.now();
-                        const timeSince = now - lastTap;
-                        const touchDuration = now - touchStartTime;
-                        if (touchDuration < 200) {
-                          if (timeSince < 300) {
-                            setSelectedTextId3(textElement.id);
-                            updateTextElement(textElement.id, { isEditing: true });
-                          } else {
-                            setSelectedTextId3(textElement.id);
-                          }
-                        }
-                        lastTap = now;
-                      }}
-                      onMouseDown={() => setSelectedTextId3(textElement.id)}
-                      onDoubleClick={() => {
-                        setSelectedTextId3(textElement.id);
-                        updateTextElement(textElement.id, { isEditing: true });
-                      }}
-                      onDragStop={(_, d) => {
-                        updateTextElement(textElement.id, { position: { x: d.x, y: d.y } });
-                      }}
-                      onResizeStop={(_, __, ref, ___, position) => {
-                        updateTextElement(textElement.id, {
-                          size: { width: parseInt(ref.style.width, 10), height: parseInt(ref.style.height, 10) },
-                          position: { x: position.x, y: position.y },
-                        });
-                      }}
-                      resizeHandleStyles={{
-                        bottomRight: {
-                          width: isMobile ? "20px" : "12px",
-                          height: isMobile ? "20px" : "12px",
-                          background: "white",
-                          border: "2px solid #1976d2",
-                          borderRadius: "3px",
-                          right: isMobile ? "-10px" : "-6px",
-                          bottom: isMobile ? "-10px" : "-6px",
-                          cursor: "se-resize",
-                          zIndex: 999,
+                    return (
+                      <Rnd
+                        key={textElement.id}
+                        cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
+                        enableUserSelectHack={false}
+                        enableResizing={{ bottomRight: true }}
+                        size={{ width: textElement.size.width, height: textElement.size.height }}
+                        position={{ x: textElement.position.x, y: textElement.position.y }}
+                        bounds="parent"
+                        style={{
+                          transform: `rotate(${textElement.rotation || 0}deg)`,
+                          zIndex: textElement.zIndex,
+                          display: "flex",
+                          alignItems: vAlign,
+                          justifyContent: hAlign,
                           touchAction: "none",
-                        },
-                      }}
-                    >
-                      <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-                        {/* Delete */}
-                        <IconButton
-                          size="small"
-                          className="no-drag"
-                          onClick={(e) => { e.stopPropagation(); deleteTextElement(textElement.id); }}
-                          sx={{
-                            position: "absolute", top: -10, right: -10, bgcolor: "#1976d2", color: "white",
-                            width: isMobile ? 26 : 20, height: isMobile ? 26 : 20, "&:hover": { bgcolor: "#f44336" },
-                            zIndex: 1, pointerEvents: "auto", touchAction: "auto",
-                          }}
-                        >
-                          <Close fontSize="small" />
-                        </IconButton>
-
-                        {/* Rotate */}
-                        <IconButton
-                          size="small"
-                          className="no-drag"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateTextElement(textElement.id, { rotation: (textElement.rotation || 0) + 30 });
-                          }}
-                          sx={{
-                            position: "absolute", top: -10, left: -10, bgcolor: "#1976d2", color: "white",
-                            width: isMobile ? 26 : 20, height: isMobile ? 26 : 20, "&:hover": { bgcolor: "#f44336" },
-                            zIndex: 3000, pointerEvents: "auto", touchAction: "auto",
-                          }}
-                        >
-                          <Forward30 fontSize={isMobile ? "medium" : "small"} />
-                        </IconButton>
-
-                        {/* Layer controls (use your global layerUpAny/layerDownAny) */}
-                        <Tooltip title="To Back">
-                          <Box
-                            className="no-drag"
-                            onClick={(e) => { e.stopPropagation(); layerDown({ type: 'text', id: textElement.id }); }}
-                            sx={{
-                              position: "absolute", top: -25, left: 40, bgcolor: "black", color: "white",
-                              borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                              p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
-                            }}
-                          >
-                            <KeyboardArrowDownOutlined fontSize={isMobile ? "medium" : "small"} />
-                          </Box>
-                        </Tooltip>
-
-                        <Tooltip title="To Front">
-                          <Box
-                            className="no-drag"
-                            onClick={(e) => { e.stopPropagation(); layerUp({ type: 'text', id: textElement.id }); }}
-                            sx={{
-                              position: "absolute", top: -25, left: 80, bgcolor: "black", color: "white",
-                              borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                              p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
-                            }}
-                          >
-                            <KeyboardArrowUpOutlined fontSize={isMobile ? "medium" : "small"} />
-                          </Box>
-                        </Tooltip>
-
-                        {/* Content: drag anywhere when NOT editing; click twice to edit */}
-                        <Box
-                          sx={{
-                            position: "relative",
-                            width: "100%",
-                            height: "100%",
-                            display: "flex",
-                            alignItems: vAlign,
-                            justifyContent: hAlign,
-                            userSelect: "none",
+                          transition: "border 0.2s ease",
+                          cursor: textElement.isEditing ? "text" : "move",
+                        }}
+                        onTouchStart={() => { touchStartTime = Date.now(); }}
+                        onTouchEnd={() => {
+                          const now = Date.now();
+                          const timeSince = now - lastTap;
+                          const touchDuration = now - touchStartTime;
+                          if (touchDuration < 200) {
+                            if (timeSince < 300) {
+                              setSelectedTextId3(textElement.id);
+                              updateTextElement(textElement.id, { isEditing: true });
+                            } else {
+                              setSelectedTextId3(textElement.id);
+                            }
+                          }
+                          lastTap = now;
+                        }}
+                        onMouseDown={() => setSelectedTextId3(textElement.id)}
+                        onDoubleClick={() => {
+                          setSelectedTextId3(textElement.id);
+                          updateTextElement(textElement.id, { isEditing: true });
+                        }}
+                        onDragStop={(_, d) => {
+                          updateTextElement(textElement.id, { position: { x: d.x, y: d.y } });
+                        }}
+                        onResizeStop={(_, __, ref, ___, position) => {
+                          updateTextElement(textElement.id, {
+                            size: { width: parseInt(ref.style.width, 10), height: parseInt(ref.style.height, 10) },
+                            position: { x: position.x, y: position.y },
+                          });
+                        }}
+                        resizeHandleStyles={{
+                          bottomRight: {
+                            width: isMobile ? "20px" : "12px",
+                            height: isMobile ? "20px" : "12px",
+                            background: "white",
+                            border: "2px solid #1976d2",
+                            borderRadius: "3px",
+                            right: isMobile ? "-10px" : "-6px",
+                            bottom: isMobile ? "-10px" : "-6px",
+                            cursor: "se-resize",
+                            zIndex: 999,
                             touchAction: "none",
-                            transform: `rotate(${textElement.rotation || 0}deg)`,
-                            border: textElement.id === selectedTextId3 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
-                            zIndex: textElement.zIndex,
-                            cursor: textElement.isEditing ? "text" : "move",
-                          }}
-                          onDoubleClick={() => {
-                            setSelectedTextId3(textElement.id);
-                            updateTextElement(textElement.id, { isEditing: true });
-                          }}
-                        >
-                          <TextField
-                            variant="standard"
-                            value={textElement.value}
-                            className="text-edit"         // ✅ used by cancel when editing
-                            placeholder="Add Text"
-                            multiline
-                            fullWidth
-                            tabIndex={0}
-                            // autoFocus={textElement.id === selectedTextId1 && textElement.isEditing}
-                            InputProps={{
-                              readOnly: !textElement.isEditing,
-                              disableUnderline: true,
-                              style: {
-                                fontSize: textElement.fontSize,
-                                fontWeight: textElement.fontWeight,
-                                color: textElement.fontColor || "#000",
-                                fontFamily: textElement.fontFamily || "Arial",
-                                lineHeight: textElement.lineHeight || 1.4,
-                                letterSpacing: textElement.letterSpacing ? `${textElement.letterSpacing}px` : "0px",
-                                padding: 0,
-                                width: "100%",
-                                display: "flex",
-                                alignItems: vAlign,
-                                justifyContent: hAlign,
-                                // ✅ drag by default, only interact with text in edit mode
-                                pointerEvents: textElement.isEditing ? "auto" : "none",
-                              },
-                            }}
-                            onChange={(e) => updateTextElement(textElement.id, { value: e.target.value })}
-                            onFocus={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: true }); }}
-                            onBlur={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: false }); }}
+                          },
+                        }}
+                      >
+                        <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
+                          {/* Delete */}
+                          <IconButton
+                            size="small"
+                            className="no-drag"
+                            onClick={(e) => { e.stopPropagation(); deleteTextElement(textElement.id); }}
                             sx={{
-                              "& .MuiInputBase-input": { overflowY: "auto", textAlign: textElement.textAlign || "center" },
+                              position: "absolute", top: -10, right: -10, bgcolor: "#1976d2", color: "white",
+                              width: isMobile ? 26 : 20, height: isMobile ? 26 : 20, "&:hover": { bgcolor: "#f44336" },
+                              zIndex: 1, pointerEvents: "auto", touchAction: "auto",
                             }}
-                          />
+                          >
+                            <Close fontSize="small" />
+                          </IconButton>
+
+                          {/* Rotate */}
+                          <IconButton
+                            size="small"
+                            className="no-drag"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateTextElement(textElement.id, { rotation: (textElement.rotation || 0) + 30 });
+                            }}
+                            sx={{
+                              position: "absolute", top: -10, left: -10, bgcolor: "#1976d2", color: "white",
+                              width: isMobile ? 26 : 20, height: isMobile ? 26 : 20, "&:hover": { bgcolor: "#f44336" },
+                              zIndex: 3000, pointerEvents: "auto", touchAction: "auto",
+                            }}
+                          >
+                            <Forward30 fontSize={isMobile ? "medium" : "small"} />
+                          </IconButton>
+
+                          {/* Layer controls (use your global layerUpAny/layerDownAny) */}
+                          {/* <Tooltip title="To Back">
+                            <Box
+                              className="no-drag"
+                              onClick={(e) => { e.stopPropagation(); layerDown({ type: 'text', id: textElement.id }); }}
+                              sx={{
+                                position: "absolute", top: -25, left: 40, bgcolor: "black", color: "white",
+                                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
+                              }}
+                            >
+                              <KeyboardArrowDownOutlined fontSize={isMobile ? "medium" : "small"} />
+                            </Box>
+                          </Tooltip>
+
+                          <Tooltip title="To Front">
+                            <Box
+                              className="no-drag"
+                              onClick={(e) => { e.stopPropagation(); layerUp({ type: 'text', id: textElement.id }); }}
+                              sx={{
+                                position: "absolute", top: -25, left: 80, bgcolor: "black", color: "white",
+                                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
+                              }}
+                            >
+                              <KeyboardArrowUpOutlined fontSize={isMobile ? "medium" : "small"} />
+                            </Box>
+                          </Tooltip> */}
+
+                          {/* Content: drag anywhere when NOT editing; click twice to edit */}
+                          <Box
+                            sx={{
+                              position: "relative",
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              alignItems: vAlign,
+                              justifyContent: hAlign,
+                              userSelect: "none",
+                              touchAction: "none",
+                              transform: `rotate(${textElement.rotation || 0}deg)`,
+                              border: textElement.id === selectedTextId3 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
+                              zIndex: textElement.zIndex,
+                              cursor: textElement.isEditing ? "text" : "move",
+                            }}
+                            onDoubleClick={() => {
+                              setSelectedTextId3(textElement.id);
+                              updateTextElement(textElement.id, { isEditing: true });
+                            }}
+                          >
+                            <TextField
+                              variant="standard"
+                              value={textElement.value}
+                              className="text-edit"         // ✅ used by cancel when editing
+                              placeholder="Add Text"
+                              multiline
+                              fullWidth
+                              tabIndex={0}
+                              // autoFocus={textElement.id === selectedTextId1 && textElement.isEditing}
+                              InputProps={{
+                                readOnly: !textElement.isEditing,
+                                disableUnderline: true,
+                                style: {
+                                  fontSize: textElement.fontSize,
+                                  fontWeight: textElement.fontWeight,
+                                  color: textElement.fontColor || "#000",
+                                  fontFamily: textElement.fontFamily || "Arial",
+                                  lineHeight: textElement.lineHeight || 1.4,
+                                  letterSpacing: textElement.letterSpacing ? `${textElement.letterSpacing}px` : "0px",
+                                  padding: 0,
+                                  width: "100%",
+                                  display: "flex",
+                                  alignItems: vAlign,
+                                  justifyContent: hAlign,
+                                  // ✅ drag by default, only interact with text in edit mode
+                                  pointerEvents: textElement.isEditing ? "auto" : "none",
+                                },
+                              }}
+                              onChange={(e) => updateTextElement(textElement.id, { value: e.target.value })}
+                              onFocus={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: true }); }}
+                              onBlur={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: false }); }}
+                              sx={{
+                                "& .MuiInputBase-input": { overflowY: "auto", textAlign: textElement.textAlign || "center" },
+                              }}
+                            />
+                          </Box>
                         </Box>
-                      </Box>
-                    </Rnd>
-                  );
-                })}
+                      </Rnd>
+                    );
+                  })}
 
                 {selectedVideoUrl3 && (
                   <Rnd

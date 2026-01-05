@@ -239,6 +239,7 @@ interface Slide2ContextType {
 
   // For Sticker
   selectedStickers2: StickerItem[];
+  setSelectedStickers2: any;
   addSticker2: (
     sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex">
   ) => void;
@@ -827,6 +828,7 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
         addSticker2,
         selectedStickers2,
+        setSelectedStickers2,
         updateSticker2,
         removeSticker2,
 
