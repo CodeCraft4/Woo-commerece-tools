@@ -289,6 +289,7 @@ const TempletEditorPreview: React.FC = () => {
     state?: { slides?: any[]; mugImage?: string };
   };
   const mugImageSrc: any = state?.mugImage ?? null;
+  console.log(mugImageSrc, '---imgUrl')
 
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)

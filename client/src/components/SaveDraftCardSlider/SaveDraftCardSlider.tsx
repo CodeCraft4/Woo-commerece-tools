@@ -161,7 +161,7 @@ export default function DraftSlider({ autoOpenCardId }: DraftSliderProps) {
     <Box sx={{ mt: 4 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Typography fontWeight={700} fontSize={22}>
-          Continue Your Drafts Personalization
+         Click to edit and continue personalising your drafts
         </Typography>
       </Box>
 

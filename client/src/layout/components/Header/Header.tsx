@@ -474,7 +474,7 @@ export default function Header(props: Props) {
                       >
                         <MenuItem
                           onClick={() => {
-                            // navigate(USER_ROUTES.ACCOUNT_SETTINGS);
+                            navigate(USER_ROUTES.USER_PROFILE);
                             handleCloseMenu();
                           }}
                           sx={{ width: 150 }}

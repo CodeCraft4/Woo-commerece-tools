@@ -129,48 +129,40 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
   return null;
 }
 
-
-// Fetch all template designs from DB
 export const fetchAllTempletDesigns = async () => {
   const { data, error } = await supabase
     .from("templetDesign")
-    .select("*");
+    .select("id, category, created_at, img_url, raw_stores"); // ✅ include raw_stores
 
   if (error) {
     console.error("Error fetching template designs:", error);
-    return [];
+    throw error;
   }
 
-  return data || [];
+  return data ?? [];
 };
 
 
-// Fetch All card Length
 export const fetchTempletCardCount = async () => {
   const { count, error } = await supabase
     .from("templetDesign")
     .select("*", { count: "exact", head: true });
 
-  if (error) throw new Error(error.message);
-  return count;
+  if (error) throw error;
+  return count ?? 0;
 };
 
-
-// db/templetDesign.ts
 export const fetchTempletDesignById = async (id: string) => {
   const { data, error } = await supabase
     .from("templetDesign")
-    .select("*")
+    .select("id, category, raw_stores, created_at")
     .eq("id", id)
     .single();
 
-  if (error) {
-    console.error("Error fetching template:", error);
-    return null;
-  }
-
+  if (error) throw error;
   return data;
 };
+
 
 
 // Blogs-----------------------------

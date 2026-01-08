@@ -1,98 +1,113 @@
 import { Box, Typography } from "@mui/material";
-// import LandingButton from "../LandingButton/LandingButton";
 import type { CategoryType } from "../ProductPopup/ProductPopup";
-
+import { COLORS } from "../../constant/color";
 
 type BasketType = {
   id?: string | number;
   title?: string;
   poster: string;
-  price?: string;
-  saleprice?: string;
+  price?: string | number;
+  saleprice?: string | number;
   category?: string;
   sales?: boolean;
-  openModal?: (user: CategoryType) => void;
+  openModal?: (item: CategoryType) => void;
 };
 
-const BasketCard = (props: BasketType) => {
-  const { poster, price, sales, id, saleprice, openModal } =
-    props;
+// background by category (same as before)
+const bgByCategory = (category?: string) => {
+  const c = (category ?? "").toLowerCase().trim();
+  if (c.includes("business card")) return COLORS.green;
+  if (c.includes("candle")) return COLORS.seconday;
+  if (c.includes("bag")) return COLORS.primary;
+  if (c.includes("coaster")) return "#7FBF9B";
+  if (c.includes("card")) return "#66B6BE";
+  if (c.includes("leaflet")) return "#7FBF9B";
+  if (c.includes("invite")) return "#8E68A6";
+  return "#8E68A6";
+};
 
-  // Store Card in the context API.
-  // const handleAddToCart = () => {
-  //   addToCart({
-  //     id: id,
-  //     img: poster,
-  //     title: title,
-  //     price: price,
-  //     category: category ? category : "default",
-  //   });
-  //   toast.success("Product add to store");
-  // };
+const BasketCard = ({ id, title, poster, category, openModal }: BasketType) => {
+  const handleOpen = () => {
+    openModal?.({ id, title, img_url: poster, cardcategory: category } as any);
+  };
 
   return (
     <Box
-      component={"div"}
+      onClick={handleOpen}
       sx={{
+        position: "relative",
+        width: "120%",                 // ✅ let Swiper control width
+        height: 235,                 // ✅ let Swiper control width
+        aspectRatio: "1 / 1",          // ✅ always square like screenshot
         borderRadius: 2,
-        width: { md: "100%", sm: "100%", xs: "100%" },
-        height: { lg: "300px", md: "300px", sm: '220px', xs: 'auto' },
+        bgcolor: bgByCategory(category),
         overflow: "hidden",
         cursor: "pointer",
+        border: "4px solid gray",
+
+        // subtle shadow like screenshot
+        boxShadow: "0 10px 18px rgba(0,0,0,0.35)",
       }}
     >
-      <Box
-        component={"img"}
-        src={poster}
-        onClick={() =>
-          openModal?.({
-            id,
-          })
-        }
-        alt="backetImg"
-        sx={{
-          width: { md: "100%", sm: "100%", xs: "100%" },
-          height: { lg: '250px', md: "250px", sm: "200px", xs: "350px" },
-          objectFit: "fill",
-          borderRadius: 2,
-          "&:hover": { transform: "scale(1.03)" },
-          transition: "transform 0.3s ease",
-        }}
-      />
-
+      {/* ✅ inner content area (THIS was missing inset before) */}
       <Box
         sx={{
-          dsiplay: "flex",
+          position: "absolute",
+          inset: 12,                   // ✅ padding inside card (important)
+          borderRadius: 1.5,
+          display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "space-between",
+          pb: 1.2,
         }}
       >
-        <Typography sx={{ pt: 1, pb: 1, fontSize: "23px", fontWeight: 300 }}>
-          {sales && (
-            <span
-              style={{
-                fontSize: "18px",
-                textDecoration: "line-through",
-                color: "Gray",
-                marginRight: 3,
-              }}
-            >
-              £{price}
-            </span>
-          )}
-          £{sales ? saleprice : price}
-        </Typography>
-        {/* {sales && (
-          <Rating name="half-rating" defaultValue={2.5} precision={0.5} />
-        )} */}
-      </Box>
+        {/* image area */}
+        <Box
+          sx={{
+            flex: 1,
+            width: "100%",
+            display: "flex",
+            // alignItems: "center",
+            justifyContent: "center",
+            mt: 0.5,
+          }}
+        >
+          <Box
+            component="img"
+            src={poster}
+            alt={title ?? "product"}
+            sx={{
+              width: "75%",
+              height: "90%",
+              objectFit: "contain",
+              display: "block",
+              userSelect: "none",
+              pointerEvents: "none",
+            }}
+          />
+        </Box>
 
-      {/* <LandingButton
-        title="Add To Basket"
-        width="100%"
-        variant="outlined"
-        onClick={handleAddToCart}
-      /> */}
+        {/* category INSIDE card */}
+        <Typography
+          sx={{
+            color: "#fff",
+            fontWeight: 500,
+            fontSize: { xs: 18, sm: 20, md: 22 },
+            textAlign: "center",
+            textTransform: "capitalize",
+            px: 1,
+            whiteSpace: "nowrap",
+            // overflow: "hidden",
+            textOverflow: "ellipsis",
+            width: "100%",
+            textWrap: "wrap",
+          }}
+          title={category}
+        >
+          {category || "Category"}
+        </Typography>
+      </Box>
     </Box>
   );
 };

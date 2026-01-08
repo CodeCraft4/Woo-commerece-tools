@@ -196,7 +196,7 @@ const CategoriesWisePreview: React.FC = () => {
 
     // ✅ preview viewport size
     const boxW = isMobile ? 320 : 480;
-    const boxH = isMobile ? 440 : 650;
+    const boxH = isMobile ? 440 : 680;
 
     // ✅ EXACT same logic as editor: coverScale
     // const fit = useMemo(() => coverScale(baseW, baseH, boxW, boxH), [baseW, baseH, boxW, boxH]);
