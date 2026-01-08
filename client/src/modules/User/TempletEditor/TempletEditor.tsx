@@ -1,3 +1,12 @@
+/* =========================================================
+   FILE: src/pages/user/TempletEditor.tsx
+   UPDATED USER EDITOR:
+   - Render size ONLY from CATEGORY_CONFIG (mmWidth/mmHeight)
+   - Element coordinate space uses ADMIN stored canvas (fitCanvas/canvasPx) to keep exact look
+   - Bigger preview (+extra px), border removed, active slide centered
+   - Fix: "Rendered more hooks than during previous render"
+   ========================================================= */
+
 import {
     Box,
     IconButton,
@@ -6,25 +15,24 @@ import {
     Chip,
     Stack,
     CircularProgress,
-    Tooltip,
-    Divider,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     Collections,
     ArrowBackIos,
     ArrowForwardIos,
-    TextFields,
-    Image as ImageIcon,
-    Close,
 } from "@mui/icons-material";
-import { USER_ROUTES } from "../../../constant/route";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { fetchTempletDesignById } from "../../../source/source";
 import * as htmlToImage from "html-to-image";
-import { COLORS } from "../../../constant/color";
-import { coverScale, mmToPx } from "../../../lib/lib";
+
 import LandingButton from "../../../components/LandingButton/LandingButton";
+import { USER_ROUTES } from "../../../constant/route";
+import { fetchTempletDesignById } from "../../../source/source";
+import { COLORS } from "../../../constant/color";
+import { fitCanvas } from "../../../lib/lib";
+import { CATEGORY_CONFIG, type CategoryKey } from "../../../constant/data";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -64,15 +72,8 @@ type AdminPreview = {
 };
 
 /* --------- Utils --------- */
-const mmToPxAtDpi = (mm: number, dpi: number) => (mm / 25.4) * dpi;
-
-function fallbackCanvasPx(mmW: number, mmH: number, dpi = 96): CanvasPx {
-    return {
-        w: Math.round(mmToPxAtDpi(mmW, dpi)),
-        h: Math.round(mmToPxAtDpi(mmH, dpi)),
-        dpi,
-    };
-}
+const TRANSPARENT_PX =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
 const cloneSlides = (slides: Slide[]): Slide[] => JSON.parse(JSON.stringify(slides));
 const asNum = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -80,6 +81,12 @@ const asStr = (v: any, d = "") => (typeof v === "string" ? v : d);
 const asBool = (v: any, d = false) => (typeof v === "boolean" ? v : d);
 const A = <T,>(v: any): T[] => (Array.isArray(v) ? v : []);
 const uuid = () => globalThis.crypto?.randomUUID?.() ?? `id_${Math.random().toString(36).slice(2)}`;
+
+const resolveCategoryKey = (category?: string): CategoryKey | null => {
+    const c = String(category ?? "").trim().toLowerCase();
+    const keys = Object.keys(CATEGORY_CONFIG) as CategoryKey[];
+    return keys.find((k) => k.trim().toLowerCase() === c) ?? null;
+};
 
 const sanitizeSrc = (src?: string) => {
     if (!src) return "";
@@ -98,6 +105,7 @@ const normalize01 = (o: any, pxW: number, pxH: number) => {
         w = asNum(o?.width ?? o?.w, 0),
         h = asNum(o?.height ?? o?.h, 0);
 
+    // if values are 0..1 => treat as normalized and scale to px
     const r = (n: number) => n > 0 && n <= 1;
     if (r(x) || r(y) || r(w) || r(h)) {
         x *= pxW;
@@ -163,16 +171,14 @@ const fileToDataUrl = (file: File): Promise<string> =>
 
 /* ------------ MAIN ------------ */
 export default function TempletEditor() {
+    const theme = useTheme();
+    const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
     const [loading, setLoading] = useState(true);
     const [adminDesign, setAdminDesign] = useState<AdminPreview | null>(null);
     const [userSlides, setUserSlides] = useState<Slide[]>([]);
     const [activeSlide, setActiveSlide] = useState(0);
     const [selectedElId, setSelectedElId] = useState<string | null>(null);
-    const selectedEl = useMemo(() => {
-        const s = userSlides[activeSlide];
-        if (!s || !selectedElId) return null;
-        return s.elements.find((e) => e.id === selectedElId) ?? null;
-    }, [userSlides, activeSlide, selectedElId]);
 
     const navigate = useNavigate();
     const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -187,21 +193,60 @@ export default function TempletEditor() {
 
     const didRestoreRef = useRef(false);
 
+    // const selectedEl = useMemo(() => {
+    //     const s = userSlides[activeSlide];
+    //     if (!s || !selectedElId) return null;
+    //     return s.elements.find((e) => e.id === selectedElId) ?? null;
+    // }, [userSlides, activeSlide, selectedElId]);
+
+    // ====== Viewport-aware sizing (admin-like) ======
+
+    const [viewport, setViewport] = useState({ w: 1200, h: 800 });
+    useEffect(() => {
+        const onResize = () => {
+            const headerFooterReserve = 240;
+            setViewport({
+                w: window.innerWidth,
+                h: Math.max(320, window.innerHeight - headerFooterReserve),
+            });
+        };
+        onResize();
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+
+    /**
+     * Build slides from raw stores.
+     * IMPORTANT:
+     * - Render mmW/mmH comes from CATEGORY_CONFIG
+     * - Element coordinate-space uses stored canvasPx (fitCanvas/canvas.px) EXACTLY
+     *   so the design looks identical to admin.
+     */
     function buildSlidesFromRawStores(raw: any): { design: AdminPreview; slides: Slide[] } {
         const src = raw?.raw_stores ?? raw;
 
-        const category = asStr(src?.category ?? src?.editorCategory ?? src?.cardCategory ?? "Card");
-        const mmWidth = asNum(src?.config?.mmWidth, asNum(src?.canvas?.mm?.w, 210));
-        const mmHeight = asNum(src?.config?.mmHeight, asNum(src?.canvas?.mm?.h, 297));
+        const category = asStr(src?.category ?? src?.editorCategory ?? src?.cardCategory ?? "Invites");
         const labels: string[] = Array.isArray(src?.config?.slideLabels) ? src.config.slideLabels : [];
 
-        const canvasPx: CanvasPx =
-            src?.canvas?.px?.w && src?.canvas?.px?.h
-                ? { w: asNum(src.canvas.px.w, 0), h: asNum(src.canvas.px.h, 0), dpi: asNum(src.canvas.px.dpi, 96) }
-                : fallbackCanvasPx(mmWidth, mmHeight, 96);
+        // DB mm only fallback (NOT for render sizing)
+        const dbMmWidth = asNum(src?.config?.mmWidth, asNum(src?.canvas?.mm?.w, 210));
+        const dbMmHeight = asNum(src?.config?.mmHeight, asNum(src?.canvas?.mm?.h, 297));
 
-        const pxW = canvasPx.w;
-        const pxH = canvasPx.h;
+        // Stored canvas in px: the coordinate system used in admin design-time
+        const storedW =
+            asNum(src?.config?.fitCanvas?.width, 0) ||
+            asNum(src?.canvas?.px?.w, 0) ||
+            1200;
+
+        const storedH =
+            asNum(src?.config?.fitCanvas?.height, 0) ||
+            asNum(src?.canvas?.px?.h, 0) ||
+            800;
+
+        // Render sizing mm comes from category config (source of truth)
+        const k = resolveCategoryKey(category);
+        const mmWidth = k ? CATEGORY_CONFIG[k].mmWidth : dbMmWidth;
+        const mmHeight = k ? CATEGORY_CONFIG[k].mmHeight : dbMmHeight;
 
         const slidesDef: any[] = A(src?.slides);
         const imgEls = A<any>(src?.imageElements);
@@ -209,7 +254,7 @@ export default function TempletEditor() {
         const stkEls = A<any>(src?.stickerElements);
 
         const coerceText = (e: any): TextEl => {
-            const r = normalize01(e, pxW, pxH);
+            const r = normalize01(e, storedW, storedH);
             return {
                 type: "text",
                 id: asStr(e?.id) || uuid(),
@@ -228,7 +273,7 @@ export default function TempletEditor() {
         };
 
         const coerceImage = (e: any): ImageEl => {
-            const r = normalize01(e, pxW, pxH);
+            const r = normalize01(e, storedW, storedH);
             return {
                 type: "image",
                 id: asStr(e?.id) || uuid(),
@@ -241,7 +286,7 @@ export default function TempletEditor() {
         };
 
         const coerceSticker = (e: any): StickerEl => {
-            const r = normalize01(e, pxW, pxH);
+            const r = normalize01(e, storedW, storedH);
             return {
                 type: "sticker",
                 id: asStr(e?.id) || uuid(),
@@ -269,12 +314,17 @@ export default function TempletEditor() {
         });
 
         return {
-            design: { category, config: { mmWidth, mmHeight, slideLabels: labels }, canvasPx, slides },
+            design: {
+                category,
+                config: { mmWidth, mmHeight, slideLabels: labels },
+                canvasPx: { w: storedW, h: storedH, dpi: 96 },
+                slides,
+            },
             slides,
         };
     }
 
-    // ✅ Restore from sessionStorage
+    // ✅ Restore
     useEffect(() => {
         const restored = safeJsonParse<{
             adminDesign: AdminPreview;
@@ -293,65 +343,96 @@ export default function TempletEditor() {
         }
     }, [productId]);
 
-    // ✅ Load only if not restored
-useEffect(() => {
-  if (didRestoreRef.current) return;
+    // ✅ Load if not restored
+    useEffect(() => {
+        if (didRestoreRef.current) return;
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      if (state?.templetDesign) {
-        const { design, slides } = buildSlidesFromRawStores(state.templetDesign);
-        setAdminDesign(design);
-        setUserSlides(slides);
-        setActiveSlide(0);
-        setSelectedElId(null);
-        return;
-      }
+        const load = async () => {
+            setLoading(true);
+            try {
+                if (state?.templetDesign) {
+                    const { design, slides } = buildSlidesFromRawStores(state.templetDesign);
+                    setAdminDesign(design);
+                    setUserSlides(slides);
+                    setActiveSlide(0);
+                    setSelectedElId(null);
+                    return;
+                }
 
-      if (productId) {
-        const row: any = await fetchTempletDesignById(productId);
-        const raw = row?.raw_stores ?? row;
-        const { design, slides } = buildSlidesFromRawStores(raw);
-        setAdminDesign(design);
-        setUserSlides(slides);
-        setActiveSlide(0);
-        setSelectedElId(null);
-        return;
-      }
+                if (productId) {
+                    const row: any = await fetchTempletDesignById(productId);
+                    const raw = row?.raw_stores ?? row;
+                    const { design, slides } = buildSlidesFromRawStores(raw);
+                    setAdminDesign(design);
+                    setUserSlides(slides);
+                    setActiveSlide(0);
+                    setSelectedElId(null);
+                    return;
+                }
 
-      setAdminDesign(null);
-      setUserSlides([]);
-    } catch (e) {
-      console.error("Failed to load template:", e);
-      setAdminDesign(null);
-      setUserSlides([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+                setAdminDesign(null);
+                setUserSlides([]);
+            } catch (e) {
+                console.error("Failed to load template:", e);
+                setAdminDesign(null);
+                setUserSlides([]);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [productId, state?.templetDesign]);
+        load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productId, state?.templetDesign]);
 
+    // ====== Render sizing ALWAYS computed (avoid hook mismatch) ======
+    const catKey = useMemo(() => resolveCategoryKey(adminDesign?.category), [adminDesign?.category]);
+    const cfg = useMemo(() => (catKey ? CATEGORY_CONFIG[catKey] : null), [catKey]);
 
-    // ✅ Persist on every change
-    // useEffect(() => {
-    //     // if (!adminDesign) return;
-    //     sessionStorage?.setItem(
-    //         storageKey(productId),
-    //         JSON.stringify({ adminDesign, userSlides, activeSlide, selectedElId })
-    //     );
-    // }, [adminDesign, userSlides, activeSlide, selectedElId, productId]);
+    const mmW = cfg?.mmWidth ?? adminDesign?.config.mmWidth ?? 210;
+    const mmH = cfg?.mmHeight ?? adminDesign?.config.mmHeight ?? 297;
+
+    // "make it a bit bigger" without distortion
+    const extraPx = isTablet ? 70 : 80;
+
+    const canvasSize = useMemo(() => {
+        return fitCanvas(
+            mmW,
+            mmH,
+            viewport.w * (isTablet ? 0.98 : 0.78),
+            viewport.h + extraPx
+        );
+    }, [mmW, mmH, viewport.w, viewport.h, isTablet]);
+
+    const artboardWidth = canvasSize?.width ?? 520;
+    const artboardHeight = canvasSize?.height ?? 520;
+
+    // BASE coordinate space = admin stored canvas
+    const baseW = adminDesign?.canvasPx.w ?? 1200;
+    const baseH = adminDesign?.canvasPx.h ?? 800;
+
+    const scale = 1.0 * 1;
+
+    // Auto-center active slide in scroller
+    useEffect(() => {
+        const container = scrollRef.current;
+        const node = slideRefs.current[activeSlide];
+        if (!container || !node) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const nodeRect = node.getBoundingClientRect();
+
+        const currentScrollLeft = container.scrollLeft;
+        const nodeCenter = nodeRect.left - containerRect.left + nodeRect.width / 2;
+        const containerCenter = containerRect.width / 2;
+
+        const delta = nodeCenter - containerCenter;
+        container.scrollTo({ left: currentScrollLeft + delta, behavior: "smooth" });
+    }, [activeSlide]);
 
     const scrollToSlide = (index: number) => {
         setActiveSlide(index);
         setSelectedElId(null);
-        if (scrollRef.current) {
-            const slideW = (scrollRef.current.children[0] as HTMLElement | undefined)?.clientWidth ?? 0;
-            scrollRef.current.scrollTo({ left: slideW * index, behavior: "smooth" });
-        }
     };
 
     const onTextChange = (slideIndex: number, elId: string, text: string) => {
@@ -382,28 +463,41 @@ useEffect(() => {
         });
     };
 
+    // const canEditSelected = !!selectedEl && selectedEl.editable !== false;
+    // const isSelectedText = selectedEl?.type === "text";
+    // const isSelectedImage = selectedEl?.type === "image";
+
+    // const openSelectedImagePicker = () => {
+    //     if (!selectedEl || selectedEl.type !== "image") return;
+    //     if (selectedEl.editable === false) return;
+    //     fileInputsRef.current[selectedEl.id]?.click();
+    // };
+
     const is3DCategory = (cat?: string) => cat === "Mugs" || cat === "Tote Bags B" || cat === "Apparel T";
     const isMugCategory = (cat?: string) => cat === "Mugs";
 
     const handleNavigatePrview = async () => {
         if (!adminDesign?.category) return;
         setLoading(true);
+
         const category = encodeURIComponent(adminDesign.category);
 
         const navStateBase = {
             slides: userSlides,
-            config: adminDesign.config,
-            canvasPx: adminDesign.canvasPx,
+            config: { mmWidth: mmW, mmHeight: mmH, slideLabels: adminDesign.config.slideLabels },
+            canvasPx: adminDesign.canvasPx, // keep if preview needs
             slideIndex: activeSlide,
             category: adminDesign.category,
         };
 
+        // Mug capture special case
         if (isMugCategory(adminDesign.category)) {
             const node = slideRefs.current[activeSlide];
             if (!node) {
                 navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
                     state: navStateBase,
                 });
+                setLoading(false);
                 return;
             }
 
@@ -414,13 +508,13 @@ useEffect(() => {
                 filter: captureFilter,
                 cacheBust: hasBlobImages(node) ? false : true,
                 skipFonts: false,
-                imagePlaceholder:
-                    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=",
+                imagePlaceholder: TRANSPARENT_PX,
             });
 
             navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
                 state: { ...navStateBase, mugImage: dataUrl },
             });
+            setLoading(false);
             return;
         }
 
@@ -429,40 +523,28 @@ useEffect(() => {
         } else {
             navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, { state: navStateBase });
         }
+
         setLoading(false);
     };
 
-    const canEditSelected = !!selectedEl && selectedEl.editable !== false;
-    const isSelectedText = selectedEl?.type === "text";
-    const isSelectedImage = selectedEl?.type === "image";
-
-    const openSelectedImagePicker = () => {
-        if (!selectedEl || selectedEl.type !== "image") return;
-        if (selectedEl.editable === false) return;
-        fileInputsRef.current[selectedEl.id]?.click();
-    };
-
-    if (loading)
+    // --------- Render (no conditional hook issues) ---------
+    if (loading) {
         return (
             <Box sx={{ height: "90vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <CircularProgress />
             </Box>
         );
+    }
 
     if (!adminDesign) return <Typography>No template found.</Typography>;
-
-    // const canvasW = adminDesign.canvasPx.w;
-    // const canvasH = adminDesign.canvasPx.h;
 
     return (
         <>
             {/* HEADER */}
-            <Box px={8}>
+            <Box px={isTablet ? 2 : 8} pt={1}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-                    {/* <Chip label={`Category: ${adminDesign.category}`} size="small" /> */}
                     <Chip label={`Slides: ${userSlides.length}`} size="small" />
-                    <Chip label={`${adminDesign.config.mmWidth} × ${adminDesign.config.mmHeight} mm`} size="small" />
-                    {/* <Chip label={`Canvas: ${canvasW} × ${canvasH} px`} size="small" /> */}
+                    <Chip label={`${mmW} × ${mmH} mm`} size="small" />
                     <Box flexGrow={1} />
                     <LandingButton title="Preview" onClick={handleNavigatePrview} />
                 </Stack>
@@ -478,163 +560,160 @@ useEffect(() => {
                     justifyContent: "center",
                 }}
             >
+                {/* Scroller */}
                 <Box
                     ref={scrollRef}
                     sx={{
                         display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
                         overflowX: "auto",
+                        overflowY: "hidden",
                         width: "100%",
-                        px: 5,
-                        py: 2,
-                        justifyContent: "center",
-                        gap: 5,
-                        "&::-webkit-scrollbar": { display: "none" },
+                        p: 2,
+                        gap: isTablet ? 4 : 7,
+                        justifyContent: "flex-start",
+                        minWidth: "100%",
+                        scrollSnapType: "x mandatory",
+                        "&::-webkit-scrollbar": { height: 6, width: 6 },
+                        "&::-webkit-scrollbar-thumb": { backgroundColor: COLORS.primary, borderRadius: "20px" },
                     }}
                 >
                     {userSlides.map((slide, i) => {
                         const ordered = [...slide.elements].sort((a, b) => asNum(a.zIndex, 1) - asNum(b.zIndex, 1));
-
-                        // base canvas size from DB (fitCanvas)
-                        const boxW = 480;
-                        const boxH = 450;
-                        const row = state?.templetDesign ?? {};
-                        const baseW =
-                            row?.config?.fitCanvas?.width ??
-                            row?.raw_stores?.config?.fitCanvas?.width ??
-                            row?.raw_stores?.canvas?.px?.w ??
-                            Math.round(mmToPx(row?.config?.mmWidth ?? 210));
-
-                        const baseH =
-                            row?.config?.fitCanvas?.height ??
-                            row?.raw_stores?.config?.fitCanvas?.height ??
-                            row?.raw_stores?.canvas?.px?.h ??
-                            Math.round(mmToPx(row?.config?.mmHeight ?? 297));
-
-                        // ✅ cover like TempletForm
-                        const { scale, w, h } = coverScale(baseW, baseH, boxW, boxH);
-
+                        const isActive = i === activeSlide;
 
                         return (
-                            <Box key={slide.id} sx={{
-                                position: "relative", display: "flex", gap: 2, flex: "0 0 auto",
-                                // ml: i === 0 ? 350 : 0,
-                            }}>
+                            <Box
+                                key={slide.id}
+                                sx={{
+                                    position: "relative",
+                                    display: "flex",
+                                    gap: 2,
+                                    flex: "0 0 auto",
+                                    scrollSnapAlign: "center",
+                                    opacity: isActive ? 1 : 0.5,
+                                    filter: isActive ? "none" : "grayscale(0.35)",
+                                    transition: "opacity .2s ease, filter .2s ease",
+                                    ml: i === 0 ? (isTablet ? 1 : 3) : 0,
+                                }}
+                            >
                                 {/* TOOLBAR */}
-                                {i === activeSlide && (
-                                    <Box
-                                        className="capture-exclude"
-                                        sx={{
-                                            position: "sticky",
-                                            top: 0,
-                                            alignSelf: "flex-start",
-                                            height: 'auto',
-                                            width: 64,
-                                            borderRadius: 2,
-                                            bgcolor: "#fff",
-                                            boxShadow: 3,
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            alignItems: "center",
-                                            gap: 1,
-                                            py: 1,
-                                            flex: "0 0 auto",
-                                        }}
-                                    >
-                                        <Typography variant="caption">Tools</Typography>
-                                        <Divider flexItem sx={{ width: "80%" }} />
+                                {/* {isActive && (
+                  <Box
+                    className="capture-exclude"
+                    sx={{
+                      position: "sticky",
+                      top: 0,
+                      alignSelf: "flex-start",
+                      height: "auto",
+                      width: 64,
+                      borderRadius: 2,
+                      bgcolor: "#fff",
+                      boxShadow: 3,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 1,
+                      py: 1,
+                      flex: "0 0 auto",
+                    }}
+                  >
+                    <Typography variant="caption">Tools</Typography>
+                    <Divider flexItem sx={{ width: "80%" }} />
 
-                                        <Tooltip title={selectedElId ? "Clear selection" : "No selection"}>
-                                            <span>
-                                                <IconButton
-                                                    disabled={!selectedElId}
-                                                    onClick={() => setSelectedElId(null)}
-                                                    size="small"
-                                                    sx={{ border: "1px solid rgba(0,0,0,0.12)" }}
-                                                >
-                                                    <Close fontSize="small" />
-                                                </IconButton>
-                                            </span>
-                                        </Tooltip>
+                    <Tooltip title={selectedElId ? "Clear selection" : "No selection"}>
+                      <span>
+                        <IconButton
+                          disabled={!selectedElId}
+                          onClick={() => setSelectedElId(null)}
+                          size="small"
+                          sx={{ border: "1px solid rgba(0,0,0,0.12)" }}
+                        >
+                          <Close fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
 
-                                        <Divider flexItem sx={{ width: "80%" }} />
+                    <Divider flexItem sx={{ width: "80%" }} />
 
-                                        <Tooltip title={canEditSelected && isSelectedText ? "Edit selected text" : "Select an editable text"}>
-                                            <span>
-                                                <IconButton
-                                                    size="small"
-                                                    disabled={!(canEditSelected && isSelectedText)}
-                                                    sx={{ border: "1px solid rgba(0,0,0,0.12)" }}
-                                                >
-                                                    <TextFields fontSize="small" />
-                                                </IconButton>
-                                            </span>
-                                        </Tooltip>
+                    <Tooltip title={canEditSelected && isSelectedText ? "Edit selected text" : "Select an editable text"}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={!(canEditSelected && isSelectedText)}
+                          sx={{ border: "1px solid rgba(0,0,0,0.12)" }}
+                        >
+                          <TextFields fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
 
-                                        <Tooltip title={canEditSelected && isSelectedImage ? "Upload selected image" : "Select an editable image"}>
-                                            <span>
-                                                <IconButton
-                                                    size="small"
-                                                    disabled={!(canEditSelected && isSelectedImage)}
-                                                    onClick={openSelectedImagePicker}
-                                                    sx={{ border: "1px solid rgba(0,0,0,0.12)" }}
-                                                >
-                                                    <ImageIcon fontSize="small" />
-                                                </IconButton>
-                                            </span>
-                                        </Tooltip>
+                    <Tooltip title={canEditSelected && isSelectedImage ? "Upload selected image" : "Select an editable image"}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={!(canEditSelected && isSelectedImage)}
+                          onClick={openSelectedImagePicker}
+                          sx={{ border: "1px solid rgba(0,0,0,0.12)" }}
+                        >
+                          <ImageIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
 
-                                        <Divider flexItem sx={{ width: "80%" }} />
-                                        <Typography variant="caption" sx={{ color: "#666" }}>
-                                            {selectedElId ? (canEditSelected ? "Editable" : "Locked") : "Select"}
-                                        </Typography>
-                                    </Box>
-                                )}
+                    <Divider flexItem sx={{ width: "80%" }} />
+                    <Typography variant="caption" sx={{ color: "#666" }}>
+                      {selectedElId ? (canEditSelected ? "Editable" : "Locked") : "Select"}
+                    </Typography>
+                  </Box>
+                )} */}
 
+                                {/* ARTBOARD */}
                                 <Box
-                                    ref={setSlideRef(i)}
+                                    ref={(el: any) => {
+                                        setSlideRef(i)(el);
+                                    }}
                                     sx={{
-                                        width: w * scale,
-                                        height: h * scale,
-                                        left: 0,
-                                        top: 0,
+                                        width: artboardWidth,
+                                        height: artboardHeight,
                                         borderRadius: 3,
                                         position: "relative",
                                         overflow: "hidden",
-                                        bgcolor: "rgba(255, 255, 255, 1)",
-                                        boxShadow: 1,
-                                        // border: '1px solid red',
+                                        bgcolor: 'transparent',
+                                        // boxShadow: isActive ? 10 : 4,
+                                        border: '1px solid gray',
+                                        outline: "none",
                                         flex: "0 0 auto",
                                     }}
-                                    onClick={() => setSelectedElId(null)}
+                                    onClick={() => isActive && setSelectedElId(null)}
                                 >
-                                    {/* ✅ "CARD" layer (scaled + centered) */}
+                                    {/* BASE CANVAS: admin stored coordinate-space scaled into artboard */}
                                     <Box
                                         sx={{
                                             position: "absolute",
-                                            transform: "none",
+                                            left: 0,
+                                            top: 0,
+                                            width: baseW,
+                                            height: baseH,
+                                            transform: `scale(${scale})`,
                                             transformOrigin: "top left",
                                         }}
                                     >
                                         {ordered.map((el) => {
                                             const isLocked = el.editable === false;
-                                            const isSelected = selectedElId === el.id && i === activeSlide;
+                                            const isSelected = selectedElId === el.id && isActive;
+                                            const cursor = isSelected ? "text" : isLocked ? "not-allowed" : "text";
 
-                                            const cursor = isSelected
-                                                ? "text"
-                                                : isLocked
-                                                    ? "not-allowed"
-                                                    : 'text';
-
-                                            // ✅ scaled element coordinates
                                             const baseStyle = {
                                                 position: "absolute" as const,
-                                                left: el.x * scale,
-                                                top: el.y * scale,
-                                                width: el.width * scale,
-                                                height: el.height * scale,
+                                                left: el.x,
+                                                top: el.y,
+                                                width: el.width,
+                                                height: el.height,
                                                 zIndex: asNum(el.zIndex, 1),
                                                 cursor,
-                                                borderRadius: 1,
+                                                borderRadius: 4,
                                             };
 
                                             if (el.type === "image") {
@@ -645,16 +724,18 @@ useEffect(() => {
                                                         sx={{ ...baseStyle, overflow: "hidden" }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
+                                                            if (!isActive) return;
                                                             setSelectedElId(el.id);
                                                         }}
                                                     >
                                                         <img
                                                             crossOrigin="anonymous"
                                                             src={img.src}
+                                                            alt=""
                                                             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                                                         />
 
-                                                        {el.editable !== false && (
+                                                        {el.editable !== false && isActive && (
                                                             <Box
                                                                 className="capture-exclude"
                                                                 sx={{
@@ -700,10 +781,11 @@ useEffect(() => {
                                                         sx={{ ...baseStyle, p: 0.5 }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
+                                                            if (!isActive) return;
                                                             setSelectedElId(el.id);
                                                         }}
                                                     >
-                                                        {t.editable !== false ? (
+                                                        {t.editable !== false && isActive ? (
                                                             <TextField
                                                                 multiline
                                                                 value={t.text}
@@ -712,14 +794,13 @@ useEffect(() => {
                                                                 InputProps={{
                                                                     disableUnderline: true,
                                                                     sx: {
-                                                                        height: el.height * scale - 1,
+                                                                        height: Math.max(1, el.height - 1),
                                                                         p: 0.5,
                                                                         "& .MuiInputBase-inputMultiline": {
                                                                             padding: 0,
                                                                             margin: 0,
                                                                             minHeight: "100%",
                                                                             textAlign: align,
-
                                                                         },
                                                                     },
                                                                 }}
@@ -727,11 +808,10 @@ useEffect(() => {
                                                                     style: {
                                                                         fontWeight: t.bold ? 700 : 400,
                                                                         fontStyle: t.italic ? "italic" : "normal",
-                                                                        fontSize: t.fontSize * scale,
+                                                                        fontSize: t.fontSize,
                                                                         fontFamily: t.fontFamily,
                                                                         color: t.color,
-                                                                        lineHeight: 1.5,
-
+                                                                        lineHeight: 1.35,
                                                                     },
                                                                 }}
                                                                 sx={{ height: "100%", overflow: "hidden", width: "100%" }}
@@ -740,14 +820,14 @@ useEffect(() => {
                                                             <Typography
                                                                 sx={{
                                                                     width: "100%",
-                                                                    height: 'auto',
+                                                                    height: "100%",
                                                                     display: "flex",
                                                                     alignItems: "center",
                                                                     justifyContent:
                                                                         align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
                                                                     fontWeight: t.bold ? 700 : 400,
                                                                     fontStyle: t.italic ? "italic" : "normal",
-                                                                    fontSize: t.fontSize * scale,
+                                                                    fontSize: t.fontSize,
                                                                     fontFamily: t.fontFamily,
                                                                     color: t.color,
                                                                     textAlign: align as any,
@@ -770,9 +850,11 @@ useEffect(() => {
                                                         key={el.id}
                                                         component="img"
                                                         src={st.src}
-                                                        sx={{ ...baseStyle, objectFit: "contain" }}
+                                                        alt=""
+                                                        sx={{ ...baseStyle, objectFit: "contain", display: "block" }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
+                                                            if (!isActive) return;
                                                             setSelectedElId(el.id);
                                                         }}
                                                     />
@@ -783,12 +865,10 @@ useEffect(() => {
                                         })}
                                     </Box>
                                 </Box>
-
                             </Box>
                         );
                     })}
                 </Box>
-
 
                 {/* Thumbnails */}
                 <Box sx={{ display: "flex", gap: 1, mt: 2, alignItems: "center" }}>

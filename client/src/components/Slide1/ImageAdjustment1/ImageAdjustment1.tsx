@@ -51,7 +51,7 @@ const ImageAdjustment1 = (props: ImageAdjustment1Props) => {
         setDraggableImages1(prev => {
             return prev.map(img =>
                 selectedImg1.includes(img.id)
-                    ? { ...img, zIndex: Math.max((img.zIndex || 0) - 1, 0) } // don't go below 0
+                    ? { ...img, zIndex: Math.max((img.zIndex || 0) - 1, 0) }
                     : img
             );
         });
@@ -73,7 +73,6 @@ const ImageAdjustment1 = (props: ImageAdjustment1Props) => {
             )
         );
     };
-
 
     return (
         <Box sx={{ position: 'absolute', left: isAdminEditor ? '29.5%' : '30%', zIndex: 99, height: 600, bgcolor: 'white', mt: 1, borderRadius: 1 }}>
@@ -141,7 +140,6 @@ const ImageAdjustment1 = (props: ImageAdjustment1Props) => {
                         <DrawOutlined fontSize="large" />
                         Sketch
                     </IconButton>
-
 
                     <IconButton
                         sx={editingButtonStyle}

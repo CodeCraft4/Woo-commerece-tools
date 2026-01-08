@@ -30,11 +30,11 @@ const titleByKey: Record<SizeKey, string> = {
   us_letter: "US Letter",
 };
 
-const descByKey: Record<SizeKey, string> = {
-  a4: "For the little message",
-  a5: "IDEA Favourite",
-  us_letter: "For a big impression",
-};
+// const descByKey: Record<SizeKey, string> = {
+//   a4: "For the little message",
+//   a5: "IDEA Favourite",
+//   us_letter: "For a big impression",
+// };
 
 const previewSizes: Record<SizeKey, { width: number; height: number; frameLabel: string }> = {
   a4: { width: 150, height: 200, frameLabel: "A4" },
@@ -108,7 +108,7 @@ const Subscription = () => {
   const plans = (["a4", "a5", "us_letter"] as SizeKey[]).map((k) => ({
     id: k,
     title: titleByKey[k],
-    desc: descByKey[k],
+    // desc: descByKey[k],
     price: priceFor(k),
   }));
 
@@ -329,7 +329,7 @@ const Subscription = () => {
                     />
                     <Box>
                       <Typography sx={{ fontWeight: { md: 900, sm: 900, xs: 700 } }}>{plan.title}</Typography>
-                      <Typography sx={{ fontSize: "13px", sm: "13px", xs: "10px" }}>{plan.desc}</Typography>
+                      {/* <Typography sx={{ fontSize: "13px", sm: "13px", xs: "10px" }}>{plan.desc}</Typography> */}
                       <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" } }}>
                         £{plan.price.toFixed(2)}
                       </Typography>

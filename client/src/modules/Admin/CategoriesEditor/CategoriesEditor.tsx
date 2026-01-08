@@ -777,7 +777,8 @@ const CategoriesEditor = () => {
               key={slide.id}
               ref={index === 0 ? registerFirstSlideNode : undefined}
               sx={{
-                flex: "0 0 auto", width: canvasSize.width, height: canvasSize.height,
+                flex: "0 0 auto",
+                 width: canvasSize.width, height: canvasSize.height,
                 // bgcolor: isInactive ? "#b6b0b06b" : "#fff",
                 borderRadius: 2,
                 boxShadow: index === selectedSlide ? 8 : 4,

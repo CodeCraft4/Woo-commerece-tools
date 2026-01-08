@@ -360,7 +360,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
               sx={{
                 width: "100%",
                 height: "100%",
-                objectFit: "cover",
+                objectFit: "fill",
                 transition: "transform 0.3s ease-in-out",
                 transform: isZoomed ? "scale(1.5)" : "scale(1)",
                 cursor: isZoomed ? "zoom-out" : "zoom-in",
