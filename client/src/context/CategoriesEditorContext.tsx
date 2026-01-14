@@ -62,31 +62,45 @@ export type SnapshotSlide = {
   elements: SnapshotAnyEl[];
 };
 
+
+// path: src/context/CategoriesEditorContext.ts
+export type PriceText = string | number | null | undefined;
+
 export type PublishMeta = {
-  id?: string;     // ✅ add
+  id?: string;
   mode?: "edit" | "create" | string;
+
+  // UI fields
   cardname?: string;
-
-  // IMPORTANT: this is the product category chosen in the form
   cardcategory?: string;
-
   subCategory?: string;
   subSubCategory?: string;
 
-  actualprice?: any;
-  a4price?: any;
-  a5price?: any;
-  usletter?: any;
+  // Legacy DB columns (already in schema)
+  actualprice?: PriceText;
+  a4price?: PriceText;
+  a5price?: PriceText;
+  usletter?: PriceText;
 
-  saleprice?: any;
-  salea4price?: any;
-  salea5price?: any;
-  saleusletter?: any;
+  saleprice?: PriceText;
+  salea4price?: PriceText;
+  salea5price?: PriceText;
+  saleusletter?: PriceText;
+
+  // ✅ New DB columns (you added)
+  a3price?: PriceText;
+  halfusletter?: PriceText;
+  ustabloid?: PriceText;
+
+  salea3price?: PriceText;
+  salehalfusletter?: PriceText;
+  saleustabloid?: PriceText;
 
   description?: string;
   sku?: string;
   imgUrl?: string;
 };
+
 
 type CategoriesEditorContextType = {
   // editor "template type"
@@ -146,7 +160,7 @@ type CategoriesEditorContextType = {
   mainScrollerRef: React.MutableRefObject<HTMLDivElement | null>;
   registerFirstSlideNode: (node: HTMLDivElement | null) => void;
 
-  reset: () => void;
+  resetState: () => void;
 };
 
 const CategoriesEditorContext = createContext<CategoriesEditorContextType | undefined>(undefined);
@@ -223,7 +237,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
   const getSlidesWithElements = useCallback(() => buildSlidesWithElements(), [buildSlidesWithElements]);
 
-  const reset = () => {
+  const resetState = () => {
     const cfg = CATEGORY_CONFIG[category];
     const newSlides = cfg.slideLabels?.length ? cfg.slideLabels.map((_, i) => ({ id: i + 1 })) : [{ id: 1 }];
     setSlides(newSlides);
@@ -450,14 +464,14 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
         toast.error("Save failed");
       } else {
         toast.success(isEdit ? "✅ Updated template Design" : "✅ Saved template Design");
-        reset();
+        resetState();
       }
     } catch (e) {
       console.error("Save error:", e);
       toast.error("Save error");
     } finally {
       setLoading(false);
-      reset();
+      // resetState();
     }
   };
 
@@ -505,7 +519,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
       mainScrollerRef,
       registerFirstSlideNode,
 
-      reset,
+      resetState,
     }),
     [
       category,

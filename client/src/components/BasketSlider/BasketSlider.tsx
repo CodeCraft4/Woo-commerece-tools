@@ -1,18 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Mousewheel } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { fetchAllCardsFromDB, fetchAllTempletDesigns } from "../../source/source";
+import { fetchAllCardsFromDB, fetchAllTempletDesignsLight, fetchTempletRawStoresById } from "../../source/source";
 import { COLORS } from "../../constant/color";
 import BasketCard from "../BasketCard/BasketCard";
 import useModal from "../../hooks/useModal";
 import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
 
 import "swiper/css";
+import toast from "react-hot-toast";
 
 type Props = {
   title?: string;
@@ -30,7 +31,7 @@ const normalizePoster = (v?: string) => {
     return `data:image/png;base64,${s.replace(/\s/g, "")}`;
   }
 
-  return s; // http/https etc
+  return s;
 };
 
 const getTemplatePoster = (item: any) => {
@@ -39,7 +40,6 @@ const getTemplatePoster = (item: any) => {
 
   const rs = item?.raw_stores;
 
-  // 2) common places inside raw_stores (adjust to your structure)
   const maybe =
     rs?.thumbnail ||
     rs?.preview ||
@@ -59,22 +59,43 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
-  // ✅ fetch template designs
-  const {
-    data: basketCards = [],
-    isLoading: loadingTemplets,
+  const { data: basketCards = [], isLoading: loadingTemplets,
     isError,
-    error,
-  } = useQuery({
-    queryKey: ["templetDesign"],
-    queryFn: fetchAllTempletDesigns,
-    staleTime: 1000 * 60 * 60,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-  });
+    error, } = useQuery({
+      queryKey: ["templetDesign", "light"],
+      queryFn: fetchAllTempletDesignsLight,
+      staleTime: 1000 * 60 * 60,
+    });
 
-  if (isError) console.error("Templet query failed:", error);
+
+  if (isError) {
+    toast.error("Error loading templates: " + (error as Error).message);
+  };
+
+
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!basketCards.length) return;
+
+    const t = setTimeout(() => {
+      // ✅ sirf first 8/10 prefetch (warna bohat requests)
+      const ids = basketCards.slice(0, 10).map((x: any) => x.id);
+
+      // ✅ stagger requests (burst nahi hoga)
+      ids.forEach((id: any, idx: number) => {
+        setTimeout(() => {
+          qc.prefetchQuery({
+            queryKey: ["templetDesign", "heavy", id],
+            queryFn: () => fetchTempletRawStoresById(id),
+            staleTime: 1000 * 60 * 30,
+          });
+        }, idx * 300);
+      });
+    }, 10000); // ✅ 10 sec (20 sec karna ho to 20000)
+
+    return () => clearTimeout(t);
+  }, [basketCards, qc]);
 
 
   // ✅ fetch cards
@@ -91,16 +112,71 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
 
   // ✅ merge both
   const allProducts = useMemo(() => {
-    return [
-      ...(basketCards ?? [])?.map((x: any) => ({ ...x, __type: "template" })),
-      ...(allCards ?? []).map((x: any) => ({ ...x, __type: "card" })),
-    ];
+    const templates = (basketCards ?? []).map((x: any) => ({
+      ...x,
+      __type: "template",
+
+      // ✅ normalize common UI fields
+      title: x.cardname || x.cardName || x.title || "Untitled",
+      category: x.cardcategory || x.cardCategory || x.category || "default",
+      description: x.description || x.desc || x?.raw_stores?.description || "",
+
+      actualprice: x.actualprice ?? x.actualPrice ?? x.price ?? 0,
+      saleprice: x.saleprice ?? x.salePrice ?? x.sale_price ?? 0,
+
+      poster: getTemplatePoster(x),
+    }));
+
+    const cards = (allCards ?? []).map((x: any) => ({
+      ...x,
+      __type: "card",
+
+      title: x.cardname || x.cardName || x.title || "Untitled",
+      category: x.cardcategory || x.cardCategory || x.category || "default",
+      description: x.description || "",
+
+      actualprice: x.actualprice ?? x.actualPrice ?? x.price ?? 0,
+      saleprice: x.saleprice ?? x.salePrice ?? x.sale_price ?? 0,
+
+      poster: normalizePoster(x?.img_url || x?.imageurl || x?.lastpageimageurl),
+    }));
+
+    return [...templates, ...cards];
   }, [basketCards, allCards]);
 
-  const handleOpen = (item: any) => {
-    setSelected(item);
+
+const handleOpen = async (item: any) => {
+  // optional: modal pe skeleton/loading chahiye to pehle open kar do
+  // openModal();
+
+  if (item.__type === "template") {
+    const heavy = await qc.fetchQuery({
+      queryKey: ["templetDesign", "heavy", item.id],
+      queryFn: () => fetchTempletRawStoresById(item.id),
+      staleTime: 1000 * 60 * 30,
+    });
+
+    // ✅ merge raw_stores into selected item
+    const merged = {
+      ...item,
+      raw_stores: heavy?.raw_stores ?? item?.raw_stores,
+      // ProductPopup me aap "templetDesign ?? cate" use kar rahe ho
+      // so safe: templetDesign object bhi attach kar do
+      templetDesign: {
+        ...item,
+        raw_stores: heavy?.raw_stores ?? item?.raw_stores,
+      },
+    };
+
+    setSelected(merged);
     openModal();
-  };
+    return;
+  }
+
+  setSelected(item);
+  openModal();
+};
+
 
   const updateEdges = (s: SwiperType) => {
     setIsBeginning(s.isBeginning);
@@ -116,7 +192,7 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
         </Typography>
       )}
       {description && (
-        <Typography sx={{ mt: 1, fontSize: { md: 27, xs: 16 }, textAlign: "start", opacity: 0.9 }}>
+        <Typography sx={{ mt: 1, fontSize: { md: 24, xs: 16 }, textAlign: "start", opacity: 0.9 }}>
           {description}
         </Typography>
       )}
@@ -163,9 +239,6 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
               style={{ paddingBottom: 6 }}
             >
               {allProducts.map((item: any) => {
-                if (item.__type === "template") {
-                  console.log("TEMPLATE POSTER:", item.img_url);
-                }
                 return (
                   <SwiperSlide key={`${item.__type}-${item.id}`} style={{ height: "auto" }}>
                     <BasketCard

@@ -8,7 +8,7 @@ const VIPFunky = () => {
       <Box
         sx={{
           width: "100%",
-          height: 350, // fixed 350 for md/sm/xs
+          height: { md: 350, xs: 'auto' }, // fixed 350 for md/sm/xs
           bgcolor: COLORS.green,
           borderRadius: 3,
           overflow: "hidden",
@@ -67,7 +67,7 @@ const VIPFunky = () => {
             <Typography
               sx={{
                 color: "#111",
-                fontSize: { md: 28, sm: 22, xs: 18 },
+                fontSize: { md: 24, sm: 22, xs: 18 },
                 lineHeight: 1.25,
                 mb: 2,
               }}
@@ -78,7 +78,7 @@ const VIPFunky = () => {
             <Typography
               sx={{
                 color: "#111",
-                fontSize: { md: 28, sm: 22, xs: 18 },
+                fontSize: { md: 24, sm: 22, xs: 18 },
                 lineHeight: 1.25,
                 mb: 1,
               }}
@@ -90,7 +90,7 @@ const VIPFunky = () => {
             <Typography
               sx={{
                 color: "#111",
-                fontSize: { md: 28, sm: 22, xs: 18 },
+                fontSize: { md: 24, sm: 22, xs: 18 },
                 lineHeight: 1.25,
                 mb: 1,
               }}
@@ -101,7 +101,7 @@ const VIPFunky = () => {
             <Typography
               sx={{
                 color: "#111",
-                fontSize: { md: 28, sm: 22, xs: 18 },
+                fontSize: { md: 24, sm: 22, xs: 18 },
                 lineHeight: 1.25,
               }}
             >

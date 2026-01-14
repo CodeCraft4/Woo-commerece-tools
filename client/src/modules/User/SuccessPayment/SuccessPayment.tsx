@@ -50,24 +50,25 @@ const SuccessPayment = () => {
   };
 
   const normalizeSlidesToArray = (slides: any): string[] => {
-    // If already array, keep it
+    // array case
     if (Array.isArray(slides)) {
       return slides
-        .map((x) => {
-          if (typeof x === "string") return x;
-          if (x && typeof x === "object") return x.image ?? x.src ?? x.png ?? x.dataUrl ?? "";
-          return "";
-        })
+        .map((x) => (typeof x === "string" ? x : x?.image ?? x?.src ?? x?.png ?? x?.dataUrl ?? ""))
         .filter(Boolean);
     }
 
-    // ✅ If object: { slide1, slide2, slide3, slide4 }
+    // ✅ object case: slide1..slideN
     if (slides && typeof slides === "object") {
-      return [slides.slide1, slides.slide2, slides.slide3, slides.slide4].filter(Boolean);
+      const keys = Object.keys(slides)
+        .filter((k) => /^slide\d+$/i.test(k))
+        .sort((a, b) => (Number(a.replace(/\D/g, "")) || 0) - (Number(b.replace(/\D/g, "")) || 0));
+
+      return keys.map((k) => slides[k]).filter(Boolean);
     }
 
     return [];
   };
+
 
   const getCleanedSlides = () => {
     let slides: any = null;
@@ -82,12 +83,12 @@ const SuccessPayment = () => {
       }
     }
 
-    console.log("🟦 Parsed slides:", slides);
-
     const slidesArray = normalizeSlidesToArray(slides);
     const cleanedSlides = slidesArray.filter(isNonEmptySlide);
     return cleanedSlides;
   };
+
+
 
   const sendPdf = async () => {
     if (!sessionId) return;
@@ -97,6 +98,7 @@ const SuccessPayment = () => {
     setErrorMsg("");
 
     const cleanedSlides = getCleanedSlides();
+    console.log("✅ cleanedSlides count:", cleanedSlides.length);
 
     // ✅ if no slides => don't call API
     if (!cleanedSlides.length) {

@@ -1,7 +1,8 @@
+// path: src/components/ProductPopup/ProductPopup.tsx
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import LandingButton from "../LandingButton/LandingButton";
 import { IconButton } from "@mui/material";
 import { Close } from "@mui/icons-material";
@@ -14,7 +15,7 @@ import { useSlide3 } from "../../context/Slide3Context";
 import { useSlide4 } from "../../context/Slide4Context";
 import { useSlide1 } from "../../context/Slide1Context";
 import { COLORS } from "../../constant/color";
-import { useCartStore, type SizeKey, type PriceTable } from "../../stores/cartStore";
+import { useCartStore, type SizeKey } from "../../stores/cartStore";
 import { pickPrice, toNumberSafe } from "../../lib/pricing";
 import { ensureDraftCardId, newUuid, setDraftCardId } from "../../lib/draftCardId";
 
@@ -28,12 +29,6 @@ const style = {
   borderRadius: 3,
 };
 
-function computePrice(base: number, key: "a4" | "a3" | "us_letter") {
-  if (key === "a3") return base + 2;
-  if (key === "us_letter") return base + 4;
-  return base;
-}
-
 function clearEditorStorage(opts?: { all?: boolean }) {
   if (opts?.all) {
     try {
@@ -43,10 +38,11 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     return;
   }
   try {
-    const KEYS = ["selectedSize", "selectedVariant", "categorieTemplet", "3dModel", "selectedPrices"];
+    const KEYS = ["selectedSize", "selectedVariant", "categorieTemplet", "3dModel", "selectedPrices", "selectedProduct"];
     KEYS.forEach((k) => localStorage.removeItem(k));
     sessionStorage.removeItem("slides");
     sessionStorage.removeItem("slides_backup");
+    sessionStorage.removeItem("mugImage");
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const key = localStorage.key(i);
       if (key && key.startsWith("templetEditor:draft:")) localStorage.removeItem(key);
@@ -56,14 +52,14 @@ function clearEditorStorage(opts?: { all?: boolean }) {
 
 export type CategoryType = {
   id?: string | number;
+
   category?: string;
+  cardcategory?: string;
+  cardCategory?: string;
 
   cardname?: string;
   cardName?: string;
   title?: string;
-
-  cardcategory?: string;
-  cardCategory?: string;
 
   description?: string;
 
@@ -75,16 +71,30 @@ export type CategoryType = {
 
   polygonlayout?: any;
 
+  // legacy columns
   actualprice?: number | string;
-  actualPrice?: number | string;
+  a4price?: number | string;
+  a5price?: number | string;
+  usletter?: number | string;
 
-  a4price?: number;
-  a5price?: number;
-  usletter?: number;
+  saleprice?: number | string;
+  salea4price?: number | string;
+  salea5price?: number | string;
+  saleusletter?: number | string;
 
-  salea4price?: number;
-  salea5price?: number;
-  saleusletter?: number;
+  // ✅ new columns
+  a3price?: number | string;
+  halfusletter?: number | string;
+  ustabloid?: number | string;
+
+  salea3price?: number | string;
+  salehalfusletter?: number | string;
+  saleustabloid?: number | string;
+
+  // template support
+  rawStores?: any;
+  raw_stores?: any;
+  templetDesign?: any;
 
   __type?: "card" | "template";
 };
@@ -94,14 +104,12 @@ type ProductsPopTypes = {
   onClose: () => void;
   cate?: CategoryType | any;
   isTempletDesign?: boolean;
-
-  /** if undefined -> auto sale per selected size */
-  salePrice?: boolean;
-
-  /** default = "add", in cart page use "edit" */
+  salePrice?: boolean; // undefined -> auto on sale per selected size
   mode?: "add" | "edit";
   initialPlan?: SizeKey;
 };
+
+type SizeDef = { key: SizeKey; title: string; sub?: string };
 
 const isActivePay = {
   display: "flex",
@@ -114,10 +122,117 @@ const isActivePay = {
   boxShadow: "3px 7px 8px #eff1f1ff",
 };
 
+const hasValidPrice = (v: unknown) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0;
+};
+
+const getCategoryName = (cate?: CategoryType) => {
+  return (
+    cate?.category ??
+    cate?.cardcategory ??
+    cate?.cardCategory ??
+    "default"
+  );
+};
+
+const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
+  const name = (categoryName ?? "").trim().toLowerCase();
+
+  // Invites: A5, A4, Half US Letter, US Letter
+  if (name.includes("invite")) {
+    return [
+      { key: "a5" as SizeKey, title: "A5", sub: "Prints 2 invites per A4 sheet" },
+      { key: "a4" as SizeKey, title: "A4", sub: "Prints 1 invite per A4 sheet" },
+      { key: "half_us_letter" as SizeKey, title: "Half US Letter", sub: "Prints 2 invites per US Letter sheet" },
+      { key: "us_letter" as SizeKey, title: "US Letter", sub: "Prints 1 invite per US Letter sheet" },
+    ];
+  }
+
+  // Clothing / Sticker / Wall Art / Photo Art / Bags: A4, A3, US Letter, US Tabloid
+  if (
+    name.includes("clothing") ||
+    name.includes("sticker") ||
+    name.includes("wall art") ||
+    name.includes("photo art") ||
+    name.includes("bag")
+  ) {
+    return [
+      { key: "a4" as SizeKey, title: "A4" },
+      { key: "a3" as SizeKey, title: "A3" },
+      { key: "us_letter" as SizeKey, title: "US Letter" },
+      { key: "us_tabloid" as SizeKey, title: "US Tabloid (11 × 17 in)" },
+    ];
+  }
+
+  // Notebooks: A5, A4, Half US Letter, US Letter
+  if (name.includes("notebook")) {
+    return [
+      { key: "a5" as SizeKey, title: "A5" },
+      { key: "a4" as SizeKey, title: "A4" },
+      { key: "half_us_letter" as SizeKey, title: "Half US Letter" },
+      { key: "us_letter" as SizeKey, title: "US Letter" },
+    ];
+  }
+
+  // Mugs: single
+  if (name.includes("mug")) {
+    return [{ key: "mug_wrap_11oz" as SizeKey, title: "228mm × 88.9mm wrap (11oz mug)" }];
+  }
+
+  // Coasters: single
+  if (name.includes("coaster")) {
+    return [{ key: "coaster_95" as SizeKey, title: "95mm × 95mm (×2 coasters)" }];
+  }
+
+  // Default Cards: A5, A4, Half US Letter, US Letter, US Tabloid
+  return [
+    { key: "a5" as SizeKey, title: "A5" },
+    { key: "a4" as SizeKey, title: "A4" },
+    { key: "half_us_letter" as SizeKey, title: "Half US Letter" },
+    { key: "us_letter" as SizeKey, title: "US Letter" },
+    { key: "us_tabloid" as SizeKey, title: "US Tabloid (Folded half: 11 × 8.5 in)" },
+  ];
+};
+
+const buildPriceTables = (cate: CategoryType | undefined): { actual: any; sale: any } => {
+  const actual: any = {};
+  const sale: any = {};
+
+  // ✅ mapping from DB columns -> size keys
+  actual.a5 = toNumberSafe(cate?.actualprice, 0);
+
+  actual.a4 = toNumberSafe(cate?.a4price, 0);
+
+  // A3 new column preferred; fallback legacy a5price (old apps used it for A3)
+  actual.a3 = toNumberSafe((cate as any)?.a3price, toNumberSafe(cate?.a5price, 0));
+
+  actual.us_letter = toNumberSafe(cate?.usletter, 0);
+  actual.half_us_letter = toNumberSafe((cate as any)?.halfusletter, 0);
+  actual.us_tabloid = toNumberSafe((cate as any)?.ustabloid, 0);
+
+  // single-size categories (mugs/coasters) use actualprice
+  actual.mug_wrap_11oz = toNumberSafe(cate?.actualprice, 0);
+  actual.coaster_95 = toNumberSafe(cate?.actualprice, 0);
+
+  sale.a5 = toNumberSafe(cate?.saleprice, 0);
+  sale.a4 = toNumberSafe(cate?.salea4price, 0);
+  sale.a3 = toNumberSafe((cate as any)?.salea3price, toNumberSafe(cate?.salea5price, 0));
+  sale.us_letter = toNumberSafe(cate?.saleusletter, 0);
+  sale.half_us_letter = toNumberSafe((cate as any)?.salehalfusletter, 0);
+  sale.us_tabloid = toNumberSafe((cate as any)?.saleustabloid, 0);
+
+  sale.mug_wrap_11oz = toNumberSafe(cate?.saleprice, 0);
+  sale.coaster_95 = toNumberSafe(cate?.saleprice, 0);
+
+  return { actual, sale };
+};
+
 const ProductPopup = (props: ProductsPopTypes) => {
-  const { open, onClose, cate, isTempletDesign, salePrice, mode = "add", initialPlan = "a4" } = props;
+  const { open, onClose, cate, isTempletDesign, salePrice, mode = "add", initialPlan } = props;
+
   const [loading, setLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<SizeKey>(initialPlan);
+  const [selectedPlan, setSelectedPlan] = useState<SizeKey>((initialPlan ?? "a4") as SizeKey);
   const [isZoomed, setIsZoomed] = useState(false);
 
   const { resetSlide1State } = useSlide1();
@@ -129,29 +244,23 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
   const { addToCart, updateCartItem } = useCartStore();
 
-  const basePrice: number = useMemo(() => {
-    const p = cate?.actualPrice ?? cate?.actualprice ?? 2;
-    const n = Number(p);
-    return Number.isFinite(n) ? n : 2;
-  }, [cate]);
+  const categoryName = useMemo(() => getCategoryName(cate), [cate]);
 
-  const actualPrices: PriceTable = {
-    a4: toNumberSafe(cate?.a4price, computePrice(basePrice, "a4")),
-    a3: toNumberSafe(cate?.a5price, computePrice(basePrice, "a3")),
-    us_letter: toNumberSafe(cate?.usletter, computePrice(basePrice, "us_letter")),
-  };
+  const sizeDefs = useMemo(() => getSizeDefsForCategory(categoryName), [categoryName]);
 
-  const salePrices = {
-    a4: toNumberSafe(cate?.salea4price, 0),
-    a3: toNumberSafe(cate?.salea5price, 0),
-    us_letter: toNumberSafe(cate?.saleusletter, 0),
-  } as const;
+  const { actual: actualPrices, sale: salePrices } = useMemo(() => buildPriceTables(cate), [cate]);
 
-  const sizeOptions: Array<{ key: SizeKey; title: string; sub?: string }> = [
-    { key: "a4", title: "A4 Paper (Folded A5 Card)", sub: "For the little message" },
-    { key: "a3", title: "A3 Paper (Folded A4 Card)", sub: "IDEA Favourite" },
-    { key: "us_letter", title: "US Letter (Half US Letter Folded Card)", sub: "For a big impression" },
-  ];
+  // ✅ show only sizes that actually have price
+  const sizeOptions = useMemo(() => {
+    return sizeDefs.filter((d) => hasValidPrice((actualPrices as any)[d.key]));
+  }, [sizeDefs, actualPrices]);
+
+  // ✅ auto-select first available size on open/product change
+  useEffect(() => {
+    if (!open) return;
+    const first = sizeOptions[0]?.key;
+    if (first) setSelectedPlan(first);
+  }, [open, sizeOptions]);
 
   const useSaleForSelected = useMemo(() => {
     if (salePrice === true) return true;
@@ -169,29 +278,41 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
   const handlePersonalize = () => {
     if (!cate) return;
+
+    if (!sizeOptions.length) {
+      toast.error("No pricing configured for this product.");
+      return;
+    }
+
     setLoading(true);
-
     clearEditorStorage({ all: false });
-
 
     const selectedVariant = {
       key: selectedPlan,
-      title: sizeOptions.find((s) => s.key === selectedPlan)?.title || selectedPlan,
+      title: sizeOptions.find((s) => s.key === selectedPlan)?.title || String(selectedPlan),
       price: display.price,
-      basePrice,
+      isOnSale: display.isOnSale,
+      category: categoryName,
+    };
+
+    const selectedProduct = {
+      id: cate?.id,
+      type: (cate?.__type ?? (isTempletDesign ? "template" : "card")) as "card" | "template",
+      title: cate?.cardname || cate?.cardName || cate?.title || "Untitled",
+      category: categoryName,
+      img:
+        cate?.imageurl ||
+        cate?.lastpageimageurl ||
+        cate?.poster ||
+        cate?.cover_screenshot ||
+        cate?.img_url,
     };
 
     try {
       localStorage.setItem("selectedVariant", JSON.stringify(selectedVariant));
-      localStorage.setItem("selectedSize", selectedPlan);
-      localStorage.setItem(
-        "selectedPrices",
-        JSON.stringify({
-          a4: useSaleForSelected ? salePrices.a4 : actualPrices.a4,
-          a5: useSaleForSelected ? salePrices.a3 : actualPrices.a3,
-          us_letter: useSaleForSelected ? salePrices.us_letter : actualPrices.us_letter,
-        })
-      );
+      localStorage.setItem("selectedSize", String(selectedPlan));
+      localStorage.setItem("selectedPrices", JSON.stringify({ actual: actualPrices, sale: salePrices }));
+      localStorage.setItem("selectedProduct", JSON.stringify(selectedProduct));
     } catch { }
 
     resetSlide1State();
@@ -199,15 +320,16 @@ const ProductPopup = (props: ProductsPopTypes) => {
     resetSlide3State();
     resetSlide4State();
 
+    // template flow
     if (isTempletDesign && user) {
-      const row = cate?.templetDesign ?? cate; // full DB row (if present)
+      const row = (cate as any)?.templetDesign ?? cate;
 
       const raw =
-        cate?.rawStores ??            // from openEdit mapping
-        row?.raw_stores ??            // DB key
-        row?.rawStores ??             // alt key
-        row?.raw_Stores ??            // alt key
-        row;                          // last fallback
+        (cate as any)?.rawStores ??
+        row?.raw_stores ??
+        row?.rawStores ??
+        row?.raw_Stores ??
+        row;
 
       const routeCategory =
         row?.category ??
@@ -217,27 +339,24 @@ const ProductPopup = (props: ProductsPopTypes) => {
         "general";
 
       navigate(`${USER_ROUTES.TEMPLET_EDITORS}/${encodeURIComponent(routeCategory)}/${row?.id ?? cate.id}`, {
-        state: { templetDesign: raw }, // ✅ THIS MUST BE RAW STORES
+        state: { templetDesign: raw },
       });
 
       setLoading(false);
       return;
     }
 
-
+    // card flow
     if (user) {
-
       const isContinueDraft = Boolean((cate as any).__draft === true);
 
       const draftId = isContinueDraft
-        ? ensureDraftCardId(String(cate?.id ?? "")) // id is draft card_id uuid
+        ? ensureDraftCardId(String(cate?.id ?? ""))
         : (() => {
-          // ✅ New card: force new id so it creates a NEW draft later
           const id = newUuid();
           setDraftCardId(id);
           return id;
         })();
-
 
       setTimeout(() => {
         navigate(`${USER_ROUTES.HOME}/${draftId}`, {
@@ -249,6 +368,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
         });
         setLoading(false);
       }, 300);
+
       return;
     }
 
@@ -265,6 +385,11 @@ const ProductPopup = (props: ProductsPopTypes) => {
       return;
     }
 
+    if (!sizeOptions.length) {
+      toast.error("No pricing configured for this product.");
+      return;
+    }
+
     const type = (cate?.__type ?? (isTempletDesign ? "template" : "card")) as "card" | "template";
 
     const img =
@@ -275,15 +400,9 @@ const ProductPopup = (props: ProductsPopTypes) => {
       cate?.img_url;
 
     const title = cate?.cardname || cate?.cardName || cate?.title || "Untitled";
+    const category = categoryName;
 
-    const category =
-      cate?.category ??
-      cate?.cardcategory ??
-      cate?.cardCategory ??
-      "default";
-
-    // ✅ robust: template data can be either cate.templetDesign OR cate itself
-    const templetRow = cate?.templetDesign ?? cate;
+    const templetRow = (cate as any)?.templetDesign ?? cate;
     const rawStores =
       templetRow?.raw_stores ??
       templetRow?.rawStores ??
@@ -302,13 +421,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
       title,
       category,
       description,
-
       selectedSize: selectedPlan,
       prices: { actual: actualPrices, sale: salePrices },
       isOnSale: display.isOnSale,
       displayPrice: display.price,
-
-      // ✅ editor data rules
       polygonlayout: type === "card" ? cate?.polygonlayout : undefined,
       templetDesign: type === "template" ? templetRow : undefined,
       rawStores: type === "template" ? rawStores : undefined,
@@ -322,15 +438,12 @@ const ProductPopup = (props: ProductsPopTypes) => {
     }
 
     const res = addToCart(payload);
-
     if (!res.ok && res.reason === "exists") {
       toast.error("Already exists in basket ❌");
       return;
     }
-
     toast.success("Product added to basket ✅");
   };
-
 
   return (
     <Modal
@@ -353,9 +466,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
           >
             <Box
               component="img"
-              src={
-                cate?.imageurl || cate?.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url
-              }
+              src={cate?.imageurl || cate?.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url}
               onClick={handleToggleZoom}
               sx={{
                 width: "100%",
@@ -370,63 +481,80 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
           <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>
             <Typography sx={{ fontSize: "20px", mb: { md: 3, sm: 3, xs: 0 }, fontWeight: "bold" }}>
-              Select Size
+              {sizeOptions.length ? "Select Size" : "Pricing"}
             </Typography>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: { md: "20px", sm: "20px", xs: "10px" } }}>
-              {sizeOptions.map((opt) => {
-                const p = pickPrice(actualPrices, useSaleForSelected ? salePrices : undefined, opt.key);
-                return (
-                  <Box
-                    key={opt.key}
-                    onClick={() => setSelectedPlan(opt.key)}
+            {!sizeOptions.length ? (
+              <Typography sx={{ color: "text.secondary", mt: 1 }}>
+                No sizes/prices configured for this product yet.
+              </Typography>
+            ) : (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: { md: "20px", sm: "20px", xs: "10px" } }}>
+                {sizeOptions.map((opt) => {
+                  const p = pickPrice(actualPrices, useSaleForSelected ? salePrices : undefined, opt.key);
+                  return (
+                    <Box
+                      key={String(opt.key)}
+                      onClick={() => setSelectedPlan(opt.key)}
+                      sx={{
+                        ...isActivePay,
+                        height: { md: "auto", sm: "auto", xs: "60px" },
+                        border: `3px solid ${selectedPlan === opt.key ? "#8D6DA1" : "transparent"}`,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <input
+                          type="radio"
+                          name="plan"
+                          checked={selectedPlan === opt.key}
+                          onChange={() => setSelectedPlan(opt.key)}
+                          style={{ width: "30px", height: "30px" }}
+                        />
+                        <Box>
+                          <Typography sx={{ fontWeight: 600, fontSize: { md: "auto", sm: "auto", xs: "12px" } }}>
+                            {opt.title}
+                          </Typography>
+                          {/* {opt.sub ? (
+                            <Typography sx={{ fontSize: 11, opacity: 0.9 }}>{opt.sub}</Typography>
+                          ) : null} */}
+                        </Box>
+                      </Box>
+
+                      <Typography variant="h5">£{Number(p.price).toFixed(2)}</Typography>
+                    </Box>
+                  );
+                })}
+
+                <Box>
+                  <Typography
                     sx={{
                       ...isActivePay,
-                      height: { md: "auto", sm: "auto", xs: "60px" },
-                      border: `3px solid ${selectedPlan === opt.key ? "#8D6DA1" : "transparent"}`,
-                      cursor: "pointer",
+                      bgcolor: "#8D6DA1",
+                      fontSize: { md: "20px", sm: "16px", xs: "14px" },
+                      color: COLORS.white,
+                      p: 1.5,
+                      maxHeight: 250,
+                      overflowY: "auto",
+                      "&::-webkit-scrollbar": {
+                        height: "4px",
+                        width: '4px'
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        backgroundColor: "#f1f1f1",
+                        borderRadius: "20px",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        backgroundColor: COLORS.gray,
+                        borderRadius: "20px",
+                      },
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <input
-                        type="radio"
-                        name="plan"
-                        checked={selectedPlan === opt.key}
-                        onChange={() => setSelectedPlan(opt.key)}
-                        style={{ width: "30px", height: "30px" }}
-                      />
-                      <Box>
-                        <Typography sx={{ fontWeight: 600, fontSize: { md: "auto", sm: "auto", xs: "12px" } }}>
-                          {opt.title}
-                        </Typography>
-                        {opt.sub && (
-                          <Typography fontSize={{ md: "13px", sm: "13px", xs: "10px" }}>{opt.sub}</Typography>
-                        )}
-                      </Box>
-                    </Box>
-
-                    <Typography variant="h5">
-                      £{Number(p.price).toFixed(2)}
-                      {p.isOnSale}
-                    </Typography>
-                  </Box>
-                );
-              })}
-
-              <Box>
-                <Typography
-                  sx={{
-                    ...isActivePay,
-                    bgcolor: "#8D6DA1",
-                    fontSize: { md: "20px", sm: "16px", xs: "14px" },
-                    color: COLORS.white,
-                    p: 1.5,
-                  }}
-                >
-                  {cate?.description} 💫
-                </Typography>
+                    {cate?.description} 💫
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
+            )}
 
             <Box sx={{ display: "flex", gap: "15px", justifyContent: "center", m: "auto", mt: 4 }}>
               <LandingButton
@@ -436,7 +564,13 @@ const ProductPopup = (props: ProductsPopTypes) => {
                 personal
                 onClick={handleAddOrUpdateCart}
               />
-              <LandingButton title="Personalise" width="150px" personal loading={loading} onClick={handlePersonalize} />
+              <LandingButton
+                title="Personalise"
+                width="150px"
+                personal
+                loading={loading}
+                onClick={handlePersonalize}
+              />
             </Box>
           </Box>
         </Box>

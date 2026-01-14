@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Box, IconButton, Typography, useMediaQuery } from "@mui/material";
+import { Box, IconButton, useMediaQuery } from "@mui/material";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import "./card.css";
 import GlobalWatermark from "../../../../../components/GlobalWatermark/GlobalWatermark";
@@ -23,7 +23,7 @@ const PreviewBookCard = () => {
 
   const isMobile = useMediaQuery("(max-width:480px)");
 
-  const numOfPapers = 2; // 4 slides across 2 papers
+  const numOfPapers = 2;
   const maxLocation = numOfPapers + 1;
 
   const slides = useMemo(() => [<Slide1 key="s1" />, <Slide2 key="s2" />, <Slide3 key="s3" />, <Slide4 key="s4" />], []);
@@ -107,27 +107,20 @@ const PreviewBookCard = () => {
 
   return (
     <>
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", p: 2 }}>
-        <Typography sx={{ fontSize: "30px", fontFamily: "cursive" }}>
-          Preview
-        </Typography>
-        <Box sx={{ display: "flex", gap: 3 }}>
-          <LandingButton
-            title="Download"
-            loading={loading}
-            onClick={async () => {
-              const slidesCaptured = await captureSlides();
-              sessionStorage.setItem("slides", JSON.stringify(slidesCaptured));
-              localStorage.setItem("slides_backup", JSON.stringify(slidesCaptured));
-              navigate(USER_ROUTES.SUBSCRIPTION);
-            }}
-
-          />
-        </Box>
+      <Box sx={{ display: "flex", gap: 3, justifyContent: 'flex-end', alignItems: 'flex-end', m: 'auto', p: 2, mt: -9 }}>
+        <LandingButton
+          title="Download"
+          loading={loading}
+          onClick={async () => {
+            const slidesCaptured = await captureSlides();
+            sessionStorage.setItem("slides", JSON.stringify(slidesCaptured));
+            localStorage.setItem("slides_backup", JSON.stringify(slidesCaptured));
+            navigate(USER_ROUTES.SUBSCRIPTION);
+          }}
+        />
       </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", m: "auto", flexDirection: "column" }}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", m: "auto", flexDirection: "column",mt:4 }}>
         {/* MOBILE: one slide at a time */}
         {isMobile ? (
           <div className="book-container mobile-only">

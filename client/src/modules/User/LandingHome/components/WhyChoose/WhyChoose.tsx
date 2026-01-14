@@ -205,12 +205,12 @@ export default function WhyChoose() {
             {/* Purple panel */}
             <Box
                 sx={{
-                    bgcolor: COLORS.seconday, // your purple
+                    bgcolor: COLORS.seconday, 
                     borderRadius: 3,
                     p: { md: 3, sm: 2.5, xs: 2 },
                     display: "flex",
                     alignItems: "stretch",
-                    gap: { md: 10, xs: 2 },
+                    gap: { md: 0, xs: 2 },
                     flexDirection: { xs: "column", md: "row" },
                 }}
             >
@@ -267,17 +267,15 @@ export default function WhyChoose() {
                 {/* Right image */}
                 <Box
                     sx={{
-                        width: { xs: "100%", md: 400 },   // like screenshot: fixed-ish on desktop
-                        height: { xs: 220, sm: 260, md: 250 },
-                        borderRadius: 2,
+                        width: { xs: "100%", md: 500 },
+                        height: { xs: '100%', sm: 260, md: 250 },
                         overflow: "hidden",
-                        bgcolor: "rgba(255,255,255,0.15)",
                         flexShrink: 0,
                     }}
                 >
                     <Box
                         component="img"
-                        src="/assets/images/chooseimg.jpg"
+                        src="/assets/images/chooseImg.png"
                         alt="DIY Personalisation"
                         sx={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />

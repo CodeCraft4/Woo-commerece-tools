@@ -7,40 +7,105 @@ import { loadStripe } from "@stripe/stripe-js";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
 import { ArrowBackIos } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
-import { COLORS } from "../../../constant/color";
+import { useLocation, useNavigate } from "react-router-dom";
 
-const stripePromise = loadStripe(
-  "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK"
-);
+// ✅ REUSE SAME SizeKey TYPE AS POPUP
+import { type SizeKey } from "../../../stores/cartStore";
+import { pickPrice } from "../../../lib/pricing";
+import { getMockupConfig } from "../../../lib/mockup";
 
-type SizeKey = "a4" | "a5" | "us_letter";
-type SelectedVariant = { key: SizeKey; title: string; price: number; basePrice: number };
+const stripePromise = loadStripe("pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK");
 
-// fallback math (kept for safety)
-function computePrice(base: number, key: SizeKey) {
-  if (key === "a5") return base + 2;
-  if (key === "us_letter") return base + 4;
-  return base;
-}
-
-const titleByKey: Record<SizeKey, string> = {
-  a4: "A4 Card",
-  a5: "A3 Card",
-  us_letter: "US Letter",
+type SelectedVariant = {
+  key: SizeKey;
+  title: string;
+  price: number;
+  isOnSale?: boolean;
+  category?: string;
 };
 
-// const descByKey: Record<SizeKey, string> = {
-//   a4: "For the little message",
-//   a5: "IDEA Favourite",
-//   us_letter: "For a big impression",
+type SelectedProduct = {
+  id?: string | number;
+  type?: "card" | "template";
+  title?: string;
+  category?: string;
+  img?: string;
+};
+
+type PriceTables = { actual: any; sale: any };
+
+type SizeDef = { key: any; title: string; sub?: string };
+
+const hasValidPrice = (v: unknown) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0;
+};
+
+// ✅ SAME category->sizes mapping (copy from ProductPopup)
+const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
+  const name = (categoryName ?? "").trim().toLowerCase();
+
+  if (name.includes("invite")) {
+    return [
+      { key: "a5", title: "A5", sub: "Prints 2 invites per A4 sheet" },
+      { key: "a4", title: "A4", sub: "Prints 1 invite per A4 sheet" },
+      { key: "half_us_letter", title: "Half US Letter", sub: "Prints 2 invites per US Letter sheet" },
+      { key: "us_letter", title: "US Letter", sub: "Prints 1 invite per US Letter sheet" },
+    ];
+  }
+
+  if (
+    name.includes("clothing") ||
+    name.includes("sticker") ||
+    name.includes("wall art") ||
+    name.includes("photo art") ||
+    name.includes("bag")
+  ) {
+    return [
+      { key: "a4", title: "A4" },
+      { key: "a3", title: "A3" },
+      { key: "us_letter", title: "US Letter" },
+      { key: "us_tabloid", title: "US Tabloid (11 × 17 in)" },
+    ];
+  }
+
+  if (name.includes("notebook")) {
+    return [
+      { key: "a5", title: "A5" },
+      { key: "a4", title: "A4" },
+      { key: "half_us_letter", title: "Half US Letter" },
+      { key: "us_letter", title: "US Letter" },
+    ];
+  }
+
+  if (name.includes("mug")) {
+    return [{ key: "mug_wrap_11oz", title: "228mm × 88.9mm wrap (11oz mug)" }];
+  }
+
+  if (name.includes("coaster")) {
+    return [{ key: "coaster_95", title: "95mm × 95mm (×2 coasters)" }];
+  }
+
+  return [
+    { key: "a5", title: "A5" },
+    { key: "a4", title: "A4" },
+    { key: "half_us_letter", title: "Half US Letter" },
+    { key: "us_letter", title: "US Letter" },
+    { key: "us_tabloid", title: "US Tabloid (Folded half: 11 × 8.5 in)" },
+  ];
+};
+
+// ✅ OPTIONAL: preview frame labels for UI (fallback safe)
+// const previewLabelByKey: Partial<Record<any, string>> = {
+//   a4: "A4",
+//   a5: "A5",
+//   a3: "A3",
+//   us_letter: "US Letter",
+//   half_us_letter: "Half US",
+//   us_tabloid: "Tabloid",
+//   mug_wrap_11oz: "Mug",
+//   coaster_95: "Coaster",
 // };
-
-const previewSizes: Record<SizeKey, { width: number; height: number; frameLabel: string }> = {
-  a4: { width: 150, height: 200, frameLabel: "A4" },
-  a5: { width: 200, height: 280, frameLabel: "A3" },
-  us_letter: { width: 180, height: 232, frameLabel: "US Letter" },
-};
 
 const isActivePay = {
   display: "flex",
@@ -54,65 +119,118 @@ const isActivePay = {
 };
 
 const Subscription = () => {
-  const [selectedPlan, setSelectedPlan] = useState<SizeKey>("a4");
-  const [basePrice, setBasePrice] = useState<number>(2); // fallback
+  const [selectedPlan, setSelectedPlan] = useState<SizeKey>("a4" as SizeKey);
   const [loading, setLoading] = useState(false);
-  const [selectedPrices, setSelectedPrices] = useState<{ a4?: number; a5?: number; us_letter?: number } | null>(null);
 
-  // ✅ REQUIRED TERMS
+  const [variant, setVariant] = useState<SelectedVariant | null>(null);
+  const [product, setProduct] = useState<SelectedProduct | null>(null);
+  const [priceTables, setPriceTables] = useState<PriceTables | null>(null);
+
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const slides = useMemo(() => {
+  const { state } = useLocation() as { state?: { slides?: Record<string, string> } };
+
+  const slidesObj = useMemo(() => {
+    // 1) state priority (fresh navigation)
+    if (state?.slides) return state.slides;
+
+    // 2) fallback localStorage
     try {
-      return JSON.parse(sessionStorage.getItem("slides") || "{}");
+      return JSON.parse(localStorage.getItem("slides_backup") || "{}");
     } catch {
       return {};
     }
-  }, []);
-  const firstSlideUrl: string | undefined = slides?.slide1;
+  }, [state?.slides]);
+
+  const firstSlideUrl = slidesObj?.slide1 || "";
+
+  console.log(firstSlideUrl, '---')
 
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const mugImageSrc = useMemo(() => {
+    return sessionStorage.getItem("mugImage"); // string | null
+  }, []);
+
+  // ✅ hydrate everything from localStorage (same data ProductPopup saves)
   useEffect(() => {
-    // hydrate from ProductPopup choice
     try {
-      const raw = localStorage.getItem("selectedVariant");
-      if (raw) {
-        const parsed: SelectedVariant = JSON.parse(raw);
+      const rawV = localStorage.getItem("selectedVariant");
+      if (rawV) {
+        const parsed = JSON.parse(rawV) as SelectedVariant;
         if (parsed?.key) {
+          setVariant(parsed);
           setSelectedPlan(parsed.key);
-          setBasePrice(Number.isFinite(parsed.basePrice) ? parsed.basePrice : 2);
         }
       }
     } catch { }
 
-    // pull exact per-size prices saved by the modal
     try {
       const rawP = localStorage.getItem("selectedPrices");
       if (rawP) {
-        const parsed = JSON.parse(rawP);
-        setSelectedPrices(parsed);
+        const parsed = JSON.parse(rawP) as PriceTables;
+        if (parsed?.actual && parsed?.sale) setPriceTables(parsed);
+      }
+    } catch { }
+
+    try {
+      const rawProd = localStorage.getItem("selectedProduct");
+      if (rawProd) {
+        const parsed = JSON.parse(rawProd) as SelectedProduct;
+        setProduct(parsed);
       }
     } catch { }
   }, []);
 
-  // prefer stored per-size prices; otherwise compute from base
-  const priceFor = (k: SizeKey): number => {
-    if (selectedPrices?.[k] != null && Number.isFinite(Number(selectedPrices[k]))) {
-      return Number(selectedPrices[k]);
-    }
-    return computePrice(basePrice, k);
-  };
+  const categoryName = useMemo(() => {
+    return variant?.category || product?.category || "default";
+  }, [variant?.category, product?.category]);
 
-  const plans = (["a4", "a5", "us_letter"] as SizeKey[]).map((k) => ({
-    id: k,
-    title: titleByKey[k],
-    // desc: descByKey[k],
-    price: priceFor(k),
-  }));
+  const sizeDefs = useMemo(() => getSizeDefsForCategory(categoryName), [categoryName]);
 
-  const preview = previewSizes[selectedPlan];
+  // ✅ only sizes that exist in actual table
+  const sizeOptions = useMemo(() => {
+    const actual = priceTables?.actual ?? {};
+    return sizeDefs.filter((d) => hasValidPrice(actual[d.key]));
+  }, [sizeDefs, priceTables?.actual]);
+
+  // ✅ if current selected size is not available, auto pick first
+  useEffect(() => {
+    if (!sizeOptions.length) return;
+    const exists = sizeOptions.some((x) => x.key === selectedPlan);
+    if (!exists) setSelectedPlan(sizeOptions[0].key);
+  }, [sizeOptions, selectedPlan]);
+
+  const useSaleForSelected = useMemo(() => {
+    // follow popup behavior: use variant.isOnSale if provided, else check sale table value
+    if (variant?.isOnSale === true) return true;
+    if (variant?.isOnSale === false) return false;
+
+    const v = priceTables?.sale?.[selectedPlan];
+    return Number.isFinite(Number(v)) && Number(v) > 0;
+  }, [variant?.isOnSale, priceTables?.sale, selectedPlan]);
+
+  // const currentPrice = useMemo(() => {
+  //   const actual = priceTables?.actual ?? {};
+  //   const sale = priceTables?.sale ?? {};
+  //   return pickPrice(actual, useSaleForSelected ? sale : undefined, selectedPlan);
+  // }, [priceTables, useSaleForSelected, selectedPlan]);
+
+  const plans = useMemo(() => {
+    return sizeOptions.map((opt) => {
+      const p = pickPrice(priceTables?.actual ?? {}, useSaleForSelected ? (priceTables?.sale ?? {}) : undefined, opt.key);
+      return {
+        id: opt.key,
+        title: opt.title,
+        sub: opt.sub,
+        price: Number(p.price) || 0,
+        isOnSale: p.isOnSale,
+      };
+    });
+  }, [sizeOptions, priceTables, useSaleForSelected]);
+
+  // const previewLabel = previewLabelByKey[selectedPlan] ?? String(selectedPlan);
 
   const handleStripeOrder = async (plan: { title: string; price: number }) => {
     setLoading(true);
@@ -127,7 +245,7 @@ const Subscription = () => {
             email: user?.email,
             name: user?.user_metadata?.full_name || "User",
           },
-          metadata: { variantKey: selectedPlan },
+          metadata: { variantKey: selectedPlan, category: categoryName },
         }),
       });
 
@@ -145,18 +263,47 @@ const Subscription = () => {
   };
 
   const handlePayClick = () => {
-    // ✅ block if not accepted
     if (!termsAccepted) {
       toast.error("Please accept Terms & Conditions first.");
       return;
     }
 
     const plan = plans.find((p) => p.id === selectedPlan);
-    if (plan) {
-      localStorage.setItem("selectedSize", selectedPlan);
-      handleStripeOrder({ title: plan.title, price: plan.price });
+    if (!plan) {
+      toast.error("No pricing configured for this product.");
+      return;
     }
+
+    // ✅ keep localStorage in sync (same as popup)
+    try {
+      const newVariant: SelectedVariant = {
+        key: selectedPlan,
+        title: plan.title,
+        price: plan.price,
+        isOnSale: plan.isOnSale,
+        category: categoryName,
+      };
+      localStorage.setItem("selectedVariant", JSON.stringify(newVariant));
+      localStorage.setItem("selectedSize", String(selectedPlan));
+    } catch { }
+
+    handleStripeOrder({ title: plan.title, price: plan.price });
   };
+
+
+  const categoryNameVariant = useMemo(() => {
+    // ✅ fallback to selectedCategory if needed
+    const lsCat = (() => {
+      try { return localStorage.getItem("selectedCategory") || ""; } catch { return ""; }
+    })();
+    return variant?.category || product?.category || lsCat || "default";
+  }, [variant?.category, product?.category]);
+
+  const isMugsCate = categoryNameVariant === "Mugs"
+  const mugPreview = useMemo(() => sessionStorage.getItem("mugImage") || "", []);
+
+  const mock = useMemo(() => getMockupConfig(categoryNameVariant), [categoryNameVariant]);
+
 
   return (
     <Applayout>
@@ -172,174 +319,157 @@ const Subscription = () => {
           m: "auto",
         }}
       >
-        <Typography
-          sx={{
-            p: 2,
-            textAlign: "start",
-            fontSize: { md: "48px", sm: "48px", xs: "20px" },
-            fontWeight: "bold",
-          }}
-        >
-          <IconButton onClick={() => navigate(-1)}>
-            <ArrowBackIos fontSize="large" sx={{ color: "black" }} />
-          </IconButton>{" "}
-          Go big and upgrade your card!
-        </Typography>
 
         <Container maxWidth="xl">
+          <Typography
+            sx={{
+              textAlign: "start",
+              fontSize: { md: "40px", sm: "30px", xs: "20px" },
+              fontWeight: "bold",
+            }}
+          >
+            <IconButton onClick={() => navigate(-1)}>
+              <ArrowBackIos fontSize="large" sx={{ color: "black" }} />
+            </IconButton>{" "}
+            Go big and upgrade your card!
+          </Typography>
           <Grid container spacing={3} sx={{ height: { md: 600, sm: 600, xs: "auto" } }}>
             {/* Left Image */}
             <Grid
               size={{ md: 7, sm: 7, xs: 12 }}
               sx={{
-                backgroundImage: `url(${TableBgImg})`,
-                backgroundSize: { md: "100% 100%", sm: "100% 100%", xs: "100%" },
+                backgroundImage: isMugsCate ? "" : mock?.mockupSrc ? `url(${mock.mockupSrc})` : `url(${TableBgImg})`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                backgroundSize: 'cover',
                 borderRadius: 7,
                 border: "1px solid gray",
                 position: "relative",
-                height: { md: "auto", sm: "auto", xs: 300 },
+                height: { md: 600, sm: 600, xs: 320 },
+                overflow: "hidden",
               }}
             >
-              {/* Reference sheet with label that changes with selection */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: 150,
-                  left: { md: 200, sm: 200, xs: 50 },
-                  width: { md: 150, sm: 200, xs: 100 },
-                  height: { md: 200, sm: 280, xs: 150 },
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 2,
-                }}
-              >
-                <Box
-                  component={"img"}
-                  src={"/assets/images/A4.svg"}
-                  alt="Sheet"
-                  sx={{ width: "100%", height: "100%", borderRadius: 2, display: "block" }}
-                />
-                <Typography
-                  sx={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    fontWeight: 700,
-                    pointerEvents: "none",
-                    userSelect: "none",
-                    fontSize: { md: 20, sm: 18, xs: 16 },
-                    color: COLORS.seconday,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {preview.frameLabel}
-                </Typography>
-              </Box>
+              {
+                mugPreview ? <Box component="img" src={mugPreview} sx={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <>
+                  {/* ✅ first slide overlay (category-wise) */}
+                  {firstSlideUrl ? (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: mock?.overlay.top ?? "20%",
+                        left: mock?.overlay.left ?? "20%",
+                        width: mock?.overlay.width ?? "60%",
+                        height: mock?.overlay.height ?? "60%",
+                        opacity: mock?.overlay.opacity ?? 1,
+                        filter: mock?.overlay.filter,
+                        clipPath: mock?.overlay.clipPath,
+                        WebkitClipPath: mock?.overlay.clipPath,
+                        borderRadius: mock?.overlay.borderRadius ?? 0,
+                        ...(mock?.overlay.sx as any),
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={firstSlideUrl || mugImageSrc}
+                        alt="first slide"
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: (mock?.overlay.objectFit as any) ?? "cover",
+                          display: "block",
+                          userSelect: "none",
+                          // borderRadius: '10px',
+                          pointerEvents: "none",
+                        }}
+                      />
+                    </Box>
+                  ) : (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "rgba(0,0,0,0.6)",
+                        fontWeight: 700,
+                        bgcolor: "rgba(255,255,255,0.25)", // optional
+                      }}
+                    >
+                      No preview found
+                    </Box>
+                  )}</>
+              }
 
-              {/* Dynamic preview */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: { md: 150, sm: 100, xs: 85 },
-                  right: { md: 100, sm: 100, xs: 0 },
-                  width: preview.width,
-                  height: preview.height,
-                  transition: "all 0.3s ease",
-                }}
-              >
-                <Box
-                  component="img"
-                  src={"/assets/images/A4.svg"}
-                  alt="Preview frame"
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: 2,
-                    display: "block",
-                    pointerEvents: "none",
-                    userSelect: "none",
-                  }}
-                />
-                <Box
-                  component="img"
-                  src={firstSlideUrl || ""}
-                  alt="Your design"
-                  sx={{
-                    position: "absolute",
-                    top: "18%",
-                    left: "0%",
-                    right: "0%",
-                    bottom: "8%",
-                    width: "auto",
-                    height: "auto",
-                    maxWidth: "85%",
-                    maxHeight: "90%",
-                    margin: "auto",
-                    objectFit: "cover",
-                    display: firstSlideUrl ? "block" : "none",
-                    pointerEvents: "none",
-                    userSelect: "none",
-                  }}
-                />
-              </Box>
             </Grid>
 
+
             {/* Right Side - Plans */}
-            <Grid
-              size={{ md: 5, sm: 5, xs: 12 }}
-              sx={{ display: "flex", flexDirection: "column", gap: "25px", textAlign: "start" }}
-            >
+            <Grid size={{ md: 5, sm: 5, xs: 12 }} sx={{ display: "flex", flexDirection: "column", gap: "25px", textAlign: "start" }}>
               <Box sx={{ p: { md: 2, sm: 2, xs: "5px" }, bgcolor: "#b7f7f4ff", borderRadius: 2 }}>
                 <Typography variant="h5">🎉 We’ve saved your card design!</Typography>
               </Box>
 
-              {plans.map((plan) => (
-                <Box
-                  key={plan.id}
-                  onClick={() => {
-                    setSelectedPlan(plan.id as SizeKey);
-                    try {
-                      const newSel = {
-                        key: plan.id as SizeKey,
-                        title: plan.title,
-                        price: plan.price,
-                        basePrice,
-                      };
-                      localStorage.setItem("selectedVariant", JSON.stringify(newSel));
-                      localStorage.setItem("selectedSize", plan.id);
-                    } catch { }
-                  }}
-                  sx={{
-                    ...isActivePay,
-                    border: `3px solid ${selectedPlan === plan.id ? "#004099" : "transparent"}`,
-                    cursor: "pointer",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <input
-                      type="radio"
-                      name="plan"
-                      checked={selectedPlan === plan.id}
-                      onChange={() => setSelectedPlan(plan.id as SizeKey)}
-                      style={{ width: "30px", height: "30px" }}
-                    />
-                    <Box>
-                      <Typography sx={{ fontWeight: { md: 900, sm: 900, xs: 700 } }}>{plan.title}</Typography>
-                      {/* <Typography sx={{ fontSize: "13px", sm: "13px", xs: "10px" }}>{plan.desc}</Typography> */}
-                      <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" } }}>
-                        £{plan.price.toFixed(2)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="h5">£{plan.price.toFixed(2)}</Typography>
-                </Box>
-              ))}
+              {/* ✅ Plans from ProductPopup logic */}
+              {!plans.length ? (
+                <Typography sx={{ color: "text.secondary" }}>
+                  No sizes/prices configured for this product.
+                </Typography>
+              ) : (
+                plans.map((plan) => (
+                  <Box
+                    key={String(plan.id)}
+                    onClick={() => {
+                      setSelectedPlan(plan.id);
 
-              {/* ✅ Terms (required) */}
+                      // keep selectedVariant synced (so checkout + UI consistent)
+                      try {
+                        const newSel: SelectedVariant = {
+                          key: plan.id,
+                          title: plan.title,
+                          price: plan.price,
+                          isOnSale: plan.isOnSale,
+                          category: categoryName,
+                        };
+                        localStorage.setItem("selectedVariant", JSON.stringify(newSel));
+                        localStorage.setItem("selectedSize", String(plan.id));
+                      } catch { }
+                    }}
+                    sx={{
+                      ...isActivePay,
+                      border: `3px solid ${selectedPlan === plan.id ? "#004099" : "transparent"}`,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <input
+                        type="radio"
+                        name="plan"
+                        checked={selectedPlan === plan.id}
+                        onChange={() => setSelectedPlan(plan.id)}
+                        style={{ width: "30px", height: "30px" }}
+                      />
+                      <Box>
+                        <Typography sx={{ fontWeight: { md: 900, sm: 900, xs: 700 } }}>
+                          {plan.title}
+                        </Typography>
+
+                        {plan.sub ? (
+                          <Typography sx={{ fontSize: 12, opacity: 0.85 }}>{plan.sub}</Typography>
+                        ) : null}
+
+                        <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" } }}>
+                          £{plan.price.toFixed(2)} {plan.isOnSale ? "(Sale)" : ""}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Typography variant="h5">£{plan.price.toFixed(2)}</Typography>
+                  </Box>
+                ))
+              )}
+
+              {/* ✅ Terms */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <input
                   type="checkbox"
@@ -353,13 +483,7 @@ const Subscription = () => {
               </Box>
 
               {/* Pay */}
-              <LandingButton
-                title="Add to Pay"
-                width="100%"
-                personal
-                loading={loading}
-                onClick={handlePayClick}
-              />
+              <LandingButton title="Add to Pay" width="100%" personal loading={loading} onClick={handlePayClick} />
             </Grid>
           </Grid>
         </Container>

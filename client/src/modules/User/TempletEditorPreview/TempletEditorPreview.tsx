@@ -54,7 +54,7 @@ const convertImageToTexture = (image: string): THREE.Texture => {
     ctx.save();
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 40);
+    ctx.drawImage(img, 0, 20);
     ctx.restore();
 
     (tex as any).image = canvas;
@@ -283,6 +283,17 @@ async function flipImageHorizontallyToDataUrl(src: string): Promise<string> {
 }
 
 
+// captured image 
+function captureMugPreviewJpg(): string | null {
+  if (!renderer) return null;
+
+  // ensure latest frame rendered
+  renderer.render(scene, camera);
+
+  const canvas = renderer.domElement as HTMLCanvasElement;
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
 
 const TempletEditorPreview: React.FC = () => {
   const { state } = useLocation() as {
@@ -342,17 +353,22 @@ const TempletEditorPreview: React.FC = () => {
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2 }}>
-          <LandingButton title="Add to basket" variant="outlined" />
           <LandingButton
             title="Download"
             loading={loading}
             onClick={async () => {
               setLoading(true);
               try {
+                // ✅ 1) capture 3D preview as JPG for Subscription display
+                const mugPreviewJpg = captureMugPreviewJpg();
+                if (mugPreviewJpg) {
+                  sessionStorage.setItem("mugImage", mugPreviewJpg);
+                }
+
+                // ✅ 2) keep flipped design only for PDF/print flow
                 const flipped = await flipImageHorizontallyToDataUrl(mugImageSrc);
-                // ✅ store in "cache"
-                const slidesObj = { slide1: flipped };
-                sessionStorage.setItem("slides", JSON.stringify(slidesObj));
+                sessionStorage.setItem("slides", JSON.stringify({ slide1: flipped }));
+
                 navigate(USER_ROUTES.SUBSCRIPTION);
               } catch (e) {
                 console.error(e);
@@ -360,6 +376,21 @@ const TempletEditorPreview: React.FC = () => {
                 setLoading(false);
               }
             }}
+
+          // onClick={async () => {
+          //   setLoading(true);
+          //   try {
+          //     const flipped = await flipImageHorizontallyToDataUrl(mugImageSrc);
+          //     // ✅ store in "cache"
+          //     const slidesObj = { slide1: flipped };
+          //     sessionStorage.setItem("slides", JSON.stringify(slidesObj));
+          //     navigate(USER_ROUTES.SUBSCRIPTION);
+          //   } catch (e) {
+          //     console.error(e);
+          //   } finally {
+          //     setLoading(false);
+          //   }
+          // }}
           />
         </Box>
       </Box>

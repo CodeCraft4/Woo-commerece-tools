@@ -31,10 +31,11 @@ type ModalType = {
   btnText?: string;
   icon?: React.ReactNode;
   onClick?: () => void;
+  isDraftOpen?: boolean
 };
 
 const ConfirmModal = (props: ModalType) => {
-  const { open, onCloseModal, title, btnText, icon, onClick } = props || {};
+  const { open, onCloseModal, title, btnText, icon, onClick, isDraftOpen } = props || {};
 
   const { signOut } = useAuthStore();
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ const ConfirmModal = (props: ModalType) => {
               personal
               variant="outlined"
               width="200px"
-              onClick={() => onCloseModal()}
+              onClick={() => isDraftOpen ? navigate(-1) : onCloseModal()}
             />
             <LandingButton
               title={btnText || "Logout"}

@@ -36,9 +36,9 @@ const BasketCard = ({ id, title, poster, category, openModal }: BasketType) => {
       onClick={handleOpen}
       sx={{
         position: "relative",
-        width: "120%",                 // ✅ let Swiper control width
-        height: 235,                 // ✅ let Swiper control width
-        aspectRatio: "1 / 1",          // ✅ always square like screenshot
+        width: "120%",
+        height: 235,
+        aspectRatio: "1 / 1",
         borderRadius: 2,
         bgcolor: bgByCategory(category),
         overflow: "hidden",
@@ -93,15 +93,13 @@ const BasketCard = ({ id, title, poster, category, openModal }: BasketType) => {
           sx={{
             color: "#fff",
             fontWeight: 500,
-            fontSize: { xs: 18, sm: 20, md: 22 },
+            fontSize: { xs: 'auto', sm: 16, md: 18 },
             textAlign: "center",
             textTransform: "capitalize",
-            px: 1,
             whiteSpace: "nowrap",
-            // overflow: "hidden",
             textOverflow: "ellipsis",
             width: "100%",
-            textWrap: "wrap",
+            textWrap: "nowrap",
           }}
           title={category}
         >

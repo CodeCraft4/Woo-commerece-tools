@@ -130,7 +130,7 @@ const Banner = () => {
         The Power to Personalise in your hands.
       </Typography>
 
-      <Typography sx={{ fontSize: { md: 30, sm: 25, xs: 16 }, textAlign: "center", mb: 2 }}>
+      <Typography sx={{ fontSize: { md: 25, sm: 20, xs: 16 }, textAlign: "center", mb: 2 }}>
         Personaised printables card, invites and gift you can create and print at home.
       </Typography>
 
@@ -142,19 +142,19 @@ const Banner = () => {
           borderRadius: 3,
           overflow: "hidden",
           bgcolor: COLORS.green,
-          height: 300,
+          height: { md: 300, xs: "auto" },
           p: { md: 3, xs: 2 },
           flexDirection: { xs: "column", sm: "column", md: "row" },
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        {/* Left Side */}
+      {/* Left Side */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
             sx={{
-              fontSize: { md: 28, sm: 22, xs: 18 },
-              fontWeight: 600,
+              fontSize: { md: 30, sm: 22, xs: 18 },
+              // fontWeight: 600,
               color: COLORS.white,
               lineHeight: 1.25,
             }}
@@ -166,7 +166,7 @@ const Banner = () => {
           </Typography>
         </Box>
 
-        {/* Right Side - exact style like screenshot */}
+        {/* Right Side */}
         <Box
           sx={{
             width: { xs: "100%", md: 520 }, // fixed stage width on desktop
@@ -177,8 +177,18 @@ const Banner = () => {
             gap: { md: 3, xs: 2 },
           }}
         >
+
+           <Box
+          component={'img'}
+          src="/assets/images/Banner.jpg"
+          sx={{
+            width: '100%',
+            height: 'auto',
+            borderRadius:2
+          }}
+        />
           {/* Left big (poster) */}
-          <Box
+          {/* <Box
             sx={{
               height: { xs: 160, md: 240 },
               width: { xs: 120, md: 160 },
@@ -198,10 +208,10 @@ const Banner = () => {
                 filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.25))",
               }}
             />
-          </Box>
+          </Box> */}
 
           {/* Mug smaller */}
-          <Box
+          {/* <Box
             sx={{
               height: { xs: 120, md: 150 }, // smaller than others
               width: { xs: 120, md: 150 },
@@ -222,10 +232,10 @@ const Banner = () => {
                 filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.25))",
               }}
             />
-          </Box>
+          </Box> */}
 
           {/* Right big (frame) */}
-          <Box
+          {/* <Box
             sx={{
               height: { xs: 160, md: 250 },
               width: { xs: 130, md: 170 },
@@ -245,7 +255,7 @@ const Banner = () => {
                 filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.25))",
               }}
             />
-          </Box>
+          </Box> */}
         </Box>
       </Box>
     </Box>
