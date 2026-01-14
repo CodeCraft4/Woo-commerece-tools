@@ -136,11 +136,12 @@ const CategoriesEditor = () => {
     [config.mmWidth, config.mmHeight, viewport, isTablet]
   );
 
-  const artboardWidth = canvasSize.width;
-
   // current slide id
+  const artboardWidth = canvasSize.width;
   const currentSlideId = slides[selectedSlide]?.id ?? null;
   const colorInputRef = useRef<HTMLInputElement | null>(null);
+
+  
 
   const openNativeColorPicker = () => {
     if (!selectedTextId) return;
@@ -287,7 +288,6 @@ const CategoriesEditor = () => {
   );
 
   /* ---------- Drag scrolling ---------- */
-
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
 
@@ -357,10 +357,9 @@ const CategoriesEditor = () => {
     el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
 
-
   // Pick one:
-  const slideScrollLeft = () => scrollByOne("left"); // or scrollByPage("left")
-  const slideScrollRight = () => scrollByOne("right"); // or scrollByPage("right")
+  const slideScrollLeft = () => scrollByOne("left");
+  const slideScrollRight = () => scrollByOne("right");
 
   // ====== Align helpers ======
   type TextAlignVal = "left" | "center" | "right";
@@ -614,7 +613,8 @@ const CategoriesEditor = () => {
     </Box>
   );
 
-  const navigate = useNavigate();
+const navigate = useNavigate();
+
  const goNextWithRawStores = () => {
   const configWithFit = {
     ...config,
@@ -680,8 +680,6 @@ const CategoriesEditor = () => {
     });
   };
 
-
-
   return (
     <DashboardLayout title="Categories Wise Editor">
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFileSelected} />
@@ -725,8 +723,6 @@ const CategoriesEditor = () => {
         </Stack>
       </Box>
 
-      {/* <WishCard adminEditor={true} /> */}
-
       {/* MAIN SLIDE SCROLLER */}
       <Box
         ref={mainScrollerRef}
@@ -748,14 +744,8 @@ const CategoriesEditor = () => {
 
           scrollBehavior: "smooth",
           userSelect: "none",
-
-          /* ❌ remove centering */
           justifyContent: "flex-start",
-
-          /* ✅ ensure unlimited horizontal growth */
           minWidth: "100%",
-
-          /* Optional but recommended */
           scrollSnapType: "x mandatory",
 
           "&::-webkit-scrollbar": { height: 6, width: 6 },
@@ -1106,7 +1096,6 @@ const CategoriesEditor = () => {
                     )}
                   </Box>
                 )}
-
 
                 {/* Shapes */}
                 {

@@ -61,7 +61,7 @@ const Footer = () => {
             <Typography
               sx={{
                 fontSize: { lg: "20px", md: "20px", sm: "15px", xs: "auto" },
-                fontWeight: 800,
+                fontWeight: 600,
                 color: COLORS.seconday,
               }}
             >
@@ -103,7 +103,7 @@ const Footer = () => {
           <Typography
             sx={{
               fontSize: { lg: "20px", md: "20px", sm: "17px", xs: "auto" },
-              fontWeight: 800,
+              fontWeight: 600,
             }}
           >
             Let's get Social
@@ -132,7 +132,7 @@ const Footer = () => {
           <Typography
             sx={{
               fontSize: { lg: "20px", md: "20px", sm: "17px", xs: "auto" },
-              fontWeight: 800,
+              fontWeight: 600,
             }}
           >
             Download the App
@@ -214,7 +214,7 @@ const Footer = () => {
           <Typography
             sx={{
               fontSize: { lg: "20px", md: "20px", sm: "17px", xs: "auto" },
-              fontWeight: 700,
+              fontWeight: 600,
             }}
           >
             Shop by Region

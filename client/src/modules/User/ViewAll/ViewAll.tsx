@@ -75,8 +75,7 @@ const ViewAll = () => {
           </Typography>
         </Box>
 
-        <ViewAllCard
-        />
+        <ViewAllCard />
 
         <Box sx={{ height: 200 }} />
       </Box>

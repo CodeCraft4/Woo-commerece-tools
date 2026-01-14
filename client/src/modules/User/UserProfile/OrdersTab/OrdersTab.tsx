@@ -347,9 +347,6 @@
 
 // export default OrdersTab;
 
-
-import React from 'react'
-
 const OrdersTab = () => {
   return (
     <div>OrdersTab</div>

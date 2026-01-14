@@ -570,7 +570,7 @@ const Navbar = () => {
               display: "flex",
               alignItems: "center",
             }}
-            onClick={openDraftModal}
+            onClick={() => location.pathname === USER_ROUTES.PREVIEW ? navigate(-1) : openDraftModal()}
           >
             <KeyboardArrowLeft /> Exit
           </Typography>
@@ -580,7 +580,7 @@ const Navbar = () => {
               <LandingButton title="Preview" onClick={() => navigate(USER_ROUTES.PREVIEW)} />
             </Box>
           ) : (
-            <LandingButton title="Back to Design" onClick={() => navigate(-1)} />
+            null
           )}
         </Toolbar>
       </AppBar>
@@ -607,6 +607,7 @@ const Navbar = () => {
           title="Do you want to save this card as Draft?"
           onClick={saveDraftToDb}
           icon={<Drafts />}
+          isDraftOpen
         />
       )}
     </Box>

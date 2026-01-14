@@ -1354,7 +1354,6 @@ const SlideCover = ({
                   );
                 })}
 
-
               {/* VIDEO QR */}
               {selectedVideoUrl1 && (
                 <Rnd
@@ -2125,6 +2124,8 @@ const SlideCover = ({
               })}
             </>
           )}
+
+
         </Box>
       )}
     </Box>

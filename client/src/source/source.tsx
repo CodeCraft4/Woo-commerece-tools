@@ -132,14 +132,63 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
 export const fetchAllTempletDesigns = async () => {
   const { data, error } = await supabase
     .from("templetDesign")
-    .select("id, category, created_at, img_url, raw_stores"); // ✅ include raw_stores
+    .select("*")
 
   if (error) {
-    console.error("Error fetching template designs:", error);
+    console.error("Supabase error:", {
+      message: error.message,
+      details: (error as any).details,
+      hint: (error as any).hint,
+      code: (error as any).code,
+    });
     throw error;
   }
 
   return data ?? [];
+};
+
+export const fetchAllTempletDesignsLight = async () => {
+  const PAGE_SIZE = 20; // light rows pe 20/30 theek
+  let from = 0;
+  const out: any[] = [];
+
+  while (true) {
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, error } = await supabase
+      .from("templetDesign")
+      .select(`
+        id,
+        img_url,
+        category,
+        title,
+        description,
+        actualprice,
+        saleprice,
+        a4price,
+        a5price,
+        a3price,
+        usletter,
+        halfusletter,
+        ustabloid,
+        salea4price,
+        salea5price,
+        salea3price,
+        saleusletter,
+        salehalfusletter,
+        saleustabloid
+      `)
+      .range(from, to);
+
+    if (error) throw error;
+
+    const rows = data ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return out;
 };
 
 
@@ -156,6 +205,18 @@ export const fetchTempletDesignById = async (id: string) => {
   const { data, error } = await supabase
     .from("templetDesign")
     .select("id, category, raw_stores, created_at")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// ✅ Jab need ho tab (open/preview) raw_stores lao
+export const fetchTempletRawStoresById = async (id: string | number) => {
+  const { data, error } = await supabase
+    .from("templetDesign")
+    .select("id, raw_stores")
     .eq("id", id)
     .single();
 

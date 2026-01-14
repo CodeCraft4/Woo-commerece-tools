@@ -32,7 +32,7 @@
 //       <Typography
 //         sx={{
 //           fontSize: { md: "16px", sm: "", xs: "12px" },
-//           fontWeight: 250,
+//           fontWeight: 220,
 //           mb: 2,
 //         }}
 //       >
@@ -45,7 +45,7 @@
 //       <Typography
 //         sx={{
 //           fontSize: { md: "16px", sm: "", xs: "12px" },
-//           fontWeight: 250,
+//           fontWeight: 220,
 //           mb: 2,
 //         }}
 //       >
@@ -65,7 +65,7 @@
 //       <Typography
 //         sx={{
 //           fontSize: { md: "16px", sm: "", xs: "12px" },
-//           fontWeight: 250,
+//           fontWeight: 220,
 //           mb: 2,
 //         }}
 //       >
@@ -77,7 +77,7 @@
 //       <Typography
 //         sx={{
 //           fontSize: { md: "16px", sm: "", xs: "12px" },
-//           fontWeight: 250,
+//           fontWeight: 220,
 //           mb: 2,
 //         }}
 //       >
@@ -92,7 +92,7 @@
 //           <Typography
 //             sx={{
 //               fontSize: { md: "16px", sm: "", xs: "12px" },
-//               fontWeight: 250,
+//               fontWeight: 220,
 //               mb: 2,
 //             }}
 //           >
@@ -208,10 +208,10 @@ const Description = () => {
         }}
       />
 
-      <Typography sx={{ fontSize: { md: 25, sm: 18, xs: 16 }, mt: 2, textAlign: 'start' }}>
+      <Typography sx={{ fontSize: { md: 22, sm: 18, xs: 16 }, mt: 2, textAlign: 'start' }}>
         DIY Personalisation is a UK based plateform thats lets you personalise and instantly download printable cards, invites and gifts, so you create and print them anywhere in the world.
       </Typography>
-      <Typography sx={{ fontSize: { md: 25, sm: 18, xs: 16 }, mt: 2, textAlign: 'start', display: 'flex', justifyContent: 'flex-start' }}>
+      <Typography sx={{ fontSize: { md: 22, sm: 18, xs: 16 }, mt: 2, textAlign: 'start', display: 'flex', justifyContent: 'flex-start' }}>
         Design are download printable PDFs, making them accessible globally with no shipping, <br /> delay or borders
       </Typography>
 
@@ -219,7 +219,7 @@ const Description = () => {
         {/* Line 1 */}
         <Typography
           sx={{
-            fontSize: { xs: 22, sm: 28, md: 25 },
+            fontSize: { xs: 22, sm: 28, md: 22 },
             fontWeight: 500,
             color: "#111",
             lineHeight: 1.15,
