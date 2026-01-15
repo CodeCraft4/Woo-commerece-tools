@@ -6,9 +6,11 @@ import {
   AudiotrackOutlined,
   AutoAwesomeMosaicOutlined,
   BlurOn,
+  Brush,
   CollectionsOutlined,
   EmojiEmotionsOutlined,
   FilterFramesOutlined,
+  PhotoFilterOutlined,
   PictureAsPdfOutlined,
   SlideshowOutlined,
   TitleOutlined,
@@ -840,6 +842,13 @@ const WishCard = (props: wishCardType) => {
                 />
               )}
 
+              {activePopup === "art" && (
+                <GeneAI2Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                  photoArt={true}
+                />
+              )}
               {activePopup === "geneAi" && (
                 <GeneAI2Popup
                   onClose={() => setActivePopup(null)}
@@ -1171,7 +1180,6 @@ const WishCard = (props: wishCardType) => {
               )}
             </>
           }
-
           {/* 2nd Card */}
           {activeIndex === 1 && (
             <Box
@@ -1289,6 +1297,15 @@ const WishCard = (props: wishCardType) => {
               >
                 <AudiotrackOutlined fontSize="large" />
                 Audio
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  togglePopup("art");
+                }}
+                sx={editingButtonStyle}
+              >
+                <PhotoFilterOutlined fontSize="large" />
+                Art
               </IconButton>
               <IconButton
                 onClick={() => {
@@ -1417,7 +1434,6 @@ const WishCard = (props: wishCardType) => {
               </IconButton>
             </Box>
           )}
-
           {/* 4th card */}
           {adminEditor &&
             <>

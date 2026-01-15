@@ -51,7 +51,7 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
         setDraggableImages(prev => {
             return prev.map(img =>
                 selectedImg.includes(img.id)
-                    ? { ...img, zIndex: Math.max((img.zIndex || 0) - 1, 0) } // don't go below 0
+                    ? { ...img, zIndex: Math.max((img.zIndex || 0) - 1, 0) }
                     : img
             );
         });
