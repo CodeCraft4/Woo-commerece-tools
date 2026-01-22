@@ -15,7 +15,7 @@ type SigninForm = {
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle ,loading} = useAuth();
 
   const {
     register,
@@ -23,18 +23,16 @@ const SignIn = () => {
     formState: { errors },
   } = useForm<SigninForm>();
 
-  const onSubmitForm = async (data: SigninForm) => {
-    try {
-      await signIn({
-        email: data.email,
-        password: data.password,
-      });
-      toast.success("Login successful!");
-      navigate('/');
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
+
+const onSubmitForm = async (data: SigninForm) => {
+  try {
+    await signIn({ email: data.email, password: data.password });
+    navigate("/");
+  } catch (err: any) {
+    toast.error(err.message);
+  }
+};
+
 
   return (
     <Box
@@ -116,6 +114,7 @@ const SignIn = () => {
               width="450px"
               personal
               type="submit"
+              loading={loading}
             />
 
             <Typography sx={{ fontSize: "13px", textAlign: "start", mt: 3 }}>

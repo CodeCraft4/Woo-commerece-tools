@@ -14,6 +14,7 @@ import {
   PeopleOutline,
   Person2Outlined,
   SettingsOutlined,
+  WorkspacePremiumOutlined,
 } from "@mui/icons-material";
 import { COLORS } from "../../../constant/color";
 
@@ -56,6 +57,11 @@ const Sidebar = () => {
       icon: <NewspaperOutlined />,
       title: "Our Blogs",
       href: ADMINS_DASHBOARD.ADMIN_BLOGS,
+    },
+    {
+      icon: <WorkspacePremiumOutlined />,
+      title: "Subscriptions",
+      href: ADMINS_DASHBOARD.ADMIN_SUBSCRIPTION_PLANS,
     },
     {
       icon: <PeopleOutline />,

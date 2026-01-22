@@ -4,12 +4,12 @@ import {
   Box,
   Tabs,
   Tab,
-  Typography,
-  useMediaQuery,
   useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { useAuth } from "../../../context/AuthContext";
 import {
+  Logout,
   LogoutOutlined,
   PersonOutline,
   ReceiptLongOutlined,
@@ -18,6 +18,9 @@ import {
 import { COLORS } from "../../../constant/color";
 import ProfileTabs from "./ProfileTabs/ProfileTabs";
 import OrdersTab from "./OrdersTab/OrdersTab";
+import DraftsCard from "./DraftsCard/DraftsCard";
+import useModal from "../../../hooks/useModal";
+import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 
 // ✅ adjust this import/path according to your project
 
@@ -54,6 +57,9 @@ const UserProfile = () => {
   const isUpSm = useMediaQuery(theme.breakpoints.up("sm"));
   const { signOut } = useAuth();
   const [value, setValue] = useState<TabValue>(0);
+
+
+  const {open:isSignoutModal,openModal:isOpenSignoutModal,closeModal:isCloseSignoutModal} = useModal()
 
   const handleChange = async (_: SyntheticEvent, newValue: TabValue) => {
     if (newValue === 4) {
@@ -142,6 +148,7 @@ const UserProfile = () => {
             icon={<LogoutOutlined />}
             iconPosition="start"
             // label="Sign out"
+            onClick={isOpenSignoutModal}
             {...a11yProps(4)}
             sx={{
               ...tabBaseSx,
@@ -164,10 +171,7 @@ const UserProfile = () => {
         </TabPanel>
 
         <TabPanel value={value} index={2}>
-          <Typography variant="h6" gutterBottom>
-            Draft Card
-          </Typography>
-          <Typography variant="body2">Saved drafts and designs.</Typography>
+          <DraftsCard/>
         </TabPanel>
 
         {/* <TabPanel value={value} index={3}>
@@ -177,6 +181,19 @@ const UserProfile = () => {
           <Typography variant="body2">Your reminders list.</Typography>
         </TabPanel> */}
       </Box>
+
+      {
+        isSignoutModal && (
+          <ConfirmModal
+           open={isSignoutModal}
+           onCloseModal={()=>isCloseSignoutModal()}
+           title="Are you sure to want logout"
+           icon={<Logout/>}
+           btnText="Yes, Logout"
+           onClick={signOut}
+          />
+        )
+      }
     </MainLayout>
   );
 };

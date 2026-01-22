@@ -71,6 +71,28 @@ export const fetchOrderCount = async () => {
 };
 
 
+// user orders 
+export async function fetchMyOrders() {
+  // ✅ get logged-in user (client-side)
+  const { data: userRes, error: userErr } = await supabase.auth.getUser();
+  if (userErr) throw new Error(userErr.message);
+
+  const user = userRes?.user;
+  if (!user?.id) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id,user_id,session_id,payer_name,payer_email,currency,amount,status,preview_image,created_at"
+    )
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []);
+}
+
+
 // Fetch All Blogs from Db
 export const fetchAllBlogs = async () => {
   const { data, error } = await supabase

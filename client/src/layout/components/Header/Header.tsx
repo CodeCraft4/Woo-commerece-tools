@@ -13,7 +13,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
 import LOGO from "/assets/images/blackLOGO.png";
-import { ChevronLeft, ChevronRight, Close, Drafts, Logout, Person, Search, Settings } from "@mui/icons-material";
+import { ChevronLeft, ChevronRight, Close, Drafts, Logout, Person, Search, Settings, WorkspacePremium } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 import MegaMenu from "../../../components/MegaMenu/MegaMenu";
@@ -77,6 +77,7 @@ export default function Header(props: Props) {
   const { user, signOut } = useAuth();
   const { cart } = useCartStore();
   const location = useLocation()
+
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -496,17 +497,17 @@ export default function Header(props: Props) {
                           </ListItemIcon>
                           <Typography>Draft Card</Typography>
                         </MenuItem>
-                        {/* <MenuItem
+                        <MenuItem
                           onClick={() => {
-                            // navigate(USER_ROUTES.SETTINGS);
+                            navigate(USER_ROUTES.PREMIUM_PLANS);
                             handleCloseMenu();
                           }}
                         >
                           <ListItemIcon>
-                            <Settings fontSize="small" />
+                            <WorkspacePremium fontSize="small" />
                           </ListItemIcon>
-                          <Typography>Settings</Typography>
-                        </MenuItem> */}
+                          <Typography>Subscription</Typography>
+                        </MenuItem>
 
                         <MenuItem onClick={handleLogout}>
                           <ListItemIcon>

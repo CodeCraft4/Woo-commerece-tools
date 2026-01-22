@@ -10,7 +10,7 @@ import {
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { useSlide2 } from "../../../context/Slide2Context";
-import {GoogleGenAI} from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 interface GeneAIType {
   onClose: () => void;
@@ -69,8 +69,8 @@ const buildPhotoArtPrompt = (style: PhotoStyle, userPrompt: string) => {
     "Keep same subject and composition. Do not add new objects unless asked.",
     core,
   ]
-    .filter(Boolean)
-    // .joinoins("\n");
+    .filter(Boolean).join('\n')
+
 };
 
 // Small helper for quota / 429 detection
@@ -96,7 +96,7 @@ const GeneAI2Popup = (props: GeneAIType) => {
 
   // ✅ Single source of truth for API Key (use your testing key via ENV)
   // Vite: VITE_GEMINI_API_KEY, CRA: REACT_APP_GEMINI_API_KEY
-  const API_KEY ='AIzaSyBf01akwuBz6rMslZ_MVne3YTqevWxk7_k'
+  const API_KEY = 'AIzaSyBf01akwuBz6rMslZ_MVne3YTqevWxk7_k'
 
   // ✅ Prevent double submit
   const inFlightRef = useRef(false);
@@ -444,7 +444,7 @@ Keep it concise and creative!`
 
     try {
       const style = inferStyleFromPrompt(prompt);
-      const finalPrompt:any = buildPhotoArtPrompt(style, prompt);
+      const finalPrompt = buildPhotoArtPrompt(style, prompt);
 
       const ai = new GoogleGenAI({ apiKey: API_KEY });
 
@@ -523,7 +523,7 @@ Keep it concise and creative!`
           border: "2px solid #acc9c9ff",
           borderRadius: 2,
           width: "100%",
-          p: { md: 1, sm: 1, xs: 0 },
+          p: { md: photoArt ? 0 : 1, sm: 1, xs: 0 },
         }}
       >
         {photoArt ? (
@@ -535,7 +535,7 @@ Keep it concise and creative!`
                 height: 300,
                 borderRadius: 2,
                 bgcolor: "#f0f0f0",
-                border: "2px dashed #cfcfcf",
+                // border: "2px dashed #cfcfcf",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -630,7 +630,6 @@ Keep it concise and creative!`
                   }}
                   onClick={() => setIsAIimage2?.(true)}
                 />
-
                 <Box
                   component={"div"}
                   sx={{

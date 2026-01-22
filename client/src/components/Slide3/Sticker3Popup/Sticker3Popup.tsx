@@ -1,9 +1,10 @@
 // Sticker3Popup.tsx
-import { Box } from "@mui/material";
+import { Box, TextField } from "@mui/material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { STICKERS_DATA } from "../../../constant/data";
 import { COLORS } from "../../../constant/color";
 import { useSlide3 } from "../../../context/Slide3Context";
+import { useMemo, useState } from "react";
 
 interface Sticker3PopupProps {
   onClose: () => void;
@@ -12,6 +13,19 @@ interface Sticker3PopupProps {
 
 const Sticker3Popup = ({ onClose }: Sticker3PopupProps) => {
   const { addSticker3 } = useSlide3();
+
+  const [search, setSearch] = useState('')
+
+  const filteredStickers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return STICKERS_DATA;
+
+    return STICKERS_DATA.filter((s) => {
+      const name = s.name.toLowerCase();
+      const path = s.sticker.toLowerCase();
+      return name.includes(q) || path.includes(q);
+    });
+  }, [search]);
 
   const handleSelectSticker = (stick: any) => {
     addSticker3(stick);
@@ -34,6 +48,8 @@ const Sticker3Popup = ({ onClose }: Sticker3PopupProps) => {
           mt: 2,
           display: "flex",
           flexWrap: "wrap",
+          justifyContent: "flex-start",
+          alignContent: "flex-start",
           gap: 1,
           overflowY: "auto",
           "&::-webkit-scrollbar": {
@@ -41,7 +57,7 @@ const Sticker3Popup = ({ onClose }: Sticker3PopupProps) => {
             width: "5px",
           },
           "&::-webkit-scrollbar-track": {
-            backgroundColor: "#f3f3f3",
+            backgroundColor: "#f1f1f1",
             borderRadius: "20px",
           },
           "&::-webkit-scrollbar-thumb": {
@@ -51,15 +67,16 @@ const Sticker3Popup = ({ onClose }: Sticker3PopupProps) => {
           height: 500,
         }}
       >
-        {STICKERS_DATA.map((stick) => (
+        <TextField variant="outlined" type="search" placeholder="search Icon ╰(*°▽°*)╯" value={search} fullWidth onChange={(e) => setSearch(e.target.value)} />
+        {filteredStickers.map((stick) => (
           <Box
             key={stick.id}
-            onClick={() => handleSelectSticker(stick)} // ✅ handle click
+            onClick={() => handleSelectSticker(stick)}
             sx={{
-              width: { md: "80px", sm: "80px", xs: '70px' },
+              width: { md: "80px", sm: "80px", xs: "70px" },
               height: "90px",
               borderRadius: 2,
-              bgcolor: "rgba(233, 232, 232, 3)",
+              bgcolor: "rgba(233, 232, 232, 1)",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
