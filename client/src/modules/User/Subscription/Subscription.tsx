@@ -241,11 +241,19 @@ const Subscription = () => {
         body: JSON.stringify({
           title: plan.title,
           price: plan.price,
+          // ✅ you already send this
           user: {
             email: user?.email,
             name: user?.user_metadata?.full_name || "User",
           },
-          metadata: { variantKey: selectedPlan, category: categoryName },
+
+          // ✅ NEW: pass auth userId in metadata (helpful for server + debugging)
+          metadata: {
+            variantKey: selectedPlan,
+            category: categoryName,
+            userId: user?.id,
+            userName: user?.user_metadata?.full_name || "User",
+          },
         }),
       });
 

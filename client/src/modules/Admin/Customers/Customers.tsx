@@ -1,4 +1,3 @@
-// File: src/modules/Admin/Customers/Customers.tsx
 import { useMemo, useState } from "react";
 import { Box, CircularProgress, Pagination, Typography } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
