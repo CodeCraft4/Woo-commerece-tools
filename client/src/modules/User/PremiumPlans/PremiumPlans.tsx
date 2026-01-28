@@ -1,12 +1,11 @@
-// src/pages/.../PremiumPlans.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import MainLayout from "../../../layout/MainLayout";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Container,
   Divider,
   IconButton,
@@ -15,6 +14,7 @@ import {
   ListItemIcon,
   Stack,
   Typography,
+  Skeleton,
 } from "@mui/material";
 import { ArrowBackIos, CheckCircleOutline, HighlightOff } from "@mui/icons-material";
 import { loadSubscriptionConfig } from "../../../lib/subscriptionStore";
@@ -42,7 +42,7 @@ type PricingPlan = {
 };
 type PricingConfig = { page: { title: string; subtitle: string }; plans: PricingPlan[] };
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://diypersonalisation.com/api/";
 const STRIPE_PK =
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 
@@ -67,10 +67,7 @@ function FeatureIcon({ kind, highlight }: { kind: FeatureIconKind; highlight: bo
 }
 
 /**
- * Plan-wise visuals (Admin-like)
- * - pro    => pink + white gradient + pink badge
- * - bundle => white + orange gradient + orange badge
- * - free   => normal paper, no gradient
+ * Plan-wise visuals
  */
 function getPlanVisual(planCode: string, isFree: boolean) {
   if (isFree) {
@@ -99,7 +96,6 @@ function getPlanVisual(planCode: string, isFree: boolean) {
     };
   }
 
-  // fallback for any other paid plan
   return {
     backgroundImage: "linear-gradient(135deg, #ffffff 0%, #e4dce9 50%, #ae8ec2 100%)",
     bgcolor: "transparent" as const,
@@ -113,12 +109,16 @@ function PlanCardView({
   showBuyButton,
   onBuy,
   buying,
+  disabled,
+  actionText,
 }: {
   plan: PricingPlan;
   isFree: boolean;
   showBuyButton: boolean;
   onBuy: () => void;
   buying: boolean;
+  disabled?: boolean;
+  actionText?: string;
 }) {
   const badgeText = (plan.badgeText || "").trim();
   const visual = getPlanVisual(plan.code, isFree);
@@ -137,9 +137,9 @@ function PlanCardView({
         width: "100%",
         backgroundImage: visual.backgroundImage,
         bgcolor: visual.bgcolor,
+        opacity: disabled ? 0.75 : 1,
       }}
     >
-      {/* ✅ Admin-like badge (top center) */}
       {badgeText ? (
         <Box
           sx={{
@@ -205,12 +205,12 @@ function PlanCardView({
           {showBuyButton ? (
             <Button
               variant="contained"
-              disabled={buying}
+              disabled={buying || disabled}
               onClick={onBuy}
               sx={{ borderRadius: 999, py: 1.3, fontWeight: 900, textTransform: "none", mt: 1 }}
               color={plan.highlight ? "warning" : "primary"}
             >
-              {buying ? "Redirecting..." : "Buy Plan"}
+              {buying ? "Redirecting..." : actionText || "Buy Plan"}
             </Button>
           ) : null}
         </Stack>
@@ -219,20 +219,74 @@ function PlanCardView({
   );
 }
 
+function PlansSkeleton() {
+  const cardSx = { bgcolor: "#d9d9d9", borderRadius: 2 };
+
+  return (
+    <Box sx={{ textAlign: "center", mt: 5 }}>
+      <Skeleton variant="text" height={60} width={360} sx={{ mx: "auto", ...cardSx }} />
+      <Skeleton variant="text" height={28} width={520} sx={{ mx: "auto", mt: 1, ...cardSx }} />
+
+      <Box
+        sx={{
+          width: "80%",
+          display: "flex",
+          gap: 3,
+          flexWrap: { xs: "wrap", md: "nowrap" },
+          m: "auto",
+          mt: 4,
+        }}
+      >
+        {[0, 1, 2].map((k) => (
+          <Box key={k} sx={{ width: "100%" }}>
+            <Card sx={{ borderRadius: 3, mt: 4, overflow: "hidden" }}>
+              <CardContent sx={{ p: 2.5 }}>
+                <Stack spacing={1.5}>
+                  <Skeleton variant="text" height={44} width="70%" sx={cardSx} />
+                  <Skeleton variant="text" height={22} width="85%" sx={cardSx} />
+                  <Skeleton variant="text" height={56} width="55%" sx={cardSx} />
+                  <Divider />
+                  {[0, 1, 2, 3].map((i) => (
+                    <Stack key={i} direction="row" spacing={1} alignItems="center">
+                      <Skeleton variant="circular" width={20} height={20} sx={{ bgcolor: "#cfcfcf" }} />
+                      <Skeleton variant="text" height={22} width="80%" sx={cardSx} />
+                    </Stack>
+                  ))}
+                  <Skeleton variant="rounded" height={46} width="100%" sx={cardSx} />
+                </Stack>
+              </CardContent>
+            </Card>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+function ActiveBannerSkeleton() {
+  return (
+    <Box sx={{ mt: 4 }}>
+      <Skeleton variant="rounded" height={54} sx={{ bgcolor: "#d9d9d9", borderRadius: 3, maxWidth: 820, mx: "auto" }} />
+    </Box>
+  );
+}
+
 export default function PremiumPlans() {
-  const { user, premiumActive, premiumExpiresAt, refreshProfile } = useAuth();
+  const { user, plan, premiumExpiresAt, bundleExpiresAt, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
   const [config, setConfig] = useState<PricingConfig | null>(null);
 
-  const expiryText = useMemo(() => formatExpiry(premiumExpiresAt), [premiumExpiresAt]);
-
-  // ✅ avoid double confirm calls (React strict mode)
   const confirmRanRef = useRef(false);
 
-  // ✅ load plans config
+  const expiryText = useMemo(() => {
+    if (plan === "pro") return formatExpiry(premiumExpiresAt);
+    if (plan === "bundle") return formatExpiry(bundleExpiresAt);
+    return "—";
+  }, [plan, premiumExpiresAt, bundleExpiresAt]);
+
   useEffect(() => {
     const run = async () => {
       try {
@@ -248,7 +302,7 @@ export default function PremiumPlans() {
     run();
   }, []);
 
-  // ✅ after Stripe redirects back: confirm subscription using session_id
+  // ✅ confirm after Stripe redirect
   useEffect(() => {
     const runConfirm = async () => {
       const params = new URLSearchParams(window.location.search);
@@ -257,7 +311,7 @@ export default function PremiumPlans() {
       if (confirmRanRef.current) return;
       confirmRanRef.current = true;
 
-      const toastId = "confirm-premium";
+      const toastId = "confirm-subscription";
 
       try {
         const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
@@ -266,9 +320,9 @@ export default function PremiumPlans() {
         const token = sessionData?.session?.access_token;
         if (!token) throw new Error("Please login again.");
 
-        toast.loading("Activating your premium...", { id: toastId });
+        toast.loading("Activating your plan...", { id: toastId });
 
-        const res = await fetch(`${API_BASE_URL}/subscription/confirm`, {
+        const res = await fetch(`${API_BASE_URL}subscription/confirm`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -281,21 +335,19 @@ export default function PremiumPlans() {
         if (!res.ok) throw new Error(json?.error || "Confirm failed.");
 
         await refreshProfile();
-        toast.success("Premium activated ✅", { id: toastId });
+        toast.success("Plan activated ✅", { id: toastId });
 
-        // clean URL
         params.delete("session_id");
         const clean = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
         window.history.replaceState({}, "", clean);
       } catch (e: any) {
-        toast.error(e?.message || "Failed to activate premium.", { id: toastId });
+        toast.error(e?.message || "Failed to activate plan.", { id: toastId });
       }
     };
 
     void runConfirm();
   }, [refreshProfile]);
 
-  // refresh profile when user is available
   useEffect(() => {
     if (user?.id) void refreshProfile();
   }, [user?.id, refreshProfile]);
@@ -313,7 +365,7 @@ export default function PremiumPlans() {
 
       toast.loading("Navigating to checkout...", { id: toastId });
 
-      const res = await fetch(`${API_BASE_URL}/subscription/create-checkout-session`, {
+      const res = await fetch(`${API_BASE_URL}subscription/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ planCode }),
@@ -335,6 +387,10 @@ export default function PremiumPlans() {
     }
   };
 
+  const showPlans = Boolean(config) && plan !== "pro"; // pro user: no need to upsell
+  const showBundleAlert = plan === "bundle";
+  const showProAlert = plan === "pro";
+
   return (
     <MainLayout>
       <Box sx={{ width: "100%", py: 4, pb: { md: 15, xs: 4 } }}>
@@ -343,46 +399,69 @@ export default function PremiumPlans() {
             <ArrowBackIos />
           </IconButton>
 
+          {/* ✅ Skeleton loading */}
           {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-              <CircularProgress />
-            </Box>
+            <>
+              <ActiveBannerSkeleton />
+              <PlansSkeleton />
+            </>
           ) : null}
 
-          {/* ✅ Premium user: only show message */}
-          {premiumActive ? (
-            <Box sx={{ textAlign: "center", mt: 6 }}>
-              <Card
-                elevation={6}
+          {/* ✅ Small success-style message (bundle) */}
+          {!loading && showBundleAlert ? (
+            <Box sx={{display: "flex", justifyContent: "center" }}>
+              <Alert
+                severity="success"
+                variant="standard"
                 sx={{
-                  mx: "auto",
                   maxWidth: 820,
+                  width: "100%",
                   borderRadius: 3,
-                  backgroundImage: "linear-gradient(135deg, #ffffff 0%, #e4dce9 50%, #ae8ec2 100%)",
-                  border: "1px solid",
-                  borderColor: "divider",
+                  py: 3,
+                  alignItems: "center",
                 }}
               >
-                <CardContent sx={{ py: 4 }}>
-                  <Stack spacing={1.2}>
-                    <Typography sx={{ fontSize: { md: 36, xs: 26 }, fontWeight: 1000 }}>🎉 You are a Pro User</Typography>
-                    <Typography sx={{ fontSize: { md: 16, xs: 14 }, fontWeight: 700, color: "text.secondary" }}>
-                      Your premium access is active. Enjoy unlimited designs & PDFs.
-                    </Typography>
-                    <Typography sx={{ fontSize: { md: 20, xs: 16 }, fontWeight: 900 }}>
-                      Expiry: <Box component="span" sx={{ fontWeight: 900 }}>{expiryText}</Box>
-                    </Typography>
-                  </Stack>
-                </CardContent>
-              </Card>
+                Bundle activated. You can Personalise you Bundle cards. Upgrade to <b>Pro</b> and Use Full library.
+              </Alert>
             </Box>
           ) : null}
 
-          {/* ✅ Non-premium: show plans */}
-          {!premiumActive && config ? (
+          {/* ✅ Pro message (optional small) */}
+          {!loading && showProAlert ? (
+  <Box sx={{ mt: 3, display: "flex", justifyContent: "center", alignItems: "center" }}>
+    <Alert
+      severity="success"
+      variant="standard"
+      
+      sx={{
+        maxWidth: 820,
+        width: "100%",
+        borderRadius: 3,
+        py: 8,
+        fontSize: 25,
+        display: "flex",
+        justifyContent: "center",
+        m: "auto",
+
+        // ✨ Gradient Background (Right → Left)
+        backgroundImage: "linear-gradient(to left, #ff8a00 0%, #f0bbd9 50%, #f5f1f1 100%)",
+        color: "#222",
+        
+        // remove default success green styling
+        "& .MuiAlert-icon": { color: "#ff8a00"},
+      }}
+    >
+      Hurry! Your Pro Plan is Active 🎉 (Expiry: <b>{expiryText}</b>)
+    </Alert>
+  </Box>
+) : null}
+
+
+          {/* ✅ Show Plans for FREE + BUNDLE (so bundle can upgrade to pro) */}
+          {!loading && showPlans ? (
             <Box sx={{ textAlign: "center", mt: 5 }}>
               <Typography sx={{ fontSize: { md: 40, xs: 28 }, fontWeight: 900 }}>
-                {config.page?.title || "Plans"}
+                {config?.page?.title || "Plans"}
               </Typography>
 
               <Typography
@@ -394,7 +473,7 @@ export default function PremiumPlans() {
                   mt: 1,
                 }}
               >
-                {config.page?.subtitle || ""}
+                {config?.page?.subtitle || ""}
               </Typography>
 
               <Box
@@ -407,19 +486,48 @@ export default function PremiumPlans() {
                   mt: 4,
                 }}
               >
-                {(config.plans || []).map((plan) => {
-                  const isFree = plan.code === "free" || plan.priceText?.toLowerCase() === "free";
-                  return (
-                    <Box key={plan.id} sx={{ width: "100%" }}>
-                      <PlanCardView
-                        plan={plan}
-                        isFree={isFree}
-                        showBuyButton={!isFree}
-                        buying={buying === plan.code}
-                        onBuy={() => startCheckout(plan.code)}
-                      />
-                    </Box>
-                  );
+                {(config?.plans || []).map((p) => {
+                  const isFreePlan = p.code === "free" || p.priceText?.toLowerCase() === "free";
+
+                  // ✅ Current plan disable
+                  const isCurrentBundle = plan === "bundle" && p.code === "bundle";
+                  // const isCurrentPro = plan === "pro" && p.code === "pro";
+
+                  // ✅ Free user: show buy for paid only
+                  if (plan === "free") {
+                    return (
+                      <Box key={p.id} sx={{ width: "100%" }}>
+                        <PlanCardView
+                          plan={p}
+                          isFree={isFreePlan}
+                          showBuyButton={!isFreePlan}
+                          buying={buying === p.code}
+                          onBuy={() => startCheckout(p.code)}
+                        />
+                      </Box>
+                    );
+                  }
+
+                  // ✅ Bundle user: show plans + allow ONLY upgrade to pro
+                  if (plan === "bundle") {
+                    const canBuy = p.code === "pro";
+                    return (
+                      <Box key={p.id} sx={{ width: "100%" }}>
+                        <PlanCardView
+                          plan={p}
+                          isFree={isFreePlan}
+                          showBuyButton={p.code !== "free"}
+                          buying={buying === p.code}
+                          disabled={isCurrentBundle || !canBuy}
+                          actionText={isCurrentBundle ? "Current Plan" : canBuy ? "Upgrade to Pro" : "Not Available"}
+                          onBuy={() => startCheckout(p.code)}
+                        />
+                      </Box>
+                    );
+                  }
+
+                  // fallback
+                  return null;
                 })}
               </Box>
             </Box>

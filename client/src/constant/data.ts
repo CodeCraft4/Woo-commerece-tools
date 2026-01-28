@@ -1815,7 +1815,7 @@ export function defaultPricing() {
           { id: uid(), text: "~12 cards per bundle", icon: "check" },
           { id: uid(), text: "Lifetime access to purchased bundle", icon: "check" },
           { id: uid(), text: "Bundle-only access (not full library)", icon: "check" },
-          { id: uid(), text: "Examples: Mother’s Day, Father’s Day, Baby Shower, Wedding", icon: "check" },
+          { id: uid(), text: "Mother’s Day, Father’s Day, Baby Shower, Wedding", icon: "check" },
           { id: uid(), text: "Seasonal drops: Halloween, Christmas, Valentine’s", icon: "check" },
           { id: uid(), text: "Upsell: upgrade to Creator subscription anytime", icon: "check" },
         ],

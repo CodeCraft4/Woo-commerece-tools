@@ -1,32 +1,29 @@
-import { useEffect, useMemo, useState } from "react";
+// File: src/components/BasketSliderNoTabs/BasketSliderNoTabs.tsx
+import { useMemo, useState } from "react";
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Mousewheel } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-import { fetchAllCardsFromDB, fetchAllTempletDesignsLight, fetchTempletRawStoresById } from "../../source/source";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAllBundlesFromDB } from "../../source/source";
 import { COLORS } from "../../constant/color";
 import BasketCard from "../BasketCard/BasketCard";
-import useModal from "../../hooks/useModal";
-import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
 
 import "swiper/css";
-import toast from "react-hot-toast";
+import { supabase } from "../../supabase/supabase";
 
-type Props = {
-  title?: string;
-  description?: string;
-};
+type Props = { title?: string; description?: string };
 
+const lc = (v: unknown) => String(v ?? "").trim().toLowerCase();
 
 const normalizePoster = (v?: string) => {
   if (!v) return "";
   const s = String(v).trim();
   if (s.startsWith("data:image/")) return s;
 
-  // raw base64 (without prefix) -> make it valid
+  // raw base64 -> make DataURL
   if (/^[A-Za-z0-9+/=\s]+$/.test(s) && s.length > 200) {
     return `data:image/png;base64,${s.replace(/\s/g, "")}`;
   }
@@ -34,158 +31,84 @@ const normalizePoster = (v?: string) => {
   return s;
 };
 
-const getTemplatePoster = (item: any) => {
-  // 1) direct img_url
-  if (item?.img_url) return normalizePoster(item.img_url);
+type CategoryTile = { name: string; poster?: string };
 
-  const rs = item?.raw_stores;
-
-  const maybe =
-    rs?.thumbnail ||
-    rs?.preview ||
-    rs?.cover ||
-    rs?.slides?.[0]?.thumbnail ||
-    rs?.slides?.[0]?.preview;
-
-  return normalizePoster(maybe);
+async function fetchCategoriesLight(): Promise<any[]> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id,name,image_base64")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
 };
 
-
 const BasketSliderNoTabs = ({ title, description }: Props) => {
-  const [selected, setSelected] = useState<CategoryType | undefined>();
-  const { open: isModal, openModal, closeModal } = useModal();
+  const navigate = useNavigate();
 
   const [swiper, setSwiper] = useState<SwiperType | null>(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
-  const { data: basketCards = [], isLoading: loadingTemplets,
-    isError,
-    error, } = useQuery({
-      queryKey: ["templetDesign", "light"],
-      queryFn: fetchAllTempletDesignsLight,
-      staleTime: 1000 * 60 * 60,
-    });
-
-
-  if (isError) {
-    toast.error("Error loading templates: " + (error as Error).message);
-  };
-
-
-  const qc = useQueryClient();
-
-  useEffect(() => {
-    if (!basketCards.length) return;
-
-    const t = setTimeout(() => {
-      // ✅ sirf first 8/10 prefetch (warna bohat requests)
-      const ids = basketCards.slice(0, 10).map((x: any) => x.id);
-
-      // ✅ stagger requests (burst nahi hoga)
-      ids.forEach((id: any, idx: number) => {
-        setTimeout(() => {
-          qc.prefetchQuery({
-            queryKey: ["templetDesign", "heavy", id],
-            queryFn: () => fetchTempletRawStoresById(id),
-            staleTime: 1000 * 60 * 30,
-          });
-        }, idx * 300);
-      });
-    }, 10000); // ✅ 10 sec (20 sec karna ho to 20000)
-
-    return () => clearTimeout(t);
-  }, [basketCards, qc]);
-
-
-  // ✅ fetch cards
-  const { data: allCards = [], isLoading: loadingCards } = useQuery({
-    queryKey: ["cards"],
-    queryFn: fetchAllCardsFromDB,
+  // ✅ Categories (includes image_base64 because select("*"))
+  const { data: categories = [], isLoading: loadingCats } = useQuery({
+    queryKey: ["allCategories"],
+    queryFn: fetchCategoriesLight,
     staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
   });
 
-  const isLoading = loadingTemplets || loadingCards;
+  // ✅ Bundles (so bundle main_category bhi categories list me aa jaye)
+  const { data: bundles = [], isLoading: loadingBundles } = useQuery({
+    queryKey: ["bundles:all"],
+    queryFn: fetchAllBundlesFromDB,
+    staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+  });
 
-  // ✅ merge both
-  const allProducts = useMemo(() => {
-    const templates = (basketCards ?? []).map((x: any) => ({
-      ...x,
-      __type: "template",
+  const categoryTiles = useMemo<CategoryTile[]>(() => {
+    // Prefer categories table image_base64
+    const map = new Map<string, CategoryTile>();
 
-      // ✅ normalize common UI fields
-      title: x.cardname || x.cardName || x.title || "Untitled",
-      category: x.cardcategory || x.cardCategory || x.category || "default",
-      description: x.description || x.desc || x?.raw_stores?.description || "",
+    for (const c of categories as any[]) {
+      const name = String(c?.name ?? "").trim();
+      if (!name) continue;
 
-      actualprice: x.actualprice ?? x.actualPrice ?? x.price ?? 0,
-      saleprice: x.saleprice ?? x.salePrice ?? x.sale_price ?? 0,
+      const key = lc(name);
+      const poster =
+        normalizePoster(c?.image_base64) ||
+        normalizePoster(c?.image) ||
+        normalizePoster(c?.img_url);
 
-      poster: getTemplatePoster(x),
-    }));
+      map.set(key, { name, poster: poster || undefined });
+    }
 
-    const cards = (allCards ?? []).map((x: any) => ({
-      ...x,
-      __type: "card",
+    // Add bundle categories if not in categories table (no image)
+    for (const b of bundles as any[]) {
+      const name = String(b?.main_category ?? "").trim();
+      if (!name) continue;
 
-      title: x.cardname || x.cardName || x.title || "Untitled",
-      category: x.cardcategory || x.cardCategory || x.category || "default",
-      description: x.description || "",
+      const key = lc(name);
+      if (!map.has(key)) map.set(key, { name });
+    }
 
-      actualprice: x.actualprice ?? x.actualPrice ?? x.price ?? 0,
-      saleprice: x.saleprice ?? x.salePrice ?? x.sale_price ?? 0,
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [categories, bundles]);
 
-      poster: normalizePoster(x?.img_url || x?.imageurl || x?.lastpageimageurl),
-    }));
-
-    return [...templates, ...cards];
-  }, [basketCards, allCards]);
-
-
-const handleOpen = async (item: any) => {
-  // optional: modal pe skeleton/loading chahiye to pehle open kar do
-  // openModal();
-
-  if (item.__type === "template") {
-    const heavy = await qc.fetchQuery({
-      queryKey: ["templetDesign", "heavy", item.id],
-      queryFn: () => fetchTempletRawStoresById(item.id),
-      staleTime: 1000 * 60 * 30,
-    });
-
-    // ✅ merge raw_stores into selected item
-    const merged = {
-      ...item,
-      raw_stores: heavy?.raw_stores ?? item?.raw_stores,
-      // ProductPopup me aap "templetDesign ?? cate" use kar rahe ho
-      // so safe: templetDesign object bhi attach kar do
-      templetDesign: {
-        ...item,
-        raw_stores: heavy?.raw_stores ?? item?.raw_stores,
-      },
-    };
-
-    setSelected(merged);
-    openModal();
-    return;
-  }
-
-  setSelected(item);
-  openModal();
-};
-
+  const isLoading = loadingCats || loadingBundles;
 
   const updateEdges = (s: SwiperType) => {
     setIsBeginning(s.isBeginning);
     setIsEnd(s.isEnd);
   };
 
+  const goToCategory = (name: string) => {
+    const n = String(name ?? "").trim();
+    if (!n) return;
+    navigate(`/view-all/${encodeURIComponent(n)}`, { state: { categoryName: n } });
+  };
+
   return (
     <Box sx={{ width: "100%", mt: { md: 6, xs: 3 } }}>
-      {/* Header */}
       {title && (
         <Typography sx={{ fontWeight: 700, fontSize: { md: 30, xs: 20 }, textAlign: "center" }}>
           {title}
@@ -197,7 +120,6 @@ const handleOpen = async (item: any) => {
         </Typography>
       )}
 
-      {/* Black strip */}
       <Box
         sx={{
           mt: 2,
@@ -232,35 +154,25 @@ const handleOpen = async (item: any) => {
                 setSwiper(s);
                 updateEdges(s);
               }}
-              onSlideChange={(s) => updateEdges(s)}
-              onReachBeginning={(s) => updateEdges(s)}
-              onReachEnd={(s) => updateEdges(s)}
-              onFromEdge={(s) => updateEdges(s)}
+              onSlideChange={updateEdges}
+              onReachBeginning={updateEdges}
+              onReachEnd={updateEdges}
+              onFromEdge={updateEdges}
               style={{ paddingBottom: 6 }}
             >
-              {allProducts.map((item: any) => {
-                return (
-                  <SwiperSlide key={`${item.__type}-${item.id}`} style={{ height: "auto" }}>
-                    <BasketCard
-                      id={item.id}
-                      openModal={() => handleOpen(item)}
-                      title={item.cardname || item.title}
-                      poster={
-                        item.__type === "template"
-                          ? getTemplatePoster(item)
-                          : normalizePoster(item?.img_url || item?.imageurl || item?.lastpageimageurl)
-                      }
-                      price={item.actualprice}
-                      saleprice={item.saleprice}
-                      category={item.cardcategory || item.category}
-                    />
-                  </SwiperSlide>
-                );
-              })}
-
+              {categoryTiles.map((cat) => (
+                <SwiperSlide key={`cat-${cat.name}`} style={{ height: "auto" }}>
+                  <BasketCard
+                    variant="category"
+                    title={cat.name}
+                    category={cat.name}
+                    poster={cat.poster} // ✅ image for category
+                    onClickCategory={goToCategory}
+                  />
+                </SwiperSlide>
+              ))}
             </Swiper>
 
-            {/* ✅ Center Prev Button */}
             <IconButton
               onClick={() => swiper?.slidePrev()}
               disabled={isBeginning}
@@ -274,8 +186,6 @@ const handleOpen = async (item: any) => {
                 border: `2px solid ${COLORS.primary}`,
                 color: COLORS.primary,
                 "&:hover": { bgcolor: "#f2f2f2" },
-
-                // ✅ disabled style
                 "&.Mui-disabled": {
                   opacity: 0.4,
                   bgcolor: "rgba(255,255,255,0.6)",
@@ -287,7 +197,6 @@ const handleOpen = async (item: any) => {
               <ArrowBackIos fontSize="small" />
             </IconButton>
 
-            {/* ✅ Center Next Button */}
             <IconButton
               onClick={() => swiper?.slideNext()}
               disabled={isEnd}
@@ -301,7 +210,6 @@ const handleOpen = async (item: any) => {
                 border: `2px solid ${COLORS.primary}`,
                 color: COLORS.primary,
                 "&:hover": { bgcolor: "#f2f2f2" },
-
                 "&.Mui-disabled": {
                   opacity: 0.4,
                   bgcolor: "rgba(255,255,255,0.6)",
@@ -315,17 +223,6 @@ const handleOpen = async (item: any) => {
           </>
         )}
       </Box>
-
-      {/* Modal */}
-      {isModal && selected && (
-        <ProductPopup
-          open={isModal}
-          onClose={closeModal}
-          cate={selected}
-          salePrice={false}
-          isTempletDesign={(selected as any)?.__type === "template"}
-        />
-      )}
     </Box>
   );
 };

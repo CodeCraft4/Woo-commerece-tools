@@ -2124,8 +2124,6 @@ const SlideCover = ({
               })}
             </>
           )}
-
-
         </Box>
       )}
     </Box>

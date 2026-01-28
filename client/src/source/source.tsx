@@ -8,8 +8,55 @@ export const fetchAllCardsFromDB = async () => {
   return data;
 };
 
+export const fetchAllCardsLight = async () => {
+  const { data, error } = await supabase
+    .from("cards")
+    .select(`
+      id,
+      cardname,
+      cardName,
+      cardcategory,
+      cardCategory,
+      imageurl,
+      image_url,
+      lastpageimageurl,
+      lastpageImageUrl,
+      accessplan
+    `);
+
+  if (error) throw error;
+  return data ?? [];
+};
+
+
+export const fetchCardById = async (id: string) => {
+  const { data, error } = await supabase
+    .from("cards")
+    .select(`
+      id,
+      cardname,
+      cardName,
+      cardcategory,
+      cardCategory,
+      imageurl,
+      image_url,
+      lastpageimageurl,
+      lastpageImageUrl,
+      accessplan,
+      polygonlayout,
+      raw_stores,
+      rawStores,
+      raw_store
+    `)
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+
 // Fetch all Categories from Subapase.
-// src/source/source.ts
 export const fetchAllCategoriesFromDB = async () => {
   const { data, error } = await supabase.from("categories").select("*");
   if (error) throw new Error(error.message);
@@ -70,7 +117,6 @@ export const fetchOrderCount = async () => {
   return count;
 };
 
-
 // user orders 
 export async function fetchMyOrders() {
   // ✅ get logged-in user (client-side)
@@ -91,7 +137,6 @@ export async function fetchMyOrders() {
   if (error) throw new Error(error.message);
   return (data ?? []);
 }
-
 
 // Fetch All Blogs from Db
 export const fetchAllBlogs = async () => {
@@ -198,7 +243,9 @@ export const fetchAllTempletDesignsLight = async () => {
         salea3price,
         saleusletter,
         salehalfusletter,
-        saleustabloid
+        saleustabloid,
+        subCategory,
+        subSubCategory
       `)
       .range(from, to);
 
@@ -246,7 +293,24 @@ export const fetchTempletRawStoresById = async (id: string | number) => {
   return data;
 };
 
+export async function fetchAllBundlesFromDB(): Promise<any> {
+  const { data, error } = await supabase
+    .from("bundles")
+    .select("id,name,image_base64,main_category,sub_categories,sub_sub_categories,created_at")
+    .order("created_at", { ascending: false });
 
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    image_base64: r.image_base64 ?? null,
+    main_category: r.main_category ?? "",
+    sub_categories: Array.isArray(r.sub_categories) ? r.sub_categories : [],
+    sub_sub_categories: Array.isArray(r.sub_sub_categories) ? r.sub_sub_categories : [],
+    created_at: r.created_at,
+  }));
+}
 
 // Blogs-----------------------------
 export async function saveBlog({

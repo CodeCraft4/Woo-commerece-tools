@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import { useEffect, useMemo, useState } from "react";
 import LandingButton from "../LandingButton/LandingButton";
-import { IconButton } from "@mui/material";
+import { IconButton, Skeleton } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../constant/route";
@@ -107,6 +107,7 @@ type ProductsPopTypes = {
   salePrice?: boolean; // undefined -> auto on sale per selected size
   mode?: "add" | "edit";
   initialPlan?: SizeKey;
+  priceLoading?:boolean
 };
 
 type SizeDef = { key: SizeKey; title: string; sub?: string };
@@ -229,7 +230,7 @@ const buildPriceTables = (cate: CategoryType | undefined): { actual: any; sale: 
 };
 
 const ProductPopup = (props: ProductsPopTypes) => {
-  const { open, onClose, cate, isTempletDesign, salePrice, mode = "add", initialPlan } = props;
+  const { open, onClose, cate, isTempletDesign, salePrice, mode = "add", initialPlan ,priceLoading} = props;
 
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SizeKey>((initialPlan ?? "a4") as SizeKey);
@@ -481,13 +482,21 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
           <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>
             <Typography sx={{ fontSize: "20px", mb: { md: 3, sm: 3, xs: 0 }, fontWeight: "bold" }}>
-              {sizeOptions.length ? "Select Size" : "Pricing"}
+              {priceLoading ? "Select Size" : "Load Pricing"}
             </Typography>
 
-            {!sizeOptions.length ? (
-              <Typography sx={{ color: "text.secondary", mt: 1 }}>
-                No sizes/prices configured for this product yet.
-              </Typography>
+            {priceLoading ? (
+              <Box sx={{ height: '75%', width: '100%', }}>
+                <Box sx={{ display: { md: "flex", sm: "flex", xs: "block" }, gap: 2 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Skeleton variant="rounded" height={48} sx={{ mt: 2 }} />
+                    <Skeleton variant="rounded" height={48} sx={{ mt: 2 }} />
+                    <Skeleton variant="rounded" height={48} sx={{ mt: 2 }} />
+                    <Skeleton variant="rounded" height={48} sx={{ mt: 2 }} />
+                    <Skeleton variant="rounded" height={48} sx={{ mt: 2 }} />
+                  </Box>
+                </Box>
+              </Box>
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: { md: "20px", sm: "20px", xs: "10px" } }}>
                 {sizeOptions.map((opt) => {
@@ -556,7 +565,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
               </Box>
             )}
 
-            <Box sx={{ display: "flex", gap: "15px", justifyContent: "center", m: "auto", mt: 4 }}>
+             <Box sx={{ display: "flex", gap: "15px", justifyContent: "center", m: "auto", mt: 4 }}>
               <LandingButton
                 title={mode === "edit" ? "Update basket" : "Add to basket"}
                 variant="outlined"
@@ -572,6 +581,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
                 onClick={handlePersonalize}
               />
             </Box>
+
           </Box>
         </Box>
 

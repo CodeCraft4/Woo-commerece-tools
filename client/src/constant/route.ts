@@ -34,6 +34,7 @@ export const ADMINS_DASHBOARD = {
   ADMIN_CATEGORIES: "/admin-category",
   ADMIN_BLOGS: "/admin-blogs",
   ADMIN_BLOGS_EDITOR: "/admin-blogs-editor",
+  ADMIN_BUNDLES: "/admin-bundles",
   ADMIN_SUBSCRIPTION_PLANS: "/admin-subscription-plans",
   ADMIN_TOTURIAL_GUIDE: "/admin-toturial-guide",
   ADMIN_COMMUNITY_HUB: "/admin-community-hub",

@@ -26,22 +26,32 @@ interface SignInInput {
   password: string;
 }
 
+export type PlanCode = "free" | "bundle" | "pro";
+
 export type UserProfileRow = {
   id?: string | number;
   auth_id: string;
+
   full_name?: string | null;
   phone?: string | null;
   email?: string | null;
   profileUrl?: string | null;
   published?: boolean | null;
 
-  // ✅ Premium fields (DB columns)
+  // ✅ Premium (pro)
   isPremium?: boolean | null;
   premium_expires_at?: string | null;
 
-  // optional (if you store)
+  // ✅ Bundle
+  plan_code?: PlanCode | string | null;
+  bundle_expires_at?: string | null;
+  bundle_subscription_id?: string | null;
+
+  // Stripe
   stripe_customer_id?: string | null;
   stripe_subscription_id?: string | null;
+
+  updated_at?: string | null;
 };
 
 interface AuthContextType {
@@ -50,9 +60,13 @@ interface AuthContextType {
   profile: UserProfileRow | null;
   loading: boolean;
 
-  // ✅ easy flags for app-wide usage
+  // ✅ plan flags
+  plan: PlanCode;
   premiumActive: boolean;
+  bundleActive: boolean;
+
   premiumExpiresAt: string | null;
+  bundleExpiresAt: string | null;
 
   signUp: (input: SignUpInput) => Promise<any>;
   signIn: (input: SignInInput) => Promise<any>;
@@ -87,6 +101,29 @@ function computePremiumActive(profile: UserProfileRow | null): boolean {
   return t > Date.now();
 }
 
+function computeBundleActive(profile: UserProfileRow | null): boolean {
+  const expiresAt = profile?.bundle_expires_at;
+  if (!expiresAt) return false;
+
+  const t = new Date(expiresAt).getTime();
+  if (!Number.isFinite(t)) return false;
+  return t > Date.now();
+}
+
+function computePlan(profile: UserProfileRow | null): PlanCode {
+  const raw = String(profile?.plan_code ?? "").toLowerCase().trim();
+
+  // direct plan_code first
+  if (raw === "pro") return "pro";
+  if (raw === "bundle") return "bundle";
+  if (raw === "free") return "free";
+
+  // fallback for old data (if plan_code not filled yet)
+  if (computePremiumActive(profile)) return "pro";
+  if (computeBundleActive(profile)) return "bundle";
+  return "free";
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -110,10 +147,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           "email",
           "profileUrl",
           "published",
+
+          // ✅ pro fields
           "isPremium",
           "premium_expires_at",
+
+          // ✅ plan fields
+          "plan_code",
+          "bundle_expires_at",
+          "bundle_subscription_id",
+
+          // stripe
           "stripe_customer_id",
           "stripe_subscription_id",
+
+          "updated_at",
         ].join(",")
       )
       .eq("auth_id", authId)
@@ -127,12 +175,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const meta: any = authUser.user_metadata ?? {};
     const avatar = getOAuthAvatar(authUser);
 
-    const payload: UserProfileRow = {
+    // ✅ DON'T overwrite plan/isPremium here (server controls it)
+    const payload: Partial<UserProfileRow> = {
       auth_id: authUser.id,
       full_name: meta?.full_name || meta?.name || "",
       email: authUser.email ?? null,
       phone: meta?.phone || null,
       profileUrl: avatar || null,
+      updated_at: new Date().toISOString(),
     };
 
     const { error } = await supabase
@@ -164,7 +214,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) console.warn("getSession error:", error);
-
         if (!alive) return;
 
         setSession(data.session ?? null);
@@ -185,25 +234,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     restoreSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        void (async () => {
-          try {
-            setSession(nextSession ?? null);
-            setUser(nextSession?.user ?? null);
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void (async () => {
+        try {
+          setSession(nextSession ?? null);
+          setUser(nextSession?.user ?? null);
 
-            if (nextSession?.user) {
-              await upsertUser(nextSession.user);
-              await fetchProfile(nextSession.user.id);
-            } else {
-              setProfile(null);
-            }
-          } catch (e) {
-            console.error("onAuthStateChange error:", e);
+          if (nextSession?.user) {
+            await upsertUser(nextSession.user);
+            await fetchProfile(nextSession.user.id);
+          } else {
+            setProfile(null);
           }
-        })();
-      }
-    );
+        } catch (e) {
+          console.error("onAuthStateChange error:", e);
+        }
+      })();
+    });
 
     return () => {
       alive = false;
@@ -279,7 +326,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const premiumActive = useMemo(() => computePremiumActive(profile), [profile]);
+  const bundleActive = useMemo(() => computeBundleActive(profile), [profile]);
+  const plan = useMemo(() => computePlan(profile), [profile]);
+
   const premiumExpiresAt = profile?.premium_expires_at ?? null;
+  const bundleExpiresAt = profile?.bundle_expires_at ?? null;
 
   const value: AuthContextType = useMemo(
     () => ({
@@ -288,8 +339,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       profile,
       loading,
 
+      plan,
       premiumActive,
+      bundleActive,
+
       premiumExpiresAt,
+      bundleExpiresAt,
 
       signUp,
       signIn,
@@ -298,7 +353,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       refreshUser,
       refreshProfile,
     }),
-    [user, session, profile, loading, premiumActive, premiumExpiresAt]
+    [
+      user,
+      session,
+      profile,
+      loading,
+      plan,
+      premiumActive,
+      bundleActive,
+      premiumExpiresAt,
+      bundleExpiresAt,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

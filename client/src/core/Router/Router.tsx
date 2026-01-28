@@ -39,6 +39,7 @@ import AddNewTemplets from "../../modules/Admin/AddNewTemplets/AddNewTemplets";
 import Draft from "../../modules/User/Drafts/Draft";
 import PremiumPlan from "../../modules/Admin/PremiumPlan/PremiumPlan";
 import PremiumPlans from "../../modules/User/PremiumPlans/PremiumPlans";
+import OccasionBundle from "../../modules/Admin/OccasionBundle/OccasionBundle";
 
 const Router = () => {
   return (
@@ -185,6 +186,14 @@ const Router = () => {
         element={
           <SecureRoute>
             <PremiumPlan />
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={`${ADMINS_DASHBOARD.ADMIN_BUNDLES}/:plan`}
+        element={
+          <SecureRoute>
+            <OccasionBundle />
           </SecureRoute>
         }
       />
