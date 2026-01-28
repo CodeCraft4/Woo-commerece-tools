@@ -22,9 +22,9 @@ import { Avatar, Badge, Link, ListItemIcon, Menu, MenuItem } from "@mui/material
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { useAuth } from "../../../context/AuthContext";
-import { fetchAllCategoriesFromDB } from "../../../source/source";
 import { useQuery } from "@tanstack/react-query";
 import RemindersDrawer from "../../../components/RemindersDrawer/RemindersDrawer";
+import { supabase } from "../../../supabase/supabase";
 
 interface Props {
   window?: () => Window;
@@ -70,6 +70,15 @@ function useHScrollArrows() {
   return { listRef, canLeft, canRight, scrollByAmount };
 }
 
+async function fetchCategoriesLight(): Promise<any[]> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id,name,subcategories")
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+};
+
 
 export default function Header(props: Props) {
   const { window } = props;
@@ -84,7 +93,7 @@ export default function Header(props: Props) {
 
   const { data: navCategories = [], isLoading, isError } = useQuery<any[]>({
     queryKey: ["navCategories"],
-    queryFn: fetchAllCategoriesFromDB,
+    queryFn: fetchCategoriesLight,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,

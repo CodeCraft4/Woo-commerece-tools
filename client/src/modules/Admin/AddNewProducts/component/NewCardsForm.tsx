@@ -85,18 +85,12 @@ type EditFormValue = {
 
   // ✅ NEW (for edit prefill)
   accessPlan?: AccessPlan;
-  accessplan?: AccessPlan; // in case DB uses this name
+  accessplan?: AccessPlan; 
 
   polyganLayout?: any;
 };
 
 type Props = { editProduct?: EditFormValue };
-
-const ACCESS_PLAN_OPTIONS = [
-  { label: "Free (single / pay-as-you-go)", value: "free" },
-  { label: "Bundle (seasonal/event)", value: "bundle" },
-  { label: "Pro (subscription)", value: "pro" },
-];
 
 const NewCardsForm = ({ editProduct }: Props) => {
   const slide1 = useSlide1();
@@ -377,23 +371,6 @@ const NewCardsForm = ({ editProduct }: Props) => {
             error={errors.cardname?.message}
           />
 
-          {/* ✅ NEW: Access Plan select */}
-          <Controller
-            name="accessPlan"
-            control={control}
-            rules={{ required: "Access Plan is required" }}
-            render={({ field }) => (
-              <CustomInput
-                label="Access Plan"
-                type="select"
-                placeholder="Select access plan"
-                value={field.value ?? "free"}
-                onChange={(e) => field.onChange((e.target as any).value)}
-                error={(errors as any).accessPlan?.message}
-                options={ACCESS_PLAN_OPTIONS}
-              />
-            )}
-          />
 
           <Controller
             name="cardcategory"

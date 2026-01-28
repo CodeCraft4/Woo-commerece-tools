@@ -1,3 +1,4 @@
+// File: src/components/BasketCard/BasketCard.tsx
 import { Box, Typography } from "@mui/material";
 import type { CategoryType } from "../ProductPopup/ProductPopup";
 import { COLORS } from "../../constant/color";
@@ -5,15 +6,14 @@ import { COLORS } from "../../constant/color";
 type BasketType = {
   id?: string | number;
   title?: string;
-  poster: string;
-  price?: string | number;
-  saleprice?: string | number;
+  poster?: string;
   category?: string;
-  sales?: boolean;
   openModal?: (item: CategoryType) => void;
+
+  variant?: "product" | "category";
+  onClickCategory?: (categoryName: string) => void;
 };
 
-// background by category (same as before)
 const bgByCategory = (category?: string) => {
   const c = (category ?? "").toLowerCase().trim();
   if (c.includes("business card")) return COLORS.green;
@@ -26,10 +26,27 @@ const bgByCategory = (category?: string) => {
   return "#8E68A6";
 };
 
-const BasketCard = ({ id, title, poster, category, openModal }: BasketType) => {
+const BasketCard = ({
+  id,
+  title,
+  poster,
+  category,
+  openModal,
+  variant = "product",
+  onClickCategory,
+}: BasketType) => {
+  const label = (title || category || "Category").trim();
+  const initials = label ? label.slice(0, 1).toUpperCase() : "C";
+
   const handleOpen = () => {
+    if (variant === "category") {
+      onClickCategory?.(label);
+      return;
+    }
     openModal?.({ id, title, img_url: poster, cardcategory: category } as any);
   };
+
+  const hasPoster = Boolean(poster && String(poster).trim());
 
   return (
     <Box
@@ -40,20 +57,17 @@ const BasketCard = ({ id, title, poster, category, openModal }: BasketType) => {
         height: 235,
         aspectRatio: "1 / 1",
         borderRadius: 2,
-        bgcolor: bgByCategory(category),
+        bgcolor: bgByCategory(label),
         overflow: "hidden",
         cursor: "pointer",
         border: "4px solid gray",
-
-        // subtle shadow like screenshot
         boxShadow: "0 10px 18px rgba(0,0,0,0.35)",
       }}
     >
-      {/* ✅ inner content area (THIS was missing inset before) */}
       <Box
         sx={{
           position: "absolute",
-          inset: 12,                   // ✅ padding inside card (important)
+          inset: 12,
           borderRadius: 1.5,
           display: "flex",
           flexDirection: "column",
@@ -62,48 +76,66 @@ const BasketCard = ({ id, title, poster, category, openModal }: BasketType) => {
           pb: 1.2,
         }}
       >
-        {/* image area */}
         <Box
           sx={{
             flex: 1,
             width: "100%",
             display: "flex",
-            // alignItems: "center",
             justifyContent: "center",
             mt: 0.5,
           }}
         >
-          <Box
-            component="img"
-            src={poster}
-            alt={title ?? "product"}
-            sx={{
-              width: "75%",
-              height: "90%",
-              objectFit: "contain",
-              display: "block",
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
-          />
+          {/* ✅ NOW: category mode can also show image */}
+          {(hasPoster && (variant === "product" || variant === "category")) ? (
+            <Box
+              component="img"
+              src={poster}
+              alt={label}
+              sx={{
+                width: "100%",
+                height: "95%",
+                objectFit: variant === "category" ? "cover" : "contain",
+                display: "block",
+                borderRadius: 2,
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: "78%",
+                height: "88%",
+                display: "grid",
+                placeItems: "center",
+                borderRadius: 2,
+                bgcolor: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.25)",
+                backdropFilter: "blur(2px)",
+              }}
+            >
+              <Typography sx={{ color: "#fff", fontWeight: 900, fontSize: 72, lineHeight: 1 }}>
+                {initials}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
-        {/* category INSIDE card */}
         <Typography
           sx={{
             color: "#fff",
-            fontWeight: 500,
-            fontSize: { xs: 'auto', sm: 16, md: 18 },
+            fontWeight: 700,
+            fontSize: { sm: 16, md: 18 },
             textAlign: "center",
             textTransform: "capitalize",
             whiteSpace: "nowrap",
             textOverflow: "ellipsis",
             width: "100%",
-            textWrap: "nowrap",
+            overflow: "hidden",
           }}
-          title={category}
+          title={label}
         >
-          {category || "Category"}
+          {label}
         </Typography>
       </Box>
     </Box>

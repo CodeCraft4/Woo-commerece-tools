@@ -2,13 +2,13 @@ import { Box } from "@mui/material";
 import MainLayout from "../../../layout/MainLayout";
 import Banner from "../../../components/Banner/Banner";
 import VIPFunky from "../../../components/VIP-Funky/VIP-Funky";
-// import BasketSlider from "../../../components/BasketSlider/BasketSlider";
 import Description from "../../../components/Description/Description";
 import VisualSection from "./components/VisualSection/VisualSection";
 import SpecialDIY from "./components/SpecialDIY/SpecialDIY";
 import MakeMoments from "./components/MakeMoments/MakeMoments";
 import WhyChoose from "./components/WhyChoose/WhyChoose";
 import BasketSliderNoTabs from "../../../components/BasketSlider/BasketSlider";
+import OurPremiumCards from "./components/OurPremiumCards/OurPremiumCards";
 
 
 // const AdverstisementCard = [
@@ -186,6 +186,8 @@ const LandingHome = () => {
         />
 
         <MakeMoments />
+
+        <OurPremiumCards/>
 
         <WhyChoose />
 

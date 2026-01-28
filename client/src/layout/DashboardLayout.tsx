@@ -65,19 +65,19 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick, onExport
                 mt: 3,
                 textAlign: "start",
                 height: "calc(100vh)",
-                overflowY: "auto",
-                "&::-webkit-scrollbar": {
-                  height: "6px",
-                  width: '4px',
-                },
-                "&::-webkit-scrollbar-track": {
-                  backgroundColor: "#f1f1f1",
-                  borderRadius: "20px",
-                },
-                "&::-webkit-scrollbar-thumb": {
-                  backgroundColor: COLORS.primary,
-                  borderRadius: "20px",
-                },
+                // overflowY: "auto",
+                // "&::-webkit-scrollbar": {
+                //   height: "6px",
+                //   width: '4px',
+                // },
+                // "&::-webkit-scrollbar-track": {
+                //   backgroundColor: "#f1f1f1",
+                //   borderRadius: "20px",
+                // },
+                // "&::-webkit-scrollbar-thumb": {
+                //   backgroundColor: COLORS.primary,
+                //   borderRadius: "20px",
+                // },
                 p: 2,
               }}
             >
@@ -119,7 +119,7 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick, onExport
           </Box>
 
           {/* Page Content */}
-          <Box sx={{ flex: 1, mb: 10 }}>
+          <Box sx={{ flex: 1, mb: 10 ,p:{md:0,xs:1}}}>
             <DHeader title={title} exportBtn={exportBtn} addBtn={addBtn} onClick={onClick} onExportClick={onExportClick} />
             {children}
           </Box>

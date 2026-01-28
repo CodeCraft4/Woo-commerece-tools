@@ -1,5 +1,6 @@
+// File: src/pages/dashboard/customers/components/CustomerCard/CustomerCard.tsx
 import { Box, IconButton, Typography } from "@mui/material";
-import { Visibility, Delete } from "@mui/icons-material";
+import { Visibility, Delete, CardGiftcard } from "@mui/icons-material";
 import { COLORS } from "../../../../../constant/color";
 
 type Props = {
@@ -12,14 +13,9 @@ type Props = {
 const getAvatar = (u: any): string => {
   if (!u) return "/assets/images/user.png";
 
-  // 1) Your DB column
   const fromProfileUrl = u.profileUrl;
+  const fromAvatarCols = u.avatar_url || u.photo_url || u.image || u.image_base64;
 
-  // 2) Common fields you may have
-  const fromAvatarCols =
-    u.avatar_url || u.photo_url || u.image || u.image_base64;
-
-  // 3) Google/Supabase metadata (if you store it in Users row)
   const metaAvatar =
     u?.user_metadata?.avatar_url ||
     u?.user_metadata?.picture ||
@@ -28,34 +24,66 @@ const getAvatar = (u: any): string => {
     u?.raw_user_meta_data?.avatar_url ||
     u?.raw_user_meta_data?.picture;
 
-  return (
-    fromProfileUrl ||
-    fromAvatarCols ||
-    metaAvatar ||
-    "/assets/images/user.png"
-  );
+  return fromProfileUrl || fromAvatarCols || metaAvatar || "/assets/images/user.png";
 };
 
-const getName = (u: any) =>
-  u?.name || u?.full_name || u?.display_name || u?.email || "Unknown User";
-
-const getProvider = (u: any) =>
-  (u?.provider || u?.auth_provider || "").toLowerCase();
-
-const getCreatedDate = (u: any) =>
-  new Date(u?.created_at || u?.createdAt || Date.now()).toLocaleDateString();
+const getName = (u: any) => u?.name || u?.full_name || u?.display_name || u?.email || "Unknown User";
+const getProvider = (u: any) => (u?.provider || u?.auth_provider || "").toLowerCase();
+const getCreatedDate = (u: any) => new Date(u?.created_at || u?.createdAt || Date.now()).toLocaleDateString();
 
 function premiumActive(u: any) {
+  const plan = String(u?.plan || u?.subscription_plan || u?.code || "").toLowerCase();
+  if (plan === "pro" || plan === "premium") return true;
+
   if (!u?.isPremium) return false;
   if (!u?.premium_expires_at) return true;
+
   const t = new Date(u.premium_expires_at).getTime();
   if (!Number.isFinite(t)) return Boolean(u.isPremium);
   return t > Date.now();
 }
 
+function bundleActive(u: any) {
+  const plan = String(u?.plan || u?.subscription_plan || u?.code || "").toLowerCase();
+  if (plan === "bundle") return true;
+
+  if (u?.isBundle || u?.hasBundle) return true;
+
+  const expires =
+    u?.bundle_expires_at ||
+    u?.bundleExpiresAt ||
+    u?.bundle_expiry ||
+    u?.bundle_expire_at ||
+    null;
+
+  if (!expires) return false;
+
+  const t = new Date(expires).getTime();
+  if (!Number.isFinite(t)) return false;
+  return t > Date.now();
+}
+
+function getPlanKind(u: any): "pro" | "bundle" | "free" {
+  if (premiumActive(u)) return "pro"; // ✅ pro overrides bundle
+  if (bundleActive(u)) return "bundle";
+  return "free";
+}
+
+function formatDateShort(expiresAt: string | null | undefined): string {
+  if (!expiresAt) return "—";
+  const d = new Date(expiresAt);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return d.toLocaleDateString();
+}
+
 const CustomerCard = ({ user, onView, onDelete }: Props) => {
   const provider = getProvider(user);
-  const isPro = premiumActive(user);
+  const kind = getPlanKind(user);
+
+  const proExpiry = formatDateShort(user?.premium_expires_at);
+  const bundleExpiry = formatDateShort(
+    user?.bundle_expires_at || user?.bundleExpiresAt || user?.bundle_expiry || user?.bundle_expire_at
+  );
 
   return (
     <Box p={1} sx={{ width: { md: 250, sm: 280, xs: "98%" } }}>
@@ -79,10 +107,10 @@ const CustomerCard = ({ user, onView, onDelete }: Props) => {
             width: 150,
             height: 150,
             borderRadius: "50%",
-            overflow: "visible", // ✅ allow crown to go outside circle
+            overflow: "visible",
             position: "absolute",
             left: "50%",
-            top: 40, // a little down for crown
+            top: 40,
             transform: "translateX(-50%)",
             border: "3px solid #fff",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
@@ -91,19 +119,19 @@ const CustomerCard = ({ user, onView, onDelete }: Props) => {
             placeItems: "center",
           }}
         >
-          {/* ✅ Crown icon on top of avatar */}
-          {isPro ? (
+          {/* ✅ Pro: crown image */}
+          {kind === "pro" ? (
             <Box
               component="img"
-              src="/assets/icons/premiumuser.png" // 👈 use your crown image here
+              src="/assets/icons/premiumuser.png"
               alt="premium crown"
               sx={{
                 position: "absolute",
-                top: -32,            // ✅ lifts above avatar
+                top: -62,
                 left: "50%",
                 transform: "translateX(-50%) rotate(-28deg)",
-                width: 55,
-                height: 55,
+                width: 105,
+                height: 105,
                 objectFit: "contain",
                 zIndex: 5,
                 pointerEvents: "none",
@@ -112,7 +140,31 @@ const CustomerCard = ({ user, onView, onDelete }: Props) => {
             />
           ) : null}
 
-          {/* ✅ Avatar image */}
+          {/* ✅ Bundle: gift icon */}
+          {kind === "bundle" ? (
+            <Box
+              sx={{
+                position: "absolute",
+                top: -28,
+                left: "50%",
+                transform: "translateX(-50%) rotate(-18deg)",
+                width: 52,
+                height: 52,
+                borderRadius: 999,
+                bgcolor: "rgba(255,255,255,0.92)",
+                display: "grid",
+                placeItems: "center",
+                zIndex: 5,
+                pointerEvents: "none",
+                boxShadow: "0 10px 20px rgba(0,0,0,0.22)",
+                border: "1px solid rgba(0,0,0,0.08)",
+              }}
+            >
+              <CardGiftcard sx={{ color: COLORS.primary, fontSize: 28 }} />
+            </Box>
+          ) : null}
+
+          {/* Avatar image */}
           <Box
             component="img"
             src={getAvatar(user)}
@@ -129,7 +181,6 @@ const CustomerCard = ({ user, onView, onDelete }: Props) => {
           />
         </Box>
 
-
         {/* Name / Email / Date */}
         <Box
           sx={{
@@ -140,28 +191,27 @@ const CustomerCard = ({ user, onView, onDelete }: Props) => {
             px: 2,
           }}
         >
-          <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 0.5 }}>
-            {getName(user)}
-          </Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 0.5 }}>{getName(user)}</Typography>
 
-          {user?.email && (
-            <Typography
-              sx={{ color: "text.secondary", fontSize: 13, mb: 0.3 }}
-              noWrap
-            >
+          {user?.email ? (
+            <Typography sx={{ color: "text.secondary", fontSize: 13, mb: 0.3 }} noWrap>
               {user.email}
             </Typography>
-          )}
+          ) : null}
 
           <Typography sx={{ color: "text.secondary", fontSize: 12 }}>
-            Joined: {getCreatedDate(user)}{" "}
-            {provider === "google" ? "• Google" : ""}
+            Joined: {getCreatedDate(user)} {provider === "google" ? "• Google" : ""}
           </Typography>
 
-          {isPro && user?.premium_expires_at ? (
+          {kind === "pro" && user?.premium_expires_at ? (
             <Typography sx={{ color: "text.secondary", fontSize: 12, mt: 0.4 }}>
-              Expires:{" "}
-              {new Date(user.premium_expires_at).toLocaleDateString()}
+              Pro Expires: {proExpiry}
+            </Typography>
+          ) : null}
+
+          {kind === "bundle" ? (
+            <Typography sx={{ color: "text.secondary", fontSize: 12, mt: 0.4 }}>
+              Bundle Expires: {bundleExpiry}
             </Typography>
           ) : null}
         </Box>

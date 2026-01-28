@@ -30,6 +30,8 @@ import { loadSubscriptionConfig, saveSubscriptionConfigWithStatus } from "../../
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabase/supabase";
 import { defaultPricing, uid } from "../../../constant/data";
+import { useNavigate } from "react-router-dom";
+import { ADMINS_DASHBOARD } from "../../../constant/route";
 
 
 function FeatureIcon({ kind, highlight }: any) {
@@ -128,6 +130,8 @@ function PlanCardInline({ planIndex, control, watch, setValue, isAdmin }: any) {
     const planBase = `plans.${planIndex}`;
     const featuresName = `${planBase}.features`;
     const { fields, append, remove } = useFieldArray({ control, name: featuresName });
+
+    const navigate = useNavigate()
 
     const highlight = Boolean(watch(`${planBase}.highlight`));
     const badgeText = watch(`${planBase}.badgeText`);
@@ -390,6 +394,18 @@ function PlanCardInline({ planIndex, control, watch, setValue, isAdmin }: any) {
                                 </IconButton>
                             </Box>
                         ) : null}
+
+                        {
+                            planCode === "free" ? null : <Box sx={{ mt: 4, }}>
+                                <LandingButton
+                                 title={planCode === "bundle" ? "Edit Bundle" : "Edit Subscription"}
+                                  personal 
+                                  width={'200px'}
+                                  onClick={()=> navigate(`${ADMINS_DASHBOARD.ADMIN_BUNDLES}/${planCode}`,{state:{code:planCode}})}
+                                   />
+                            </Box>
+                        }
+
                     </List>
                 </Stack>
             </CardContent>
@@ -459,7 +475,7 @@ const PremiumPlan = ({ isAdmin = true, enableSupabase = true }) => {
 
     return (
         <DashboardLayout title="Pro Plans">
-            <Box sx={{ width: "100%", bgcolor: "#e8f2f3", p: 3, height: "auto" }}>
+            <Box sx={{ width: "100%", bgcolor: "#e1f3f5", p: {md:3,sm:3,xs:2}, height: "auto" }}>
                 <Container maxWidth="xl">
                     <Box sx={{ width: "100%", borderRadius: 2, textAlign: "center", height: "100%" }}>
                         <Stack spacing={1.2} alignItems="center">
@@ -500,7 +516,7 @@ const PremiumPlan = ({ isAdmin = true, enableSupabase = true }) => {
                                 )}
                             />
 
-                            <Box sx={{ width: "100%", mt: 8, display: "flex", gap: 3 }}>
+                            <Box sx={{ width: "100%", mt: 8, display: {md:"flex",sm:'flex',xs:'block'}, gap: 3 }}>
                                 {plans?.map((plan, idx) => (
                                     <Box sx={{ width: "100%" }} key={plan.id}>
                                         <PlanCardInline

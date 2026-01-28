@@ -90,6 +90,7 @@ const PreviewBookCard = () => {
         pixelRatio: 2,
       });
 
+
       results[key.replace("s", "slide")] = dataUrl;
     }
 
@@ -120,7 +121,7 @@ const PreviewBookCard = () => {
         />
       </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", m: "auto", flexDirection: "column",mt:4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", m: "auto", flexDirection: "column", mt: 4 }}>
         {/* MOBILE: one slide at a time */}
         {isMobile ? (
           <div className="book-container mobile-only">
