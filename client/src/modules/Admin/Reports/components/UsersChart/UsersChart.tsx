@@ -122,6 +122,7 @@ const UsersChart = () => {
         p: 3,
         width: { md: "49%", sm: "100%", xs: "100%" },
         height: 400,
+        minWidth: 0,
         boxShadow: 2,
       }}
     >
@@ -152,34 +153,36 @@ const UsersChart = () => {
 
       {/* States */}
       {isLoading ? (
-        <Box sx={{ height: "90%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box sx={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <CircularProgress />
         </Box>
       ) : isError ? (
-        <Box sx={{ height: "90%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box sx={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Typography color="error">Failed to load users</Typography>
         </Box>
       ) : (
-        <ResponsiveContainer width="100%" height="90%">
-          <BarChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="name"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#bbb", fontSize: 12, dy: 8 }}
-              interval={0}
-            />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#bbb", fontSize: 12 }} />
-            <Tooltip
-              cursor={{ fill: "rgba(0,0,0,0.03)" }}
-              contentStyle={{ borderRadius: 10, backgroundColor: "#fff", border: "1px solid #eee" }}
-            />
-            <Legend verticalAlign="top" align="left" iconType="circle" iconSize={10} wrapperStyle={{ top: -5, fontWeight: 500 }} />
-            <Bar dataKey="returning" name="Returning customers" fill="#d8e0edff" barSize={18} />
-            <Bar dataKey="new" name="New customers" fill="#c66beaff" barSize={18} radius={[10, 10, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <Box sx={{ height: 320, minHeight: 320 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#bbb", fontSize: 12, dy: 8 }}
+                interval={0}
+              />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: "#bbb", fontSize: 12 }} />
+              <Tooltip
+                cursor={{ fill: "rgba(0,0,0,0.03)" }}
+                contentStyle={{ borderRadius: 10, backgroundColor: "#fff", border: "1px solid #eee" }}
+              />
+              <Legend verticalAlign="top" align="left" iconType="circle" iconSize={10} wrapperStyle={{ top: -5, fontWeight: 500 }} />
+              <Bar dataKey="returning" name="Returning customers" fill="#d8e0edff" barSize={18} />
+              <Bar dataKey="new" name="New customers" fill="#c66beaff" barSize={18} radius={[10, 10, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
       )}
     </Box>
   );

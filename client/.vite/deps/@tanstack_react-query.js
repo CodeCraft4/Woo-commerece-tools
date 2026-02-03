@@ -33,13 +33,13 @@ import {
   streamedQuery,
   timeoutManager,
   unsetMarker
-} from "./chunk-NK3DIQWM.js";
+} from "./chunk-POJ54DMB.js";
 import {
   require_jsx_runtime
-} from "./chunk-XP4JWPZJ.js";
+} from "./chunk-S3GOUJ4W.js";
 import {
   require_react
-} from "./chunk-6VIQC2ON.js";
+} from "./chunk-5GCMZSAB.js";
 import {
   __toESM
 } from "./chunk-HXA6O6EE.js";
@@ -110,9 +110,8 @@ var QueryErrorResetBoundary = ({
 
 // node_modules/@tanstack/react-query/build/modern/errorBoundaryUtils.js
 var React4 = __toESM(require_react(), 1);
-var ensurePreventErrorBoundaryRetry = (options, errorResetBoundary, query) => {
-  const throwOnError = query?.state.error && typeof options.throwOnError === "function" ? shouldThrowError(options.throwOnError, [query.state.error, query]) : options.throwOnError;
-  if (options.suspense || options.experimental_prefetchInRender || throwOnError) {
+var ensurePreventErrorBoundaryRetry = (options, errorResetBoundary) => {
+  if (options.suspense || options.throwOnError || options.experimental_prefetchInRender) {
     if (!errorResetBoundary.isReset()) {
       options.retryOnMount = false;
     }
@@ -173,10 +172,9 @@ function useQueries({
     }),
     [queries, client, isRestoring]
   );
-  defaultedQueries.forEach((queryOptions2) => {
-    ensureSuspenseTimers(queryOptions2);
-    const query = client.getQueryCache().get(queryOptions2.queryHash);
-    ensurePreventErrorBoundaryRetry(queryOptions2, errorResetBoundary, query);
+  defaultedQueries.forEach((query) => {
+    ensureSuspenseTimers(query);
+    ensurePreventErrorBoundaryRetry(query, errorResetBoundary);
   });
   useClearResetErrorBoundary(errorResetBoundary);
   const [observer] = React5.useState(
@@ -258,7 +256,6 @@ function useBaseQuery(options, Observer, queryClient) {
   client.getDefaultOptions().queries?._experimental_beforeQuery?.(
     defaultedOptions
   );
-  const query = client.getQueryCache().get(defaultedOptions.queryHash);
   if (true) {
     if (!defaultedOptions.queryFn) {
       console.error(
@@ -268,7 +265,7 @@ function useBaseQuery(options, Observer, queryClient) {
   }
   defaultedOptions._optimisticResults = isRestoring ? "isRestoring" : "optimistic";
   ensureSuspenseTimers(defaultedOptions);
-  ensurePreventErrorBoundaryRetry(defaultedOptions, errorResetBoundary, query);
+  ensurePreventErrorBoundaryRetry(defaultedOptions, errorResetBoundary);
   useClearResetErrorBoundary(errorResetBoundary);
   const isNewCacheEntry = !client.getQueryCache().get(defaultedOptions.queryHash);
   const [observer] = React6.useState(
@@ -301,7 +298,7 @@ function useBaseQuery(options, Observer, queryClient) {
     result,
     errorResetBoundary,
     throwOnError: defaultedOptions.throwOnError,
-    query,
+    query: client.getQueryCache().get(defaultedOptions.queryHash),
     suspense: defaultedOptions.suspense
   })) {
     throw result.error;
@@ -317,7 +314,7 @@ function useBaseQuery(options, Observer, queryClient) {
       fetchOptimistic(defaultedOptions, observer, errorResetBoundary)
     ) : (
       // subscribe to the "cache promise" so that we can finalize the currentThenable once data comes in
-      query?.promise
+      client.getQueryCache().get(defaultedOptions.queryHash)?.promise
     );
     promise?.catch(noop).finally(() => {
       observer.updateResult();

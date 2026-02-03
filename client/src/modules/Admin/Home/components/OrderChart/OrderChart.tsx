@@ -87,6 +87,8 @@ const OrderChart = () => {
             left: 0,
             width: "100%",
             height: "100%",
+            minWidth: 1,
+            minHeight: 1,
             opacity: 0.7,
           }}
         >
