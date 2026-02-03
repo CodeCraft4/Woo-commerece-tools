@@ -11,7 +11,7 @@ import {
   Avatar,
   Badge,
 } from "@mui/material";
-import { styled, alpha } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   ArrowDropDown,
@@ -32,10 +32,10 @@ import { useNotifications } from "../../../context/NotificationContext";
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: "transparent",
+  backgroundColor: "#ffffff",
   cursor: "pointer",
   "&:hover": {
-    backgroundColor: alpha(theme.palette.common.white, 0.15),
+    backgroundColor: "#ffffff",
   },
   marginLeft: 0,
   width: "100%",
@@ -65,9 +65,9 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     width: "100%",
     flex: 1,
     fontSize: '12px',
-    color: COLORS.white,
+    color: COLORS.black,
     "&::placeholder": {
-      color: "#fff", 
+      color: "rgba(0,0,0,0.6)",
       opacity: 1, 
     },
     [theme.breakpoints.up("md")]: {
@@ -114,8 +114,10 @@ const DNavbar = () => {
     <AppBar
       position="static"
       sx={{
-        backgroundColor: "#240222ff",
-        boxShadow: "none",
+        background:
+          "linear-gradient(90deg, rgba(16,20,45,0.98) 0%, rgba(18,22,46,0.98) 100%)",
+        boxShadow: "0 12px 30px rgba(5,10,36,0.6)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
         display: { md: 'flex', sm: 'flex', xs: 'none' }
       }}
     >
@@ -138,10 +140,10 @@ const DNavbar = () => {
           />
           <Search>
             <SearchIconWrapper>
-              <SearchIcon />
+              <SearchIcon sx={{ color: COLORS.seconday }} />
             </SearchIconWrapper>
             <StyledInputBase
-              placeholder="   Search…"
+              placeholder="   Search everything..."
               fullWidth
               inputProps={{ "aria-label": "search" }}
             />
@@ -150,17 +152,24 @@ const DNavbar = () => {
 
         {/* Right side - Admin dropdown */}
         <Box display="flex" alignItems="center" gap={1}>
-          <IconButton sx={{ color: "white" }} onClick={() => navigate(ADMINS_DASHBOARD.ADMIN_COMMUNITY_HUB)}>
+          <IconButton sx={{ color: COLORS.primary }} onClick={() => navigate(ADMINS_DASHBOARD.ADMIN_COMMUNITY_HUB)}>
             <Chat />
           </IconButton>
-          <IconButton sx={{ color: "white" }} onClick={openNotificationModal}>
+          <IconButton sx={{ color: COLORS.green }} onClick={openNotificationModal}>
             <Badge badgeContent={unreadCount} color="error">
               <Notifications />
             </Badge>
           </IconButton>
 
           <Avatar
-            sx={{ bgcolor: COLORS.primary, width: 30, height: 30, cursor: 'pointer' }}
+            sx={{
+              bgcolor: COLORS.primary,
+              width: 30,
+              height: 30,
+              cursor: 'pointer',
+              color: COLORS.black,
+              border: "2px solid rgba(255,255,255,0.8)",
+            }}
             onClick={handleMenu}
             src={admin?.profile_image || undefined}
           >
@@ -171,19 +180,38 @@ const DNavbar = () => {
             }
           </Avatar>
 
-          <Typography sx={{ color: "#fff", fontSize: '12px' }}>
-            {admin?.first_name}
-          </Typography>
-          <IconButton onClick={handleMenu} sx={{ color: "#fff" }}>
-            <ArrowDropDown />
-          </IconButton>
+          <Box
+            onClick={handleMenu}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              bgcolor: "#ffffff",
+              px: 1.2,
+              py: 0.4,
+              borderRadius: 20,
+              cursor: "pointer",
+              border: "1px solid rgba(0,0,0,0.08)",
+            }}
+          >
+            <Typography sx={{ color: COLORS.black, fontSize: '12px', fontWeight: 600 }}>
+              {admin?.first_name}
+            </Typography>
+            <ArrowDropDown sx={{ color: COLORS.black }} />
+          </Box>
 
           <Menu
             anchorEl={anchorEl}
             open={open}
             onClose={handleClose}
             PaperProps={{
-              sx: { mt: 1, minWidth: 150, ml: -2 },
+              sx: {
+                mt: 1,
+                minWidth: 150,
+                ml: -2,
+                borderRadius: 2,
+                boxShadow: "0 16px 36px rgba(5,10,36,0.25)",
+              },
             }}
           >
             {/* <MenuItem onClick={() => navigate(ADMINS_DASHBOARD.SETTINGS)}>

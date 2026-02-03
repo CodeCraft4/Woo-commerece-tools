@@ -4,7 +4,7 @@ import MainLayout from "../../../layout/MainLayout";
 import { Close, EditOutlined, KeyboardArrowLeft } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import LandingButton from "../../../components/LandingButton/LandingButton";
-import { useCartStore } from "../../../stores/cartStore";
+import { useCartStore, type SizeKey } from "../../../stores/cartStore";
 import useModal from "../../../hooks/useModal";
 import ProductPopup from "../../../components/ProductPopup/ProductPopup";
 import { sizeLabel } from "../../../lib/pricing";
@@ -22,15 +22,34 @@ const toNumberSafe = (v: any, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+const readPrice = (table: any, key: SizeKey) => {
+  if (!table) return 0;
+  const upper = String(key).toUpperCase();
+  const raw = table?.[key] ?? table?.[upper];
+  return toNumberSafe(raw, 0);
+};
+
+const normalizeSize = (s: any): SizeKey => {
+  const v = String(s ?? "a4").toLowerCase();
+  if (v === "a5") return "a5";
+  if (v === "a3") return "a3";
+  if (v === "half_us_letter") return "half_us_letter";
+  if (v === "us_letter") return "us_letter";
+  if (v === "us_tabloid") return "us_tabloid";
+  if (v === "mug_wrap_11oz") return "mug_wrap_11oz";
+  if (v === "coaster_95") return "coaster_95";
+  return "a4";
+};
+
 const getItemPrice = (item: any) => {
   const display = Number(item?.displayPrice);
   if (Number.isFinite(display)) return display;
 
   if (item?.price != null) return toNumberSafe(item.price, 0);
 
-  const size = (item?.selectedSize ?? "a4") as "a4" | "a3" | "us_letter";
-  const actual = item?.prices?.actual?.[size];
-  const sale = item?.prices?.sale?.[size];
+  const size = normalizeSize(item?.selectedSize);
+  const actual = readPrice(item?.prices?.actual, size);
+  const sale = readPrice(item?.prices?.sale, size);
 
   if (item?.isOnSale && toNumberSafe(sale, 0) > 0) return toNumberSafe(sale, 0);
   return toNumberSafe(actual, 0);
@@ -53,13 +72,6 @@ const normalizeCartType = (t: any): "card" | "templet" => {
 };
 
 
-const normalizeSize = (s: any): "a4" | "a3" | "us_letter" => {
-  const v = String(s ?? "a4").toLowerCase();
-  if (v === "a3") return "a3";
-  if (v === "us_letter") return "us_letter";
-  return "a4";
-};
-
 const AddToCart = () => {
   const { cart, removeFromCart, clearCart } = useCartStore();
   const navigate = useNavigate();
@@ -81,6 +93,8 @@ const AddToCart = () => {
 
   const openEdit = (item: any) => {
     const isTemplate = normalizeCartType(item.type) === "templet";
+    const pickPrice = (table: any, lower: string, upper: string) =>
+      table?.[lower] ?? table?.[upper];
 
     setSelected({
       id: item.id,
@@ -90,12 +104,16 @@ const AddToCart = () => {
       cardCategory: item.category,
       imageurl: item.img,
       poster: item.img,
-      a4price: item.prices?.actual?.a4,
-      a5price: item.prices?.actual?.a3,
-      usletter: item.prices?.actual?.us_letter,
-      salea4price: item.prices?.sale?.a4,
-      salea5price: item.prices?.sale?.a3,
-      saleusletter: item.prices?.sale?.us_letter,
+      a4price: pickPrice(item.prices?.actual, "a4", "A4"),
+      a5price: pickPrice(item.prices?.actual, "a3", "A3"),
+      usletter: pickPrice(item.prices?.actual, "us_letter", "US_LETTER"),
+      a3price: pickPrice(item.prices?.actual, "a3", "A3"),
+      ustabloid: pickPrice(item.prices?.actual, "us_tabloid", "US_TABLOID"),
+      salea4price: pickPrice(item.prices?.sale, "a4", "A4"),
+      salea5price: pickPrice(item.prices?.sale, "a3", "A3"),
+      saleusletter: pickPrice(item.prices?.sale, "us_letter", "US_LETTER"),
+      salea3price: pickPrice(item.prices?.sale, "a3", "A3"),
+      saleustabloid: pickPrice(item.prices?.sale, "us_tabloid", "US_TABLOID"),
       category: item.category,
       description: item.description,
       polygonlayout: !isTemplate ? item.polygonlayout : undefined,

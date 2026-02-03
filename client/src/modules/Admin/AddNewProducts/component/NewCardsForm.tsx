@@ -1,5 +1,6 @@
 // src/pages/admin/.../NewCardsForm.tsx
-import { Box } from "@mui/material";
+import { Box, useMediaQuery } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { useMemo, useRef, useState, useEffect } from "react";
 import CustomInput from "../../../../components/CustomInput/CustomInput";
 import LandingButton from "../../../../components/LandingButton/LandingButton";
@@ -97,6 +98,9 @@ const NewCardsForm = ({ editProduct }: Props) => {
   const slide2 = useSlide2();
   const slide3 = useSlide3();
   const slide4 = useSlide4();
+  const theme = useTheme();
+  const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
+  const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -233,6 +237,28 @@ const NewCardsForm = ({ editProduct }: Props) => {
   }, [cardsRow, selectedSubCategory]);
 
   const previewRef = useRef<HTMLDivElement>(null);
+  const previewRatio = useMemo(() => {
+    const rect = (slide1 as any)?.bgRect1;
+    const w = Number(rect?.width ?? 0);
+    const h = Number(rect?.height ?? 0);
+    if (w > 0 && h > 0) return w / h;
+    return 5 / 7;
+  }, [(slide1 as any)?.bgRect1?.width, (slide1 as any)?.bgRect1?.height]);
+
+  const previewBounds = useMemo(() => {
+    if (isMdUp) return { maxW: 620, maxH: 840 };
+    if (isSmUp) return { maxW: 520, maxH: 720 };
+    return { maxW: 360, maxH: 480 };
+  }, [isMdUp, isSmUp]);
+
+  const previewSize = useMemo(() => {
+    const ratio = previewRatio > 0 ? previewRatio : 5 / 7;
+    const { maxW, maxH } = previewBounds;
+    const byWidth = maxW / ratio <= maxH;
+    const width = byWidth ? maxW : maxH * ratio;
+    const height = byWidth ? maxW / ratio : maxH;
+    return { width, height };
+  }, [previewRatio, previewBounds]);
 
   useEffect(() => {
     if (isEditMode) {
@@ -341,6 +367,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
           display: { md: "flex", sm: "flex", xs: "block" },
           gap: "20px",
           justifyContent: "center",
+          alignItems: "center",
           width: "100%",
           height: "auto",
           overflow: "hidden",
@@ -351,8 +378,9 @@ const NewCardsForm = ({ editProduct }: Props) => {
         <Box
           ref={previewRef}
           sx={{
-            width: { md: "500px", sm: "400px", xs: "100%" },
-            height: { md: "700px", sm: "600px", xs: 400 },
+            width: previewSize.width,
+            height: previewSize.height,
+            maxWidth: "100%",
             position: "relative",
             overflow: "hidden",
             borderRadius: "12px",
@@ -361,7 +389,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
             userSelect: "none",
           }}
         >
-          <Slide1PreviewBox width={500} height={700} scale={1} />
+          <Slide1PreviewBox width={previewSize.width} height={previewSize.height} scale={1} />
         </Box>
 
         {/* Right — Form */}

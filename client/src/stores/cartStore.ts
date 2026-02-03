@@ -1,8 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type SizeKey = "a4" | "a3" | "us_letter";
-export type PriceTable = Record<SizeKey, number>;
+export type SizeKey =
+  | "a5"
+  | "a4"
+  | "a3"
+  | "half_us_letter"
+  | "us_letter"
+  | "us_tabloid"
+  | "mug_wrap_11oz"
+  | "coaster_95";
+export type PriceTable = Partial<Record<SizeKey, number>>;
 
 export type CartItemType = "card" | "templet";
 

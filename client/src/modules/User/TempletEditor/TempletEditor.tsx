@@ -72,7 +72,22 @@ const uuid = () => globalThis.crypto?.randomUUID?.() ?? `id_${Math.random().toSt
 const resolveCategoryKey = (category?: string): CategoryKey | null => {
   const c = String(category ?? "").trim().toLowerCase();
   const keys = Object.keys(CATEGORY_CONFIG) as CategoryKey[];
-  return keys.find((k) => k.trim().toLowerCase() === c) ?? null;
+  const exact = keys.find((k) => k.trim().toLowerCase() === c);
+  if (exact) return exact;
+
+  if (c.includes("business card")) return "Business Cards";
+  if (c.includes("business leaflet")) return "Business Leaflets";
+  if (c.includes("mug")) return "Mugs";
+  if (c.includes("tote")) return "Tote Bags";
+  if (c.includes("photo art")) return "Photo Art";
+  if (c.includes("wall art")) return "Wall Art";
+  if (c.includes("notebook")) return "Notebooks";
+  if (c.includes("sticker")) return "Stickers";
+  if (c.includes("coaster")) return "Coasters";
+  if (c.includes("invite")) return "Invites";
+  if (c.includes("apparel")) return "Apparel";
+
+  return null;
 };
 
 const sanitizeSrc = (src?: string) => {
@@ -445,22 +460,27 @@ export default function TempletEditor() {
     });
   };
 
-  const is3DCategory = (cat?: string) => cat === "Mugs" || cat === "Tote Bags B" || cat === "Apparel T";
-  const isMugCategory = (cat?: string) => cat === "Mugs";
+  const isMugCategory = (cat?: string) => /mug/i.test(String(cat ?? ""));
+  const isBusinessCardCategory = (cat?: string) => /business\s*card/i.test(String(cat ?? ""));
+  const is3DCategory = (cat?: string) =>
+    /mug|tote bag|apparel/i.test(String(cat ?? ""));
 
   // ✅ NEW: JPEG capture helper (small size, less heavy)
-  const captureJpegFromNode = async (node: HTMLElement): Promise<string | null> => {
+  const captureJpegFromNode = async (
+    node: HTMLElement,
+    opts?: { width?: number; height?: number; background?: string }
+  ): Promise<string | null> => {
     try {
       await waitForAssets(node);
 
       const rect = node.getBoundingClientRect();
-      const w = Math.max(1, Math.round(rect.width));
-      const h = Math.max(1, Math.round(rect.height));
+      const w = Math.max(1, Math.round(opts?.width ?? rect.width));
+      const h = Math.max(1, Math.round(opts?.height ?? rect.height));
 
       return await htmlToImage.toJpeg(node, {
         quality: 0.72,
         pixelRatio: 1,
-        backgroundColor:'transparent',
+        backgroundColor: opts?.background ?? "transparent",
         filter: captureFilter,
         cacheBust: hasBlobImages(node) ? false : true,
         skipFonts: true,
@@ -494,7 +514,11 @@ export default function TempletEditor() {
   try {
     // ✅ ONLY capture active slide
     const activeNode = slideRefs.current[activeSlide];
-    const activeJpeg = activeNode ? await captureJpegFromNode(activeNode) : null;
+    const forceSize =
+      isMugCategory(adminDesign.category) || isBusinessCardCategory(adminDesign.category)
+        ? { width: artboardWidth, height: artboardHeight, background: "#ffffff" }
+        : undefined;
+    const activeJpeg = activeNode ? await captureJpegFromNode(activeNode, forceSize) : null;
 
     // ✅ store ONLY 1 (super fast)
     if (activeJpeg) {

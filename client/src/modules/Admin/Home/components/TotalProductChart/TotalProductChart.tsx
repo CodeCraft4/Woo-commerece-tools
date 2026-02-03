@@ -36,7 +36,7 @@ const MinimalGradientAreaChart = ({
         dataKey="name"
         tickLine={false}
         axisLine={false}
-        tick={{ stroke: "rgba(255,255,255,0.3)", fontSize: 10 }}
+        tick={{ stroke: "rgba(0,0,0,0.3)", fontSize: 10 }}
         tickFormatter={() => ""}
       />
       <Area
@@ -100,11 +100,12 @@ const TotalProductChart = () => {
         sx={{
           position: "relative",
           p: 3,
-          color: "white",
+          color: COLORS.black,
           height: { md: 200, sm: 200, xs: 180 },
-          boxShadow: 8,
+          boxShadow: "0 14px 30px rgba(5,10,36,0.08)",
           borderRadius: 4,
-          background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.seconday} 100%)`,
+          border: "1px solid rgba(0,0,0,0.06)",
+          background: "#ffffff",
         }}
       >
         {/* The minimal chart positioned absolutely behind the text/data */}
@@ -123,9 +124,9 @@ const TotalProductChart = () => {
           <MinimalGradientAreaChart
             data={productData}
             colorId="colorProduct"
-            colorStart="#ffffff"
-            colorEnd="#ffffff"
-            strokeColor="#ffffff"
+            colorStart="rgba(86,190,204,0.45)"
+            colorEnd="rgba(86,190,204,0.05)"
+            strokeColor={COLORS.primary}
           />
         </Box>
 
@@ -135,7 +136,7 @@ const TotalProductChart = () => {
             variant="body1"
             fontWeight="medium"
             letterSpacing={1.5}
-            sx={{ opacity: 0.9 }}
+            sx={{ opacity: 0.8, color: COLORS.black }}
           >
             TOTAL PRODUCTS
           </Typography>
@@ -161,7 +162,7 @@ const TotalProductChart = () => {
             <Typography
               variant="body2"
               fontWeight="semibold"
-              sx={{ opacity: 0.8, color: COLORS.white }}
+              sx={{ opacity: 0.7, color: COLORS.black }}
             >
               ALL TIMES PRODUCTS
             </Typography>
