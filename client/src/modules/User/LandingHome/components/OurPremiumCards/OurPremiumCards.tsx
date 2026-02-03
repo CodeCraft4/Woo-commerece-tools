@@ -1,304 +1,282 @@
-import React, { useMemo, useState } from "react";
-import { Box, Card, CardMedia, Typography, Chip } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../../../../../supabase/supabase";
-import { CardGiftcard } from "@mui/icons-material";
-import useModal from "../../../../../hooks/useModal";
-import type { CategoryType } from "../../../../../components/ProductPopup/ProductPopup";
-import ProductPopup from "../../../../../components/ProductPopup/ProductPopup";
+import React, { useMemo } from "react";
+import { Box, Button, Typography } from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useNavigate } from "react-router-dom";
 import { COLORS } from "../../../../../constant/color";
+import { USER_ROUTES } from "../../../../../constant/route";
+import { supabase } from "../../../../../supabase/supabase";
+import { useQuery } from "@tanstack/react-query";
 
-type ProductItem = {
-  key: string; // "card:<id>" | "template:<id>"
-  item_type: "card" | "template";
-  item_id: string; // real id (cards.id / templetDesign.id)
-  title: string;
-  image: string;
-  accessplan: "free" | "bundle" | "pro";
-  category?: string;
-};
 
-const norm = (s: any) => String(s ?? "").trim();
-const lc = (s: any) => norm(s).toLowerCase();
-
-const getAccessPlan = (x: any): "free" | "bundle" | "pro" => {
-  const v = lc(x?.accessplan ?? x?.accessPlan ?? x?.access ?? x?.plan_code);
-  if (v === "pro" || v === "premium") return "pro";
-  if (v === "bundle") return "bundle";
-  return "free";
-};
-
-const pickImage = (x: any) =>
-  x?.lastpageimageurl ||
-  x?.lastpageImageUrl ||
-  x?.imageUrl ||
-  x?.imageurl ||
-  x?.image_url ||
-  x?.img_url ||
-  x?.image ||
-  "";
-
-// ✅ light
-async function fetchCardsLight(): Promise<any[]> {
+async function fetchCardsLight() {
   const { data, error } = await supabase
     .from("cards")
-    .select("id,cardname,imageurl,accessplan,cardcategory,created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data ?? [];
-}
-
-async function fetchTemplatesLight(): Promise<any[]> {
-  const { data, error } = await supabase
-    .from("templetDesign")
-    .select("id,title,img_url,accessplan,category,created_at")
+    .select("id,imageurl,accessplan,created_at")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
 
-// ✅ IMPORTANT: Full rows (prices, sizes, description, subcats, polygonlayout/raw_stores etc.)
-async function fetchCardFullById(id: string): Promise<any> {
-  const { data, error } = await supabase
-    .from("cards")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-async function fetchTemplateFullById(id: string): Promise<any> {
+async function fetchTemplatesLight() {
   const { data, error } = await supabase
     .from("templetDesign")
-    .select("*")
-    .eq("id", id)
-    .single();
-
+    .select("id,img_url,accessplan,created_at")
+    .order("created_at", { ascending: false });
   if (error) throw error;
-  return data;
+  return data ?? [];
 }
 
-// ✅ bundle_items fetch (keys like card:<id> / template:<id>)
-async function fetchBundleItemKeys(): Promise<string[]> {
-  const { data, error } = await supabase.from("bundle_items").select("item_type,item_id");
-  if (error) throw error;
+const SubscriptionModelSection: React.FC = () => {
+  const navigate = useNavigate();
 
-  return (data ?? []).map((r: any) => {
-    const t = lc(r.item_type);
-    const type = t === "cards" ? "card" : t === "templets" ? "template" : t;
-    return `${type}:${String(r.item_id)}`;
-  });
-}
+  const heroImage = "/assets/images/family.png";
+  // const phoneMock = "/assets/images/phone-mock.png";
 
-const badgeSx = {
-  position: "absolute" as const,
-  top: 10,
-  left: 10,
-  fontWeight: 900,
-};
+  const benefits = [
+    "Unlimited premium designs",
+    "Upload your own photos",
+    "Exclusive birthday & seasonal bundles",
+    "Instant downloads (print anytime)",
+  ];
 
-const cardSx = {
-  borderRadius: 2,
-  overflow: "hidden",
-  boxShadow: 4,
-  position: "relative" as const,
-  cursor: "pointer",
-};
-
-const gridSx = {
-  display: "grid",
-  gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)", md: "repeat(5, 1fr)" },
-  gap: 2,
-};
-
-const OurPremiumCards: React.FC = () => {
-  const qc = useQueryClient();
-
-  // ✅ useModal
-  const { open, openModal, closeModal } = useModal();
-
-  // ✅ selected cate for popup
-  const [selectedCate, setSelectedCate] = useState<CategoryType | undefined>();
-  const [isTempletDesign, setIsTempletDesign] = useState(false);
-
-  const { data: cards = [], isLoading: loadingCards } = useQuery({
-    queryKey: ["premium:cards:light"],
+  const { data: cardData = [], isLoading: cardsLoading } = useQuery({
+    queryKey: ["allCards"],
     queryFn: fetchCardsLight,
     staleTime: 1000 * 60 * 10,
   });
 
-  const { data: templates = [], isLoading: loadingTemplates } = useQuery({
-    queryKey: ["premium:templates:light"],
+  const { data: templateData = [], isLoading: templatesLoading } = useQuery({
+    queryKey: ["allTemplates"],
     queryFn: fetchTemplatesLight,
     staleTime: 1000 * 60 * 10,
   });
 
-  const { data: bundleKeys = [], isLoading: loadingBundleKeys } = useQuery({
-    queryKey: ["bundle_items:keys"],
-    queryFn: fetchBundleItemKeys,
-    staleTime: 1000 * 60 * 2,
-  });
+  // ✅ IMPORTANT: no setState here, useMemo instead
+  const proItems = useMemo(() => {
+    const cards = cardData
+      .filter((x: any) => String(x.accessplan).toLowerCase() === "pro")
+      .map((x: any) => ({
+        key: `card:${x.id}`,
+        type: "card",
+        id: x.id,
+        src: x.imageurl,
+      }));
 
-  const allProducts = useMemo<ProductItem[]>(() => {
-    const cardItems: ProductItem[] = (cards ?? []).map((c: any) => ({
-      key: `card:${String(c.id)}`,
-      item_type: "card",
-      item_id: String(c.id), // ✅ real id
-      title: norm(c.cardName ?? c.cardname) || "Card",
-      image: pickImage(c),
-      accessplan: getAccessPlan(c),
-      category: norm(c.cardcategory ?? c.cardCategory) || "default",
-    }));
+    const templates = templateData
+      .filter((x: any) => String(x.accessplan).toLowerCase() === "pro")
+      .map((x: any) => ({
+        key: `template:${x.id}`,
+        type: "template",
+        id: x.id,
+        src: x.img_url,
+      }));
 
-    const tplItems: ProductItem[] = (templates ?? []).map((t: any) => ({
-      key: `template:${String(t.id)}`,
-      item_type: "template",
-      item_id: String(t.id), // ✅ real id
-      title: norm(t.title ?? t.name) || "Template",
-      image: pickImage(t),
-      accessplan: getAccessPlan(t),
-      category: norm(t.category) || "general",
-    }));
+    // combine + keep only valid images
+    const merged = [...cards, ...templates].filter((x) => !!x.src);
 
-    return [...cardItems, ...tplItems].filter((x) => !!x.image);
-  }, [cards, templates]);
+    // optional: latest first (already ordered, but mixed sources)
+    return merged.slice(0, 8); // show max 8 (you can change)
+  }, [cardData, templateData]);
 
-  const matchedBundleItems = useMemo(() => {
-    const allow = new Set(bundleKeys);
-    return allProducts.filter((p) => allow.has(p.key));
-  }, [allProducts, bundleKeys]);
-
-  const isLoading = loadingCards || loadingTemplates || loadingBundleKeys;
-
-  // ✅ Click: open popup instantly + background fetch full row + then update selectedCate with full data
-  const handleOpenPopup = async (p: ProductItem) => {
-    // 1) open modal immediately with light info
-    const lightCate: any = {
-      id: p.item_id,
-      title: p.title,
-      cardname: p.title,
-      cardName: p.title,
-      category: p.category,
-      cardcategory: p.category,
-      cardCategory: p.category,
-      imageurl: p.image,
-      lastpageimageurl: p.image,
-      img_url: p.image,
-      accessplan: p.accessplan,
-      __type: p.item_type === "template" ? "template" : "card",
-    };
-
-    setSelectedCate(lightCate);
-    setIsTempletDesign(p.item_type === "template");
-    openModal();
-
-    // 2) background prefetch
-    const id = String(p.item_id);
-    if (!id) return;
-
-    try {
-      if (p.item_type === "template") {
-        // prefetch + get data
-        const full = await qc.fetchQuery({
-          queryKey: ["templet:full", id],
-          queryFn: () => fetchTemplateFullById(id),
-          staleTime: 1000 * 60 * 10,
-        });
-
-        // 3) update cate with FULL row (this is what ProductPopup needs)
-        setSelectedCate((prev) => ({
-          ...(prev ?? {}),
-          ...(full ?? {}),
-          __type: "template",
-        }));
-      } else {
-        const full = await qc.fetchQuery({
-          queryKey: ["card:full", id],
-          queryFn: () => fetchCardFullById(id),
-          staleTime: 1000 * 60 * 10,
-        });
-
-        setSelectedCate((prev) => ({
-          ...(prev ?? {}),
-          ...(full ?? {}),
-          __type: "card",
-        }));
-      }
-    } catch (err) {
-      // popup will still show light data, but prices may be missing if DB not configured
-      console.error("Failed to fetch full product:", err);
-    }
-  };
-
-  const renderCard = (p: ProductItem) => (
-    <Card key={p.key} sx={cardSx} onClick={() => handleOpenPopup(p)}>
-      {/* ✅ badges (bundle icon + pro crown) */}
-      {p.accessplan === "bundle" ? (
-        <Chip
-          icon={<CardGiftcard sx={{ fontSize: 18 }} />}
-          label="Bundle"
-          size="small"
-          sx={{
-            ...badgeSx,
-            bgcolor: "#fff",
-            border: "1px solid rgba(0,0,0,0.12)",
-            "& .MuiChip-label": { fontWeight: 900 },
-          }}
-        />
-      ) : p.accessplan === "pro" ? (
-        <Box
-          component="img"
-          src="/assets/icons/premiumuser.png"
-          alt="premium crown"
-          sx={{
-            position: "absolute",
-            top: -30,
-            left: "7%",
-            transform: "translateX(-50%) rotate(-38deg)",
-            width: 105,
-            height: 105,
-            objectFit: "contain",
-            zIndex: 99,
-            pointerEvents: "none",
-            filter: "drop-shadow(0px 6px 6px rgba(0,0,0,0.25))",
-          }}
-        />
-      ) : null}
-
-      <CardMedia component="img" height="300" image={p.image} alt={p.title} sx={{ objectFit: "fill" }} />
-    </Card>
-  );
+  const isLoading = cardsLoading || templatesLoading;
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography sx={{ fontSize: { md: 35, sm: 30, xs: 20 }, fontWeight: 600, color: COLORS.black, lineHeight: 1.3, textAlign: 'center' }}>Personalise your Premiums or Bundles Cards </Typography>
-      <Typography sx={{ fontSize: { md: 24, sm: 25, xs: 'auto' },mb:1,mt:1 }}>personalise your Premimum Cards or Bundles cards for our Ocassion.</Typography>
+    <Box
+      sx={{
+        maxWidth: "100%",
+        mx: "auto",
+        bgcolor: COLORS.white,
+        borderRadius: 3,
+        boxShadow: 5,
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1.05fr 1fr" },
+          gap: { xs: 3, md: 0 },
+          alignItems: "stretch",
+        }}
+      >
+        {/* LEFT */}
+        <Box
+          sx={{
+            p: { xs: 2.5, sm: 4, md: 5 },
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: { xs: 34, sm: 42, md: 35 },
+              fontWeight: 700,
+              color: "#3A2B3A",
+              lineHeight: 1.05,
+              mb: 1.5,
+            }}
+          >
+            Personalise your Premium Cards
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: { xs: 16, sm: 18, md: 20 },
+              color: "#2B2B2B",
+              lineHeight: 1.4,
+              mb: 3,
+              maxWidth: 520,
+            }}
+          >
+            Unlock premium cards & Bundles and exclusive design with one simple plan.
+          </Typography>
+
+          <Box sx={{ display: "grid", gap: 1.6, mb: 3.5 }}>
+            {benefits.map((txt) => (
+              <Box key={txt} sx={{ display: "flex", alignItems: "center", gap: 1.4 }}>
+                <Box
+                  sx={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: "50%",
+                    bgcolor: COLORS.black,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
+                  }}
+                >
+                  <CheckCircleIcon sx={{ color: "#fff", fontSize: 20 }} />
+                </Box>
+                <Typography sx={{ fontSize: { xs: 18, md: 22 }, color: "#222" }}>
+                  {txt}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          <Button
+            variant="contained"
+            onClick={() => navigate(USER_ROUTES.PREMIUM_PLANS)}
+            sx={{
+              alignSelf: "flex-start",
+              bgcolor: "#5B3C62",
+              color: "#fff",
+              px: 4,
+              py: 1.3,
+              borderRadius: 3,
+              textTransform: "none",
+              fontSize: { xs: 18, md: 20 },
+              fontWeight: 700,
+              boxShadow: "0 10px 20px rgba(91,60,98,0.35)",
+              "&:hover": { bgcolor: "#4D3253" },
+            }}
+          >
+            Choose your plan
+          </Button>
+        </Box>
+
+        {/* RIGHT */}
+        <Box
+          sx={{
+            position: "relative",
+            p: { xs: 2, sm: 3, md: 3.5 },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "transparent",
+          }}
+        >
+          <Box
+            component="img"
+            src={heroImage}
+            alt="Subscription lifestyle"
+            sx={{
+              width: "100%",
+              height: { xs: 260, sm: 360, md: 420 },
+              objectFit: "cover",
+              borderRadius: 5,
+              borderTopLeftRadius: 70,
+              boxShadow: "0 10px 25px rgba(0,0,0,0.14)",
+            }}
+          />
+
+          {/* overlay */}
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: { xs: 10, md: 4 },
+              left: { xs: 10, md: 10 },
+              right: { xs: 10, md: 16 },
+              display: "flex",
+              alignItems: "flex-end",
+              gap: { xs: 1, md: 1.6 },
+            }}
+          >
+            {/* ✅ REAL PRO items (cards + templates) */}
+            <Box sx={{ display: "flex", gap: { xs: 1, md: 1.6 }, flex: 1 }}>
+              {isLoading ? null : proItems.slice(0, 5).map((it) => (
+                <Box
+                  key={it.key}
+                  sx={{
+                    position: "relative", // ✅ correct
+                    width: { xs: 80, sm: 90, md: 110 },
+                    height: { xs: 120, sm: 140, md: 160 },
+                    flexShrink: 0,
+                  }}
+                >
+                  {/* frame */}
+                  <Box
+                    component="img"
+                    src="/assets/images/A4.svg"
+                    alt="frame"
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      display: "block",
+                    }}
+                  />
+
+                  {/* thumbnail */}
+                  <Box
+                    component="img"
+                    src={it.src}
+                    alt={it.key}
+                    sx={{
+                      position: "absolute",
+                      top: 18,
+                      left: 6,
+                      right: 10,
+                      bottom: 12,
+                      width: "calc(100% -10px)",
+                      height: "calc(100% - 22px)",
+                      objectFit: "cover",
+                      boxShadow: "0 8px 18px rgba(0,0,0,0.18)",
+                      bgcolor: "#fff",
+                    }}
+                  />
+                </Box>
+              ))}
+            </Box>
 
 
-      {isLoading ? <Typography sx={{ opacity: 0.7 }}>Loading...</Typography> : null}
-
-      <Box sx={gridSx}>{matchedBundleItems.map(renderCard)}</Box>
-
-      {!isLoading && matchedBundleItems.length === 0 ? (
-        <Typography sx={{ mt: 2, opacity: 0.7 }}>
-          No bundle_items matched with cards/templates.
-        </Typography>
-      ) : null}
-
-      {/* ✅ ProductPopup (NO CHANGES INSIDE IT) */}
-      {open && selectedCate ? (
-        <ProductPopup
-          open={open}
-          onClose={closeModal}
-          cate={selectedCate}
-          isTempletDesign={isTempletDesign}
-        />
-      ) : null}
+            {/* <Box
+                component="img"
+                src={phoneMock}
+                alt="Phone mock"
+                sx={{
+                  width: { xs: 62, sm: 74, md: 86 },
+                  height: "auto",
+                  filter: "drop-shadow(0 10px 18px rgba(0,0,0,0.22))",
+                }}
+              /> */}
+          </Box>
+        </Box>
+      </Box>
     </Box>
   );
 };
 
-export default OurPremiumCards; 
+export default SubscriptionModelSection;

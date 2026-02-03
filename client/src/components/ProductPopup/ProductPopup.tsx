@@ -1,4 +1,10 @@
-// path: src/components/ProductPopup/ProductPopup.tsx
+// ProductPopup.tsx (FULL UPDATED COMPONENT)
+// ✅ Personalise click par agar price/size select nahi kiya (ya selected size ka price 0/empty ho) => EDITOR par nahi jayega
+// ✅ EXACT sizes show (1/2/4/5 jitni bhi config me hon)
+// ✅ Only ACTUAL prices (no sale)
+// ✅ Auto-selects first available priced size when modal opens
+// ✅ Add to basket bhi blocked if selected size invalid
+
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
@@ -15,9 +21,9 @@ import { useSlide3 } from "../../context/Slide3Context";
 import { useSlide4 } from "../../context/Slide4Context";
 import { useSlide1 } from "../../context/Slide1Context";
 import { COLORS } from "../../constant/color";
-import { useCartStore, type SizeKey } from "../../stores/cartStore";
-import { pickPrice, toNumberSafe } from "../../lib/pricing";
+import { useCartStore } from "../../stores/cartStore";
 import { ensureDraftCardId, newUuid, setDraftCardId } from "../../lib/draftCardId";
+import { getPricingConfig, type SizeKeyConfig } from "../../lib/pricing";
 
 const style = {
   position: "absolute" as const,
@@ -34,7 +40,7 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     try {
       localStorage.clear();
       sessionStorage.clear();
-    } catch { }
+    } catch {}
     return;
   }
   try {
@@ -47,7 +53,7 @@ function clearEditorStorage(opts?: { all?: boolean }) {
       const key = localStorage.key(i);
       if (key && key.startsWith("templetEditor:draft:")) localStorage.removeItem(key);
     }
-  } catch { }
+  } catch {}
 }
 
 export type CategoryType = {
@@ -77,19 +83,10 @@ export type CategoryType = {
   a5price?: number | string;
   usletter?: number | string;
 
-  saleprice?: number | string;
-  salea4price?: number | string;
-  salea5price?: number | string;
-  saleusletter?: number | string;
-
-  // ✅ new columns
+  // new columns
   a3price?: number | string;
   halfusletter?: number | string;
   ustabloid?: number | string;
-
-  salea3price?: number | string;
-  salehalfusletter?: number | string;
-  saleustabloid?: number | string;
 
   // template support
   rawStores?: any;
@@ -104,13 +101,10 @@ type ProductsPopTypes = {
   onClose: () => void;
   cate?: CategoryType | any;
   isTempletDesign?: boolean;
-  salePrice?: boolean; // undefined -> auto on sale per selected size
   mode?: "add" | "edit";
-  initialPlan?: SizeKey;
-  priceLoading?:boolean
+  initialPlan?: any;
+  priceLoading?: boolean;
 };
-
-type SizeDef = { key: SizeKey; title: string; sub?: string };
 
 const isActivePay = {
   display: "flex",
@@ -123,159 +117,107 @@ const isActivePay = {
   boxShadow: "3px 7px 8px #eff1f1ff",
 };
 
-const hasValidPrice = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0;
+const toNum = (v: unknown, fallback = 0) => {
+  if (v == null) return fallback;
+  const s = String(v).trim();
+  if (!s) return fallback;
+  if (s.toUpperCase() === "EMPTY") return fallback;
+  const n = Number(s.replace(/,/g, ""));
+  return Number.isFinite(n) ? n : fallback;
 };
 
 const getCategoryName = (cate?: CategoryType) => {
-  return (
-    cate?.category ??
-    cate?.cardcategory ??
-    cate?.cardCategory ??
-    "default"
-  );
+  return cate?.category ?? cate?.cardcategory ?? cate?.cardCategory ?? "default";
 };
 
-const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
-  const name = (categoryName ?? "").trim().toLowerCase();
+type ActualMap = Partial<Record<SizeKeyConfig, number>>;
 
-  // Invites: A5, A4, Half US Letter, US Letter
-  if (name.includes("invite")) {
-    return [
-      { key: "a5" as SizeKey, title: "A5", sub: "Prints 2 invites per A4 sheet" },
-      { key: "a4" as SizeKey, title: "A4", sub: "Prints 1 invite per A4 sheet" },
-      { key: "half_us_letter" as SizeKey, title: "Half US Letter", sub: "Prints 2 invites per US Letter sheet" },
-      { key: "us_letter" as SizeKey, title: "US Letter", sub: "Prints 1 invite per US Letter sheet" },
-    ];
-  }
-
-  // Clothing / Sticker / Wall Art / Photo Art / Bags: A4, A3, US Letter, US Tabloid
-  if (
-    name.includes("clothing") ||
-    name.includes("sticker") ||
-    name.includes("wall art") ||
-    name.includes("photo art") ||
-    name.includes("bag")
-  ) {
-    return [
-      { key: "a4" as SizeKey, title: "A4" },
-      { key: "a3" as SizeKey, title: "A3" },
-      { key: "us_letter" as SizeKey, title: "US Letter" },
-      { key: "us_tabloid" as SizeKey, title: "US Tabloid (11 × 17 in)" },
-    ];
-  }
-
-  // Notebooks: A5, A4, Half US Letter, US Letter
-  if (name.includes("notebook")) {
-    return [
-      { key: "a5" as SizeKey, title: "A5" },
-      { key: "a4" as SizeKey, title: "A4" },
-      { key: "half_us_letter" as SizeKey, title: "Half US Letter" },
-      { key: "us_letter" as SizeKey, title: "US Letter" },
-    ];
-  }
-
-  // Mugs: single
-  if (name.includes("mug")) {
-    return [{ key: "mug_wrap_11oz" as SizeKey, title: "228mm × 88.9mm wrap (11oz mug)" }];
-  }
-
-  // Coasters: single
-  if (name.includes("coaster")) {
-    return [{ key: "coaster_95" as SizeKey, title: "95mm × 95mm (×2 coasters)" }];
-  }
-
-  // Default Cards: A5, A4, Half US Letter, US Letter, US Tabloid
-  return [
-    { key: "a5" as SizeKey, title: "A5" },
-    { key: "a4" as SizeKey, title: "A4" },
-    { key: "half_us_letter" as SizeKey, title: "Half US Letter" },
-    { key: "us_letter" as SizeKey, title: "US Letter" },
-    { key: "us_tabloid" as SizeKey, title: "US Tabloid (Folded half: 11 × 8.5 in)" },
-  ];
-};
-
-const buildPriceTables = (cate: CategoryType | undefined): { actual: any; sale: any } => {
+// ✅ builds actual prices (same rules you had)
+const buildActualPrices = (cate?: any, categoryName?: string, isTempletDesign?: boolean): ActualMap => {
   const actual: any = {};
-  const sale: any = {};
 
-  // ✅ mapping from DB columns -> size keys
-  actual.a5 = toNumberSafe(cate?.actualprice, 0);
+  // common/legacy
+  actual.A4 = toNum(cate?.a4price, 0);
+  actual.US_LETTER = toNum(cate?.usletter, 0);
 
-  actual.a4 = toNumberSafe(cate?.a4price, 0);
+  // template new columns
+  actual.HALF_US_LETTER = toNum(cate?.halfusletter, 0);
+  actual.US_TABLOID = toNum(cate?.ustabloid, 0);
 
-  // A3 new column preferred; fallback legacy a5price (old apps used it for A3)
-  actual.a3 = toNumberSafe((cate as any)?.a3price, toNumberSafe(cate?.a5price, 0));
+  // A5 normal
+  actual.A5 = toNum(cate?.a5price, 0);
 
-  actual.us_letter = toNumberSafe(cate?.usletter, 0);
-  actual.half_us_letter = toNumberSafe((cate as any)?.halfusletter, 0);
-  actual.us_tabloid = toNumberSafe((cate as any)?.ustabloid, 0);
+  // A3 rule (cards: from a5price, templates: from a3price fallback a5price)
+  actual.A3 = isTempletDesign ? toNum(cate?.a3price, toNum(cate?.a5price, 0)) : toNum(cate?.a5price, 0);
 
-  // single-size categories (mugs/coasters) use actualprice
-  actual.mug_wrap_11oz = toNumberSafe(cate?.actualprice, 0);
-  actual.coaster_95 = toNumberSafe(cate?.actualprice, 0);
+  // single-size categories
+  actual.MUG_WRAP_11OZ = toNum(cate?.actualprice, 0);
+  actual.COASTER_95 = toNum(cate?.actualprice, 0);
 
-  sale.a5 = toNumberSafe(cate?.saleprice, 0);
-  sale.a4 = toNumberSafe(cate?.salea4price, 0);
-  sale.a3 = toNumberSafe((cate as any)?.salea3price, toNumberSafe(cate?.salea5price, 0));
-  sale.us_letter = toNumberSafe(cate?.saleusletter, 0);
-  sale.half_us_letter = toNumberSafe((cate as any)?.salehalfusletter, 0);
-  sale.us_tabloid = toNumberSafe((cate as any)?.saleustabloid, 0);
+  // fallback: older row me sirf actualprice filled ho
+  const sizes = getPricingConfig(categoryName).sizes;
+  const firstKey = sizes[0]?.key;
+  if (firstKey) {
+    const cur = toNum(actual[firstKey], 0);
+    const legacy = toNum(cate?.actualprice, 0);
+    if (cur <= 0 && legacy > 0) actual[firstKey] = legacy;
+  }
 
-  sale.mug_wrap_11oz = toNumberSafe(cate?.saleprice, 0);
-  sale.coaster_95 = toNumberSafe(cate?.saleprice, 0);
-
-  return { actual, sale };
+  return actual;
 };
 
 const ProductPopup = (props: ProductsPopTypes) => {
-  const { open, onClose, cate, isTempletDesign, salePrice, mode = "add", initialPlan ,priceLoading} = props;
+  const { open, onClose, cate, isTempletDesign, mode = "add", initialPlan, priceLoading } = props;
 
   const [loading, setLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<SizeKey>((initialPlan ?? "a4") as SizeKey);
+  const [selectedPlan, setSelectedPlan] = useState<any>((initialPlan ?? "") as any);
   const [isZoomed, setIsZoomed] = useState(false);
 
   const { resetSlide1State } = useSlide1();
   const { resetSlide2State } = useSlide2();
   const { resetSlide3State } = useSlide3();
   const { resetSlide4State } = useSlide4();
+
   const { user } = useAuth();
   const navigate = useNavigate();
-
   const { addToCart, updateCartItem } = useCartStore();
 
   const categoryName = useMemo(() => getCategoryName(cate), [cate]);
 
-  const sizeDefs = useMemo(() => getSizeDefsForCategory(categoryName), [categoryName]);
+  // ✅ use central config (EXACT sizes)
+  const sizeOptions = useMemo(() => getPricingConfig(categoryName).sizes, [categoryName]);
 
-  const { actual: actualPrices, sale: salePrices } = useMemo(() => buildPriceTables(cate), [cate]);
+  const actualPrices = useMemo(
+    () => buildActualPrices(cate, categoryName, isTempletDesign),
+    [cate, categoryName, isTempletDesign]
+  );
 
-  // ✅ show only sizes that actually have price
-  const sizeOptions = useMemo(() => {
-    return sizeDefs.filter((d) => hasValidPrice((actualPrices as any)[d.key]));
-  }, [sizeDefs, actualPrices]);
-
-  // ✅ auto-select first available size on open/product change
+  // ✅ pick first size which has price > 0 (else fallback first)
   useEffect(() => {
     if (!open) return;
-    const first = sizeOptions[0]?.key;
-    if (first) setSelectedPlan(first);
-  }, [open, sizeOptions]);
 
-  const useSaleForSelected = useMemo(() => {
-    if (salePrice === true) return true;
-    if (salePrice === false) return false;
-    const v = (salePrices as any)[selectedPlan];
-    return Number.isFinite(Number(v)) && Number(v) > 0;
-  }, [salePrice, salePrices, selectedPlan]);
+    const firstWithPrice = sizeOptions.find((s) => toNum((actualPrices as any)[s.key], 0) > 0)?.key;
+    const fallback = sizeOptions[0]?.key ?? "A4";
 
-  const display = useMemo(() => {
-    const picked = pickPrice(actualPrices, useSaleForSelected ? salePrices : undefined, selectedPlan);
-    return picked;
-  }, [actualPrices, salePrices, selectedPlan, useSaleForSelected]);
+    // if initialPlan provided and it has price > 0, prefer it
+    const initOk = initialPlan && toNum((actualPrices as any)[initialPlan], 0) > 0;
+    setSelectedPlan(initOk ? initialPlan : firstWithPrice ?? fallback);
+  }, [open, sizeOptions, actualPrices, initialPlan]);
+
+  const displayPrice = useMemo(() => toNum((actualPrices as any)[selectedPlan], 0), [actualPrices, selectedPlan]);
+
+  const selectedIsValid = useMemo(() => {
+    if (!selectedPlan) return false;
+    const exists = sizeOptions.some((s) => s.key === selectedPlan);
+    if (!exists) return false;
+    return displayPrice > 0;
+  }, [selectedPlan, sizeOptions, displayPrice]);
 
   const handleToggleZoom = () => setIsZoomed((prev) => !prev);
+
+  const mustSelectError = () => {
+    toast.error("Please select a valid size/price to continue.");
+  };
 
   const handlePersonalize = () => {
     if (!cate) return;
@@ -285,14 +227,20 @@ const ProductPopup = (props: ProductsPopTypes) => {
       return;
     }
 
+    // ✅ STOP: do not go editor if invalid
+    if (!selectedIsValid) {
+      mustSelectError();
+      return;
+    }
+
     setLoading(true);
     clearEditorStorage({ all: false });
 
     const selectedVariant = {
       key: selectedPlan,
       title: sizeOptions.find((s) => s.key === selectedPlan)?.title || String(selectedPlan),
-      price: display.price,
-      isOnSale: display.isOnSale,
+      price: displayPrice,
+      isOnSale: false,
       category: categoryName,
     };
 
@@ -301,20 +249,16 @@ const ProductPopup = (props: ProductsPopTypes) => {
       type: (cate?.__type ?? (isTempletDesign ? "template" : "card")) as "card" | "template",
       title: cate?.cardname || cate?.cardName || cate?.title || "Untitled",
       category: categoryName,
-      img:
-        cate?.imageurl ||
-        cate?.lastpageimageurl ||
-        cate?.poster ||
-        cate?.cover_screenshot ||
-        cate?.img_url,
+      img: cate?.imageurl || cate?.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url,
     };
 
     try {
       localStorage.setItem("selectedVariant", JSON.stringify(selectedVariant));
       localStorage.setItem("selectedSize", String(selectedPlan));
-      localStorage.setItem("selectedPrices", JSON.stringify({ actual: actualPrices, sale: salePrices }));
+      localStorage.setItem("selectedPrices", JSON.stringify({ actual: actualPrices, sale: {} }));
       localStorage.setItem("selectedProduct", JSON.stringify(selectedProduct));
-    } catch { }
+      localStorage.setItem("selectedCategory", String(categoryName));
+    } catch {}
 
     resetSlide1State();
     resetSlide2State();
@@ -332,12 +276,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
         row?.raw_Stores ??
         row;
 
-      const routeCategory =
-        row?.category ??
-        raw?.category ??
-        cate?.category ??
-        cate?.cardcategory ??
-        "general";
+      const routeCategory = row?.category ?? raw?.category ?? cate?.category ?? cate?.cardcategory ?? "general";
 
       navigate(`${USER_ROUTES.TEMPLET_EDITORS}/${encodeURIComponent(routeCategory)}/${row?.id ?? cate.id}`, {
         state: { templetDesign: raw },
@@ -354,10 +293,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
       const draftId = isContinueDraft
         ? ensureDraftCardId(String(cate?.id ?? ""))
         : (() => {
-          const id = newUuid();
-          setDraftCardId(id);
-          return id;
-        })();
+            const id = newUuid();
+            setDraftCardId(id);
+            return id;
+          })();
 
       setTimeout(() => {
         navigate(`${USER_ROUTES.HOME}/${draftId}`, {
@@ -391,7 +330,13 @@ const ProductPopup = (props: ProductsPopTypes) => {
       return;
     }
 
-    const type = (cate?.__type ?? (isTempletDesign ? "template" : "card")) as "card" | "template";
+    // ✅ STOP: don’t add/update with invalid plan
+    if (!selectedIsValid) {
+      mustSelectError();
+      return;
+    }
+
+    const type = (isTempletDesign ? "templet" : "card") as "card" | "templet";
 
     const img =
       cate?.imageurl ||
@@ -404,35 +349,46 @@ const ProductPopup = (props: ProductsPopTypes) => {
     const category = categoryName;
 
     const templetRow = (cate as any)?.templetDesign ?? cate;
+
+    const idStr = String(cate.id).trim();
+
+    if (type === "card") {
+      const cardId = Number(idStr);
+      if (!Number.isFinite(cardId) || !/^\d+$/.test(idStr)) {
+        toast.error("Card id is invalid (must be number). This item looks like a template.");
+        return;
+      }
+    }
+
     const rawStores =
+      (cate as any)?.rawStores ??
+      (cate as any)?.raw_stores ??
       templetRow?.raw_stores ??
       templetRow?.rawStores ??
+      templetRow?.raw_Stores ??
       templetRow?.stores ??
       undefined;
 
-    const description =
-      cate?.description ??
-      templetRow?.description ??
-      "";
+    const description = cate?.description ?? templetRow?.description ?? "";
 
-    const payload = {
-      id: cate.id,
+    const payload: any = {
+      id: idStr,
       type,
       img,
       title,
       category,
       description,
       selectedSize: selectedPlan,
-      prices: { actual: actualPrices, sale: salePrices },
-      isOnSale: display.isOnSale,
-      displayPrice: display.price,
+      prices: { actual: actualPrices, sale: {} },
+      isOnSale: false,
+      displayPrice,
       polygonlayout: type === "card" ? cate?.polygonlayout : undefined,
-      templetDesign: type === "template" ? templetRow : undefined,
-      rawStores: type === "template" ? rawStores : undefined,
+      templetDesign: type === "templet" ? templetRow : undefined,
+      rawStores: type === "templet" ? rawStores : undefined,
     };
 
     if (mode === "edit") {
-      updateCartItem(cate.id, type, payload);
+      updateCartItem(idStr, type, payload);
       toast.success("Basket updated");
       onClose();
       return;
@@ -443,7 +399,9 @@ const ProductPopup = (props: ProductsPopTypes) => {
       toast.error("Already exists in basket ❌");
       return;
     }
+
     toast.success("Product added to basket ✅");
+    onClose();
   };
 
   return (
@@ -482,11 +440,11 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
           <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>
             <Typography sx={{ fontSize: "20px", mb: { md: 3, sm: 3, xs: 0 }, fontWeight: "bold" }}>
-              {priceLoading ? "Select Size" : "Load Pricing"}
+              {priceLoading ? "Load Pricing" : "Select Size"}
             </Typography>
 
             {priceLoading ? (
-              <Box sx={{ height: '75%', width: '100%', }}>
+              <Box sx={{ height: "75%", width: "100%" }}>
                 <Box sx={{ display: { md: "flex", sm: "flex", xs: "block" }, gap: 2 }}>
                   <Box sx={{ flex: 1 }}>
                     <Skeleton variant="rounded" height={48} sx={{ mt: 2 }} />
@@ -500,37 +458,44 @@ const ProductPopup = (props: ProductsPopTypes) => {
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: { md: "20px", sm: "20px", xs: "10px" } }}>
                 {sizeOptions.map((opt) => {
-                  const p = pickPrice(actualPrices, useSaleForSelected ? salePrices : undefined, opt.key);
+                  const price = toNum((actualPrices as any)[opt.key], 0);
+                  const disabled = price <= 0;
+
                   return (
                     <Box
                       key={String(opt.key)}
-                      onClick={() => setSelectedPlan(opt.key)}
+                      onClick={() => !disabled && setSelectedPlan(opt.key)}
                       sx={{
                         ...isActivePay,
-                        height: { md: "auto", sm: "auto", xs: "60px" },
+                        opacity: disabled ? 0.5 : 1,
+                        cursor: disabled ? "not-allowed" : "pointer",
                         border: `3px solid ${selectedPlan === opt.key ? "#8D6DA1" : "transparent"}`,
-                        cursor: "pointer",
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <input
                           type="radio"
                           name="plan"
+                          disabled={disabled}
                           checked={selectedPlan === opt.key}
-                          onChange={() => setSelectedPlan(opt.key)}
+                          onChange={() => !disabled && setSelectedPlan(opt.key)}
                           style={{ width: "30px", height: "30px" }}
                         />
                         <Box>
-                          <Typography sx={{ fontWeight: 600, fontSize: { md: "auto", sm: "auto", xs: "12px" } }}>
-                            {opt.title}
-                          </Typography>
-                          {/* {opt.sub ? (
-                            <Typography sx={{ fontSize: 11, opacity: 0.9 }}>{opt.sub}</Typography>
-                          ) : null} */}
+                          <Typography sx={{ fontWeight: 700 }}>{opt.title}</Typography>
+
+                          {/* helper/sub text if you want */}
+                          {"helper" in opt && (opt as any).helper ? (
+                            <Typography sx={{ fontSize: 12, opacity: 0.9 }}>
+                              {(opt as any).helper}
+                            </Typography>
+                          ) : null}
+
+                          {disabled ? <Typography sx={{ fontSize: 12 }}>Not available</Typography> : null}
                         </Box>
                       </Box>
 
-                      <Typography variant="h5">£{Number(p.price).toFixed(2)}</Typography>
+                      <Typography variant="h5">{disabled ? "—" : `£${price.toFixed(2)}`}</Typography>
                     </Box>
                   );
                 })}
@@ -538,25 +503,16 @@ const ProductPopup = (props: ProductsPopTypes) => {
                 <Box>
                   <Typography
                     sx={{
-                      ...isActivePay,
                       bgcolor: "#8D6DA1",
                       fontSize: { md: "20px", sm: "16px", xs: "14px" },
                       color: COLORS.white,
-                      p: 1.5,
-                      maxHeight: 250,
+                      height: 270,
+                      borderRadius: 4,
+                      p: 2,
                       overflowY: "auto",
-                      "&::-webkit-scrollbar": {
-                        height: "4px",
-                        width: '4px'
-                      },
-                      "&::-webkit-scrollbar-track": {
-                        backgroundColor: "#f1f1f1",
-                        borderRadius: "20px",
-                      },
-                      "&::-webkit-scrollbar-thumb": {
-                        backgroundColor: COLORS.gray,
-                        borderRadius: "20px",
-                      },
+                      "&::-webkit-scrollbar": { height: "4px", width: "4px" },
+                      "&::-webkit-scrollbar-track": { backgroundColor: "#f1f1f1", borderRadius: "20px" },
+                      "&::-webkit-scrollbar-thumb": { backgroundColor: COLORS.gray, borderRadius: "20px" },
                     }}
                   >
                     {cate?.description} 💫
@@ -565,7 +521,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
               </Box>
             )}
 
-             <Box sx={{ display: "flex", gap: "15px", justifyContent: "center", m: "auto", mt: 4 }}>
+            <Box sx={{ display: "flex", gap: "15px", justifyContent: "center", m: "auto", mt: 4 }}>
               <LandingButton
                 title={mode === "edit" ? "Update basket" : "Add to basket"}
                 variant="outlined"
@@ -579,9 +535,16 @@ const ProductPopup = (props: ProductsPopTypes) => {
                 personal
                 loading={loading}
                 onClick={handlePersonalize}
+                // ✅ optional: disable button UI too
               />
             </Box>
 
+            {/* ✅ optional hint */}
+            {!priceLoading && !selectedIsValid ? (
+              <Typography sx={{ mt: 1, fontSize: 12, color: "#d32f2f", textAlign: "center" }}>
+                Please select a size with a valid price to continue.
+              </Typography>
+            ) : null}
           </Box>
         </Box>
 

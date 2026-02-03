@@ -130,8 +130,8 @@ const Banner = () => {
         The Power to Personalise in your hands.
       </Typography>
 
-      <Typography sx={{ fontSize: { md: 25, sm: 20, xs: 16 }, textAlign: "center", mb: 2 }}>
-        Personaised printables card, invites and gift you can create and print at home.
+      <Typography sx={{ fontSize: { md: 25, sm: 20, xs: 16 }, textAlign: "start", mb: 2 }}>
+        Personalised printable cards, invites and gifts you can create and print at home.
       </Typography>
 
       <Box

@@ -9,6 +9,35 @@ import { Check, ErrorOutline, HourglassEmptyOutlined } from "@mui/icons-material
 
 type Status = "loading" | "success" | "error";
 
+async function getTokenSafely() {
+  const { data } = await supabase.auth.getSession();
+  if (data?.session?.access_token) return data.session.access_token;
+
+  await new Promise((r) => setTimeout(r, 500));
+  const retry = await supabase.auth.getSession();
+  return retry.data?.session?.access_token || null;
+}
+
+function getSlidesPayload() {
+  try {
+    const raw =
+      sessionStorage.getItem("slides") ||
+      localStorage.getItem("slides_backup") ||
+      "{}";
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function getSelectedPlan() {
+  return (
+    localStorage.getItem("selectedSize") ||
+    JSON.parse(localStorage.getItem("selectedVariant") || "{}")?.key ||
+    null
+  );
+}
+
 export default function PremiumSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -18,35 +47,47 @@ export default function PremiumSuccess() {
   const [status, setStatus] = useState<Status>("loading");
   const [msg, setMsg] = useState("");
 
-  async function confirmSubscription() {
+  async function handlePaymentSuccess() {
     if (!sessionId) return;
 
     openModal();
     setStatus("loading");
 
     try {
-      const s = await supabase.auth.getSession();
-      const token = s.data?.session?.access_token;
+      const token = await getTokenSafely();
       if (!token) throw new Error("Login required");
 
-      const res = await fetch("https://diypersonalisation.com/api/subscription/confirm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ sessionId }),
-      });
+      const slides = getSlidesPayload();
+      const cardSize = getSelectedPlan();
+
+      if (!Object.keys(slides).length) {
+        throw new Error("Slides data missing");
+      }
+
+      const res = await fetch(
+        "https://diypersonalisation.com/api/send-pdf-after-success",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            sessionId,
+            slides,
+            cardSize,
+          }),
+        }
+      );
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error || `Failed (${res.status})`);
       }
 
-      const data = await res.json();
       setStatus("success");
-      setMsg(`Plan activated: ${data.planCode}`);
-      toast.success("Subscription activated!");
+      setMsg("Payment successful. PDF sent to your email 📧");
+      toast.success("PDF generated & sent to your email!");
     } catch (e: any) {
       setStatus("error");
       setMsg(e?.message || "Failed");
@@ -55,16 +96,16 @@ export default function PremiumSuccess() {
   }
 
   useEffect(() => {
-    confirmSubscription();
+    handlePaymentSuccess();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   const title =
     status === "loading"
-      ? "Activating your plan..."
+      ? "Processing your payment..."
       : status === "success"
-      ? "✅ Subscription Activated"
-      : "❌ Activation Failed";
+      ? "✅ Payment Successful"
+      : "❌ Payment Failed";
 
   const icon =
     status === "loading" ? (
@@ -75,23 +116,42 @@ export default function PremiumSuccess() {
       <ErrorOutline color="error" fontSize="large" />
     );
 
-  const btnText = status === "loading" ? "Please wait..." : status === "success" ? "Continue" : "Try Again";
+  const btnText =
+    status === "loading"
+      ? "Please wait..."
+      : status === "success"
+      ? "Open Gmail"
+      : "Try Again";
 
   const onPrimary = () => {
     if (status === "success") {
-      closeModal();
-      navigate("/"); // or your editor/dashboard route
+      window.open("https://mail.google.com", "_blank");
       return;
     }
-    confirmSubscription();
+    handlePaymentSuccess();
+  };
+
+  const onClose = () => {
+    if (status === "loading") return;
+    closeModal();
+    navigate("/subscription");
   };
 
   return (
-    <Box sx={{ width: "100%", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "white" }}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        bgcolor: "white",
+      }}
+    >
       {open && (
         <ConfirmModal
           open={open}
-          onCloseModal={() => (status === "loading" ? null : closeModal())}
+          onCloseModal={onClose}
           title={title}
           icon={icon}
           btnText={btnText}
@@ -100,7 +160,19 @@ export default function PremiumSuccess() {
       )}
 
       {open && status === "error" && (
-        <Box sx={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", bgcolor: "#fff", border: "1px solid #eee", px: 2, py: 1, borderRadius: 2 }}>
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            bgcolor: "#fff",
+            border: "1px solid #eee",
+            px: 2,
+            py: 1,
+            borderRadius: 2,
+          }}
+        >
           {msg}
         </Box>
       )}

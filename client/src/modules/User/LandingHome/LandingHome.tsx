@@ -8,7 +8,7 @@ import SpecialDIY from "./components/SpecialDIY/SpecialDIY";
 import MakeMoments from "./components/MakeMoments/MakeMoments";
 import WhyChoose from "./components/WhyChoose/WhyChoose";
 import BasketSliderNoTabs from "../../../components/BasketSlider/BasketSlider";
-import OurPremiumCards from "./components/OurPremiumCards/OurPremiumCards";
+import SubscriptionModelSection from "./components/OurPremiumCards/OurPremiumCards";
 
 
 // const AdverstisementCard = [
@@ -34,18 +34,6 @@ import OurPremiumCards from "./components/OurPremiumCards/OurPremiumCards";
 
 const LandingHome = () => {
   // const { user } = useAuth();
-
-  // const { data: categories, isLoading } = useQuery({
-  //   queryKey: ["categories"],
-  //   queryFn: fetchAllCategoriesFromDB,
-  //   staleTime: 1000 * 60 * 60 * 24,
-  //   gcTime: 1000 * 60 * 60 * 24,
-  //   refetchOnWindowFocus: false,
-  //   refetchOnReconnect: false,
-  //   refetchOnMount: false,
-  // });
-
-
   return (
     <MainLayout>
       <Box
@@ -187,7 +175,7 @@ const LandingHome = () => {
 
         <MakeMoments />
 
-        <OurPremiumCards/>
+        <SubscriptionModelSection/>
 
         <WhyChoose />
 

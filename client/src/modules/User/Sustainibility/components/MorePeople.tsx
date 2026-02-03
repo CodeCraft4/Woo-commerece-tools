@@ -20,7 +20,7 @@ const imagineIf = [
     {
         id: 3,
         percentage: 50,
-        title: "avoided shipping altogather",
+        title: "avoided shipping altogether",
         icons: '/assets/icons/truck.png',
         border: COLORS.black
     },
@@ -53,7 +53,7 @@ const MorePeople = () => {
                 sx={{
                     fontSize: { md: 35, sm: 30, xs: 20 },
                     fontWeight: 600,
-                    color: COLORS.green,
+                    color: COLORS.seconday,
                     lineHeight: 1.3,
                     textAlign: "center",
                     mb: 1,

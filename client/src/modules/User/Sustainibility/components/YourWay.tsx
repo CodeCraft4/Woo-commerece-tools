@@ -7,7 +7,7 @@ const YourWay = () => {
     return (
         <React.Fragment>
             <Typography sx={{ fontSize: { md: 25, sm: 20, xs: 16 }, textAlign: "start", lineHeight: { md: 0, xs: 'auto' } }}>
-                Sustainability is'nt about doing everything. Its about doing something better.
+                Sustainability isn't about doing everything. It's about doing something better.
             </Typography>
 
             <Box
@@ -25,7 +25,7 @@ const YourWay = () => {
                 </Typography>
 
                 <Typography sx={{ fontSize: { md: 25, sm: 20, xs: 16 } }}>
-                    Whether it's choosing a lower design gsm card, printing locally, or avoiding delivery altogether. DIY Personalisation gives  you the freedom to create with intention. <br />Small chooses, thoughtfull design, Personalistion with purpose.
+                    Whether it's choosing a lower gsm card, printing locally, or avoiding delivery altogether DIY Personalisation gives  you the freedom to create with intention. <br />Small choices, thoughtful design, Personalistion with purpose.
                 </Typography>
             </Box>
 

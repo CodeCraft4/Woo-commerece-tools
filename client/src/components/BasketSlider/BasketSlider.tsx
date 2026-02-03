@@ -1,4 +1,3 @@
-// File: src/components/BasketSliderNoTabs/BasketSliderNoTabs.tsx
 import { useMemo, useState } from "react";
 import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
@@ -7,10 +6,8 @@ import { FreeMode, Mousewheel } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchAllBundlesFromDB } from "../../source/source";
 import { COLORS } from "../../constant/color";
 import BasketCard from "../BasketCard/BasketCard";
-
 import "swiper/css";
 import { supabase } from "../../supabase/supabase";
 
@@ -57,14 +54,6 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
     refetchOnWindowFocus: false,
   });
 
-  // ✅ Bundles (so bundle main_category bhi categories list me aa jaye)
-  const { data: bundles = [], isLoading: loadingBundles } = useQuery({
-    queryKey: ["bundles:all"],
-    queryFn: fetchAllBundlesFromDB,
-    staleTime: 1000 * 60 * 10,
-    refetchOnWindowFocus: false,
-  });
-
   const categoryTiles = useMemo<CategoryTile[]>(() => {
     // Prefer categories table image_base64
     const map = new Map<string, CategoryTile>();
@@ -81,20 +70,10 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
 
       map.set(key, { name, poster: poster || undefined });
     }
-
-    // Add bundle categories if not in categories table (no image)
-    for (const b of bundles as any[]) {
-      const name = String(b?.main_category ?? "").trim();
-      if (!name) continue;
-
-      const key = lc(name);
-      if (!map.has(key)) map.set(key, { name });
-    }
-
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [categories, bundles]);
+  }, [categories]);
 
-  const isLoading = loadingCats || loadingBundles;
+  const isLoading = loadingCats;
 
   const updateEdges = (s: SwiperType) => {
     setIsBeginning(s.isBeginning);
