@@ -22,7 +22,7 @@ import {
 } from "./chunk-NBQCNOND.js";
 import {
   require_react
-} from "./chunk-5GCMZSAB.js";
+} from "./chunk-6VIQC2ON.js";
 import {
   __toESM
 } from "./chunk-HXA6O6EE.js";

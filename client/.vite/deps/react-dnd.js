@@ -2,10 +2,10 @@ import "./chunk-SO2FIUG4.js";
 import "./chunk-SITVF2AJ.js";
 import {
   require_jsx_runtime
-} from "./chunk-S3GOUJ4W.js";
+} from "./chunk-XP4JWPZJ.js";
 import {
   require_react
-} from "./chunk-5GCMZSAB.js";
+} from "./chunk-6VIQC2ON.js";
 import {
   __commonJS,
   __toESM
@@ -1502,7 +1502,7 @@ function _objectWithoutPropertiesLoose(source, excluded) {
   return target;
 }
 var refCount = 0;
-var INSTANCE_SYM = Symbol.for("__REACT_DND_CONTEXT_INSTANCE__");
+var INSTANCE_SYM = /* @__PURE__ */ Symbol.for("__REACT_DND_CONTEXT_INSTANCE__");
 var DndProvider = (0, import_react2.memo)(function DndProvider2(_param) {
   var { children } = _param, props = _objectWithoutProperties(_param, [
     "children"

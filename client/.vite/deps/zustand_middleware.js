@@ -335,6 +335,7 @@ var persistImpl = (config, baseOptions) => (set, get, api) => {
     ...baseOptions
   };
   let hasHydrated = false;
+  let hydrationVersion = 0;
   const hydrationListeners = /* @__PURE__ */ new Set();
   const finishHydrationListeners = /* @__PURE__ */ new Set();
   let storage = options.storage;
@@ -375,6 +376,7 @@ var persistImpl = (config, baseOptions) => (set, get, api) => {
   const hydrate = () => {
     var _a, _b;
     if (!storage) return;
+    const currentVersion = ++hydrationVersion;
     hasHydrated = false;
     hydrationListeners.forEach((cb) => {
       var _a2;
@@ -404,6 +406,9 @@ var persistImpl = (config, baseOptions) => (set, get, api) => {
       return [false, void 0];
     }).then((migrationResult) => {
       var _a2;
+      if (currentVersion !== hydrationVersion) {
+        return;
+      }
       const [migrated, migratedState] = migrationResult;
       stateFromStorage = options.merge(
         migratedState,
@@ -414,11 +419,17 @@ var persistImpl = (config, baseOptions) => (set, get, api) => {
         return setItem();
       }
     }).then(() => {
+      if (currentVersion !== hydrationVersion) {
+        return;
+      }
       postRehydrationCallback == null ? void 0 : postRehydrationCallback(stateFromStorage, void 0);
       stateFromStorage = get();
       hasHydrated = true;
       finishHydrationListeners.forEach((cb) => cb(stateFromStorage));
     }).catch((e) => {
+      if (currentVersion !== hydrationVersion) {
+        return;
+      }
       postRehydrationCallback == null ? void 0 : postRehydrationCallback(void 0, e);
     });
   };

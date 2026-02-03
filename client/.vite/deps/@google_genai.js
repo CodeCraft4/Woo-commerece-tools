@@ -512,11 +512,6 @@ var Type;
   Type2["OBJECT"] = "OBJECT";
   Type2["NULL"] = "NULL";
 })(Type || (Type = {}));
-var Mode;
-(function(Mode2) {
-  Mode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-  Mode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
-})(Mode || (Mode = {}));
 var ApiSpec;
 (function(ApiSpec2) {
   ApiSpec2["API_SPEC_UNSPECIFIED"] = "API_SPEC_UNSPECIFIED";
@@ -552,11 +547,32 @@ var PhishBlockThreshold;
   PhishBlockThreshold2["BLOCK_VERY_HIGH_AND_ABOVE"] = "BLOCK_VERY_HIGH_AND_ABOVE";
   PhishBlockThreshold2["BLOCK_ONLY_EXTREMELY_HIGH"] = "BLOCK_ONLY_EXTREMELY_HIGH";
 })(PhishBlockThreshold || (PhishBlockThreshold = {}));
+var Behavior;
+(function(Behavior2) {
+  Behavior2["UNSPECIFIED"] = "UNSPECIFIED";
+  Behavior2["BLOCKING"] = "BLOCKING";
+  Behavior2["NON_BLOCKING"] = "NON_BLOCKING";
+})(Behavior || (Behavior = {}));
+var DynamicRetrievalConfigMode;
+(function(DynamicRetrievalConfigMode2) {
+  DynamicRetrievalConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+  DynamicRetrievalConfigMode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
+})(DynamicRetrievalConfigMode || (DynamicRetrievalConfigMode = {}));
+var FunctionCallingConfigMode;
+(function(FunctionCallingConfigMode2) {
+  FunctionCallingConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+  FunctionCallingConfigMode2["AUTO"] = "AUTO";
+  FunctionCallingConfigMode2["ANY"] = "ANY";
+  FunctionCallingConfigMode2["NONE"] = "NONE";
+  FunctionCallingConfigMode2["VALIDATED"] = "VALIDATED";
+})(FunctionCallingConfigMode || (FunctionCallingConfigMode = {}));
 var ThinkingLevel;
 (function(ThinkingLevel2) {
   ThinkingLevel2["THINKING_LEVEL_UNSPECIFIED"] = "THINKING_LEVEL_UNSPECIFIED";
   ThinkingLevel2["LOW"] = "LOW";
+  ThinkingLevel2["MEDIUM"] = "MEDIUM";
   ThinkingLevel2["HIGH"] = "HIGH";
+  ThinkingLevel2["MINIMAL"] = "MINIMAL";
 })(ThinkingLevel || (ThinkingLevel = {}));
 var HarmCategory;
 (function(HarmCategory2) {
@@ -706,6 +722,7 @@ var PartMediaResolutionLevel;
   PartMediaResolutionLevel2["MEDIA_RESOLUTION_LOW"] = "MEDIA_RESOLUTION_LOW";
   PartMediaResolutionLevel2["MEDIA_RESOLUTION_MEDIUM"] = "MEDIA_RESOLUTION_MEDIUM";
   PartMediaResolutionLevel2["MEDIA_RESOLUTION_HIGH"] = "MEDIA_RESOLUTION_HIGH";
+  PartMediaResolutionLevel2["MEDIA_RESOLUTION_ULTRA_HIGH"] = "MEDIA_RESOLUTION_ULTRA_HIGH";
 })(PartMediaResolutionLevel || (PartMediaResolutionLevel = {}));
 var FeatureSelectionPreference;
 (function(FeatureSelectionPreference2) {
@@ -714,30 +731,11 @@ var FeatureSelectionPreference;
   FeatureSelectionPreference2["BALANCED"] = "BALANCED";
   FeatureSelectionPreference2["PRIORITIZE_COST"] = "PRIORITIZE_COST";
 })(FeatureSelectionPreference || (FeatureSelectionPreference = {}));
-var Behavior;
-(function(Behavior2) {
-  Behavior2["UNSPECIFIED"] = "UNSPECIFIED";
-  Behavior2["BLOCKING"] = "BLOCKING";
-  Behavior2["NON_BLOCKING"] = "NON_BLOCKING";
-})(Behavior || (Behavior = {}));
-var DynamicRetrievalConfigMode;
-(function(DynamicRetrievalConfigMode2) {
-  DynamicRetrievalConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-  DynamicRetrievalConfigMode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
-})(DynamicRetrievalConfigMode || (DynamicRetrievalConfigMode = {}));
 var Environment;
 (function(Environment2) {
   Environment2["ENVIRONMENT_UNSPECIFIED"] = "ENVIRONMENT_UNSPECIFIED";
   Environment2["ENVIRONMENT_BROWSER"] = "ENVIRONMENT_BROWSER";
 })(Environment || (Environment = {}));
-var FunctionCallingConfigMode;
-(function(FunctionCallingConfigMode2) {
-  FunctionCallingConfigMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-  FunctionCallingConfigMode2["AUTO"] = "AUTO";
-  FunctionCallingConfigMode2["ANY"] = "ANY";
-  FunctionCallingConfigMode2["NONE"] = "NONE";
-  FunctionCallingConfigMode2["VALIDATED"] = "VALIDATED";
-})(FunctionCallingConfigMode || (FunctionCallingConfigMode = {}));
 var SafetyFilterLevel;
 (function(SafetyFilterLevel2) {
   SafetyFilterLevel2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
@@ -844,6 +842,7 @@ var FileSource;
   FileSource2["SOURCE_UNSPECIFIED"] = "SOURCE_UNSPECIFIED";
   FileSource2["UPLOADED"] = "UPLOADED";
   FileSource2["GENERATED"] = "GENERATED";
+  FileSource2["REGISTERED"] = "REGISTERED";
 })(FileSource || (FileSource = {}));
 var TurnCompleteReason;
 (function(TurnCompleteReason2) {
@@ -867,6 +866,12 @@ var VadSignalType;
   VadSignalType2["VAD_SIGNAL_TYPE_SOS"] = "VAD_SIGNAL_TYPE_SOS";
   VadSignalType2["VAD_SIGNAL_TYPE_EOS"] = "VAD_SIGNAL_TYPE_EOS";
 })(VadSignalType || (VadSignalType = {}));
+var VoiceActivityType;
+(function(VoiceActivityType2) {
+  VoiceActivityType2["TYPE_UNSPECIFIED"] = "TYPE_UNSPECIFIED";
+  VoiceActivityType2["ACTIVITY_START"] = "ACTIVITY_START";
+  VoiceActivityType2["ACTIVITY_END"] = "ACTIVITY_END";
+})(VoiceActivityType || (VoiceActivityType = {}));
 var StartSensitivity;
 (function(StartSensitivity2) {
   StartSensitivity2["START_SENSITIVITY_UNSPECIFIED"] = "START_SENSITIVITY_UNSPECIFIED";
@@ -2715,15 +2720,15 @@ function functionCallToMldev$4(fromObject) {
 }
 function functionCallingConfigToMldev$2(fromObject) {
   const toObject = {};
-  const fromMode = getValueByPath(fromObject, ["mode"]);
-  if (fromMode != null) {
-    setValueByPath(toObject, ["mode"], fromMode);
-  }
   const fromAllowedFunctionNames = getValueByPath(fromObject, [
     "allowedFunctionNames"
   ]);
   if (fromAllowedFunctionNames != null) {
     setValueByPath(toObject, ["allowedFunctionNames"], fromAllowedFunctionNames);
+  }
+  const fromMode = getValueByPath(fromObject, ["mode"]);
+  if (fromMode != null) {
+    setValueByPath(toObject, ["mode"], fromMode);
   }
   if (getValueByPath(fromObject, ["streamFunctionCallArguments"]) !== void 0) {
     throw new Error("streamFunctionCallArguments parameter is not supported in Gemini API.");
@@ -2983,6 +2988,9 @@ function imageConfigToMldev$1(fromObject) {
   if (fromImageSize != null) {
     setValueByPath(toObject, ["imageSize"], fromImageSize);
   }
+  if (getValueByPath(fromObject, ["personGeneration"]) !== void 0) {
+    throw new Error("personGeneration parameter is not supported in Gemini API.");
+  }
   if (getValueByPath(fromObject, ["outputMimeType"]) !== void 0) {
     throw new Error("outputMimeType parameter is not supported in Gemini API.");
   }
@@ -3207,42 +3215,24 @@ function safetySettingToMldev$1(fromObject) {
 }
 function toolConfigToMldev$2(fromObject) {
   const toObject = {};
-  const fromFunctionCallingConfig = getValueByPath(fromObject, [
-    "functionCallingConfig"
-  ]);
-  if (fromFunctionCallingConfig != null) {
-    setValueByPath(toObject, ["functionCallingConfig"], functionCallingConfigToMldev$2(fromFunctionCallingConfig));
-  }
   const fromRetrievalConfig = getValueByPath(fromObject, [
     "retrievalConfig"
   ]);
   if (fromRetrievalConfig != null) {
     setValueByPath(toObject, ["retrievalConfig"], fromRetrievalConfig);
   }
+  const fromFunctionCallingConfig = getValueByPath(fromObject, [
+    "functionCallingConfig"
+  ]);
+  if (fromFunctionCallingConfig != null) {
+    setValueByPath(toObject, ["functionCallingConfig"], functionCallingConfigToMldev$2(fromFunctionCallingConfig));
+  }
   return toObject;
 }
 function toolToMldev$4(fromObject) {
   const toObject = {};
-  const fromFunctionDeclarations = getValueByPath(fromObject, [
-    "functionDeclarations"
-  ]);
-  if (fromFunctionDeclarations != null) {
-    let transformedList = fromFunctionDeclarations;
-    if (Array.isArray(transformedList)) {
-      transformedList = transformedList.map((item) => {
-        return item;
-      });
-    }
-    setValueByPath(toObject, ["functionDeclarations"], transformedList);
-  }
   if (getValueByPath(fromObject, ["retrieval"]) !== void 0) {
     throw new Error("retrieval parameter is not supported in Gemini API.");
-  }
-  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
-    "googleSearchRetrieval"
-  ]);
-  if (fromGoogleSearchRetrieval != null) {
-    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
   if (fromComputerUse != null) {
@@ -3261,6 +3251,18 @@ function toolToMldev$4(fromObject) {
   if (getValueByPath(fromObject, ["enterpriseWebSearch"]) !== void 0) {
     throw new Error("enterpriseWebSearch parameter is not supported in Gemini API.");
   }
+  const fromFunctionDeclarations = getValueByPath(fromObject, [
+    "functionDeclarations"
+  ]);
+  if (fromFunctionDeclarations != null) {
+    let transformedList = fromFunctionDeclarations;
+    if (Array.isArray(transformedList)) {
+      transformedList = transformedList.map((item) => {
+        return item;
+      });
+    }
+    setValueByPath(toObject, ["functionDeclarations"], transformedList);
+  }
   const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
   if (fromGoogleMaps != null) {
     setValueByPath(toObject, ["googleMaps"], googleMapsToMldev$4(fromGoogleMaps));
@@ -3268,6 +3270,12 @@ function toolToMldev$4(fromObject) {
   const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
   if (fromGoogleSearch != null) {
     setValueByPath(toObject, ["googleSearch"], googleSearchToMldev$4(fromGoogleSearch));
+  }
+  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+    "googleSearchRetrieval"
+  ]);
+  if (fromGoogleSearchRetrieval != null) {
+    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
   if (fromUrlContext != null) {
@@ -4099,15 +4107,15 @@ function functionCallToMldev$3(fromObject) {
 }
 function functionCallingConfigToMldev$1(fromObject) {
   const toObject = {};
-  const fromMode = getValueByPath(fromObject, ["mode"]);
-  if (fromMode != null) {
-    setValueByPath(toObject, ["mode"], fromMode);
-  }
   const fromAllowedFunctionNames = getValueByPath(fromObject, [
     "allowedFunctionNames"
   ]);
   if (fromAllowedFunctionNames != null) {
     setValueByPath(toObject, ["allowedFunctionNames"], fromAllowedFunctionNames);
+  }
+  const fromMode = getValueByPath(fromObject, ["mode"]);
+  if (fromMode != null) {
+    setValueByPath(toObject, ["mode"], fromMode);
   }
   if (getValueByPath(fromObject, ["streamFunctionCallArguments"]) !== void 0) {
     throw new Error("streamFunctionCallArguments parameter is not supported in Gemini API.");
@@ -4116,9 +4124,6 @@ function functionCallingConfigToMldev$1(fromObject) {
 }
 function functionDeclarationToVertex$2(fromObject) {
   const toObject = {};
-  if (getValueByPath(fromObject, ["behavior"]) !== void 0) {
-    throw new Error("behavior parameter is not supported in Vertex AI.");
-  }
   const fromDescription = getValueByPath(fromObject, ["description"]);
   if (fromDescription != null) {
     setValueByPath(toObject, ["description"], fromDescription);
@@ -4146,6 +4151,9 @@ function functionDeclarationToVertex$2(fromObject) {
   ]);
   if (fromResponseJsonSchema != null) {
     setValueByPath(toObject, ["responseJsonSchema"], fromResponseJsonSchema);
+  }
+  if (getValueByPath(fromObject, ["behavior"]) !== void 0) {
+    throw new Error("behavior parameter is not supported in Vertex AI.");
   }
   return toObject;
 }
@@ -4350,42 +4358,24 @@ function partToMldev$3(fromObject) {
 }
 function toolConfigToMldev$1(fromObject) {
   const toObject = {};
-  const fromFunctionCallingConfig = getValueByPath(fromObject, [
-    "functionCallingConfig"
-  ]);
-  if (fromFunctionCallingConfig != null) {
-    setValueByPath(toObject, ["functionCallingConfig"], functionCallingConfigToMldev$1(fromFunctionCallingConfig));
-  }
   const fromRetrievalConfig = getValueByPath(fromObject, [
     "retrievalConfig"
   ]);
   if (fromRetrievalConfig != null) {
     setValueByPath(toObject, ["retrievalConfig"], fromRetrievalConfig);
   }
+  const fromFunctionCallingConfig = getValueByPath(fromObject, [
+    "functionCallingConfig"
+  ]);
+  if (fromFunctionCallingConfig != null) {
+    setValueByPath(toObject, ["functionCallingConfig"], functionCallingConfigToMldev$1(fromFunctionCallingConfig));
+  }
   return toObject;
 }
 function toolToMldev$3(fromObject) {
   const toObject = {};
-  const fromFunctionDeclarations = getValueByPath(fromObject, [
-    "functionDeclarations"
-  ]);
-  if (fromFunctionDeclarations != null) {
-    let transformedList = fromFunctionDeclarations;
-    if (Array.isArray(transformedList)) {
-      transformedList = transformedList.map((item) => {
-        return item;
-      });
-    }
-    setValueByPath(toObject, ["functionDeclarations"], transformedList);
-  }
   if (getValueByPath(fromObject, ["retrieval"]) !== void 0) {
     throw new Error("retrieval parameter is not supported in Gemini API.");
-  }
-  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
-    "googleSearchRetrieval"
-  ]);
-  if (fromGoogleSearchRetrieval != null) {
-    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
   if (fromComputerUse != null) {
@@ -4404,6 +4394,18 @@ function toolToMldev$3(fromObject) {
   if (getValueByPath(fromObject, ["enterpriseWebSearch"]) !== void 0) {
     throw new Error("enterpriseWebSearch parameter is not supported in Gemini API.");
   }
+  const fromFunctionDeclarations = getValueByPath(fromObject, [
+    "functionDeclarations"
+  ]);
+  if (fromFunctionDeclarations != null) {
+    let transformedList = fromFunctionDeclarations;
+    if (Array.isArray(transformedList)) {
+      transformedList = transformedList.map((item) => {
+        return item;
+      });
+    }
+    setValueByPath(toObject, ["functionDeclarations"], transformedList);
+  }
   const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
   if (fromGoogleMaps != null) {
     setValueByPath(toObject, ["googleMaps"], googleMapsToMldev$3(fromGoogleMaps));
@@ -4411,6 +4413,12 @@ function toolToMldev$3(fromObject) {
   const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
   if (fromGoogleSearch != null) {
     setValueByPath(toObject, ["googleSearch"], googleSearchToMldev$3(fromGoogleSearch));
+  }
+  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+    "googleSearchRetrieval"
+  ]);
+  if (fromGoogleSearchRetrieval != null) {
+    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
   if (fromUrlContext != null) {
@@ -4420,27 +4428,9 @@ function toolToMldev$3(fromObject) {
 }
 function toolToVertex$2(fromObject) {
   const toObject = {};
-  const fromFunctionDeclarations = getValueByPath(fromObject, [
-    "functionDeclarations"
-  ]);
-  if (fromFunctionDeclarations != null) {
-    let transformedList = fromFunctionDeclarations;
-    if (Array.isArray(transformedList)) {
-      transformedList = transformedList.map((item) => {
-        return functionDeclarationToVertex$2(item);
-      });
-    }
-    setValueByPath(toObject, ["functionDeclarations"], transformedList);
-  }
   const fromRetrieval = getValueByPath(fromObject, ["retrieval"]);
   if (fromRetrieval != null) {
     setValueByPath(toObject, ["retrieval"], fromRetrieval);
-  }
-  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
-    "googleSearchRetrieval"
-  ]);
-  if (fromGoogleSearchRetrieval != null) {
-    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
   if (fromComputerUse != null) {
@@ -4461,6 +4451,18 @@ function toolToVertex$2(fromObject) {
   if (fromEnterpriseWebSearch != null) {
     setValueByPath(toObject, ["enterpriseWebSearch"], fromEnterpriseWebSearch);
   }
+  const fromFunctionDeclarations = getValueByPath(fromObject, [
+    "functionDeclarations"
+  ]);
+  if (fromFunctionDeclarations != null) {
+    let transformedList = fromFunctionDeclarations;
+    if (Array.isArray(transformedList)) {
+      transformedList = transformedList.map((item) => {
+        return functionDeclarationToVertex$2(item);
+      });
+    }
+    setValueByPath(toObject, ["functionDeclarations"], transformedList);
+  }
   const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
   if (fromGoogleMaps != null) {
     setValueByPath(toObject, ["googleMaps"], fromGoogleMaps);
@@ -4468,6 +4470,12 @@ function toolToVertex$2(fromObject) {
   const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
   if (fromGoogleSearch != null) {
     setValueByPath(toObject, ["googleSearch"], fromGoogleSearch);
+  }
+  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+    "googleSearchRetrieval"
+  ]);
+  if (fromGoogleSearchRetrieval != null) {
+    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
   if (fromUrlContext != null) {
@@ -5620,9 +5628,6 @@ function functionCallToMldev$2(fromObject) {
 }
 function functionDeclarationToVertex$1(fromObject) {
   const toObject = {};
-  if (getValueByPath(fromObject, ["behavior"]) !== void 0) {
-    throw new Error("behavior parameter is not supported in Vertex AI.");
-  }
   const fromDescription = getValueByPath(fromObject, ["description"]);
   if (fromDescription != null) {
     setValueByPath(toObject, ["description"], fromDescription);
@@ -5650,6 +5655,9 @@ function functionDeclarationToVertex$1(fromObject) {
   ]);
   if (fromResponseJsonSchema != null) {
     setValueByPath(toObject, ["responseJsonSchema"], fromResponseJsonSchema);
+  }
+  if (getValueByPath(fromObject, ["behavior"]) !== void 0) {
+    throw new Error("behavior parameter is not supported in Vertex AI.");
   }
   return toObject;
 }
@@ -5749,7 +5757,7 @@ function generationConfigToVertex$1(fromObject) {
   }
   const fromSpeechConfig = getValueByPath(fromObject, ["speechConfig"]);
   if (fromSpeechConfig != null) {
-    setValueByPath(toObject, ["speechConfig"], speechConfigToVertex$1(fromSpeechConfig));
+    setValueByPath(toObject, ["speechConfig"], fromSpeechConfig);
   }
   const fromStopSequences = getValueByPath(fromObject, [
     "stopSequences"
@@ -5964,7 +5972,7 @@ function liveConnectConfigToVertex(fromObject, parentObject) {
   }
   const fromSpeechConfig = getValueByPath(fromObject, ["speechConfig"]);
   if (parentObject !== void 0 && fromSpeechConfig != null) {
-    setValueByPath(parentObject, ["setup", "generationConfig", "speechConfig"], speechConfigToVertex$1(tLiveSpeechConfig(fromSpeechConfig)));
+    setValueByPath(parentObject, ["setup", "generationConfig", "speechConfig"], tLiveSpeechConfig(fromSpeechConfig));
   }
   const fromThinkingConfig = getValueByPath(fromObject, [
     "thinkingConfig"
@@ -6216,6 +6224,12 @@ function liveServerMessageFromVertex(fromObject) {
   if (fromVoiceActivityDetectionSignal != null) {
     setValueByPath(toObject, ["voiceActivityDetectionSignal"], fromVoiceActivityDetectionSignal);
   }
+  const fromVoiceActivity = getValueByPath(fromObject, [
+    "voiceActivity"
+  ]);
+  if (fromVoiceActivity != null) {
+    setValueByPath(toObject, ["voiceActivity"], voiceActivityFromVertex(fromVoiceActivity));
+  }
   return toObject;
 }
 function partToMldev$2(fromObject) {
@@ -6289,43 +6303,10 @@ function sessionResumptionConfigToMldev$1(fromObject) {
   }
   return toObject;
 }
-function speechConfigToVertex$1(fromObject) {
-  const toObject = {};
-  const fromVoiceConfig = getValueByPath(fromObject, ["voiceConfig"]);
-  if (fromVoiceConfig != null) {
-    setValueByPath(toObject, ["voiceConfig"], fromVoiceConfig);
-  }
-  const fromLanguageCode = getValueByPath(fromObject, ["languageCode"]);
-  if (fromLanguageCode != null) {
-    setValueByPath(toObject, ["languageCode"], fromLanguageCode);
-  }
-  if (getValueByPath(fromObject, ["multiSpeakerVoiceConfig"]) !== void 0) {
-    throw new Error("multiSpeakerVoiceConfig parameter is not supported in Vertex AI.");
-  }
-  return toObject;
-}
 function toolToMldev$2(fromObject) {
   const toObject = {};
-  const fromFunctionDeclarations = getValueByPath(fromObject, [
-    "functionDeclarations"
-  ]);
-  if (fromFunctionDeclarations != null) {
-    let transformedList = fromFunctionDeclarations;
-    if (Array.isArray(transformedList)) {
-      transformedList = transformedList.map((item) => {
-        return item;
-      });
-    }
-    setValueByPath(toObject, ["functionDeclarations"], transformedList);
-  }
   if (getValueByPath(fromObject, ["retrieval"]) !== void 0) {
     throw new Error("retrieval parameter is not supported in Gemini API.");
-  }
-  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
-    "googleSearchRetrieval"
-  ]);
-  if (fromGoogleSearchRetrieval != null) {
-    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
   if (fromComputerUse != null) {
@@ -6344,6 +6325,18 @@ function toolToMldev$2(fromObject) {
   if (getValueByPath(fromObject, ["enterpriseWebSearch"]) !== void 0) {
     throw new Error("enterpriseWebSearch parameter is not supported in Gemini API.");
   }
+  const fromFunctionDeclarations = getValueByPath(fromObject, [
+    "functionDeclarations"
+  ]);
+  if (fromFunctionDeclarations != null) {
+    let transformedList = fromFunctionDeclarations;
+    if (Array.isArray(transformedList)) {
+      transformedList = transformedList.map((item) => {
+        return item;
+      });
+    }
+    setValueByPath(toObject, ["functionDeclarations"], transformedList);
+  }
   const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
   if (fromGoogleMaps != null) {
     setValueByPath(toObject, ["googleMaps"], googleMapsToMldev$2(fromGoogleMaps));
@@ -6351,6 +6344,12 @@ function toolToMldev$2(fromObject) {
   const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
   if (fromGoogleSearch != null) {
     setValueByPath(toObject, ["googleSearch"], googleSearchToMldev$2(fromGoogleSearch));
+  }
+  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+    "googleSearchRetrieval"
+  ]);
+  if (fromGoogleSearchRetrieval != null) {
+    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
   if (fromUrlContext != null) {
@@ -6360,27 +6359,9 @@ function toolToMldev$2(fromObject) {
 }
 function toolToVertex$1(fromObject) {
   const toObject = {};
-  const fromFunctionDeclarations = getValueByPath(fromObject, [
-    "functionDeclarations"
-  ]);
-  if (fromFunctionDeclarations != null) {
-    let transformedList = fromFunctionDeclarations;
-    if (Array.isArray(transformedList)) {
-      transformedList = transformedList.map((item) => {
-        return functionDeclarationToVertex$1(item);
-      });
-    }
-    setValueByPath(toObject, ["functionDeclarations"], transformedList);
-  }
   const fromRetrieval = getValueByPath(fromObject, ["retrieval"]);
   if (fromRetrieval != null) {
     setValueByPath(toObject, ["retrieval"], fromRetrieval);
-  }
-  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
-    "googleSearchRetrieval"
-  ]);
-  if (fromGoogleSearchRetrieval != null) {
-    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
   if (fromComputerUse != null) {
@@ -6401,6 +6382,18 @@ function toolToVertex$1(fromObject) {
   if (fromEnterpriseWebSearch != null) {
     setValueByPath(toObject, ["enterpriseWebSearch"], fromEnterpriseWebSearch);
   }
+  const fromFunctionDeclarations = getValueByPath(fromObject, [
+    "functionDeclarations"
+  ]);
+  if (fromFunctionDeclarations != null) {
+    let transformedList = fromFunctionDeclarations;
+    if (Array.isArray(transformedList)) {
+      transformedList = transformedList.map((item) => {
+        return functionDeclarationToVertex$1(item);
+      });
+    }
+    setValueByPath(toObject, ["functionDeclarations"], transformedList);
+  }
   const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
   if (fromGoogleMaps != null) {
     setValueByPath(toObject, ["googleMaps"], fromGoogleMaps);
@@ -6408,6 +6401,12 @@ function toolToVertex$1(fromObject) {
   const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
   if (fromGoogleSearch != null) {
     setValueByPath(toObject, ["googleSearch"], fromGoogleSearch);
+  }
+  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+    "googleSearchRetrieval"
+  ]);
+  if (fromGoogleSearchRetrieval != null) {
+    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
   if (fromUrlContext != null) {
@@ -6504,6 +6503,14 @@ function usageMetadataFromVertex(fromObject) {
   const fromTrafficType = getValueByPath(fromObject, ["trafficType"]);
   if (fromTrafficType != null) {
     setValueByPath(toObject, ["trafficType"], fromTrafficType);
+  }
+  return toObject;
+}
+function voiceActivityFromVertex(fromObject) {
+  const toObject = {};
+  const fromVoiceActivityType = getValueByPath(fromObject, ["type"]);
+  if (fromVoiceActivityType != null) {
+    setValueByPath(toObject, ["voiceActivityType"], fromVoiceActivityType);
   }
   return toObject;
 }
@@ -7185,15 +7192,15 @@ function functionCallToMldev$1(fromObject) {
 }
 function functionCallingConfigToMldev(fromObject) {
   const toObject = {};
-  const fromMode = getValueByPath(fromObject, ["mode"]);
-  if (fromMode != null) {
-    setValueByPath(toObject, ["mode"], fromMode);
-  }
   const fromAllowedFunctionNames = getValueByPath(fromObject, [
     "allowedFunctionNames"
   ]);
   if (fromAllowedFunctionNames != null) {
     setValueByPath(toObject, ["allowedFunctionNames"], fromAllowedFunctionNames);
+  }
+  const fromMode = getValueByPath(fromObject, ["mode"]);
+  if (fromMode != null) {
+    setValueByPath(toObject, ["mode"], fromMode);
   }
   if (getValueByPath(fromObject, ["streamFunctionCallArguments"]) !== void 0) {
     throw new Error("streamFunctionCallArguments parameter is not supported in Gemini API.");
@@ -7202,9 +7209,6 @@ function functionCallingConfigToMldev(fromObject) {
 }
 function functionDeclarationToVertex(fromObject) {
   const toObject = {};
-  if (getValueByPath(fromObject, ["behavior"]) !== void 0) {
-    throw new Error("behavior parameter is not supported in Vertex AI.");
-  }
   const fromDescription = getValueByPath(fromObject, ["description"]);
   if (fromDescription != null) {
     setValueByPath(toObject, ["description"], fromDescription);
@@ -7232,6 +7236,9 @@ function functionDeclarationToVertex(fromObject) {
   ]);
   if (fromResponseJsonSchema != null) {
     setValueByPath(toObject, ["responseJsonSchema"], fromResponseJsonSchema);
+  }
+  if (getValueByPath(fromObject, ["behavior"]) !== void 0) {
+    throw new Error("behavior parameter is not supported in Vertex AI.");
   }
   return toObject;
 }
@@ -7539,7 +7546,7 @@ function generateContentConfigToVertex(apiClient, fromObject, parentObject) {
   }
   const fromSpeechConfig = getValueByPath(fromObject, ["speechConfig"]);
   if (fromSpeechConfig != null) {
-    setValueByPath(toObject, ["speechConfig"], speechConfigToVertex(tSpeechConfig(fromSpeechConfig)));
+    setValueByPath(toObject, ["speechConfig"], tSpeechConfig(fromSpeechConfig));
   }
   const fromAudioTimestamp = getValueByPath(fromObject, [
     "audioTimestamp"
@@ -8484,7 +8491,7 @@ function generationConfigToVertex(fromObject) {
   }
   const fromSpeechConfig = getValueByPath(fromObject, ["speechConfig"]);
   if (fromSpeechConfig != null) {
-    setValueByPath(toObject, ["speechConfig"], speechConfigToVertex(fromSpeechConfig));
+    setValueByPath(toObject, ["speechConfig"], fromSpeechConfig);
   }
   const fromStopSequences = getValueByPath(fromObject, [
     "stopSequences"
@@ -8568,6 +8575,9 @@ function imageConfigToMldev(fromObject) {
   if (fromImageSize != null) {
     setValueByPath(toObject, ["imageSize"], fromImageSize);
   }
+  if (getValueByPath(fromObject, ["personGeneration"]) !== void 0) {
+    throw new Error("personGeneration parameter is not supported in Gemini API.");
+  }
   if (getValueByPath(fromObject, ["outputMimeType"]) !== void 0) {
     throw new Error("outputMimeType parameter is not supported in Gemini API.");
   }
@@ -8585,6 +8595,12 @@ function imageConfigToVertex(fromObject) {
   const fromImageSize = getValueByPath(fromObject, ["imageSize"]);
   if (fromImageSize != null) {
     setValueByPath(toObject, ["imageSize"], fromImageSize);
+  }
+  const fromPersonGeneration = getValueByPath(fromObject, [
+    "personGeneration"
+  ]);
+  if (fromPersonGeneration != null) {
+    setValueByPath(toObject, ["personGeneration"], fromPersonGeneration);
   }
   const fromOutputMimeType = getValueByPath(fromObject, [
     "outputMimeType"
@@ -9284,59 +9300,26 @@ function segmentImageSourceToVertex(fromObject, parentObject) {
   }
   return toObject;
 }
-function speechConfigToVertex(fromObject) {
-  const toObject = {};
-  const fromVoiceConfig = getValueByPath(fromObject, ["voiceConfig"]);
-  if (fromVoiceConfig != null) {
-    setValueByPath(toObject, ["voiceConfig"], fromVoiceConfig);
-  }
-  const fromLanguageCode = getValueByPath(fromObject, ["languageCode"]);
-  if (fromLanguageCode != null) {
-    setValueByPath(toObject, ["languageCode"], fromLanguageCode);
-  }
-  if (getValueByPath(fromObject, ["multiSpeakerVoiceConfig"]) !== void 0) {
-    throw new Error("multiSpeakerVoiceConfig parameter is not supported in Vertex AI.");
-  }
-  return toObject;
-}
 function toolConfigToMldev(fromObject) {
   const toObject = {};
-  const fromFunctionCallingConfig = getValueByPath(fromObject, [
-    "functionCallingConfig"
-  ]);
-  if (fromFunctionCallingConfig != null) {
-    setValueByPath(toObject, ["functionCallingConfig"], functionCallingConfigToMldev(fromFunctionCallingConfig));
-  }
   const fromRetrievalConfig = getValueByPath(fromObject, [
     "retrievalConfig"
   ]);
   if (fromRetrievalConfig != null) {
     setValueByPath(toObject, ["retrievalConfig"], fromRetrievalConfig);
   }
+  const fromFunctionCallingConfig = getValueByPath(fromObject, [
+    "functionCallingConfig"
+  ]);
+  if (fromFunctionCallingConfig != null) {
+    setValueByPath(toObject, ["functionCallingConfig"], functionCallingConfigToMldev(fromFunctionCallingConfig));
+  }
   return toObject;
 }
 function toolToMldev$1(fromObject) {
   const toObject = {};
-  const fromFunctionDeclarations = getValueByPath(fromObject, [
-    "functionDeclarations"
-  ]);
-  if (fromFunctionDeclarations != null) {
-    let transformedList = fromFunctionDeclarations;
-    if (Array.isArray(transformedList)) {
-      transformedList = transformedList.map((item) => {
-        return item;
-      });
-    }
-    setValueByPath(toObject, ["functionDeclarations"], transformedList);
-  }
   if (getValueByPath(fromObject, ["retrieval"]) !== void 0) {
     throw new Error("retrieval parameter is not supported in Gemini API.");
-  }
-  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
-    "googleSearchRetrieval"
-  ]);
-  if (fromGoogleSearchRetrieval != null) {
-    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
   if (fromComputerUse != null) {
@@ -9355,6 +9338,18 @@ function toolToMldev$1(fromObject) {
   if (getValueByPath(fromObject, ["enterpriseWebSearch"]) !== void 0) {
     throw new Error("enterpriseWebSearch parameter is not supported in Gemini API.");
   }
+  const fromFunctionDeclarations = getValueByPath(fromObject, [
+    "functionDeclarations"
+  ]);
+  if (fromFunctionDeclarations != null) {
+    let transformedList = fromFunctionDeclarations;
+    if (Array.isArray(transformedList)) {
+      transformedList = transformedList.map((item) => {
+        return item;
+      });
+    }
+    setValueByPath(toObject, ["functionDeclarations"], transformedList);
+  }
   const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
   if (fromGoogleMaps != null) {
     setValueByPath(toObject, ["googleMaps"], googleMapsToMldev$1(fromGoogleMaps));
@@ -9362,6 +9357,12 @@ function toolToMldev$1(fromObject) {
   const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
   if (fromGoogleSearch != null) {
     setValueByPath(toObject, ["googleSearch"], googleSearchToMldev$1(fromGoogleSearch));
+  }
+  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+    "googleSearchRetrieval"
+  ]);
+  if (fromGoogleSearchRetrieval != null) {
+    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
   if (fromUrlContext != null) {
@@ -9371,27 +9372,9 @@ function toolToMldev$1(fromObject) {
 }
 function toolToVertex(fromObject) {
   const toObject = {};
-  const fromFunctionDeclarations = getValueByPath(fromObject, [
-    "functionDeclarations"
-  ]);
-  if (fromFunctionDeclarations != null) {
-    let transformedList = fromFunctionDeclarations;
-    if (Array.isArray(transformedList)) {
-      transformedList = transformedList.map((item) => {
-        return functionDeclarationToVertex(item);
-      });
-    }
-    setValueByPath(toObject, ["functionDeclarations"], transformedList);
-  }
   const fromRetrieval = getValueByPath(fromObject, ["retrieval"]);
   if (fromRetrieval != null) {
     setValueByPath(toObject, ["retrieval"], fromRetrieval);
-  }
-  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
-    "googleSearchRetrieval"
-  ]);
-  if (fromGoogleSearchRetrieval != null) {
-    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
   if (fromComputerUse != null) {
@@ -9412,6 +9395,18 @@ function toolToVertex(fromObject) {
   if (fromEnterpriseWebSearch != null) {
     setValueByPath(toObject, ["enterpriseWebSearch"], fromEnterpriseWebSearch);
   }
+  const fromFunctionDeclarations = getValueByPath(fromObject, [
+    "functionDeclarations"
+  ]);
+  if (fromFunctionDeclarations != null) {
+    let transformedList = fromFunctionDeclarations;
+    if (Array.isArray(transformedList)) {
+      transformedList = transformedList.map((item) => {
+        return functionDeclarationToVertex(item);
+      });
+    }
+    setValueByPath(toObject, ["functionDeclarations"], transformedList);
+  }
   const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
   if (fromGoogleMaps != null) {
     setValueByPath(toObject, ["googleMaps"], fromGoogleMaps);
@@ -9419,6 +9414,12 @@ function toolToVertex(fromObject) {
   const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
   if (fromGoogleSearch != null) {
     setValueByPath(toObject, ["googleSearch"], fromGoogleSearch);
+  }
+  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+    "googleSearchRetrieval"
+  ]);
+  if (fromGoogleSearchRetrieval != null) {
+    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
   if (fromUrlContext != null) {
@@ -9967,7 +9968,7 @@ var CONTENT_TYPE_HEADER = "Content-Type";
 var SERVER_TIMEOUT_HEADER = "X-Server-Timeout";
 var USER_AGENT_HEADER = "User-Agent";
 var GOOGLE_API_CLIENT_HEADER = "x-goog-api-client";
-var SDK_VERSION = "1.33.0";
+var SDK_VERSION = "1.36.0";
 var LIBRARY_LABEL = `google-genai-sdk/${SDK_VERSION}`;
 var VERTEX_AI_API_DEFAULT_VERSION = "v1beta1";
 var GOOGLE_AI_API_DEFAULT_VERSION = "v1beta";
@@ -10026,6 +10027,11 @@ var ApiClient = class {
   }
   getLocation() {
     return this.clientOptions.location;
+  }
+  async getAuthHeaders() {
+    const headers = new Headers();
+    await this.clientOptions.auth.addAuthHeaders(headers);
+    return headers;
   }
   getApiVersion() {
     if (this.clientOptions.httpOptions && this.clientOptions.httpOptions.apiVersion !== void 0) {
@@ -11994,7 +12000,7 @@ var Models = class extends BaseModule {
    * console.log(response1?.generatedImages?.[0]?.image?.imageBytes);
    *
    * const response2 = await ai.models.recontextImage({
-   *  model: 'virtual-try-on-preview-08-04',
+   *  model: 'virtual-try-on-001',
    *  source: {
    *    personImage: personImage,
    *    productImages: [productImage],
@@ -13015,26 +13021,8 @@ function sessionResumptionConfigToMldev(fromObject) {
 }
 function toolToMldev(fromObject) {
   const toObject = {};
-  const fromFunctionDeclarations = getValueByPath(fromObject, [
-    "functionDeclarations"
-  ]);
-  if (fromFunctionDeclarations != null) {
-    let transformedList = fromFunctionDeclarations;
-    if (Array.isArray(transformedList)) {
-      transformedList = transformedList.map((item) => {
-        return item;
-      });
-    }
-    setValueByPath(toObject, ["functionDeclarations"], transformedList);
-  }
   if (getValueByPath(fromObject, ["retrieval"]) !== void 0) {
     throw new Error("retrieval parameter is not supported in Gemini API.");
-  }
-  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
-    "googleSearchRetrieval"
-  ]);
-  if (fromGoogleSearchRetrieval != null) {
-    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromComputerUse = getValueByPath(fromObject, ["computerUse"]);
   if (fromComputerUse != null) {
@@ -13053,6 +13041,18 @@ function toolToMldev(fromObject) {
   if (getValueByPath(fromObject, ["enterpriseWebSearch"]) !== void 0) {
     throw new Error("enterpriseWebSearch parameter is not supported in Gemini API.");
   }
+  const fromFunctionDeclarations = getValueByPath(fromObject, [
+    "functionDeclarations"
+  ]);
+  if (fromFunctionDeclarations != null) {
+    let transformedList = fromFunctionDeclarations;
+    if (Array.isArray(transformedList)) {
+      transformedList = transformedList.map((item) => {
+        return item;
+      });
+    }
+    setValueByPath(toObject, ["functionDeclarations"], transformedList);
+  }
   const fromGoogleMaps = getValueByPath(fromObject, ["googleMaps"]);
   if (fromGoogleMaps != null) {
     setValueByPath(toObject, ["googleMaps"], googleMapsToMldev(fromGoogleMaps));
@@ -13060,6 +13060,12 @@ function toolToMldev(fromObject) {
   const fromGoogleSearch = getValueByPath(fromObject, ["googleSearch"]);
   if (fromGoogleSearch != null) {
     setValueByPath(toObject, ["googleSearch"], googleSearchToMldev(fromGoogleSearch));
+  }
+  const fromGoogleSearchRetrieval = getValueByPath(fromObject, [
+    "googleSearchRetrieval"
+  ]);
+  if (fromGoogleSearchRetrieval != null) {
+    setValueByPath(toObject, ["googleSearchRetrieval"], fromGoogleSearchRetrieval);
   }
   const fromUrlContext = getValueByPath(fromObject, ["urlContext"]);
   if (fromUrlContext != null) {
@@ -14821,7 +14827,7 @@ var APIPromise = class _APIPromise extends Promise {
     return this.parse().finally(onfinally);
   }
 };
-var brand_privateNullableHeaders = Symbol("brand.privateNullableHeaders");
+var brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
 function* iterateHeaders(headers) {
   if (!headers)
     return;
@@ -14909,7 +14915,7 @@ var BaseGeminiNextGenAPIClient = class _BaseGeminiNextGenAPIClient {
    */
   constructor(_b) {
     var _c, _d, _e, _f, _g, _h, _j;
-    var _k = _b === void 0 ? {} : _b, { baseURL = readEnv("GEMINI_NEXT_GEN_API_BASE_URL"), apiKey = (_c = readEnv("GEMINI_API_KEY")) !== null && _c !== void 0 ? _c : null, apiVersion = "v1beta" } = _k, opts = __rest(_k, ["baseURL", "apiKey", "apiVersion"]);
+    var { baseURL = readEnv("GEMINI_NEXT_GEN_API_BASE_URL"), apiKey = (_c = readEnv("GEMINI_API_KEY")) !== null && _c !== void 0 ? _c : null, apiVersion = "v1beta" } = _b, opts = __rest(_b, ["baseURL", "apiKey", "apiVersion"]);
     const options = Object.assign(Object.assign({
       apiKey,
       apiVersion
@@ -14927,6 +14933,7 @@ var BaseGeminiNextGenAPIClient = class _BaseGeminiNextGenAPIClient {
     this._options = options;
     this.apiKey = apiKey;
     this.apiVersion = apiVersion;
+    this.clientAdapter = options.clientAdapter;
   }
   /**
    * Create a new client instance re-using the same options given to the current client with optional overriding.
@@ -14945,6 +14952,9 @@ var BaseGeminiNextGenAPIClient = class _BaseGeminiNextGenAPIClient {
     return this._options.defaultQuery;
   }
   validateHeaders({ values, nulls }) {
+    if (values.has("authorization") || values.has("x-goog-api-key")) {
+      return;
+    }
     if (this.apiKey && values.get("x-goog-api-key")) {
       return;
     }
@@ -14954,10 +14964,17 @@ var BaseGeminiNextGenAPIClient = class _BaseGeminiNextGenAPIClient {
     throw new Error('Could not resolve authentication method. Expected the apiKey to be set. Or for the "x-goog-api-key" headers to be explicitly omitted');
   }
   async authHeaders(opts) {
-    if (this.apiKey == null) {
+    const existingHeaders = buildHeaders([opts.headers]);
+    if (existingHeaders.values.has("authorization") || existingHeaders.values.has("x-goog-api-key")) {
       return void 0;
     }
-    return buildHeaders([{ "x-goog-api-key": this.apiKey }]);
+    if (this.apiKey) {
+      return buildHeaders([{ "x-goog-api-key": this.apiKey }]);
+    }
+    if (this.clientAdapter.isVertexAI()) {
+      return buildHeaders([await this.clientAdapter.getAuthHeaders()]);
+    }
+    return void 0;
   }
   /**
    * Basic re-implementation of `qs.stringify` for primitive types.
@@ -14995,9 +15012,14 @@ var BaseGeminiNextGenAPIClient = class _BaseGeminiNextGenAPIClient {
     return url.toString();
   }
   /**
-   * Used as a callback for mutating the given `FinalRequestOptions` object.
-   */
+     * Used as a callback for mutating the given `FinalRequestOptions` object.
+  
+     */
   async prepareOptions(options) {
+    if (this.clientAdapter && this.clientAdapter.isVertexAI() && !options.path.startsWith(`/${this.apiVersion}/projects/`)) {
+      const oldPath = options.path.slice(this.apiVersion.length + 1);
+      options.path = `/${this.apiVersion}/projects/${this.clientAdapter.getProject()}/locations/${this.clientAdapter.getLocation()}${oldPath}`;
+    }
   }
   /**
    * Used as a callback for mutating the given `RequestInit` object.
@@ -15214,13 +15236,14 @@ var BaseGeminiNextGenAPIClient = class _BaseGeminiNextGenAPIClient {
         options.idempotencyKey = this.defaultIdempotencyKey();
       idempotencyHeaders[this.idempotencyHeader] = options.idempotencyKey;
     }
-    const headers = buildHeaders([
+    const authHeaders = await this.authHeaders(options);
+    let headers = buildHeaders([
       idempotencyHeaders,
       Object.assign(Object.assign({ Accept: "application/json", "User-Agent": this.getUserAgent(), "X-Stainless-Retry-Count": String(retryCount) }, options.timeout ? { "X-Stainless-Timeout": String(Math.trunc(options.timeout / 1e3)) } : {}), getPlatformHeaders()),
-      await this.authHeaders(options),
       this._options.defaultHeaders,
       bodyHeaders,
-      options.headers
+      options.headers,
+      authHeaders
     ]);
     this.validateHeaders(headers);
     return headers.values;
@@ -16422,9 +16445,6 @@ var GoogleGenAI = class {
       return this._interactions;
     }
     console.warn("GoogleGenAI.interactions: Interactions usage is experimental and may change in future versions.");
-    if (this.vertexai) {
-      throw new Error("This version of the GenAI SDK does not support Vertex AI API for interactions.");
-    }
     const httpOpts = this.httpOptions;
     if (httpOpts === null || httpOpts === void 0 ? void 0 : httpOpts.extraBody) {
       console.warn("GoogleGenAI.interactions: Client level httpOptions.extraBody is not supported by the interactions client and will be ignored.");
@@ -16432,6 +16452,8 @@ var GoogleGenAI = class {
     const nextGenClient = new GeminiNextGenAPIClient({
       baseURL: this.apiClient.getBaseUrl(),
       apiKey: this.apiKey,
+      apiVersion: this.apiClient.getApiVersion(),
+      clientAdapter: this.apiClient,
       defaultHeaders: this.apiClient.getDefaultHeaders(),
       timeout: httpOpts === null || httpOpts === void 0 ? void 0 : httpOpts.timeout
     });
@@ -16567,7 +16589,6 @@ export {
   MediaModality,
   MediaResolution,
   Modality,
-  Mode,
   Models,
   MusicGenerationMode,
   Operations,
@@ -16608,6 +16629,7 @@ export {
   VideoCompressionQuality,
   VideoGenerationMaskMode,
   VideoGenerationReferenceType,
+  VoiceActivityType,
   createFunctionResponsePartFromBase64,
   createFunctionResponsePartFromUri,
   createModelContent,

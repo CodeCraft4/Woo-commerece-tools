@@ -8,9 +8,12 @@ import { COLORS } from "../../../constant/color";
 import useModal from "../../../hooks/useModal";
 import ProductPopup from "../../../components/ProductPopup/ProductPopup";
 import MainLayout from "../../../layout/MainLayout";
+import { USER_ROUTES } from "../../../constant/route";
 
 const VIEW_ALL = "View All Filters";
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
+const toAbs = (p: string) => (p.startsWith("/") ? p : `/${p}`);
+
 
 type LocationState = {
   categoryId?: string | number | null;
@@ -43,7 +46,7 @@ const getAccessPlan = (x: any): "free" | "bundle" | "pro" => {
 const IconBadge = ({ kind }: { kind: "pro" | "bundle" }) => {
   const isPro = kind === "pro";
   return (
-     <Box
+    <Box
       sx={{
         position: "absolute",
         top: 5,
@@ -55,7 +58,7 @@ const IconBadge = ({ kind }: { kind: "pro" | "bundle" }) => {
         display: "grid",
         placeItems: "center",
         bgcolor: "rgba(255,255,255,0.92)",
-        boxShadow:5,
+        boxShadow: 5,
         transform: "rotate(-12deg)",
         // border: "1px solid rgba(80, 80, 80, 0.73)",
       }}
@@ -173,15 +176,20 @@ const ViewAllCard = () => {
   // ✅ CLICK handlers update URL + title automatically
   const clickViewAll = () => {
     setActiveTab({ id: null, name: VIEW_ALL });
-    navigate(`/view-all`, { state: { categoryName: null, categoryId: null } }); // ✅ URL CHANGE
+    navigate(toAbs(USER_ROUTES.VIEW_ALL), {
+      replace: true,
+      state: { categoryName: null, categoryId: null },
+    });
   };
 
   const clickTab = (c: { id: any; name: string }) => {
     setActiveTab({ id: c.id, name: c.name });
-    navigate(`/view-all/${encodeURIComponent(c.name)}`, {
+    navigate(`${toAbs(USER_ROUTES.VIEW_ALL)}/${encodeURIComponent(c.name)}`, {
+      replace: true,
       state: { categoryName: c.name, categoryId: c.id },
-    }); // ✅ URL CHANGE
+    });
   };
+
 
   const filteredCards = useMemo(() => {
     const list = Array.isArray(cardData) ? cardData : [];

@@ -126,11 +126,11 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
   if (name.includes("coaster")) return [{ key: "coaster_95", title: "95mm × 95mm (×2 coasters)" }];
 
   return [
-    { key: "a5", title: "A5" },
+    { key: "a5", title: "A3" },
     { key: "a4", title: "A4" },
-    { key: "half_us_letter", title: "Half US Letter" },
+    // { key: "half_us_letter", title: "Half US Letter" },
     { key: "us_letter", title: "US Letter" },
-    { key: "us_tabloid", title: "US Tabloid (Folded half: 11 × 8.5 in)" },
+    // { key: "us_tabloid", title: "US Tabloid (Folded half: 11 × 8.5 in)" },
   ];
 };
 
@@ -592,7 +592,6 @@ const Subscription = () => {
     <MainLayout>
       <Box
         sx={{
-          bgcolor: "white",
           width: "100%",
           display: "flex",
           alignItems: "start",
@@ -600,6 +599,7 @@ const Subscription = () => {
           justifyContent: "center",
           mt: { md: 4, sm: 3, xs: 2 },
           mb: { md: 4, sm: 3, xs: 2 },
+          
         }}
       >
         <Container maxWidth="xl">

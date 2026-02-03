@@ -86,7 +86,7 @@ type EditFormValue = {
 
   // ✅ NEW (for edit prefill)
   accessPlan?: AccessPlan;
-  accessplan?: AccessPlan; 
+  accessplan?: AccessPlan;
 
   polyganLayout?: any;
 };
@@ -246,8 +246,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
   }, [(slide1 as any)?.bgRect1?.width, (slide1 as any)?.bgRect1?.height]);
 
   const previewBounds = useMemo(() => {
-    if (isMdUp) return { maxW: 620, maxH: 840 };
-    if (isSmUp) return { maxW: 520, maxH: 720 };
+    if (isMdUp) return { maxW: 500, maxH: 700 };
+    if (isSmUp) return { maxW: 500, maxH: 700 };
     return { maxW: 360, maxH: 480 };
   }, [isMdUp, isSmUp]);
 
@@ -267,12 +267,11 @@ const NewCardsForm = ({ editProduct }: Props) => {
       }
       return;
     }
-
-    slide1?.resetSlide1State?.();
-    slide2?.resetSlide2State?.();
-    slide3?.resetSlide3State?.();
-    slide4?.resetSlide4State?.();
-  }, [isEditMode, editLayout, slide1, slide2, slide3, slide4]);
+    // slide1?.resetSlide1State?.();
+    // slide2?.resetSlide2State?.();
+    // slide3?.resetSlide3State?.();
+    // slide4?.resetSlide4State?.();
+  }, [isEditMode]);
 
   const handleEditLayout = async () => {
     if (editLoading) return;
@@ -453,8 +452,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
                   !watch("subCategory")
                     ? "Select sub category first (optional)"
                     : subSubCategoryOptions.length === 0
-                    ? "No sub-sub categories"
-                    : "Select sub-sub category (optional)"
+                      ? "No sub-sub categories"
+                      : "Select sub-sub category (optional)"
                 }
                 value={field.value ?? ""}
                 onChange={(e) => field.onChange((e.target as HTMLInputElement).value)}
