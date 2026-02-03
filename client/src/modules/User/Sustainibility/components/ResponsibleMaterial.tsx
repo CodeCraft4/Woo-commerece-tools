@@ -23,7 +23,7 @@ const ResponsibleMaterial = () => {
                 {/* Left */}
                 <Box sx={{ width: "100%" }}>
                     <Typography sx={{ fontSize: { md: 23, sm: 20, xs: 16 }, textAlign: "start" }}>
-                        Paper can be sustainable  material when sourced responsibly. We encourage printing on paper and card made from well, managed forest and renewable growth cycle, where trees are replanted and harvested thoughtfully.
+                        Paper can be sustainable  material when sourced responsibly. We encourage printing on paper and card made from well managed forest and renewable growth cycle, where trees are replanted and harvested thoughtfully.
                     </Typography>
 
                     <Typography sx={{ fontSize: { md: 23, sm: 20, xs: 16 }, textAlign: "start" }}>

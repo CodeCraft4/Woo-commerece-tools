@@ -346,7 +346,6 @@ const TempletEditorPreview: React.FC = () => {
 
   return (
     <>
-
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 3 }}>
         <Typography sx={{ p: 2, display: "flex", alignItems: "center", color: "blue", "&:hover": { textDecoration: "underline", cursor: "pointer" } }} onClick={() => navigate(-1)}>
           <ArrowBackIos fontSize="small" /> exit

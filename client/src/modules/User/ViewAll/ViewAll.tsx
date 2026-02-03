@@ -1,4 +1,3 @@
-// File: src/pages/viewAll/ViewAll.tsx  (YA jahan aapne ye component rakha hai)
 import { useEffect, useMemo, useState } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { TuneOutlined, CardGiftcard } from "@mui/icons-material";
@@ -44,25 +43,25 @@ const getAccessPlan = (x: any): "free" | "bundle" | "pro" => {
 const IconBadge = ({ kind }: { kind: "pro" | "bundle" }) => {
   const isPro = kind === "pro";
   return (
-    <Box
+     <Box
       sx={{
         position: "absolute",
-        top: 10,
-        left: 10,
+        top: 5,
+        left: 5,
         zIndex: 2,
-        width: 75,
-        height: 75,
+        width: 50,
+        height: 50,
         borderRadius: 999,
         display: "grid",
         placeItems: "center",
         bgcolor: "rgba(255,255,255,0.92)",
-        boxShadow: "0 10px 20px rgba(0,0,0,0.25)",
+        boxShadow:5,
         transform: "rotate(-12deg)",
-        border: "1px solid rgba(0,0,0,0.08)",
+        // border: "1px solid rgba(80, 80, 80, 0.73)",
       }}
     >
       {isPro ? (
-        <Box component="img" src="/assets/icons/premiumuser.png" sx={{ width: 70, height: 70 }} />
+        <Box component="img" src="/assets/icons/premiumuser.png" sx={{ width: 40, height: 40 }} />
       ) : (
         <CardGiftcard sx={{ color: COLORS.primary, fontSize: 24 }} />
       )}

@@ -1,14 +1,52 @@
 import { Box, Typography } from "@mui/material";
 import { COLORS } from "../../constant/color";
+import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
 
 const VIPFunky = () => {
+
+  const {session} = useAuth()
+
+const handleJoinWaitlist = async (e:any) => {
+  e.preventDefault();
+  try {
+
+    const token = session?.access_token;
+
+    if (!token) {
+      toast.error("Please login first");
+      return;
+    }
+
+    const res = await fetch(`diypersonalisation.com/api/waitlist/join`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ source: "vip-funky-banner" }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error(data?.error || "Failed to join waitlist");
+      return;
+    }
+
+    toast.success("You are added in the waitlist");
+  } catch {
+    toast.error("Network error");
+  }
+};
+
+
+
   return (
     <Box sx={{ mt: 6, px: { md: 0, sm: 0, xs: 1 } }}>
-      {/* Green panel */}
       <Box
         sx={{
           width: "100%",
-          height: { md: 350, xs: 'auto' }, // fixed 350 for md/sm/xs
+          height: { md: 350, xs: "auto" },
           bgcolor: COLORS.green,
           borderRadius: 3,
           overflow: "hidden",
@@ -20,7 +58,6 @@ const VIPFunky = () => {
           gap: { md: 2, xs: 1.5 },
         }}
       >
-        {/* LEFT */}
         <Box
           sx={{
             flex: 1,
@@ -30,7 +67,6 @@ const VIPFunky = () => {
             justifyContent: "center",
           }}
         >
-          {/* Title + badge centered like screenshot */}
           <Box sx={{ textAlign: "center", mb: 2 }}>
             <Typography
               sx={{
@@ -62,55 +98,39 @@ const VIPFunky = () => {
             </Box>
           </Box>
 
-          {/* Body text */}
           <Box sx={{ px: { md: 1, xs: 0 } }}>
-            <Typography
-              sx={{
-                color: "#111",
-                fontSize: { md: 24, sm: 22, xs: 18 },
-                lineHeight: 1.25,
-                mb: 2,
-              }}
-            >
+            <Typography sx={{ color: "#111", fontSize: { md: 24, sm: 22, xs: 18 }, lineHeight: 1.25, mb: 2 }}>
               Personalising on the go is about to get even easier.
             </Typography>
 
-            <Typography
-              sx={{
-                color: "#111",
-                fontSize: { md: 24, sm: 22, xs: 18 },
-                lineHeight: 1.25,
-                mb: 1,
-              }}
-            >
-              Create and personalise cards, invites, gifts and more directly from
-              your phone.
+            <Typography sx={{ color: "#111", fontSize: { md: 24, sm: 22, xs: 18 }, lineHeight: 1.25, mb: 1 }}>
+              Create and personalise cards, invites, gifts and more directly from your phone.
             </Typography>
 
-            <Typography
-              sx={{
-                color: "#111",
-                fontSize: { md: 24, sm: 22, xs: 18 },
-                lineHeight: 1.25,
-                mb: 1,
-              }}
-            >
-              [ Join the waitlist ]
+            {/* ✅ CLICKABLE WAITLIST */}
+            <Typography sx={{ fontSize: { md: 24, sm: 22, xs: 18 }, lineHeight: 1.25, m:1 }}>
+              <Box
+                onClick={handleJoinWaitlist}
+                component={'div'}     
+                // underline="always"
+                sx={{
+                  // color: "#111",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  "&:hover": { opacity: 0.8,textDecoration:'underline' },
+                  color:COLORS.black
+                }}
+              >
+                [ Join the waitlist ]
+              </Box>
             </Typography>
 
-            <Typography
-              sx={{
-                color: "#111",
-                fontSize: { md: 24, sm: 22, xs: 18 },
-                lineHeight: 1.25,
-              }}
-            >
+            <Typography sx={{ color: "#111", fontSize: { md: 24, sm: 22, xs: 18 }, lineHeight: 1.25 }}>
               Be the first to know when the app launches.
             </Typography>
           </Box>
         </Box>
 
-        {/* RIGHT (App image) */}
         <Box
           sx={{
             width: { xs: "100%", md: 420 },
@@ -122,14 +142,12 @@ const VIPFunky = () => {
         >
           <Box
             component="img"
-            // use your best app photo here (phone mock)
             src="/assets/images/AppBanners.png"
             alt="App preview"
             sx={{
-              height: { xs: 170, sm: 220, md: 320 }, // fits inside 350 panel
+              height: { xs: 170, sm: 220, md: 320 },
               width: "auto",
               objectFit: "contain",
-              // slight “float” to match screenshot placement
               transform: { xs: "none", md: "translateY(6px)" },
               filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.25))",
               userSelect: "none",

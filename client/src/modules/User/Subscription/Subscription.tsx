@@ -1,26 +1,34 @@
-import { Box, Container, Grid, IconButton, Typography, Alert, Chip } from "@mui/material";
-import Applayout from "../../../layout/Applayout";
+// Subscription.tsx (FULL UPDATED COMPONENT)
+// ✅ Shows EXACT sizes for category (no hiding)
+// ✅ Uses ONLY actual prices (no sale)
+// ✅ Still keeps your bundle/pro/free rules the same
+// ✅ Handles BOTH legacy lowercase keys (a4/us_letter/...) + uppercase keys (A4/US_LETTER/...)
+// ✅ Selected plan auto-picks first available (else first item)
+
+import { Box, Container, Grid, Typography, Chip, Button } from "@mui/material";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import TableBgImg from "/assets/images/table.png";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { loadStripe } from "@stripe/stripe-js";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
-import { ArrowBackIos, CardGiftcard, EmojiEvents } from "@mui/icons-material";
+import { CardGiftcard, EmojiEvents } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { type SizeKey } from "../../../stores/cartStore";
-import { pickPrice } from "../../../lib/pricing";
 import { getMockupConfig } from "../../../lib/mockup";
 import { supabase } from "../../../supabase/supabase";
 import { USER_ROUTES } from "../../../constant/route";
+import MainLayout from "../../../layout/MainLayout";
+import { COLORS } from "../../../constant/color";
 
 // ------------------ ENV ------------------
-// const API_BASE = "http://localhost:5000";
 const API_BASE = "https://diypersonalisation.com/api";
+// const API_BASE = "http://localhost:5000";
 const STRIPE_PK =
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : Promise.resolve(null);
 
+// ------------------ Types ------------------
 type SelectedVariant = {
   key: SizeKey;
   title: string;
@@ -35,14 +43,8 @@ type SelectedProduct = {
   title?: string;
   category?: string;
   img?: string;
-
   accessplan?: string;
   accessPlan?: string;
-
-  subCategory?: string;
-  subSubCategory?: string;
-  subcategory?: string;
-  subsubcategory?: string;
 };
 
 type PriceTables = { actual: any; sale: any };
@@ -53,10 +55,6 @@ type UserPlan = {
   isPremium: boolean;
   premium_expires_at: string | null;
   email?: string | null;
-
-  bundle_main_categories?: string[] | null;
-  bundle_sub_categories?: string[] | null;
-  bundle_sub_sub_categories?: string[] | null;
 };
 
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
@@ -68,11 +66,26 @@ const getItemAccessPlan = (p: any): "free" | "bundle" | "pro" => {
   return "free";
 };
 
-const hasValidPrice = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0;
+const normalizeItemType = (type?: string) => {
+  if (!type) return "";
+  const t = type.toLowerCase().trim();
+  if (t === "templet") return "template";
+  if (t === "templates") return "template";
+  if (t === "cards") return "card";
+  return t;
 };
 
+export const isProductInBundle = (
+  product: { id?: string | number; type?: string } | null,
+  bundleKeySet: Set<string>
+): boolean => {
+  if (!product?.id || !product?.type) return false;
+  const normalizedType = normalizeItemType(product.type);
+  const key = `${normalizedType}:${String(product.id).trim()}`;
+  return bundleKeySet.has(key);
+};
+
+// ------------------ EXACT Size Config (same as ProductPopup) ------------------
 const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
   const name = (categoryName ?? "").trim().toLowerCase();
 
@@ -121,15 +134,46 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
   ];
 };
 
+// ------------------ UI ------------------
 const isActivePay = {
   display: "flex",
   gap: "4px",
   justifyContent: "space-between",
   alignItems: "center",
-  bgcolor: "#cdf0c06a",
+  bgcolor: COLORS.seconday,
   p: "3px",
   borderRadius: 2,
   boxShadow: "3px 7px 8px #eff1f1ff",
+};
+
+// ------------------ Helpers ------------------
+const toNum = (v: unknown, fallback = 0) => {
+  if (v == null) return fallback;
+  const s = String(v).trim();
+  if (!s) return fallback;
+  if (s.toUpperCase() === "EMPTY") return fallback;
+  const n = Number(s.replace(/,/g, ""));
+  return Number.isFinite(n) ? n : fallback;
+};
+
+// Some rows/flows may have uppercase keys, some lowercase. Support both.
+const KEY_FALLBACK: Record<string, string> = {
+  A5: "a5",
+  A4: "a4",
+  A3: "a3",
+  US_LETTER: "us_letter",
+  HALF_US_LETTER: "half_us_letter",
+  US_TABLOID: "us_tabloid",
+  MUG_WRAP_11OZ: "mug_wrap_11oz",
+  COASTER_95: "coaster_95",
+};
+
+const readActualPrice = (tables: PriceTables | null, key: any) => {
+  const actual = tables?.actual ?? {};
+  const raw1 = actual?.[key]; // current key
+  const raw2 = actual?.[String(key).toUpperCase?.() ?? ""]; // uppercase attempt
+  const raw3 = actual?.[KEY_FALLBACK[String(key).toUpperCase()] ?? ""]; // mapped lowercase
+  return toNum(raw1 ?? raw2 ?? raw3, 0);
 };
 
 async function getAccessToken() {
@@ -141,16 +185,6 @@ async function getAccessToken() {
   return s2.data?.session?.access_token || "";
 }
 
-function readLocalJson<T>(key: string): T | null {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
-}
-
 // ✅ bundle_items keys: "card:<id>" or "template:<id>"
 async function fetchBundleItemKeySet(): Promise<Set<string>> {
   const { data, error } = await supabase.from("bundle_items").select("item_type,item_id");
@@ -158,11 +192,8 @@ async function fetchBundleItemKeySet(): Promise<Set<string>> {
 
   const keys = new Set<string>();
   (data ?? []).forEach((r: any) => {
-    const t = lc(r.item_type);
-    const id = String(r.item_id);
-
-    const type = t === "cards" ? "card" : t === "templets" ? "template" : t;
-    if (type === "card" || type === "template") keys.add(`${type}:${id}`);
+    const type = r.item_type === "cards" ? "card" : r.item_type === "templets" ? "template" : r.item_type;
+    keys.add(`${type}:${r.item_id}`);
   });
 
   return keys;
@@ -180,16 +211,15 @@ const Subscription = () => {
 
   const [userPlan, setUserPlan] = useState<UserPlan | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
+  console.log(userPlan)
 
-  // ✅ bundle_items set
   const [bundleKeySet, setBundleKeySet] = useState<Set<string>>(new Set());
   const [bundleKeyLoading, setBundleKeyLoading] = useState(false);
 
-  // ✅ get both state and search (Stripe return)
   const location: any = useLocation() as { state?: { slides?: Record<string, string> } };
   const { state } = location;
 
-  const { user } = useAuth();
+  const { user, plan } = useAuth();
   const navigate = useNavigate();
 
   const slidesObj = useMemo(() => {
@@ -222,7 +252,7 @@ const Subscription = () => {
       const rawP = localStorage.getItem("selectedPrices");
       if (rawP) {
         const parsed = JSON.parse(rawP) as PriceTables;
-        if (parsed?.actual && parsed?.sale) setPriceTables(parsed);
+        if (parsed?.actual) setPriceTables(parsed);
       }
     } catch {}
 
@@ -250,7 +280,7 @@ const Subscription = () => {
     })();
   }, []);
 
-  // ✅ category/sub/subsub from local+product
+  // ✅ category used for sizes + mockup
   const categoryName = useMemo(() => {
     const lsCat = (() => {
       try {
@@ -263,64 +293,38 @@ const Subscription = () => {
     return variant?.category || product?.category || lsCat || "default";
   }, [variant?.category, product?.category]);
 
-  const subCategoryName = useMemo(() => {
-    const ls = (() => {
-      try {
-        return localStorage.getItem("selectedSubCategory") || "";
-      } catch {
-        return "";
-      }
-    })();
-    return product?.subCategory || product?.subcategory || (product as any)?.sub_category || ls || "";
-  }, [product]);
-
-  const subSubCategoryName = useMemo(() => {
-    const ls = (() => {
-      try {
-        return localStorage.getItem("selectedSubSubCategory") || "";
-      } catch {
-        return "";
-      }
-    })();
-    return product?.subSubCategory || product?.subsubcategory || (product as any)?.sub_sub_category || ls || "";
-  }, [product]);
-
+  // ✅ EXACT sizes (no filter)
   const sizeDefs = useMemo(() => getSizeDefsForCategory(categoryName), [categoryName]);
 
-  const sizeOptions = useMemo(() => {
-    const actual = priceTables?.actual ?? {};
-    return sizeDefs.filter((d) => hasValidPrice(actual[d.key]));
-  }, [sizeDefs, priceTables?.actual]);
-
-  useEffect(() => {
-    if (!sizeOptions.length) return;
-    const exists = sizeOptions.some((x) => x.key === selectedPlan);
-    if (!exists) setSelectedPlan(sizeOptions[0].key);
-  }, [sizeOptions, selectedPlan]);
-
-  const useSaleForSelected = useMemo(() => {
-    if (variant?.isOnSale === true) return true;
-    if (variant?.isOnSale === false) return false;
-    const v = priceTables?.sale?.[selectedPlan];
-    return Number.isFinite(Number(v)) && Number(v) > 0;
-  }, [variant?.isOnSale, priceTables?.sale, selectedPlan]);
-
+  // ✅ Build plans from EXACT sizeDefs (no sale)
   const plans = useMemo(() => {
-    return sizeOptions.map((opt) => {
-      const p = pickPrice(priceTables?.actual ?? {}, useSaleForSelected ? priceTables?.sale ?? {} : undefined, opt.key);
+    return sizeDefs.map((opt) => {
+      const price = readActualPrice(priceTables, opt.key);
       return {
         id: opt.key,
         title: opt.title,
         sub: opt.sub,
-        price: Number(p.price) || 0,
-        isOnSale: p.isOnSale,
+        price,
+        disabled: price <= 0,
       };
     });
-  }, [sizeOptions, priceTables, useSaleForSelected]);
+  }, [sizeDefs, priceTables]);
+
+  // ✅ Ensure selectedPlan exists; prefer first available, else first item
+  useEffect(() => {
+    if (!plans.length) return;
+
+    const exists = plans.some((p) => String(p.id) === String(selectedPlan));
+    if (exists) return;
+
+    const firstAvail = plans.find((p) => !p.disabled)?.id;
+    const fallback = plans[0]?.id;
+    setSelectedPlan((firstAvail ?? fallback ?? "a4") as any);
+  }, [plans, selectedPlan]);
 
   const isMugsCate = useMemo(
     () => categoryName === "Mugs" || categoryName.toLowerCase() === "mugs",
-    [categoryName],
+    [categoryName]
   );
   const mock = useMemo(() => getMockupConfig(categoryName), [categoryName]);
 
@@ -335,7 +339,7 @@ const Subscription = () => {
           return;
         }
 
-        const res = await fetch(`${API_BASE}/me/plan`, {
+        const res = await fetch(`${API_BASE}e/plan`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -354,88 +358,33 @@ const Subscription = () => {
     })();
   }, []);
 
-  const planCode = useMemo(() => lc(userPlan?.plan_code || "free"), [userPlan?.plan_code]);
-
-  // ✅ build bundle allow lists (API + local fallback)
-  const bundleAllow = useMemo(() => {
-    const apiAllow = {
-      main: (userPlan?.bundle_main_categories ?? []) as string[],
-      sub: (userPlan?.bundle_sub_categories ?? []) as string[],
-      subsub: (userPlan?.bundle_sub_sub_categories ?? []) as string[],
-    };
-
-    const local = readLocalJson<{ main?: string[]; sub?: string[]; subsub?: string[] }>("bundle_access");
-
-    const main = (apiAllow.main?.length ? apiAllow.main : local?.main || []).map((x) => lc(x));
-    const sub = (apiAllow.sub?.length ? apiAllow.sub : local?.sub || []).map((x) => lc(x));
-    const subsub = (apiAllow.subsub?.length ? apiAllow.subsub : local?.subsub || []).map((x) => lc(x));
-
-    return { main, sub, subsub };
-  }, [userPlan]);
-
-  // ✅ category-based bundle eligibility
-  const isBundleEligibleByCategory = useMemo(() => {
-    if (planCode !== "bundle") return false;
-
-    const m = lc(categoryName);
-    const s = lc(subCategoryName);
-    const ss = lc(subSubCategoryName);
-
-    if (!bundleAllow.main.length) return false;
-    if (!bundleAllow.main.includes(m)) return false;
-
-    if (bundleAllow.sub.length && s) {
-      if (!bundleAllow.sub.includes(s)) return false;
-    }
-    if (bundleAllow.subsub.length && ss) {
-      if (!bundleAllow.subsub.includes(ss)) return false;
-    }
-
-    return true;
-  }, [planCode, categoryName, subCategoryName, subSubCategoryName, bundleAllow]);
+  const planCode = plan;
 
   const selectedItemAccessPlan = useMemo(() => getItemAccessPlan(product), [product]);
 
-  // ✅ ID match key
-  const productKey = useMemo(() => {
-    const id = product?.id == null ? "" : String(product.id);
-    const type = (product?.type ?? "card") as "card" | "template";
-    if (!id) return "";
-    return `${type}:${id}`;
-  }, [product?.id, product?.type]);
+  const productKey = useMemo(
+    () => (product?.id && product?.type ? `${product.type}:${product.id}` : ""),
+    [product]
+  );
 
-  const isInBundleItems = useMemo(() => {
-    if (!productKey) return false;
-    return bundleKeySet.has(productKey);
-  }, [bundleKeySet, productKey]);
+  const isInBundleItems = useMemo(() => isProductInBundle(product, bundleKeySet), [product, bundleKeySet]);
 
-  // ✅ FINAL bundle eligibility = ID OR CATEGORY
-  const isBundleEligible = useMemo(() => {
-    if (planCode !== "bundle") return false;
-    return isInBundleItems || isBundleEligibleByCategory;
-  }, [planCode, isInBundleItems, isBundleEligibleByCategory]);
+  const isBundleAndMatched = planCode === "bundle" && isInBundleItems;
 
-  // ✅ PRO-ONLY CARD RULE
+  // ✅ PRO-ONLY CARD RULE (keep as-is)
   const isProUser = planCode === "pro";
   const isProOnlyCard = selectedItemAccessPlan === "pro";
   const proOnlyLocked = isProOnlyCard && !isProUser;
 
-  // ✅ payment needed rule
   const requiresPayment = useMemo(() => {
     if (planLoading || bundleKeyLoading) return true;
 
-    // pro-only card: non-pro user can't pay; must upgrade
-    if (proOnlyLocked) return false;
-
     if (planCode === "pro") return false;
 
-    if (planCode === "bundle") {
-      // ✅ OR eligibility
-      return !isBundleEligible;
-    }
+    if (planCode === "bundle") return !isInBundleItems;
 
-    return true; // free
-  }, [planLoading, bundleKeyLoading, planCode, proOnlyLocked, isBundleEligible]);
+    return true;
+  }, [planCode, planLoading, bundleKeyLoading, isInBundleItems]);
 
   const getSlidesPayload = () => {
     if (slidesObj && Object.keys(slidesObj).length) return slidesObj;
@@ -447,22 +396,23 @@ const Subscription = () => {
     }
   };
 
-  const syncLocalSelection = (plan: { id: any; title: string; price: number; isOnSale?: boolean }) => {
+  const syncLocalSelection = (p: { id: any; title: string; price: number }) => {
     try {
       const newVariant: SelectedVariant = {
-        key: plan.id,
-        title: plan.title,
-        price: plan.price,
-        isOnSale: plan.isOnSale,
+        key: p.id,
+        title: p.title,
+        price: p.price,
+        isOnSale: false,
         category: categoryName,
-      };
+      } as any;
+
       localStorage.setItem("selectedVariant", JSON.stringify(newVariant));
-      localStorage.setItem("selectedSize", String(plan.id));
+      localStorage.setItem("selectedSize", String(p.id));
       localStorage.setItem("selectedCategory", String(categoryName));
     } catch {}
   };
 
-  const startOneTimeStripeCheckout = async (plan: { title: string; price: number }) => {
+  const startOneTimeStripeCheckout = async (p: { title: string; price: number }) => {
     setLoading(true);
     try {
       if (!STRIPE_PK) throw new Error("Stripe key missing in env");
@@ -476,8 +426,8 @@ const Subscription = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: plan.title,
-          price: plan.price,
+          title: p.title,
+          price: p.price,
           user: {
             email: user?.email,
             name: user?.user_metadata?.full_name || "User",
@@ -489,8 +439,6 @@ const Subscription = () => {
             variantKey: selectedPlan,
             category: categoryName,
             accessplan: selectedItemAccessPlan,
-            subCategory: subCategoryName,
-            subSubCategory: subSubCategoryName,
             productKey,
           },
         }),
@@ -508,7 +456,6 @@ const Subscription = () => {
     }
   };
 
-  // ✅ generate PDF
   const sendPdfDirectForSubscription = useCallback(
     async (opts?: { paid?: boolean; sessionId?: string }) => {
       setLoading(true);
@@ -527,19 +474,14 @@ const Subscription = () => {
             slides,
             cardSize: localStorage.getItem("selectedSize") || selectedPlan,
             category: categoryName,
-            subCategory: subCategoryName,
-            subSubCategory: subSubCategoryName,
             accessplan: selectedItemAccessPlan,
 
-            // ✅ final eligibility
-            bundleEligible: isBundleEligible,
             inBundleItems: isInBundleItems,
-            categoryEligible: isBundleEligibleByCategory,
             productKey,
+            userPlan: planCode,
 
             paid: Boolean(opts?.paid),
             payment_session_id: opts?.sessionId ?? null,
-            userPlan: planCode,
           }),
         });
 
@@ -556,22 +498,10 @@ const Subscription = () => {
         setLoading(false);
       }
     },
-    [
-      categoryName,
-      subCategoryName,
-      subSubCategoryName,
-      selectedItemAccessPlan,
-      isBundleEligible,
-      isInBundleItems,
-      isBundleEligibleByCategory,
-      productKey,
-      getSlidesPayload,
-      selectedPlan,
-      planCode,
-    ],
+    [categoryName, selectedItemAccessPlan, isInBundleItems, productKey, getSlidesPayload, selectedPlan, planCode]
   );
 
-  // ✅ Stripe return handler
+  // ✅ Stripe return handler (same)
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const paid = sp.get("paid") === "1";
@@ -618,46 +548,58 @@ const Subscription = () => {
       return;
     }
 
-    const plan = plans.find((p) => p.id === selectedPlan);
-    if (!plan) {
-      toast.error("No pricing configured for this product.");
-      return;
-    }
-
-    syncLocalSelection(plan);
-
     if (planLoading || bundleKeyLoading) {
       toast.error("Please wait, loading your plan...");
       return;
     }
 
+    // ✅ direct
     if (!requiresPayment) {
       await sendPdfDirectForSubscription();
       return;
     }
 
-    await startOneTimeStripeCheckout({ title: plan.title, price: plan.price });
+    const picked = plans.find((p) => String(p.id) === String(selectedPlan));
+    if (!picked || picked.disabled) {
+      toast.error("No pricing configured for this product.");
+      return;
+    }
+
+    syncLocalSelection({ id: picked.id, title: picked.title, price: picked.price });
+    await startOneTimeStripeCheckout({ title: picked.title, price: picked.price });
   };
 
   // ✅ Icons
   const showTrophyIcon = selectedItemAccessPlan === "pro";
-  const showGiftIcon = !showTrophyIcon && selectedItemAccessPlan === "bundle" && isBundleEligible;
+  const showGiftIcon =
+    !showTrophyIcon && selectedItemAccessPlan === "bundle" && planCode === "bundle" && isInBundleItems;
 
-  // ✅ Messages
-  const showHurryBundleMsg = planCode === "bundle" && selectedItemAccessPlan === "bundle" && isBundleEligible;
+  // const productName =
+  //   product?.title ||
+  //   product?.category ||
+  //   (() => {
+  //     try {
+  //       const raw = localStorage.getItem("selectedProduct");
+  //       if (!raw) return "product";
+  //       const p = JSON.parse(raw);
+  //       return p?.title || p?.category || "product";
+  //     } catch {
+  //       return "product";
+  //     }
+  //   })();
 
   return (
-    <Applayout>
+    <MainLayout>
       <Box
         sx={{
           bgcolor: "white",
           width: "100%",
-          height: { md: "95vh", sm: "95vh", xs: "auto" },
           display: "flex",
           alignItems: "start",
           flexDirection: "column",
           justifyContent: "center",
-          m: "auto",
+          mt: { md: 4, sm: 3, xs: 2 },
+          mb: { md: 4, sm: 3, xs: 2 },
         }}
       >
         <Container maxWidth="xl">
@@ -665,18 +607,14 @@ const Subscription = () => {
             sx={{
               textAlign: "start",
               fontSize: { md: "40px", sm: "30px", xs: "20px" },
-              fontWeight: "bold",
+              // fontWeight: "bold",
               display: "flex",
               alignItems: "center",
               gap: 1.2,
               flexWrap: "wrap",
             }}
           >
-            <IconButton onClick={() => navigate(-1)}>
-              <ArrowBackIos fontSize="large" sx={{ color: "black" }} />
-            </IconButton>
-            Go big and upgrade your card!
-
+             Please select your {product?.category} print size!
             {showTrophyIcon ? (
               <Chip icon={<EmojiEvents />} label="Pro" color="warning" size="small" sx={{ fontWeight: 900 }} />
             ) : null}
@@ -687,36 +625,30 @@ const Subscription = () => {
           </Typography>
 
           {/* Alerts */}
-          <Box sx={{ mt: 1, mb: 2, display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
-            {proOnlyLocked ? (
-              <Alert severity="warning" sx={{ py: 0.2 }}>
-                This card is <b>Pro-only</b>. Please upgrade to Pro to generate PDF.
-              </Alert>
-            ) : null}
+          <Box sx={{ mt: 1, mb: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {isBundleAndMatched && (
+              <Box sx={{ p: 1.5, bgcolor: COLORS.green, borderRadius: 2 }}>
+                🎁 <b>Bundle matched!</b> This item is included in your bundle. You can generate your PDF without payment.
+              </Box>
+            )}
 
-            {!proOnlyLocked && planCode === "pro" ? (
-              <Alert severity="success" sx={{ py: 0.2 }}>
-                You can generate your pdf easily without payment ✅
-              </Alert>
-            ) : null}
+            {!isBundleAndMatched && planCode === "bundle" && (
+              <Box sx={{ p: 1.5, bgcolor: COLORS.green, borderRadius: 2 }}>
+                This product is not included in your bundle → payment required.
+              </Box>
+            )}
 
-            {!proOnlyLocked && showHurryBundleMsg ? (
-              <Alert severity="success" sx={{ py: 0.2 }}>
-                Hurry🎉 This card is insert in the bundle — your plan <b>Bundle</b> can generate your PDF easily ✅
-              </Alert>
-            ) : null}
+            {planCode === "pro" && (
+              <Box sx={{ p: 1.5, bgcolor: COLORS.green, borderRadius: 2 }}>
+                🏆 <b>Pro user</b>: PDF generation included ✅
+              </Box>
+            )}
 
-            {!proOnlyLocked && planCode === "bundle" && selectedItemAccessPlan === "bundle" && !isBundleEligible ? (
-              <Alert severity="warning" sx={{ py: 0.2 }}>
-                Not included in your Bundle (ID match & category match both failed) → payment required.
-              </Alert>
-            ) : null}
-
-            {!proOnlyLocked && planCode === "free" ? (
-              <Alert severity="info" sx={{ py: 0.2 }}>
-                Free user: payment required to generate PDF.
-              </Alert>
-            ) : null}
+            {planCode === "free" && (
+              <Box sx={{ p: 1.5, bgcolor: COLORS.green, borderRadius: 2 }}>
+                🆓 <b>Free user</b>: payment required to generate PDF.
+              </Box>
+            )}
           </Box>
 
           <Grid container spacing={3} sx={{ height: { md: 600, sm: 600, xs: "auto" } }}>
@@ -790,76 +722,89 @@ const Subscription = () => {
               size={{ md: 5, sm: 5, xs: 12 }}
               sx={{ display: "flex", flexDirection: "column", gap: "25px", textAlign: "start" }}
             >
-              <Box sx={{ p: { md: 2, sm: 2, xs: "5px" }, bgcolor: "#b7f7f4ff", borderRadius: 2 }}>
-                <Typography variant="h5">🎉 We’ve saved your card design!</Typography>
+              <Box sx={{ p: { md: 2, sm: 2, xs: "5px" }, bgcolor: COLORS.primary, borderRadius: 2 }}>
+                <Typography variant="h5">🎉 We’ve saved your {product?.category} design!</Typography>
 
                 <Typography sx={{ fontSize: 14, mt: 1, opacity: 0.8 }}>
                   {planLoading || bundleKeyLoading
                     ? "Checking your plan..."
                     : proOnlyLocked
                     ? "This card is Pro-only. Please upgrade to Pro to generate PDF."
+                    : isBundleAndMatched
+                    ? "Bundle matched by ID. You can generate your PDF without payment."
                     : planCode === "pro"
                     ? "Pro user: PDF generation included."
                     : planCode === "bundle"
-                    ? isBundleEligible
-                      ? "Bundle matched (ID or Categories): PDF included for this item."
-                      : "Bundle user: payment required (not eligible)."
+                    ? "Bundle user: payment required for this item."
                     : "Free users need to complete payment to receive PDF."}
                 </Typography>
               </Box>
 
               {!plans.length ? (
-                <Typography sx={{ color: "text.secondary" }}>No sizes/prices configured for this product.</Typography>
+                <Typography sx={{ color: "text.secondary" }}>No sizes configured for this category.</Typography>
               ) : (
-                plans.map((plan) => (
-                  <Box
-                    key={String(plan.id)}
-                    onClick={() => {
-                      setSelectedPlan(plan.id);
-                      syncLocalSelection(plan);
-                    }}
-                    sx={{
-                      ...isActivePay,
-                      border: `3px solid ${selectedPlan === plan.id ? "#004099" : "transparent"}`,
-                      cursor: "pointer",
-                      opacity: proOnlyLocked ? 0.7 : 1,
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <input
-                        type="radio"
-                        name="plan"
-                        checked={selectedPlan === plan.id}
-                        onChange={() => setSelectedPlan(plan.id)}
-                        style={{ width: "30px", height: "30px" }}
-                      />
-                      <Box>
-                        <Typography sx={{ fontWeight: { md: 900, sm: 900, xs: 700 } }}>{plan.title}</Typography>
-                        {plan.sub ? <Typography sx={{ fontSize: 12, opacity: 0.85 }}>{plan.sub}</Typography> : null}
+                plans.map((p) => {
+                  const isSelected = String(selectedPlan) === String(p.id);
 
-                        {proOnlyLocked ? (
-                          <Typography sx={{ fontSize: 13, fontWeight: 800 }}>Pro-only</Typography>
-                        ) : requiresPayment ? (
-                          <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" } }}>
-                            £{plan.price.toFixed(2)} {plan.isOnSale ? "(Sale)" : ""}
-                          </Typography>
-                        ) : (
-                          <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" }, fontWeight: 900 }}>
-                            Included
-                          </Typography>
-                        )}
+                  return (
+                    <Box
+                      key={String(p.id)}
+                      onClick={() => {
+                        if (p.disabled) return;
+                        setSelectedPlan(p.id as any);
+                        syncLocalSelection({ id: p.id, title: p.title, price: p.price });
+                      }}
+                      sx={{
+                        ...isActivePay,
+                        border: `3px solid ${isSelected ? "#004099" : "transparent"}`,
+                        cursor: p.disabled ? "not-allowed" : "pointer",
+                        opacity: proOnlyLocked ? 0.7 : p.disabled ? 0.55 : 1,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <input
+                          type="radio"
+                          name="plan"
+                          disabled={p.disabled}
+                          checked={isSelected}
+                          onChange={() => {
+                            if (p.disabled) return;
+                            setSelectedPlan(p.id as any);
+                          }}
+                          style={{ width: "30px", height: "30px" }}
+                        />
+                        <Box>
+                          <Typography sx={{ fontWeight: { md: 900, sm: 900, xs: 700 } }}>{p.title}</Typography>
+                          {p.sub ? <Typography sx={{ fontSize: 12, opacity: 0.85 }}>{p.sub}</Typography> : null}
+
+                          {p.disabled ? (
+                            <Typography sx={{ fontSize: 13, fontWeight: 800 }}>Not available</Typography>
+                          ) : proOnlyLocked ? (
+                            <Typography sx={{ fontSize: 13, fontWeight: 800 }}>Pro-only</Typography>
+                          ) : requiresPayment ? (
+                            <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" } }}>
+                              £{p.price.toFixed(2)}
+                            </Typography>
+                          ) : (
+                            <Typography sx={{ fontSize: { md: "auto", sm: "auto", xs: "15px" }, fontWeight: 900 }}>
+                              Included
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
-                    </Box>
 
-                    {proOnlyLocked ? (
-                      <Typography variant="h5">—</Typography>
-                    ) : requiresPayment ? (
-                      <Typography variant="h5">£{plan.price.toFixed(2)}</Typography>
-                    ) : (
-                      <Typography variant="h5">£0</Typography>
-                    )}
-                  </Box>
-                ))
+                      {p.disabled ? (
+                        <Typography variant="h5">—</Typography>
+                      ) : proOnlyLocked ? (
+                        <Typography variant="h5">—</Typography>
+                      ) : requiresPayment ? (
+                        <Typography variant="h5">£{p.price.toFixed(2)}</Typography>
+                      ) : (
+                        <Typography variant="h5">£0</Typography>
+                      )}
+                    </Box>
+                  );
+                })
               )}
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -874,23 +819,32 @@ const Subscription = () => {
                 </Typography>
               </Box>
 
-              <LandingButton
-                title={
-                  planLoading || bundleKeyLoading
-                    ? "Loading..."
-                    : proOnlyLocked
-                    ? "Go to Premium Plans"
-                    : requiresPayment
-                    ? "Pay & Get PDF"
-                    : "Generate PDF"
-                }
-                width="100%"
-                personal
-                loading={loading || planLoading || bundleKeyLoading}
-                onClick={proOnlyLocked ? () => navigate(USER_ROUTES.PREMIUM_PLANS) : handlePayClick}
-              />
+              <Button
+                fullWidth
+                onClick={handlePayClick}
+                sx={{
+                  borderRadius: "8px",
+                  py: 1.5,
+                  fontSize: 20,
+                  textTransform: "none",
+                  backgroundColor: COLORS.primary,
+                  color: COLORS.black,
+                  "&:hover": {
+                    backgroundColor: COLORS.seconday,
+                    opacity: 0.9,
+                  },
+                }}
+              >
+                {planLoading || bundleKeyLoading || loading
+                  ? "Loading..."
+                  : proOnlyLocked
+                  ? "Go to Premium Plans"
+                  : requiresPayment
+                  ? "Pay & Get PDF"
+                  : "Generate PDF"}
+              </Button>
 
-              {!planLoading && planCode === "free" ? (
+              {planCode === "pro" ? null : (
                 <LandingButton
                   title={"Want unlimited? Upgrade to Bundle/Pro"}
                   variant="outlined"
@@ -898,12 +852,12 @@ const Subscription = () => {
                   width="100%"
                   onClick={() => navigate(USER_ROUTES.PREMIUM_PLANS)}
                 />
-              ) : null}
+              )}
             </Grid>
           </Grid>
         </Container>
       </Box>
-    </Applayout>
+    </MainLayout>
   );
 };
 

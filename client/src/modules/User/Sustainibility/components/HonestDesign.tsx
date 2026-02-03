@@ -6,19 +6,19 @@ import { COLORS } from '../../../../constant/color'
 const Customers = [
     {
         id: 1,
-        title: "Fewer unnecessary delivery",
+        title: "Fewer unnecessary deliveries",
         icons: '/assets/icons/truck.png',
         border: COLORS.primary
     },
     {
         id: 2,
-        title: "More control in your hand",
+        title: "More control in your hands",
         icons: '/assets/icons/love.png',
         border: COLORS.seconday
     },
     {
         id: 3,
-        title: "Clear guidance to help you print more responsible",
+        title: "Clear guidance to help you print more responsibly",
         icons: '/assets/icons/greenTree.png',
         border: COLORS.green
     },
@@ -43,7 +43,7 @@ const HonestDesign = () => {
                 We're not perfect, and  we're not claiming to be.
             </Typography>
             <Typography sx={{ fontSize: { md: 25, sm: 20, xs: 16 }, textAlign: "start", lineHeight: { md: 0.4, xs: 'auto' } }}>
-                DIY Personalisation doesn't promise carbon neutrally or zero  impact.
+                DIY Personalisation doesn't promise carbon neutrality or zero  impact.
             </Typography>
 
             <Box sx={{ display: { md: 'flex', xs: 'block' }, gap: 1 }}>
@@ -54,7 +54,7 @@ const HonestDesign = () => {
                 <Box sx={{ display: { md: 'flex' }, gap: 1, width: { md: '60%', xs: '100%' }, flexWrap: 'wrap' }}>
                     {
                         Customers.map((e) => (
-                            <Box sx={{ p: 1.5, color: COLORS.black, border: `3px solid ${e.border}`, width: { md: 220, xs: '100%' }, height: { md: 200, xs: 'auto' }, display: 'flex', flexDirection: 'column', m: 'auto', alignItems: 'center', justifyContent: 'center', borderRadius: 2, textAlign: 'center',mb:{md:0,xs:1} }}>
+                            <Box sx={{ p: 1.5, color: COLORS.black, border: `3px solid ${e.border}`, width: { md: 220, xs: '100%' }, height: { md: 200, xs: 'auto' }, display: 'flex', flexDirection: 'column', m: 'auto', alignItems: 'center', justifyContent: 'center', borderRadius: 2, textAlign: 'center', mb: { md: 0, xs: 1 } }}>
                                 <Typography sx={{ fontSize: { md: 18, xs: 'auto' }, fontWeight: 700, mt: 2 }}>{e.title}</Typography>
                                 <Box
                                     component={'img'}

@@ -59,8 +59,8 @@ type AdminPreview = {
 };
 
 /* --------- Utils --------- */
-const TRANSPARENT_PX =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+// const TRANSPARENT_PX =
+  // "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
 const cloneSlides = (slides: Slide[]): Slide[] => JSON.parse(JSON.stringify(slides));
 const asNum = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -458,13 +458,13 @@ export default function TempletEditor() {
       const h = Math.max(1, Math.round(rect.height));
 
       return await htmlToImage.toJpeg(node, {
-        quality: 0.85, // ✅ small
-        pixelRatio: 1.5,
-        backgroundColor: COLORS.white,
+        quality: 0.72,
+        pixelRatio: 1,
+        backgroundColor:'transparent',
         filter: captureFilter,
         cacheBust: hasBlobImages(node) ? false : true,
         skipFonts: false,
-        imagePlaceholder: TRANSPARENT_PX,
+        // imagePlaceholder: TRANSPARENT_PX,
         width: w,
         height: h,
         style: { transform: "none" },
@@ -475,68 +475,54 @@ export default function TempletEditor() {
     }
   };
 
-  const handleNavigatePrview = async () => {
-    if (!adminDesign?.category) return;
+ const handleNavigatePrview = async () => {
+  if (!adminDesign?.category) return;
 
-    // ✅ Preview ka apna loading (page loading ko touch nahi karna)
-    setPreviewLoading(true);
+  setPreviewLoading(true);
 
-    const category = encodeURIComponent(adminDesign.category);
+  const category = encodeURIComponent(adminDesign.category);
 
-    const navStateBase: any = {
-      slides: userSlides,
-      config: { mmWidth: mmW, mmHeight: mmH, slideLabels: adminDesign.config.slideLabels },
-      canvasPx: adminDesign.canvasPx,
-      slideIndex: activeSlide,
-      category: adminDesign.category,
-    };
-
-    try {
-      // ✅ Capture active slide (always)
-      const activeNode = slideRefs.current[activeSlide];
-      const activeJpeg = activeNode ? await captureJpegFromNode(activeNode) : null;
-
-      // ✅ (optional but helpful) capture all slides for subscription
-      const captured: string[] = [];
-      for (let i = 0; i < userSlides.length; i++) {
-        const n = slideRefs.current[i];
-        if (!n) continue;
-        const jpg = await captureJpegFromNode(n);
-        if (jpg) captured.push(jpg);
-      }
-
-      // ✅ save into sessionStorage for subscription page
-      if (captured.length) {
-        const slidesObj = Object.fromEntries(captured.map((u, idx) => [`slide${idx + 1}`, u]));
-        sessionStorage.setItem("slides", JSON.stringify(slidesObj));
-      } else if (activeJpeg) {
-        sessionStorage.setItem("slides", JSON.stringify({ slide1: activeJpeg }));
-      }
-
-      // ✅ attach capture to navigation state (preview pages can use it if they want)
-      navStateBase.capturedSlides = captured.length ? captured : activeJpeg ? [activeJpeg] : [];
-
-      // Mug special: previously png, now jpeg
-      if (isMugCategory(adminDesign.category)) {
-        navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
-          state: { ...navStateBase, mugImage: activeJpeg },
-        });
-        return;
-      }
-
-      if (is3DCategory(adminDesign.category)) {
-        navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
-          state: navStateBase,
-        });
-      } else {
-        navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, {
-          state: navStateBase,
-        });
-      }
-    } finally {
-      setPreviewLoading(false);
-    }
+  const navStateBase: any = {
+    slides: userSlides,
+    config: { mmWidth: mmW, mmHeight: mmH, slideLabels: adminDesign.config.slideLabels },
+    canvasPx: adminDesign.canvasPx,
+    slideIndex: activeSlide,
+    category: adminDesign.category,
   };
+
+  try {
+    // ✅ ONLY capture active slide
+    const activeNode = slideRefs.current[activeSlide];
+    const activeJpeg = activeNode ? await captureJpegFromNode(activeNode) : null;
+
+    // ✅ store ONLY 1 (super fast)
+    if (activeJpeg) {
+      sessionStorage.setItem("slides", JSON.stringify({ slide1: activeJpeg }));
+    }
+
+    navStateBase.capturedSlides = activeJpeg ? [activeJpeg] : [];
+
+    if (isMugCategory(adminDesign.category)) {
+      navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
+        state: { ...navStateBase, mugImage: activeJpeg },
+      });
+      return;
+    }
+
+    if (is3DCategory(adminDesign.category)) {
+      navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
+        state: navStateBase,
+      });
+    } else {
+      navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, {
+        state: navStateBase,
+      });
+    }
+  } finally {
+    setPreviewLoading(false);
+  }
+};
+
 
   // --------- Render ---------
   if (loading) {
@@ -628,7 +614,7 @@ export default function TempletEditor() {
                     borderRadius: 3,
                     position: "relative",
                     overflow: "hidden",
-                    bgcolor: "white",
+                    bgcolor: "transparent",
                     boxShadow: isActive ? 10 : 4,
                     outline: "none",
                   }}
@@ -760,10 +746,10 @@ export default function TempletEditor() {
                                   fontSize: t.fontSize,
                                   fontFamily: t.fontFamily,
                                   color: t.color,
-                                  lineHeight: 1.3,
+                                  lineHeight: 1.2,
                                 },
                               }}
-                              sx={{ height: "100%", width: "100%", overflow: "hidden" }}
+                              sx={{ height: "100%", width: "100%" }}
                             />
 
                           ) : (

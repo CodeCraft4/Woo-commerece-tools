@@ -18,7 +18,7 @@ const PrintSmarter = () => {
             </Typography>
 
             <Typography sx={{ fontSize: { md: 25, sm: 20, xs: 16 }, textAlign: "start", lineHeight: 0 }}>
-                Your paper and card choice matter.
+                Your paper and card choices matter.
             </Typography>
 
             <Box sx={{ p: 1, bgcolor: COLORS.black, borderRadius: 3, mt: 2 }}>

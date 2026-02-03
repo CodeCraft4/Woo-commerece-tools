@@ -94,7 +94,7 @@ const BasketCard = ({
               sx={{
                 width: "100%",
                 height: "95%",
-                objectFit: variant === "category" ? "cover" : "contain",
+                objectFit: variant === "category" ? "fill" : "contain",
                 display: "block",
                 borderRadius: 2,
                 userSelect: "none",

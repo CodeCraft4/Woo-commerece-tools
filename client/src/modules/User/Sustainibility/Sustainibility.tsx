@@ -38,7 +38,7 @@ const Sustainibility = () => {
                 </Typography>
 
                 <Typography sx={{ fontSize: { md: 25, sm: 20, xs: 16 }, textAlign: "start", lineHeight: 0 }}>
-                    Personaisation with a lighter footprint.
+                    Personalisation with a lighter footprint.
                 </Typography>
 
 
@@ -67,11 +67,11 @@ const Sustainibility = () => {
                                 lineHeight: 1.25, // why: compact like screenshot
                             }}
                         >
-                            At DIY Personalisation, sustainability starts with something simple: choice.
+                            At DIY Personalisation, sustainability starts with something simple choice.
                             By helping you personalise and print at home, you reduce unnecessary delivery,
                             packaging and waste, while giving full control over how and what you create.
                             We believe thoughtful personalisation doesn’t need to come at the planet’s expense.
-                            Small decisions, made locally, make a meaningful difference.
+                            Small decisions, made at scale, make a meaningful difference.
                         </Typography>
                     </Box>
 

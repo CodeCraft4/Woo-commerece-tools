@@ -596,7 +596,7 @@ export default function Header(props: Props) {
         </nav>
       </Box>
       {
-        location.pathname === USER_ROUTES.USER_PROFILE ? null :
+        location.pathname === USER_ROUTES.USER_PROFILE || location.pathname === USER_ROUTES.SUBSCRIPTION ? null :
           <Box
             sx={{
               width: "100%",

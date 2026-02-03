@@ -2,12 +2,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type SizeKey = "a4" | "a3" | "us_letter";
-
 export type PriceTable = Record<SizeKey, number>;
 
+export type CartItemType = "card" | "templet";
+
 export type CartItem = {
-  id: string | number;
-  type: "card" | "template";
+  id: string;                 // ✅ always string
+  type: CartItemType;         // ✅ "card" | "templet"
   img?: string;
   title?: string;
   category?: string;
@@ -22,9 +23,9 @@ export type CartItem = {
   isOnSale: boolean;
   displayPrice: number;
 
-   polygonlayout?: any;      // card editor
-  rawStores?: any;          // template editor (your rawStores)
-  templetDesign?: any; 
+  polygonlayout?: any; // card editor
+  rawStores?: any;     // template editor
+  templetDesign?: any;
 };
 
 type AddResult = { ok: true } | { ok: false; reason: "exists" | "invalid" };
@@ -32,14 +33,10 @@ type AddResult = { ok: true } | { ok: false; reason: "exists" | "invalid" };
 type CartState = {
   cart: CartItem[];
   addToCart: (item: CartItem) => AddResult;
-  updateCartItem: (
-    id: string | number,
-    type: CartItem["type"],
-    patch: Partial<CartItem>
-  ) => void;
-  removeFromCart: (id: string | number, type?: CartItem["type"]) => void;
+  updateCartItem: (id: string, type: CartItemType, patch: Partial<CartItem>) => void;
+  removeFromCart: (id: string, type?: CartItemType) => void;
   clearCart: () => void;
-  hasItem: (id: string | number, type: CartItem["type"]) => boolean;
+  hasItem: (id: string, type: CartItemType) => boolean;
 };
 
 export const useCartStore = create<CartState>()(
@@ -48,29 +45,37 @@ export const useCartStore = create<CartState>()(
       cart: [],
 
       hasItem: (id, type) =>
-        get().cart.some((x) => String(x.id) === String(id) && x.type === type),
+        get().cart.some((x) => x.id === String(id) && x.type === type),
 
       addToCart: (item) => {
-        if (!item?.id) return { ok: false, reason: "invalid" };
-        if (get().hasItem(item.id, item.type))
+        const id = String(item?.id || "").trim();
+        if (!id) return { ok: false, reason: "invalid" };
+
+        const normalized: CartItem = { ...item, id };
+
+        if (get().hasItem(normalized.id, normalized.type)) {
           return { ok: false, reason: "exists" };
-        set((s) => ({ cart: [...s.cart, item] }));
+        }
+
+        set((s) => ({ cart: [...s.cart, normalized] }));
         return { ok: true };
       },
 
       updateCartItem: (id, type, patch) => {
+        const targetId = String(id).trim();
         set((s) => ({
           cart: s.cart.map((x) => {
-            if (String(x.id) !== String(id) || x.type !== type) return x;
-            return { ...x, ...patch };
+            if (x.id !== targetId || x.type !== type) return x;
+            return { ...x, ...patch, id: x.id, type: x.type }; // keep id/type stable
           }),
         }));
       },
 
       removeFromCart: (id, type) => {
+        const targetId = String(id).trim();
         set((s) => ({
           cart: s.cart.filter((x) => {
-            const sameId = String(x.id) === String(id);
+            const sameId = x.id === targetId;
             if (!sameId) return true;
             if (!type) return false;
             return x.type !== type;

@@ -112,9 +112,8 @@ const CustomerCard = ({ user, onView, onDelete }: Props) => {
             left: "50%",
             top: 40,
             transform: "translateX(-50%)",
-            border: "3px solid #fff",
+            border: "3px solid #997d7d",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            bgcolor: "#f6f6f6",
             display: "grid",
             placeItems: "center",
           }}
@@ -127,14 +126,17 @@ const CustomerCard = ({ user, onView, onDelete }: Props) => {
               alt="premium crown"
               sx={{
                 position: "absolute",
-                top: -62,
+                top: -30,
                 left: "50%",
                 transform: "translateX(-50%) rotate(-28deg)",
-                width: 105,
-                height: 105,
+                width: 55,
+                height: 55,
                 objectFit: "contain",
                 zIndex: 5,
                 pointerEvents: "none",
+                bgcolor: "rgba(255,255,255,0.92)",
+                borderRadius:'50%',
+                p:1,
                 filter: "drop-shadow(0px 6px 6px rgba(0,0,0,0.25))",
               }}
             />

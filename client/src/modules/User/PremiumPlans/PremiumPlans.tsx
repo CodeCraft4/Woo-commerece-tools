@@ -23,6 +23,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { COLORS } from "../../../constant/color";
 
 /**
  * TYPES
@@ -65,6 +66,14 @@ function FeatureIcon({ kind, highlight }: { kind: FeatureIconKind; highlight: bo
   if (kind === "cross") return <HighlightOff fontSize="small" color={highlight ? "warning" : "error"} />;
   return <CheckCircleOutline fontSize="small" color={highlight ? "warning" : "action"} />;
 }
+
+const getPlanColor = (code: string) => {
+  if (code === "free") return COLORS.primary;
+  if (code === "bundle") return COLORS.seconday;
+  if (code === "pro") return COLORS.green;
+  return COLORS.gray;
+};
+
 
 /**
  * Plan-wise visuals
@@ -110,7 +119,7 @@ function PlanCardView({
   onBuy,
   buying,
   disabled,
-  actionText,
+  // actionText,
 }: {
   plan: PricingPlan;
   isFree: boolean;
@@ -122,29 +131,30 @@ function PlanCardView({
 }) {
   const badgeText = (plan.badgeText || "").trim();
   const visual = getPlanVisual(plan.code, isFree);
+  const borderColor = getPlanColor(plan.code);
 
   return (
     <Card
-      elevation={plan.highlight ? 10 : 2}
+      elevation={2}
       sx={{
         borderRadius: 3,
         height: "100%",
         position: "relative",
-        border: plan.highlight ? "3px solid" : "1px solid",
-        borderColor: plan.highlight ? "warning.main" : "divider",
+        border: `5px solid ${borderColor}`,
+        // borderColor: plan.highlight ? "warning.main" : "divider",
         overflow: "visible",
         mt: 4,
         width: "100%",
         backgroundImage: visual.backgroundImage,
         bgcolor: visual.bgcolor,
-        opacity: disabled ? 0.75 : 1,
+        opacity: disabled ? 0.55 : 1,
       }}
     >
       {badgeText ? (
         <Box
           sx={{
             position: "absolute",
-            top: -14,
+            top: -15,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 2,
@@ -152,18 +162,19 @@ function PlanCardView({
         >
           <Box
             sx={{
-              px: 2,
+              px: 3,
               py: 0.6,
               borderRadius: 999,
               fontSize: 11,
               fontWeight: 900,
               letterSpacing: 0.4,
               boxShadow: 1,
-              border: "1px solid",
-              borderColor: "rgba(0,0,0,0.10)",
+              bgcolor: borderColor,
+              color: COLORS.white,
               userSelect: "none",
               whiteSpace: "nowrap",
-              ...visual.badgeSx,
+
+              // ...visual.badgeSx,
             }}
           >
             {badgeText}
@@ -171,7 +182,7 @@ function PlanCardView({
         </Box>
       ) : null}
 
-      <CardContent sx={{ p: 2.5, pt: badgeText ? 4 : 2.5 }}>
+      <CardContent sx={{ p: 2.5, pt: badgeText ? 4 : 2.5, mt: 3 }}>
         <Stack spacing={1.5}>
           <Box>
             <Typography sx={{ fontSize: { md: 28, xs: 22 }, fontWeight: 900 }}>{plan.name}</Typography>
@@ -202,17 +213,30 @@ function PlanCardView({
             ))}
           </List>
 
-          {showBuyButton ? (
+          {showBuyButton && (
             <Button
-              variant="contained"
-              disabled={buying || disabled}
+              fullWidth
+              disabled={disabled || buying}
               onClick={onBuy}
-              sx={{ borderRadius: 999, py: 1.3, fontWeight: 900, textTransform: "none", mt: 1 }}
-              color={plan.highlight ? "warning" : "primary"}
+              sx={{
+                mt: 3,
+                borderRadius: "30px",
+                py: 1.3,
+                fontWeight: 700,
+                fontSize: 20,
+                textTransform: "none",
+                backgroundColor: borderColor,
+                color: COLORS.white,
+                "&:hover": {
+                  backgroundColor: borderColor,
+                  opacity: 0.9,
+                },
+              }}
             >
-              {buying ? "Redirecting..." : actionText || "Buy Plan"}
+              {buying ? "Processing..." : 'Buy Plan'}
             </Button>
-          ) : null}
+          )}
+
         </Stack>
       </CardContent>
     </Card>
@@ -270,6 +294,8 @@ function ActiveBannerSkeleton() {
     </Box>
   );
 }
+
+
 
 export default function PremiumPlans() {
   const { user, plan, premiumExpiresAt, bundleExpiresAt, refreshProfile } = useAuth();
@@ -409,7 +435,7 @@ export default function PremiumPlans() {
 
           {/* ✅ Small success-style message (bundle) */}
           {!loading && showBundleAlert ? (
-            <Box sx={{display: "flex", justifyContent: "center" }}>
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
               <Alert
                 severity="success"
                 variant="standard"
@@ -428,33 +454,33 @@ export default function PremiumPlans() {
 
           {/* ✅ Pro message (optional small) */}
           {!loading && showProAlert ? (
-  <Box sx={{ mt: 3, display: "flex", justifyContent: "center", alignItems: "center" }}>
-    <Alert
-      severity="success"
-      variant="standard"
-      
-      sx={{
-        maxWidth: 820,
-        width: "100%",
-        borderRadius: 3,
-        py: 8,
-        fontSize: 25,
-        display: "flex",
-        justifyContent: "center",
-        m: "auto",
+            <Box sx={{ mt: 3, display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <Alert
+                severity="success"
+                variant="standard"
 
-        // ✨ Gradient Background (Right → Left)
-        backgroundImage: "linear-gradient(to left, #ff8a00 0%, #f0bbd9 50%, #f5f1f1 100%)",
-        color: "#222",
-        
-        // remove default success green styling
-        "& .MuiAlert-icon": { color: "#ff8a00"},
-      }}
-    >
-      Hurry! Your Pro Plan is Active 🎉 (Expiry: <b>{expiryText}</b>)
-    </Alert>
-  </Box>
-) : null}
+                sx={{
+                  maxWidth: 820,
+                  width: "100%",
+                  borderRadius: 3,
+                  py: 8,
+                  fontSize: 25,
+                  display: "flex",
+                  justifyContent: "center",
+                  m: "auto",
+
+                  // ✨ Gradient Background (Right → Left)
+                  backgroundImage: "linear-gradient(to left, #ff8a00 0%, #f0bbd9 50%, #f5f1f1 100%)",
+                  color: "#222",
+
+                  // remove default success green styling
+                  "& .MuiAlert-icon": { color: "#ff8a00" },
+                }}
+              >
+                Hurry! Your Pro Plan is Active 🎉 (Expiry: <b>{expiryText}</b>)
+              </Alert>
+            </Box>
+          ) : null}
 
 
           {/* ✅ Show Plans for FREE + BUNDLE (so bundle can upgrade to pro) */}
@@ -519,7 +545,7 @@ export default function PremiumPlans() {
                           showBuyButton={p.code !== "free"}
                           buying={buying === p.code}
                           disabled={isCurrentBundle || !canBuy}
-                          actionText={isCurrentBundle ? "Current Plan" : canBuy ? "Upgrade to Pro" : "Not Available"}
+                          actionText={isCurrentBundle ? "Current Plan" : canBuy ? "Buy Plan" : "Not Available"}
                           onBuy={() => startCheckout(p.code)}
                         />
                       </Box>

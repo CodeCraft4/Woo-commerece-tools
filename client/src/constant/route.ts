@@ -9,7 +9,7 @@ export const USER_ROUTES = {
   OUR_SUSTAIANIBILITY: "/sustainability",
   VIEW_ALL: "/view-all",
   USER_DRAFTS_CARDS: "/drafts",
-  ADD_TO_CART: "add-to-cart",
+  ADD_TO_CART: "/add-to-cart",
   COMMUNITY_HUB: "/community-hub",
   PREMIUM_PLANS: "/premium-plans",
   SUBSCRIPTION: "/subscription",

@@ -15,14 +15,14 @@ const LowerGSM = () => {
                     mb: 2
                 }}
             >
-                Why lower gsm make a difference
+                Why lower gsm makes a difference
             </Typography>
 
             <Box sx={{ display: "flex", flexDirection: { md: "row", xs: 'column' }, gap: 2, }}>
                 {/* Left */}
                 <Box sx={{ width: "100%" }}>
                     <Typography sx={{ fontSize: { md: 23, sm: 20, xs: 16 }, textAlign: "start" }}>
-                        Higher gsm is'nt alway better. In many cases,thoughtfully chosen
+                        Higher gsm isn't always better. In many cases,thoughtfully chosen
                         lower materials are more efficient and just as effective.
                     </Typography>
 
@@ -38,7 +38,7 @@ const LowerGSM = () => {
                         }}
                     >
                         <li>Less raw material used per product</li>
-                        <li>Reduce ink absorption</li>
+                        <li>Reduced ink absorption</li>
                         <li>Fewer printer jams and misprints</li>
                         <li>Less waste overall</li>
                     </Box>
@@ -72,7 +72,7 @@ const LowerGSM = () => {
                     gap: { xs: 2, md: 2.5 },
                     borderRadius: 3,
                     overflow: "hidden",
-                    bgcolor: COLORS.green,
+                    bgcolor: COLORS.primary,
                     px: { xs: 2, md: 2.5 },
                     py: { xs: 1.5, md: 1 },
                     flexDirection: { xs: "column", md: "row" },
@@ -100,7 +100,7 @@ const LowerGSM = () => {
                             lineHeight: 1.15,
                         }}
                     >
-                        Manufacturing, packaging, transport, missed deliveries or returns. DIY Personalisation removes delivery
+                        Manufacturing, packaging, transportation, missed deliveries or returns. DIY Personalisation removes delivery
                         entirely by printing at home. Do away with the load, excess packaging, reprints due to delays or errors.
                     </Typography>
                     <Typography
