@@ -22,7 +22,13 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick, onExport
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   return (
-    <Box sx={{ height: "100vh", bgcolor: "#f9f9f9", overflow: 'hidden' }}>
+    <Box
+      sx={{
+        height: "100vh",
+        bgcolor: "#0f132a",
+        overflow: "hidden",
+      }}
+    >
       <DNavbar />
       <Box display={"flex"} width={"100%"}>
         {/* Sidebar Container */}
@@ -31,20 +37,22 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick, onExport
           sx={{
             width: { md: 260, sm: 260, xs: sidebarOpen ? 240 : 0 },
             transition: "width 0.3s ease",
-            bgcolor: COLORS.black,
+            background:
+              "linear-gradient(180deg, rgba(18,22,46,1) 0%, rgba(12,16,38,1) 100%)",
             color: COLORS.white,
             height: "100vh",
             overflowY: "auto",
+            borderRight: "1px solid rgba(255,255,255,0.06)",
             "&::-webkit-scrollbar": {
               height: "6px",
               width: '6px',
             },
             "&::-webkit-scrollbar-track": {
-              backgroundColor: "#f1f1f1",
+              backgroundColor: "rgba(255,255,255,0.06)",
               borderRadius: "20px",
             },
             "&::-webkit-scrollbar-thumb": {
-              backgroundColor: COLORS.seconday,
+              backgroundColor: COLORS.primary,
               borderRadius: "20px",
             },
             position: { xs: "fixed", sm: "relative" },
@@ -93,12 +101,12 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick, onExport
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            p: { md: "20px", sm: "20px", xs: "0px" },
+            p: { md: "24px", sm: "20px", xs: "0px" },
             overflowY: "auto",
             height: "100vh",
             width: "100%",
             overflowX: "hidden",
-            msOverflowY: 'scroll'
+            msOverflowY: "scroll",
           }}
         >
           {/* Mobile Toggle Button */}
@@ -108,7 +116,7 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick, onExport
               justifyContent: "flex-start",
               alignItems: "center",
               p: 1,
-              bgcolor: COLORS.black,
+              bgcolor: "#11142d",
               color: COLORS.white,
             }}
           >
@@ -119,9 +127,26 @@ const DashboardLayout = ({ children, title, exportBtn, addBtn, onClick, onExport
           </Box>
 
           {/* Page Content */}
-          <Box sx={{ flex: 1, mb: 10 ,p:{md:0,xs:1}}}>
-            <DHeader title={title} exportBtn={exportBtn} addBtn={addBtn} onClick={onClick} onExportClick={onExportClick} />
-            {children}
+          <Box sx={{ flex: 1, mb: 10, p: { md: 0, xs: 1 } }}>
+            <Box
+              sx={{
+                backgroundColor: "#ffffff",
+                borderRadius: 4,
+                p: { md: 3, sm: 2, xs: 2 },
+                minHeight: { md: "calc(100vh - 150px)", xs: "auto" },
+                boxShadow: "0 20px 60px rgba(5,10,36,0.35)",
+                border: "1px solid rgba(0,0,0,0.06)",
+              }}
+            >
+              <DHeader
+                title={title}
+                exportBtn={exportBtn}
+                addBtn={addBtn}
+                onClick={onClick}
+                onExportClick={onExportClick}
+              />
+              {children}
+            </Box>
           </Box>
         </Box>
       </Box>

@@ -36,7 +36,9 @@ const ProductCard = (props: Props) => {
       component={"div"}
       sx={{
         width: "100%",
-        height: { md: 240, sm: 220, xs: 240 },
+        height: "auto",
+        aspectRatio: "3 / 4",
+        minHeight: 260,
         border: "1px solid #E6E9EF",
         borderRadius: 3,
         overflow: "hidden",
@@ -56,7 +58,8 @@ const ProductCard = (props: Props) => {
         sx={{
           width: "100%",
           height: "100%",
-          objectFit: "cover",
+          objectFit: "contain",
+          backgroundColor: "#ffffff",
           clipPath: data?.polygon_shape || "none",
         }}
       />

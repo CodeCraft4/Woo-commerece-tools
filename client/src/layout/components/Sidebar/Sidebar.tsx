@@ -109,15 +109,17 @@ const Sidebar = () => {
                 justifyContent: "space-between",
                 alignItems: "center",
                 height: "44px",
-                borderRadius: 6,
+                borderRadius: 10,
                 fontWeight: 600,
-                paddingLeft: 2,
+                paddingLeft: 12,
                 fontSize: '12px',
                 textDecoration: "none",
-                color: isActive ? "#414040ff" : COLORS.white,
-                backgroundColor: isActive ? `${COLORS.white}` : "#1313137c",
+                color: isActive ? COLORS.black : "rgba(255,255,255,0.78)",
+                backgroundColor: isActive ? "rgba(86,190,204,0.75)" : "transparent",
+                border: isActive ? "1px solid rgba(255,255,255,0.15)" : "1px solid transparent",
                 transition: "background-color 0.3s",
                 marginBottom: 4,
+                boxShadow: isActive ? "0 10px 24px rgba(6,10,35,0.35)" : "none",
               }}
             >
               <Box

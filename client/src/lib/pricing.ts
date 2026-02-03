@@ -1,7 +1,27 @@
 import type { PriceTable, SizeKey } from "../stores/cartStore";
 
-export const sizeLabel = (k: SizeKey) =>
-  k === "a4" ? "A4" : k === "a3" ? "A3" : "US Letter";
+export const sizeLabel = (k: SizeKey) => {
+  switch (k) {
+    case "a5":
+      return "A5";
+    case "a4":
+      return "A4";
+    case "a3":
+      return "A3";
+    case "half_us_letter":
+      return "Half US Letter";
+    case "us_letter":
+      return "US Letter";
+    case "us_tabloid":
+      return "US Tabloid";
+    case "mug_wrap_11oz":
+      return "11oz Mug Wrap";
+    case "coaster_95":
+      return "95mm Coaster";
+    default:
+      return String(k);
+  }
+};
 
 export const toNumberSafe = (v: any, fallback = 0) => {
   const n = Number(String(v ?? "").replace(/[^\d.]/g, ""));

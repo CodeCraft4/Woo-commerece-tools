@@ -183,28 +183,69 @@ const ProductPopup = (props: ProductsPopTypes) => {
   const { addToCart, updateCartItem } = useCartStore();
 
   const categoryName = useMemo(() => getCategoryName(cate), [cate]);
+  const isBusinessCard = useMemo(
+    () => /business\s*card/i.test(String(categoryName ?? "")),
+    [categoryName]
+  );
 
   // ✅ use central config (EXACT sizes)
-  const sizeOptions = useMemo(() => getPricingConfig(categoryName).sizes, [categoryName]);
+  const sizeOptions = useMemo(() => {
+    const base = getPricingConfig(categoryName).sizes ?? [];
+    if (!isTempletDesign || isBusinessCard) return base;
+
+    const has = (k: any) => base.some((s) => s.key === k);
+    const next = [...base];
+    if (!has("A3")) next.push({ key: "A3", title: "A3" });
+    if (!has("US_TABLOID")) next.push({ key: "US_TABLOID", title: "US Tabloid (11×17)" });
+
+    const order = [
+      "A5",
+      "A4",
+      "A3",
+      "HALF_US_LETTER",
+      "US_LETTER",
+      "US_TABLOID",
+      "MUG_WRAP_11OZ",
+      "COASTER_95",
+    ];
+
+    return next.sort(
+      (a, b) => order.indexOf(a.key as any) - order.indexOf(b.key as any)
+    );
+  }, [categoryName, isTempletDesign, isBusinessCard]);
 
   const actualPrices = useMemo(
     () => buildActualPrices(cate, categoryName, isTempletDesign),
     [cate, categoryName, isTempletDesign]
   );
 
+  const getPriceForKey = (key: any) =>
+    toNum(
+      (actualPrices as any)?.[key] ??
+        (actualPrices as any)?.[String(key).toUpperCase?.()] ??
+        (actualPrices as any)?.[String(key).toLowerCase?.()],
+      0
+    );
+
   // ✅ pick first size which has price > 0 (else fallback first)
   useEffect(() => {
     if (!open) return;
 
-    const firstWithPrice = sizeOptions.find((s) => toNum((actualPrices as any)[s.key], 0) > 0)?.key;
+    const firstWithPrice = sizeOptions.find((s) => getPriceForKey(s.key) > 0)?.key;
     const fallback = sizeOptions[0]?.key ?? "A4";
 
     // if initialPlan provided and it has price > 0, prefer it
-    const initOk = initialPlan && toNum((actualPrices as any)[initialPlan], 0) > 0;
-    setSelectedPlan(initOk ? initialPlan : firstWithPrice ?? fallback);
+    const normalizedInit =
+      initialPlan &&
+      sizeOptions.find(
+        (s) => String(s.key).toLowerCase() === String(initialPlan).toLowerCase()
+      )?.key;
+    const initKey = normalizedInit ?? initialPlan;
+    const initOk = initKey && getPriceForKey(initKey) > 0;
+    setSelectedPlan(initOk ? initKey : firstWithPrice ?? fallback);
   }, [open, sizeOptions, actualPrices, initialPlan]);
 
-  const displayPrice = useMemo(() => toNum((actualPrices as any)[selectedPlan], 0), [actualPrices, selectedPlan]);
+  const displayPrice = useMemo(() => getPriceForKey(selectedPlan), [actualPrices, selectedPlan]);
 
   const selectedIsValid = useMemo(() => {
     if (!selectedPlan) return false;
@@ -458,7 +499,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: { md: "20px", sm: "20px", xs: "10px" } }}>
                 {sizeOptions.map((opt) => {
-                  const price = toNum((actualPrices as any)[opt.key], 0);
+                  const price = getPriceForKey(opt.key);
                   const disabled = price <= 0;
 
                   return (

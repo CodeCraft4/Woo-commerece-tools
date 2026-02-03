@@ -44,15 +44,16 @@ export default function VisitorMiniChart() {
         height: 200,
         minWidth: 0,
         borderRadius: 3,
-        boxShadow: 3,
+        boxShadow: "0 14px 30px rgba(5,10,36,0.08)",
         p: 2,
-        background: `linear-gradient(135deg, ${COLORS.black} 0%, ${COLORS.seconday} 100%)`,
+        background: "#ffffff",
+        border: "1px solid rgba(0,0,0,0.06)",
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography
           variant="body2"
-          sx={{ color: "#fff", textAlign: "center", letterSpacing: 0.5 }}
+          sx={{ color: COLORS.black, textAlign: "center", letterSpacing: 0.5 }}
         >
           WEBSITE VISITORS
         </Typography>
@@ -65,11 +66,12 @@ export default function VisitorMiniChart() {
               label=""
               onChange={(e) => setFilter(e.target.value)}
               sx={{
-                color: "#fff",
-                ".MuiOutlinedInput-notchedOutline": { borderColor: "#fff" },
-                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#fff" },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#fff" },
-                ".MuiSvgIcon-root": { color: "#fff" },
+                color: COLORS.black,
+                borderBottom: "1px solid rgba(0,0,0,0.2)",
+                ".MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+                ".MuiSvgIcon-root": { color: COLORS.black },
               }}
             >
               <MenuItem value="daily">Daily</MenuItem>
@@ -81,7 +83,7 @@ export default function VisitorMiniChart() {
         </Box>
       </Box>
       {loading ? (
-        <CircularProgress color="secondary" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', m: 'auto' }} />
+        <CircularProgress sx={{ color: COLORS.seconday, display: 'flex', justifyContent: 'center', alignItems: 'center', m: 'auto' }} />
       ) : (
         <>
           <Box sx={{ height: 120, minHeight: 120 }}>
@@ -92,21 +94,21 @@ export default function VisitorMiniChart() {
               >
                 <defs>
                   <linearGradient id="lineColor" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#ff00c8" />
-                    <stop offset="50%" stopColor="#b400ff" />
-                    <stop offset="100%" stopColor="#00e5ff" />
+                    <stop offset="0%" stopColor={COLORS.primary} />
+                    <stop offset="50%" stopColor={COLORS.seconday} />
+                    <stop offset="100%" stopColor={COLORS.green} />
                   </linearGradient>
                 </defs>
 
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="day" stroke="#dbdbdbff" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#e9e9e9ff" tick={{ fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.12)" />
+                <XAxis dataKey="day" stroke="rgba(0,0,0,0.6)" tick={{ fontSize: 10, fill: COLORS.black }} />
+                <YAxis stroke="rgba(0,0,0,0.6)" tick={{ fontSize: 10, fill: COLORS.black }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1e1e1e",
-                    border: "none",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid rgba(0,0,0,0.08)",
                     borderRadius: "8px",
-                    color: "#fff",
+                    color: COLORS.black,
                   }}
                 />
 
@@ -115,7 +117,7 @@ export default function VisitorMiniChart() {
                   dataKey="visitors"
                   stroke="url(#lineColor)"
                   strokeWidth={2.5}
-                  dot={{ r: 3, stroke: "#ffffffff", strokeWidth: 1 }}
+                  dot={{ r: 3, stroke: "#ffffff", strokeWidth: 1 }}
                   activeDot={{ r: 5 }}
                   animationBegin={0}
                   animationDuration={1500}
