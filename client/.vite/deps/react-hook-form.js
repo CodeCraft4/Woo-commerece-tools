@@ -1,6 +1,6 @@
 import {
   require_react
-} from "./chunk-5GCMZSAB.js";
+} from "./chunk-6VIQC2ON.js";
 import {
   __toESM
 } from "./chunk-HXA6O6EE.js";
@@ -21,24 +21,22 @@ var isPlainObject = (tempObject) => {
 };
 var isWeb = typeof window !== "undefined" && typeof window.HTMLElement !== "undefined" && typeof document !== "undefined";
 function cloneObject(data) {
-  let copy;
-  const isArray = Array.isArray(data);
-  const isFileListInstance = typeof FileList !== "undefined" ? data instanceof FileList : false;
   if (data instanceof Date) {
-    copy = new Date(data);
-  } else if (!(isWeb && (data instanceof Blob || isFileListInstance)) && (isArray || isObject(data))) {
-    copy = isArray ? [] : Object.create(Object.getPrototypeOf(data));
-    if (!isArray && !isPlainObject(data)) {
-      copy = data;
-    } else {
-      for (const key in data) {
-        if (data.hasOwnProperty(key)) {
-          copy[key] = cloneObject(data[key]);
-        }
-      }
-    }
-  } else {
+    return new Date(data);
+  }
+  const isFileListInstance = typeof FileList !== "undefined" && data instanceof FileList;
+  if (isWeb && (data instanceof Blob || isFileListInstance)) {
     return data;
+  }
+  const isArray = Array.isArray(data);
+  if (!isArray && !(isObject(data) && isPlainObject(data))) {
+    return data;
+  }
+  const copy = isArray ? [] : Object.create(Object.getPrototypeOf(data));
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      copy[key] = cloneObject(data[key]);
+    }
   }
   return copy;
 }
@@ -54,6 +52,7 @@ var get = (object, path, defaultValue) => {
   return isUndefined(result) || result === object ? isUndefined(object[path]) ? defaultValue : object[path] : result;
 };
 var isBoolean = (value) => typeof value === "boolean";
+var isFunction = (value) => typeof value === "function";
 var set = (object, path, value) => {
   let index = -1;
   const tempPath = isKey(path) ? [path] : stringToPath(path);
@@ -94,13 +93,9 @@ var INPUT_VALIDATION_RULES = {
   required: "required",
   validate: "validate"
 };
-var HookFormContext = import_react.default.createContext(null);
-HookFormContext.displayName = "HookFormContext";
-var useFormContext = () => import_react.default.useContext(HookFormContext);
-var FormProvider = (props) => {
-  const { children, ...data } = props;
-  return import_react.default.createElement(HookFormContext.Provider, { value: data }, children);
-};
+var HookFormControlContext = import_react.default.createContext(null);
+HookFormControlContext.displayName = "HookFormControlContext";
+var useFormControlContext = () => import_react.default.useContext(HookFormControlContext);
 var getProxyFormState = (formState, control, localProxyFormState, isRoot = true) => {
   const result = {
     defaultValues: control._defaultValues
@@ -121,8 +116,8 @@ var getProxyFormState = (formState, control, localProxyFormState, isRoot = true)
 };
 var useIsomorphicLayoutEffect = typeof window !== "undefined" ? import_react.default.useLayoutEffect : import_react.default.useEffect;
 function useFormState(props) {
-  const methods = useFormContext();
-  const { control = methods.control, disabled, name, exact } = props || {};
+  const formControl = useFormControlContext();
+  const { control = formControl, disabled, name, exact } = props || {};
   const [formState, updateFormState] = import_react.default.useState(control._formState);
   const _localProxyFormState = import_react.default.useRef({
     isDirty: false,
@@ -168,7 +163,7 @@ function deepEqual(object1, object2, _internal_visited = /* @__PURE__ */ new Wea
     return Object.is(object1, object2);
   }
   if (isDateObject(object1) && isDateObject(object2)) {
-    return object1.getTime() === object2.getTime();
+    return Object.is(object1.getTime(), object2.getTime());
   }
   const keys1 = Object.keys(object1);
   const keys2 = Object.keys(object2);
@@ -195,8 +190,8 @@ function deepEqual(object1, object2, _internal_visited = /* @__PURE__ */ new Wea
   return true;
 }
 function useWatch(props) {
-  const methods = useFormContext();
-  const { control = methods.control, name, defaultValue, disabled, exact, compute } = props || {};
+  const formControl = useFormControlContext();
+  const { control = formControl, name, defaultValue, disabled, exact, compute } = props || {};
   const _defaultValue = import_react.default.useRef(defaultValue);
   const _compute = import_react.default.useRef(compute);
   const _computeFormValues = import_react.default.useRef(void 0);
@@ -256,8 +251,8 @@ function useWatch(props) {
   return computedOutput !== null ? computedOutput : value;
 }
 function useController(props) {
-  const methods = useFormContext();
-  const { name, disabled, control = methods.control, shouldUnregister, defaultValue, exact = true } = props;
+  const formControl = useFormControlContext();
+  const { name, disabled, control = formControl, shouldUnregister, defaultValue, exact = true } = props;
   const isArrayField = isNameInFieldArray(control._names.array, name);
   const defaultValueMemo = import_react.default.useMemo(() => get(control._formValues, name, get(control._defaultValues, name, defaultValue)), [control, name, defaultValue]);
   const value = useWatch({
@@ -317,12 +312,12 @@ function useController(props) {
   }), [name, control._formValues]);
   const ref = import_react.default.useCallback((elm) => {
     const field2 = get(control._fields, name);
-    if (field2 && elm) {
+    if (field2 && field2._f && elm) {
       field2._f.ref = {
-        focus: () => elm.focus && elm.focus(),
-        select: () => elm.select && elm.select(),
-        setCustomValidity: (message) => elm.setCustomValidity(message),
-        reportValidity: () => elm.reportValidity()
+        focus: () => isFunction(elm.focus) && elm.focus(),
+        select: () => isFunction(elm.select) && elm.select(),
+        setCustomValidity: (message) => isFunction(elm.setCustomValidity) && elm.setCustomValidity(message),
+        reportValidity: () => isFunction(elm.reportValidity) && elm.reportValidity()
       };
     }
   }, [control._fields, name]);
@@ -390,6 +385,51 @@ var flatten = (obj) => {
     }
   }
   return output;
+};
+var HookFormContext = import_react.default.createContext(null);
+HookFormContext.displayName = "HookFormContext";
+var useFormContext = () => import_react.default.useContext(HookFormContext);
+var FormProvider = (props) => {
+  const { children, watch, getValues, getFieldState, setError, clearErrors, setValue, trigger, formState, resetField, reset, handleSubmit, unregister, control, register, setFocus, subscribe } = props;
+  return import_react.default.createElement(
+    HookFormContext.Provider,
+    { value: import_react.default.useMemo(() => ({
+      watch,
+      getValues,
+      getFieldState,
+      setError,
+      clearErrors,
+      setValue,
+      trigger,
+      formState,
+      resetField,
+      reset,
+      handleSubmit,
+      unregister,
+      control,
+      register,
+      setFocus,
+      subscribe
+    }), [
+      clearErrors,
+      control,
+      formState,
+      getFieldState,
+      getValues,
+      handleSubmit,
+      register,
+      reset,
+      resetField,
+      setError,
+      setFocus,
+      setValue,
+      subscribe,
+      trigger,
+      unregister,
+      watch
+    ]) },
+    import_react.default.createElement(HookFormControlContext.Provider, { value: control }, children)
+  );
 };
 var POST_REQUEST = "post";
 function Form(props) {
@@ -518,7 +558,6 @@ function extractFormValues(fieldsState, formValues) {
 }
 var isEmptyObject = (value) => isObject(value) && !Object.keys(value).length;
 var isFileInput = (element) => element.type === "file";
-var isFunction = (value) => typeof value === "function";
 var isHTMLElement = (value) => {
   if (!isWeb) {
     return false;
@@ -948,7 +987,8 @@ function createFormControl(props = {}) {
   let _state = {
     action: false,
     mount: false,
-    watch: false
+    watch: false,
+    keepIsValid: false
   };
   let _names = {
     mount: /* @__PURE__ */ new Set(),
@@ -959,7 +999,7 @@ function createFormControl(props = {}) {
   };
   let delayErrorCallback;
   let timer = 0;
-  const _proxyFormState = {
+  const defaultProxyFormState = {
     isDirty: false,
     dirtyFields: false,
     validatingFields: false,
@@ -967,6 +1007,9 @@ function createFormControl(props = {}) {
     isValidating: false,
     isValid: false,
     errors: false
+  };
+  const _proxyFormState = {
+    ...defaultProxyFormState
   };
   let _proxySubscribeFormState = {
     ..._proxyFormState
@@ -981,8 +1024,17 @@ function createFormControl(props = {}) {
     timer = setTimeout(callback, wait);
   };
   const _setValid = async (shouldUpdateValid) => {
+    if (_state.keepIsValid) {
+      return;
+    }
     if (!_options.disabled && (_proxyFormState.isValid || _proxySubscribeFormState.isValid || shouldUpdateValid)) {
-      const isValid = _options.resolver ? isEmptyObject((await _runSchema()).errors) : await executeBuiltInValidation(_fields, true);
+      let isValid;
+      if (_options.resolver) {
+        isValid = isEmptyObject((await _runSchema()).errors);
+        _updateIsValidating();
+      } else {
+        isValid = await executeBuiltInValidation(_fields, true);
+      }
       if (isValid !== _formState.isValid) {
         _subjects.state.next({
           isValid
@@ -1113,11 +1165,11 @@ function createFormControl(props = {}) {
   const _runSchema = async (name) => {
     _updateIsValidating(name, true);
     const result = await _options.resolver(_formValues, _options.context, getResolverOptions(name || _names.mount, _fields, _options.criteriaMode, _options.shouldUseNativeValidation));
-    _updateIsValidating(name);
     return result;
   };
   const executeSchemaAndUpdateState = async (names) => {
     const { errors } = await _runSchema(names);
+    _updateIsValidating(names);
     if (names) {
       for (const name of names) {
         const error = get(errors, name);
@@ -1147,7 +1199,7 @@ function createFormControl(props = {}) {
           }
           if (fieldError[_f.name]) {
             context.valid = false;
-            if (shouldOnlyCheckValid) {
+            if (shouldOnlyCheckValid || props.shouldUseNativeValidation) {
               break;
             }
           }
@@ -1241,11 +1293,18 @@ function createFormControl(props = {}) {
     } else {
       field && !field._f && !isNullOrUndefined(cloneValue) ? setValues(name, cloneValue, options) : setFieldValue(name, cloneValue, options);
     }
-    isWatched(name, _names) && _subjects.state.next({ ..._formState, name });
-    _subjects.state.next({
-      name: _state.mount ? name : void 0,
-      values: cloneObject(_formValues)
-    });
+    if (isWatched(name, _names)) {
+      _subjects.state.next({
+        ..._formState,
+        name,
+        values: cloneObject(_formValues)
+      });
+    } else {
+      _subjects.state.next({
+        name: _state.mount ? name : void 0,
+        values: cloneObject(_formValues)
+      });
+    }
   };
   const onChange = async (event) => {
     _state.mount = true;
@@ -1296,6 +1355,7 @@ function createFormControl(props = {}) {
       !isBlurEvent && watched && _subjects.state.next({ ..._formState });
       if (_options.resolver) {
         const { errors } = await _runSchema([name]);
+        _updateIsValidating([name]);
         _updateIsFieldValueUpdated(fieldValue);
         if (isFieldValueUpdated) {
           const previousErrorLookupResult = schemaErrorLookup(_formState.errors, _fields, name);
@@ -1416,7 +1476,10 @@ function createFormControl(props = {}) {
     };
     return _subscribe({
       ...props2,
-      formState: _proxySubscribeFormState
+      formState: {
+        ...defaultProxyFormState,
+        ...props2.formState
+      }
     });
   };
   const unregister = (name, options = {}) => {
@@ -1444,7 +1507,11 @@ function createFormControl(props = {}) {
   };
   const _setDisabledField = ({ disabled, name }) => {
     if (isBoolean(disabled) && _state.mount || !!disabled || _names.disabled.has(name)) {
+      const wasDisabled = _names.disabled.has(name);
+      const isDisabled = !!disabled;
+      const disabledStateChanged = wasDisabled !== isDisabled;
       disabled ? _names.disabled.add(name) : _names.disabled.delete(name);
+      disabledStateChanged && _state.mount && !_state.action && _setValid();
     }
   };
   const register = (name, options = {}) => {
@@ -1544,6 +1611,7 @@ function createFormControl(props = {}) {
     });
     if (_options.resolver) {
       const { errors, values } = await _runSchema();
+      _updateIsValidating();
       _formState.errors = errors;
       fieldValues = cloneObject(values);
     } else {
@@ -1619,7 +1687,14 @@ function createFormControl(props = {}) {
           ...Object.keys(getDirtyFields(_defaultValues, _formValues))
         ]);
         for (const fieldName of Array.from(fieldsToCheck)) {
-          get(_formState.dirtyFields, fieldName) ? set(values, fieldName, get(_formValues, fieldName)) : setValue(fieldName, get(values, fieldName));
+          const isDirty = get(_formState.dirtyFields, fieldName);
+          const existingValue = get(_formValues, fieldName);
+          const newValue = get(values, fieldName);
+          if (isDirty && !isUndefined(existingValue)) {
+            set(values, fieldName, existingValue);
+          } else if (!isDirty && !isUndefined(newValue)) {
+            setValue(fieldName, newValue);
+          }
         }
       } else {
         if (isWeb && isUndefined(formValues)) {
@@ -1664,6 +1739,7 @@ function createFormControl(props = {}) {
     };
     _state.mount = !_proxyFormState.isValid || !!keepStateOptions.keepIsValid || !!keepStateOptions.keepDirtyValues || !_options.shouldUnregister && !isEmptyObject(values);
     _state.watch = !!_options.shouldUnregister;
+    _state.keepIsValid = !!keepStateOptions.keepIsValid;
     _state.action = false;
     if (!keepStateOptions.keepErrors) {
       _formState.errors = {};
@@ -1680,15 +1756,17 @@ function createFormControl(props = {}) {
       defaultValues: _defaultValues
     });
   };
-  const reset = (formValues, keepStateOptions) => _reset(isFunction(formValues) ? formValues(_formValues) : formValues, keepStateOptions);
+  const reset = (formValues, keepStateOptions) => _reset(isFunction(formValues) ? formValues(_formValues) : formValues, { ..._options.resetOptions, ...keepStateOptions });
   const setFocus = (name, options = {}) => {
     const field = get(_fields, name);
     const fieldReference = field && field._f;
     if (fieldReference) {
       const fieldRef = fieldReference.refs ? fieldReference.refs[0] : fieldReference.ref;
       if (fieldRef.focus) {
-        fieldRef.focus();
-        options.shouldSelect && isFunction(fieldRef.select) && fieldRef.select();
+        setTimeout(() => {
+          fieldRef.focus();
+          options.shouldSelect && isFunction(fieldRef.select) && fieldRef.select();
+        });
       }
     }
   };
@@ -1713,6 +1791,7 @@ function createFormControl(props = {}) {
       setError,
       _subscribe,
       _runSchema,
+      _updateIsValidating,
       _focusError,
       _getWatch,
       _getDirty,
@@ -1836,8 +1915,8 @@ var updateAt = (fieldValues, index, value) => {
   return fieldValues;
 };
 function useFieldArray(props) {
-  const methods = useFormContext();
-  const { control = methods.control, name, keyName = "id", shouldUnregister, rules } = props;
+  const formControl = useFormControlContext();
+  const { control = formControl, name, keyName = "id", shouldUnregister, rules } = props;
   const [fields, setFields] = import_react.default.useState(control._getFieldArray(name));
   const ids = import_react.default.useRef(control._getFieldArray(name).map(generateId));
   const _actioned = import_react.default.useRef(false);
@@ -1950,6 +2029,7 @@ function useFieldArray(props) {
     if (_actioned.current && (!getValidationModes(control._options.mode).isOnSubmit || control._formState.isSubmitted) && !getValidationModes(control._options.reValidateMode).isOnSubmit) {
       if (control._options.resolver) {
         control._runSchema([name]).then((result) => {
+          control._updateIsValidating([name]);
           const error = get(result.errors, name);
           const existingError = get(control._formState.errors, name);
           if (existingError ? !error && existingError.type || error && (existingError.type !== error.type || existingError.message !== error.message) : error && error.type) {
@@ -2119,10 +2199,10 @@ function useForm(props = {}) {
     }
     control._removeUnmounted();
   });
-  _formControl.current.formState = getProxyFormState(formState, control);
+  _formControl.current.formState = import_react.default.useMemo(() => getProxyFormState(formState, control), [control, formState]);
   return _formControl.current;
 }
-var Watch = ({ control, names, render }) => render(useWatch({ control, name: names }));
+var Watch = (props) => props.render(useWatch({ name: props.names, ...props }));
 export {
   Controller,
   Form,

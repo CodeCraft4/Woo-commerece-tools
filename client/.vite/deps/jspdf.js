@@ -3,7 +3,7 @@ import {
 } from "./chunk-SITVF2AJ.js";
 import "./chunk-HXA6O6EE.js";
 
-// node_modules/jspdf/node_modules/fflate/esm/browser.js
+// node_modules/fflate/esm/browser.js
 var ch2 = {};
 var wk = (function(c2, id, msg, transfer, cb) {
   var w2 = new Worker(ch2[id] || (ch2[id] = URL.createObjectURL(new Blob([
@@ -13953,7 +13953,7 @@ function le(t2) {
   var h2 = l2.getContext("2d");
   h2.fillStyle = "#fff", h2.fillRect(0, 0, l2.width, l2.height);
   var f2 = { ignoreMouse: true, ignoreAnimation: true, ignoreDimensions: true }, d2 = this;
-  return (i.canvg ? Promise.resolve(i.canvg) : import("./index.es-M24CASSN.js")).catch(function(t3) {
+  return (i.canvg ? Promise.resolve(i.canvg) : import("./index.es-IK6E5ZJ6.js")).catch(function(t3) {
     return Promise.reject(new Error("Could not load canvg: " + t3));
   }).then(function(t3) {
     return t3.default ? t3.default : t3;

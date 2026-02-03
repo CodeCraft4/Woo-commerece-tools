@@ -2,7 +2,7 @@ import React from "react";
 import {
   AppBar,
   Toolbar,
-  Typography,
+  // Typography,
   Box,
   IconButton,
   InputBase,
@@ -14,7 +14,7 @@ import {
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import {
-  ArrowDropDown,
+  // ArrowDropDown,
   Chat,
   LogoutOutlined,
   Notifications,
@@ -180,7 +180,7 @@ const DNavbar = () => {
             }
           </Avatar>
 
-          <Box
+          {/* <Box
             onClick={handleMenu}
             sx={{
               display: "flex",
@@ -198,7 +198,7 @@ const DNavbar = () => {
               {admin?.first_name}
             </Typography>
             <ArrowDropDown sx={{ color: COLORS.black }} />
-          </Box>
+          </Box> */}
 
           <Menu
             anchorEl={anchorEl}

@@ -610,9 +610,9 @@ const TempletForm = () => {
     }, [rawStores?.config?.fitCanvas?.width, rawStores?.config?.fitCanvas?.height, rawStores?.config?.mmWidth, rawStores?.config?.mmHeight, previewImageRatio, categoryRatio]);
 
     const previewBounds = useMemo(() => {
-        if (isMdUp) return { maxW: 760, maxH: 900 };
-        if (isSmUp) return { maxW: 620, maxH: 780 };
-        return { maxW: 380, maxH: 520 };
+        if (isMdUp) return { maxW: 500, maxH: 700 };
+        if (isSmUp) return { maxW: 500, maxH: 700 };
+        return { maxW: 500, maxH: 700 };
     }, [isMdUp, isSmUp]);
 
     const previewSize = useMemo(() => {
@@ -628,303 +628,295 @@ const TempletForm = () => {
     const cols = 4;
 
     return (
-        <Box>
+        <Box
+            sx={{
+                display: { md: "flex", sm: "flex", xs: "block" },
+                gap: "20px",
+                justifyContent: "center",
+                alignItems: "center",
+                width: '100%',
+                height: "auto",
+                overflow: "hidden",
+            }}
+        >
+            {/* Left Preview */}
             <Box
                 sx={{
-                    display: { md: "flex", sm: "flex", xs: "block" },
-                    gap: "20px",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    width: "100%",
-                    height: "auto",
+                    width: previewSize.width,
+                    height: previewSize.height,
+                    maxWidth: "100%",
+                    borderRadius: "10px",
+                    boxShadow: "3px 5px 8px gray",
+                    position: "relative",
                     overflow: "hidden",
-                    mt: 2,
+                    backgroundColor: "transparent",
                 }}
             >
-                {/* Left Preview */}
                 <Box
+                    ref={previewRef}
                     sx={{
-                        width: previewBounds.maxW,
-                        height: previewBounds.maxH,
+                        width: previewSize.width,
+                        height: previewSize.height,
                         maxWidth: "100%",
-                        borderRadius: "12px",
-                        boxShadow: "3px 5px 8px gray",
                         position: "relative",
-                        overflow: "hidden",
-                        backgroundColor: "#fff",
-                        p: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        borderRadius: "10px",
+                        backgroundColor: "transparent",
                     }}
                 >
-                    <Box
-                        ref={previewRef}
-                        sx={{
-                            width: previewSize.width,
-                            height: previewSize.height,
-                            maxWidth: "100%",
-                            position: "relative",
-                            overflow: "hidden",
-                            borderRadius: "12px",
-                            backgroundColor: "#fff",
-                        }}
-                    >
-                        {previewImage ? (
-                            <Box component={"img"} src={`${previewImage}`} sx={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                        ) : (
-                            <>
-                                {rawStores ? (
-                                    (() => {
-                                        const firstSlide = rawStores.slides?.[0];
-                                        if (!firstSlide) return <Box sx={{ color: "#999", p: 2 }}>No slide data</Box>;
+                    {previewImage ? (
+                        <Box component={"img"} src={`${previewImage}`} sx={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    ) : (
+                        <>
+                            {rawStores ? (
+                                (() => {
+                                    const firstSlide = rawStores.slides?.[0];
+                                    if (!firstSlide) return <Box sx={{ color: "#999", p: 2 }}>No slide data</Box>;
 
-                                        const slideTextElements =
-                                            rawStores.textElements?.filter((te: any) => te.slideId === firstSlide.id) || [];
-                                        const slideImageElements =
-                                            rawStores.imageElements?.filter((ie: any) => ie.slideId === firstSlide.id) || [];
-                                        const slideBg = rawStores.slideBg?.[firstSlide.id] || null;
+                                    const slideTextElements =
+                                        rawStores.textElements?.filter((te: any) => te.slideId === firstSlide.id) || [];
+                                    const slideImageElements =
+                                        rawStores.imageElements?.filter((ie: any) => ie.slideId === firstSlide.id) || [];
+                                    const slideBg = rawStores.slideBg?.[firstSlide.id] || null;
 
-                                        const baseW = rawStores.config?.fitCanvas?.width ?? mmToPx(rawStores.config?.mmWidth ?? 210);
-                                        const baseH = rawStores.config?.fitCanvas?.height ?? mmToPx(rawStores.config?.mmHeight ?? 297);
+                                    const baseW = rawStores.config?.fitCanvas?.width ?? mmToPx(rawStores.config?.mmWidth ?? 210);
+                                    const baseH = rawStores.config?.fitCanvas?.height ?? mmToPx(rawStores.config?.mmHeight ?? 297);
 
-                                        const boxW = previewSize.width;
-                                        const boxH = previewSize.height;
-                                        const { scale, w, h, offsetX, offsetY } = coverScale(baseW, baseH, boxW, boxH);
+                                    const boxW = previewSize.width;
+                                    const boxH = previewSize.height;
+                                    const { scale, w, h, offsetX, offsetY } = coverScale(baseW, baseH, boxW, boxH);
 
-                                        return (
-                                            <Box sx={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
-                                                <Box
-                                                    sx={{
-                                                        position: "absolute",
-                                                        left: offsetX,
-                                                        top: offsetY,
-                                                        width: `${w}`,
-                                                        height: `${h}`,
-                                                        backgroundColor: slideBg?.color || "#cc2727ff",
-                                                    }}
-                                                >
-                                                    {slideBg?.image && (
-                                                        <Box
-                                                            component="img"
-                                                            src={slideBg.image}
-                                                            sx={{
-                                                                width: "100%",
-                                                                height: "100%",
-                                                                objectFit: "cover",
-                                                                position: "absolute",
-                                                                top: 0,
-                                                                left: 0,
-                                                            }}
-                                                        />
-                                                    )}
+                                    return (
+                                        <Box sx={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
+                                            <Box
+                                                sx={{
+                                                    position: "absolute",
+                                                    left: offsetX,
+                                                    top: offsetY,
+                                                    width: `${w}`,
+                                                    height: `${h}`,
+                                                    backgroundColor: slideBg?.color || "#cc2727ff",
+                                                }}
+                                            >
+                                                {slideBg?.image && (
+                                                    <Box
+                                                        component="img"
+                                                        src={slideBg.image}
+                                                        sx={{
+                                                            width: "100%",
+                                                            height: "100%",
+                                                            objectFit: "cover",
+                                                            position: "absolute",
+                                                            top: 0,
+                                                            left: 0,
+                                                        }}
+                                                    />
+                                                )}
 
-                                                    {slideImageElements.map((img: any) => (
-                                                        <Box
-                                                            key={img.id}
-                                                            component="img"
-                                                            src={img.src}
-                                                            sx={{
-                                                                position: "absolute",
-                                                                top: img.y * scale,
-                                                                left: img.x * scale,
-                                                                width: img.width * scale,
-                                                                height: img.height * scale,
-                                                                objectFit: "cover",
-                                                            }}
-                                                        />
-                                                    ))}
+                                                {slideImageElements.map((img: any) => (
+                                                    <Box
+                                                        key={img.id}
+                                                        component="img"
+                                                        src={img.src}
+                                                        sx={{
+                                                            position: "absolute",
+                                                            top: img.y * scale,
+                                                            left: img.x * scale,
+                                                            width: img.width * scale,
+                                                            height: img.height * scale,
+                                                            objectFit: "cover",
+                                                        }}
+                                                    />
+                                                ))}
 
-                                                    {slideTextElements.map((txt: any) => (
-                                                        <Typography
-                                                            key={txt.id}
-                                                            sx={{
-                                                                position: "absolute",
-                                                                top: txt.y * scale,
-                                                                left: txt.x * scale,
-                                                                width: txt.width * scale,
-                                                                fontSize: (txt.fontSize ?? 16) * scale,
-                                                                fontFamily: txt.fontFamily,
-                                                                color: txt.color,
-                                                                fontWeight: txt.bold ? 700 : 400,
-                                                                fontStyle: txt.italic ? "italic" : "normal",
-                                                                textAlign: txt.align as any,
-                                                                whiteSpace: "pre-wrap",
-                                                            }}
-                                                        >
-                                                            {txt.text}
-                                                        </Typography>
-                                                    ))}
-                                                </Box>
+                                                {slideTextElements.map((txt: any) => (
+                                                    <Typography
+                                                        key={txt.id}
+                                                        sx={{
+                                                            position: "absolute",
+                                                            top: txt.y * scale,
+                                                            left: txt.x * scale,
+                                                            width: txt.width * scale,
+                                                            fontSize: (txt.fontSize ?? 16) * scale,
+                                                            fontFamily: txt.fontFamily,
+                                                            color: txt.color,
+                                                            fontWeight: txt.bold ? 700 : 400,
+                                                            fontStyle: txt.italic ? "italic" : "normal",
+                                                            textAlign: txt.align as any,
+                                                            whiteSpace: "pre-wrap",
+                                                        }}
+                                                    >
+                                                        {txt.text}
+                                                    </Typography>
+                                                ))}
                                             </Box>
-                                        );
-                                    })()
-                                ) : (
-                                    <Box sx={{ color: "#999", p: 2 }}>No preview available</Box>
-                                )}
-                            </>
-                        )}
-                    </Box>
+                                        </Box>
+                                    );
+                                })()
+                            ) : (
+                                <Box sx={{ color: "#999", p: 2 }}>No preview available</Box>
+                            )}
+                        </>
+                    )}
+                </Box>
+            </Box>
+
+            {/* Right Form */}
+            <Box
+                component="form"
+                sx={{ width: { md: "500px", sm: "500px", xs: "100%" }, mt: { md: 0, sm: 0, xs: 3 } }}
+                onSubmit={handleSubmit(onSubmit)}
+            >
+                <CustomInput
+                    label="Title"
+                    placeholder="Enter template title"
+                    defaultValue=""
+                    register={register("cardname", { required: "Title is required" })}
+                    error={errors.cardname?.message}
+                />
+
+                <Controller
+                    name="cardcategory"
+                    control={control}
+                    rules={{ required: "Category is required" }}
+                    render={({ field }) => (
+                        <CustomInput
+                            label="Category"
+                            type="select"
+                            placeholder={
+                                isLoadingCats ? "Loading categories..." : isErrorCats ? "Failed to load categories" : "Select category"
+                            }
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange((e.target as any).value)}
+                            error={errors.cardcategory?.message}
+                            options={categoryOptionsWithEmpty}
+                        />
+                    )}
+                />
+
+                <Controller
+                    name="subCategory"
+                    control={control}
+                    rules={{ required: subCategoryOptions.length > 1 ? "Sub category is required" : false }}
+                    render={({ field }) => (
+                        <CustomInput
+                            label="Sub Category"
+                            type="select"
+                            placeholder={
+                                !watch("cardcategory")
+                                    ? "Select main category first"
+                                    : subCategoryOptions.length <= 1
+                                        ? "No sub categories"
+                                        : "Select sub category"
+                            }
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange((e.target as any).value)}
+                            error={errors.subCategory?.message}
+                            options={subCategoryOptions}
+                        />
+                    )}
+                />
+
+                <Controller
+                    name="subSubCategory"
+                    control={control}
+                    rules={{ required: subSubCategoryOptions.length > 1 ? "Sub-sub category is required" : false }}
+                    render={({ field }) => (
+                        <CustomInput
+                            label="Sub Sub Category"
+                            type="select"
+                            placeholder={
+                                !watch("subCategory")
+                                    ? "Select sub category first"
+                                    : subSubCategoryOptions.length <= 1
+                                        ? "No sub-sub categories"
+                                        : "Select sub-sub category"
+                            }
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange((e.target as any).value)}
+                            error={errors.subSubCategory?.message}
+                            options={subSubCategoryOptions}
+                        />
+                    )}
+                />
+
+                <CustomInput
+                    label="SKU"
+                    placeholder="Enter your SKU"
+                    defaultValue=""
+                    register={register("sku", { required: "SKU is required" })}
+                    error={errors.sku?.message}
+                />
+
+                {/* Pricing */}
+                <Box sx={{ mt: 2, mb: 1 }}>
+                    {/* <Typography sx={{ fontWeight: 800 }}>{pricingConfig.title ?? "Prices by Size"}</Typography> */}
+                    {pricingConfig.note ? (
+                        <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.5 }}>{pricingConfig.note}</Typography>
+                    ) : null}
                 </Box>
 
-                {/* Right Form */}
-                <Box
-                    component="form"
-                    sx={{ width: { md: "500px", sm: "500px", xs: "100%" }, mt: { md: 0, sm: 0, xs: 3 } }}
-                    onSubmit={handleSubmit(onSubmit)}
-                >
-                    <CustomInput
-                        label="Title"
-                        placeholder="Enter template title"
-                        defaultValue=""
-                        register={register("cardname", { required: "Title is required" })}
-                        error={errors.cardname?.message}
-                    />
-
-                    <Controller
-                        name="cardcategory"
-                        control={control}
-                        rules={{ required: "Category is required" }}
-                        render={({ field }) => (
-                            <CustomInput
-                                label="Category"
-                                type="select"
-                                placeholder={
-                                    isLoadingCats ? "Loading categories..." : isErrorCats ? "Failed to load categories" : "Select category"
-                                }
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange((e.target as any).value)}
-                                error={errors.cardcategory?.message}
-                                options={categoryOptionsWithEmpty}
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        name="subCategory"
-                        control={control}
-                        rules={{ required: subCategoryOptions.length > 1 ? "Sub category is required" : false }}
-                        render={({ field }) => (
-                            <CustomInput
-                                label="Sub Category"
-                                type="select"
-                                placeholder={
-                                    !watch("cardcategory")
-                                        ? "Select main category first"
-                                        : subCategoryOptions.length <= 1
-                                            ? "No sub categories"
-                                            : "Select sub category"
-                                }
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange((e.target as any).value)}
-                                error={errors.subCategory?.message}
-                                options={subCategoryOptions}
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        name="subSubCategory"
-                        control={control}
-                        rules={{ required: subSubCategoryOptions.length > 1 ? "Sub-sub category is required" : false }}
-                        render={({ field }) => (
-                            <CustomInput
-                                label="Sub Sub Category"
-                                type="select"
-                                placeholder={
-                                    !watch("subCategory")
-                                        ? "Select sub category first"
-                                        : subSubCategoryOptions.length <= 1
-                                            ? "No sub-sub categories"
-                                            : "Select sub-sub category"
-                                }
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange((e.target as any).value)}
-                                error={errors.subSubCategory?.message}
-                                options={subSubCategoryOptions}
-                            />
-                        )}
-                    />
-
-                    <CustomInput
-                        label="SKU"
-                        placeholder="Enter your SKU"
-                        defaultValue=""
-                        register={register("sku", { required: "SKU is required" })}
-                        error={errors.sku?.message}
-                    />
-
-                    {/* Pricing */}
-                    <Box sx={{ mt: 2, mb: 1 }}>
-                        {/* <Typography sx={{ fontWeight: 800 }}>{pricingConfig.title ?? "Prices by Size"}</Typography> */}
-                        {pricingConfig.note ? (
-                            <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.5 }}>{pricingConfig.note}</Typography>
-                        ) : null}
-                    </Box>
-
-                    <Typography sx={{ fontWeight: 700, mb: 0.8 }}>Actual Prices</Typography>
-                    <Box sx={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 1 }}>
-                        {sizes.map((s) => (
-                            <CustomInput
-                                key={`pricing-${s.key}`}
-                                label={s.label}
-                                placeholder="0"
-                                defaultValue=""
-                                register={register(`pricing.${s.key}` as PricingFieldPath, { required: !isEditMode ? "Required" : false })}
-                                error={getNestedError(errors, `pricing.${s.key}`)}
-                            />
-                        ))}
-                    </Box>
-
-                    <Typography sx={{ fontWeight: 700, mb: 0.8, mt: 2 }}>Sale Prices</Typography>
-                    <Box sx={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 1 }}>
-                        {sizes.map((s) => (
-                            <CustomInput
-                                key={`salePricing-${s.key}`}
-                                label={s.label}
-                                placeholder="0"
-                                defaultValue=""
-                                register={register(`salePricing.${s.key}` as SalePricingFieldPath)}
-                                error={getNestedError(errors, `salePricing.${s.key}`)}
-                            />
-                        ))}
-                    </Box>
-
-                    <CustomInput
-                        label="Description"
-                        placeholder="Enter description"
-                        defaultValue=""
-                        register={register("description", { required: "Description is required" })}
-                        error={errors.description?.message}
-                        multiline
-                    />
-
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
-                        <LandingButton
-                            title={isEditMode ? "Update templet" : "Edit templet"}
-                            personal
-                            width="200px"
-                            type="button"
-                            onClick={() =>
-                                navigate(ADMINS_DASHBOARD.ADMIN_CATEGORIES_EDITOR, {
-                                    state: {
-                                        mode: isEditMode ? "edit" : "create",
-                                        id: templateId ?? null,
-                                        product: watch(),
-                                        rawStores: rawStoresState,
-                                    },
-                                })
-                            }
+                <Typography sx={{ fontWeight: 700, mb: 0.8 }}>Actual Prices</Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 1 }}>
+                    {sizes.map((s) => (
+                        <CustomInput
+                            key={`pricing-${s.key}`}
+                            label={s.label}
+                            placeholder="0"
+                            defaultValue=""
+                            register={register(`pricing.${s.key}` as PricingFieldPath, { required: !isEditMode ? "Required" : false })}
+                            error={getNestedError(errors, `pricing.${s.key}`)}
                         />
-                        <LandingButton
-                            title={isEditMode ? "Update & Publish" : "Save & Publish"}
-                            personal
-                            variant="outlined"
-                            width="200px"
-                            type="submit"
-                            loading={loading}
+                    ))}
+                </Box>
+
+                <Typography sx={{ fontWeight: 700, mb: 0.8, mt: 2 }}>Sale Prices</Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 1 }}>
+                    {sizes.map((s) => (
+                        <CustomInput
+                            key={`salePricing-${s.key}`}
+                            label={s.label}
+                            placeholder="0"
+                            defaultValue=""
+                            register={register(`salePricing.${s.key}` as SalePricingFieldPath)}
+                            error={getNestedError(errors, `salePricing.${s.key}`)}
                         />
-                    </Box>
+                    ))}
+                </Box>
+
+                <CustomInput
+                    label="Description"
+                    placeholder="Enter description"
+                    defaultValue=""
+                    register={register("description", { required: "Description is required" })}
+                    error={errors.description?.message}
+                    multiline
+                />
+
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+                    <LandingButton
+                        title={isEditMode ? "Update templet" : "Edit templet"}
+                        personal
+                        width="200px"
+                        type="button"
+                        onClick={() =>
+                            navigate(ADMINS_DASHBOARD.ADMIN_CATEGORIES_EDITOR, {
+                                state: {
+                                    mode: isEditMode ? "edit" : "create",
+                                    id: templateId ?? null,
+                                    product: watch(),
+                                    rawStores: rawStoresState,
+                                },
+                            })
+                        }
+                    />
+                    <LandingButton
+                        title={isEditMode ? "Update & Publish" : "Save & Publish"}
+                        personal
+                        variant="outlined"
+                        width="200px"
+                        type="submit"
+                        loading={loading}
+                    />
                 </Box>
             </Box>
         </Box>

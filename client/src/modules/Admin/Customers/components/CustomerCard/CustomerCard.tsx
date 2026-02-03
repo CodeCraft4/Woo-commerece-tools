@@ -91,7 +91,7 @@ const CustomerCard = ({ user, onView, onDelete }: Props) => {
         sx={{
           position: "relative",
           width: "100%",
-          height: { md: 320, sm: 280, xs: 250 },
+          height: { md: 350, sm: 280, xs: 250 },
           borderRadius: 2,
           overflow: "hidden",
           cursor: "pointer",

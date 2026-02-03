@@ -63,7 +63,7 @@ const Router = () => {
         element={<CategoriesWisePreview />}
       />
       <Route path={USER_ROUTES.PREVIEW} element={<Preview />} />
-      <Route path={`${USER_ROUTES.VIEW_ALL}/:search`} element={<ViewAll />} />
+      <Route path={`${USER_ROUTES.VIEW_ALL}/:search?`} element={<ViewAll />} />
       <Route path={`${USER_ROUTES.USER_DRAFTS_CARDS}`} element={<Draft />} />
       <Route path={USER_ROUTES.ADD_TO_CART} element={<AddToCart />} />
       <Route path={USER_ROUTES.PREMIUM_PLANS} element={<PremiumPlans />} />
