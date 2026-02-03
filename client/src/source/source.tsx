@@ -1,4 +1,4 @@
-import { supabase } from "../supabase/supabase";
+import { supabase, supabaseAdmin } from "../supabase/supabase";
 import { toast } from 'react-hot-toast';
 
 // Fetch all cards from the database
@@ -197,7 +197,7 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
 }
 
 export const fetchAllTempletDesigns = async () => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("templetDesign")
     .select("*")
 
@@ -222,7 +222,7 @@ export const fetchAllTempletDesignsLight = async () => {
   while (true) {
     const to = from + PAGE_SIZE - 1;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("templetDesign")
       .select(`
         id,
@@ -262,7 +262,7 @@ export const fetchAllTempletDesignsLight = async () => {
 
 
 export const fetchTempletCardCount = async () => {
-  const { count, error } = await supabase
+  const { count, error } = await supabaseAdmin
     .from("templetDesign")
     .select("*", { count: "exact", head: true });
 
@@ -271,7 +271,7 @@ export const fetchTempletCardCount = async () => {
 };
 
 export const fetchTempletDesignById = async (id: string) => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("templetDesign")
     .select("id, category, raw_stores, created_at")
     .eq("id", id)
@@ -281,9 +281,20 @@ export const fetchTempletDesignById = async (id: string) => {
   return data;
 };
 
+export const fetchTempletDesignFullById = async (id: string | number) => {
+  const { data, error } = await supabaseAdmin
+    .from("templetDesign")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ?? null;
+};
+
 // ✅ Jab need ho tab (open/preview) raw_stores lao
 export const fetchTempletRawStoresById = async (id: string | number) => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("templetDesign")
     .select("id, raw_stores")
     .eq("id", id)

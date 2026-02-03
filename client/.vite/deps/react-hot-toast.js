@@ -1,7 +1,7 @@
 "use client";
 import {
   require_react
-} from "./chunk-6VIQC2ON.js";
+} from "./chunk-5GCMZSAB.js";
 import {
   __toESM
 } from "./chunk-HXA6O6EE.js";

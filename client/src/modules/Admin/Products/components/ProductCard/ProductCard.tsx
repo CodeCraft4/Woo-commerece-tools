@@ -35,15 +35,16 @@ const ProductCard = (props: Props) => {
     <Box
       component={"div"}
       sx={{
-        width: { md: 200, sm: 200, xs: "100%" },
-        height: { md: 250, sm: 250, xs: 280 },
-        border: "1px solid #e0e0e0",
+        width: "100%",
+        height: { md: 240, sm: 220, xs: 240 },
+        border: "1px solid #E6E9EF",
         borderRadius: 3,
         overflow: "hidden",
-        boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+        backgroundColor: "#fff",
+        boxShadow: "0 6px 18px rgba(20, 23, 31, 0.08)",
         position: "relative",
         cursor: "pointer",
-        "&:hover": { boxShadow: "0 4px 15px rgba(0,0,0,0.2)" },
+        "&:hover": { boxShadow: "0 10px 28px rgba(20, 23, 31, 0.12)" },
         "&:hover .overlay": { opacity: 1 },
       }}
     >

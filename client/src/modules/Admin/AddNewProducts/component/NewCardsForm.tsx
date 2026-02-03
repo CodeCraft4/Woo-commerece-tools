@@ -235,8 +235,18 @@ const NewCardsForm = ({ editProduct }: Props) => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    applyPolygonLayoutToContexts(editLayout, slide1, slide2, slide3, slide4);
-  }, [editLayout]);
+    if (isEditMode) {
+      if (editLayout) {
+        applyPolygonLayoutToContexts(editLayout, slide1, slide2, slide3, slide4);
+      }
+      return;
+    }
+
+    slide1?.resetSlide1State?.();
+    slide2?.resetSlide2State?.();
+    slide3?.resetSlide3State?.();
+    slide4?.resetSlide4State?.();
+  }, [isEditMode, editLayout, slide1, slide2, slide3, slide4]);
 
   const handleEditLayout = async () => {
     if (editLoading) return;

@@ -4,7 +4,7 @@ import { Box, Typography } from "@mui/material";
 import { Controller, useForm, type FieldErrors } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchAllCategoriesFromDB } from "../../../../../source/source";
+import { fetchAllCategoriesFromDB, fetchTempletDesignFullById } from "../../../../../source/source";
 import CustomInput from "../../../../../components/CustomInput/CustomInput";
 import LandingButton from "../../../../../components/LandingButton/LandingButton";
 import { useCategoriesEditorState, type PublishMeta } from "../../../../../context/CategoriesEditorContext";
@@ -160,6 +160,10 @@ const TempletForm = () => {
     const isEditMode = mode === "edit" || !!templateId;
 
     const [rawStoresState, setRawStoresState] = useState<any>(null);
+    const [editProduct, setEditProduct] = useState<EditProductLike | undefined>(
+        (location.state as any)?.product
+    );
+    const [previewImage, setPreviewImage] = useState<string | undefined>(prevImg);
 
     useEffect(() => {
         const rs = navState?.rawStores;
@@ -178,6 +182,79 @@ const TempletForm = () => {
 
         setRawStoresState(normalized);
     }, [navState?.rawStores]);
+
+    useEffect(() => {
+        if (!isEditMode || !templateId) return;
+        let mounted = true;
+
+        const load = async () => {
+            try {
+                const row: any = await fetchTempletDesignFullById(templateId);
+                if (!mounted || !row) return;
+
+                const normalizedProduct: EditProductLike = {
+                    cardname: row.title ?? row.name ?? row.cardname ?? "",
+                    cardcategory: row.category ?? row.cardcategory ?? "",
+                    subCategory: row.subCategory ?? row.subcategory ?? "",
+                    subSubCategory: row.subSubCategory ?? row.sub_subcategory ?? "",
+                    sku: row.sku ?? "",
+                    description: row.description ?? "",
+
+                    actualprice: row.actualprice ?? row.actual_price ?? "",
+                    a4price: row.a4price ?? "",
+                    a5price: row.a5price ?? "",
+                    usletter: row.usletter ?? "",
+                    saleprice: row.saleprice ?? row.sale_price ?? "",
+                    salea4price: row.salea4price ?? "",
+                    salea5price: row.salea5price ?? "",
+                    saleusletter: row.saleusletter ?? "",
+
+                    a3price: row.a3price ?? "",
+                    halfusletter: row.halfusletter ?? "",
+                    ustabloid: row.ustabloid ?? "",
+                    salea3price: row.salea3price ?? "",
+                    salehalfusletter: row.salehalfusletter ?? "",
+                    saleustabloid: row.saleustabloid ?? "",
+
+                    pricing: row.pricing ?? undefined,
+                    salePricing: row.salePricing ?? undefined,
+                };
+
+                setEditProduct(normalizedProduct);
+
+                const rs = row.raw_stores ?? row.rawStores ?? row.rawstores ?? null;
+                if (rs) {
+                    const normalized =
+                        typeof rs === "string"
+                            ? (() => {
+                                try {
+                                    return JSON.parse(rs);
+                                } catch {
+                                    return null;
+                                }
+                            })()
+                            : rs;
+                    setRawStoresState(normalized);
+                }
+
+                const img =
+                    row.img_url ??
+                    row.image_url ??
+                    row.imageurl ??
+                    row.lastpageImageUrl ??
+                    row.lastpageimageurl ??
+                    undefined;
+                if (img) setPreviewImage(img);
+
+                didPrefillRef.current = false;
+            } catch (e) {
+                console.error("Failed to fetch template full details:", e);
+            }
+        };
+
+        load();
+        return () => { mounted = false; };
+    }, [isEditMode, templateId]);
 
     const rawStores = rawStoresState;
 
@@ -248,7 +325,7 @@ const TempletForm = () => {
         },
     });
 
-    const { product } = (location.state || {}) as { product?: EditProductLike };
+    const product = editProduct;
 
     const selectedCategoryName = watch("cardcategory");
     const selectedSubCategory = watch("subCategory");
@@ -273,6 +350,7 @@ const TempletForm = () => {
         const productSizes = productConfig.sizes;
         const hasA5 = productSizes.some((s) => s.key === "A5");
         const hasA3 = productSizes.some((s) => s.key === "A3");
+        const firstKey = productSizes[0]?.key;
 
         const incomingPricing: PricingMap = {};
         const incomingSalePricing: PricingMap = {};
@@ -282,6 +360,13 @@ const TempletForm = () => {
         }
         if ((product as any).salePricing && typeof (product as any).salePricing === "object") {
             for (const [k, v] of Object.entries((product as any).salePricing)) incomingSalePricing[k as SizeKey] = v != null ? String(v) : "";
+        }
+
+        if (firstKey && !incomingPricing[firstKey] && product.actualprice != null) {
+            incomingPricing[firstKey] = String(product.actualprice);
+        }
+        if (firstKey && !incomingSalePricing[firstKey] && product.saleprice != null) {
+            incomingSalePricing[firstKey] = String(product.saleprice);
         }
 
         // DB fallback
@@ -333,22 +418,31 @@ const TempletForm = () => {
     );
 
     const subCategoryOptions: Option[] = useMemo(() => {
-        if (!selectedCategory?.subcategories) return [{ label: "Select sub category", value: "" }];
-        return [{ label: "Select sub category", value: "" }, ...selectedCategory.subcategories.map((sub) => ({ label: sub, value: sub }))];
-    }, [selectedCategory]);
+        const base = selectedCategory?.subcategories ?? [];
+        const set = new Set(base);
+        if (selectedSubCategory && !set.has(selectedSubCategory)) set.add(selectedSubCategory);
+        const list = Array.from(set);
+        if (list.length === 0) return [{ label: "Select sub category", value: "" }];
+        return [{ label: "Select sub category", value: "" }, ...list.map((sub) => ({ label: sub, value: sub }))];
+    }, [selectedCategory, selectedSubCategory]);
 
     const subSubCategoryOptions: Option[] = useMemo(() => {
         if (!selectedCategory || !selectedSubCategory) return [{ label: "Select sub-sub category", value: "" }];
         const map = selectedCategory.sub_subcategories || {};
         const list = map[selectedSubCategory] || [];
-        return [{ label: "Select sub-sub category", value: "" }, ...list.map((name) => ({ label: name, value: name }))];
-    }, [selectedCategory, selectedSubCategory]);
+        const set = new Set(list);
+        const current = watch("subSubCategory") || "";
+        if (current && !set.has(current)) set.add(current);
+        const final = Array.from(set);
+        return [{ label: "Select sub-sub category", value: "" }, ...final.map((name) => ({ label: name, value: name }))];
+    }, [selectedCategory, selectedSubCategory, watch]);
 
     // Clear sub/subSub when invalid after category changes
     useEffect(() => {
         const sub = watch("subCategory") || "";
         const subsub = watch("subSubCategory") || "";
-        const validSub = !!selectedCategory?.subcategories?.includes(sub);
+        const availableSubs = selectedCategory?.subcategories ?? [];
+        const validSub = availableSubs.length === 0 ? true : availableSubs.includes(sub);
 
         if (!validSub) {
             setValue("subCategory", "");
@@ -356,15 +450,10 @@ const TempletForm = () => {
             return;
         }
 
-        const validSubSub = !!(selectedCategory?.sub_subcategories?.[sub] ?? []).includes(subsub);
+        const availableSubSubs = (selectedCategory?.sub_subcategories?.[sub] ?? []);
+        const validSubSub = availableSubSubs.length === 0 ? true : availableSubSubs.includes(subsub);
         if (!validSubSub) setValue("subSubCategory", "");
     }, [selectedCategoryName, selectedCategory, setValue, watch]);
-
-    useEffect(() => {
-        const subsub = watch("subSubCategory") || "";
-        const list = selectedCategory?.sub_subcategories?.[selectedSubCategory || ""] ?? [];
-        if (!list.includes(subsub)) setValue("subSubCategory", "");
-    }, [selectedSubCategory, selectedCategory, setValue, watch]);
 
     // Ensure keys exist
     useEffect(() => {
@@ -414,6 +503,8 @@ const TempletForm = () => {
                     pixelRatio: 2,
                     backgroundColor: "#ffffff",
                     style: { transform: "none" },
+                    skipFonts: true,
+                    fontEmbedCSS: "",
                 });
             } catch (e) {
                 console.error("LeftBox capture failed:", e);
@@ -508,8 +599,8 @@ const TempletForm = () => {
                         p: 0,
                     }}
                 >
-                    {prevImg ? (
-                        <Box component={"img"} src={`${prevImg}`} sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
+                    {previewImage ? (
+                        <Box component={"img"} src={`${previewImage}`} sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
                     ) : (
                         <>
                             {rawStores ? (

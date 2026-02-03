@@ -226,6 +226,8 @@ const Navbar = () => {
         backgroundColor: "#ffffff",
         pixelRatio: 1,
         quality: 0.7,
+        skipFonts: true,
+        fontEmbedCSS: "",
       });
 
       return dataUrl;

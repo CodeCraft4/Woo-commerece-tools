@@ -3,21 +3,16 @@ import {
   Box,
   CircularProgress,
   Typography,
-  Button,
   Tabs,
   Tab,
   Badge,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
-  Divider,
   Paper,
-  Tooltip,
-  IconButton,
-  Collapse,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
-import { supabase } from "../../../supabase/supabase";
+import { supabaseAdmin } from "../../../supabase/supabase";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { Delete, Style as CardsIcon, Category as TemplatesIcon, FilterList } from "@mui/icons-material";
@@ -32,7 +27,6 @@ import {
   fetchAllCategoriesFromDB,
   fetchAllTempletDesigns,
 } from "../../../source/source";
-import { COLORS } from "../../../constant/color";
 
 type CardRow = {
   id: number;
@@ -74,24 +68,6 @@ type TemplateDesign = {
   subSubCategory?: string; sub_subcategory?: string;
 };
 
-type TemplateFilterSidebarProps = {
-  open: boolean;
-  onToggle: () => void;
-  ALL: string;
-  mainCats: string[];
-  tMainCat: string;
-  setTMainCat: (v: string) => void;
-  tSubcats: string[];
-  tSubCat: string;
-  setTSubCat: (v: string) => void;
-
-  // ✅ add and type both of these properly
-  tSubSubs: Set<string>;
-  setTSubSubs: React.Dispatch<React.SetStateAction<Set<string>>>;
-
-  tVisibleSubSubs: string[];
-};
-
 const ALL = "ALL";
 type ActiveTab = "cards" | "templates";
 type DeletePick = { id: number | string; source: ActiveTab };
@@ -100,12 +76,12 @@ type DeletePick = { id: number | string; source: ActiveTab };
 
 // delete helpers
 const deleteCardById = async (id: number | string) => {
-  const { error } = await supabase.from("cards").delete().eq("id", id);
+  const { error } = await supabaseAdmin.from("cards").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return id;
 };
 const deleteTemplateById = async (id: number | string) => {
-  const { error } = await supabase.from("templetDesign").delete().eq("id", id);
+  const { error } = await supabaseAdmin.from("templetDesign").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return id;
 };
@@ -113,6 +89,7 @@ const getTabIndex = (t: ActiveTab) => (t === "cards" ? 0 : 1);
 const indexToTab = (i: number): ActiveTab => (i === 0 ? "cards" : "templates");
 
 // cards normalize helpers
+const getCardMain = (r: CardRow) => (r.cardcategory ?? r.card_category ?? "").trim();
 const getSub = (r: CardRow) => (r.subCategory ?? r.subcategory ?? "").trim();
 const getSubSub = (r: CardRow) => (r.subSubCategory ?? r.sub_subcategory ?? "").trim();
 
@@ -134,282 +111,103 @@ function buildCardTreesFromRows(rows: CardRow[]) {
   return { subcategories, sub_subcategories };
 }
 
-/* ---------------- Filter Sidebars ---------------- */
-
-// Cards filter (unchanged)
-function CardsFilterSidebar({
-  open,
-  onToggle,
-  ALL,
-  cardSubcategories,
-  selectedSubCat,
-  setSelectedSubCat,
-  selectedSubSubs,
-  toggleSubSub,
-  clearSubSub,
-  visibleSubSubs,
+function FilterBar({
+  categories,
+  category,
+  onCategoryChange,
+  subcategories,
+  subcategory,
+  onSubcategoryChange,
+  subsubcategories,
+  subsubcategory,
+  onSubsubcategoryChange,
 }: {
-  open: boolean;
-  onToggle: () => void;
-  ALL: string;
-  cardSubcategories: string[];
-  selectedSubCat: string;
-  setSelectedSubCat: (v: string) => void;
-  selectedSubSubs: Set<string>;
-  toggleSubSub: (v: string) => void;
-  clearSubSub: () => void;
-  visibleSubSubs: string[];
+  categories: string[];
+  category: string;
+  onCategoryChange: (v: string) => void;
+  subcategories: string[];
+  subcategory: string;
+  onSubcategoryChange: (v: string) => void;
+  subsubcategories: string[];
+  subsubcategory: string;
+  onSubsubcategoryChange: (v: string) => void;
 }) {
   return (
     <Paper
       elevation={0}
       sx={{
-        width: open ? 180 : 50,
-        p: 1,
-        border: `1px solid ${COLORS.seconday}`,
-        borderRadius: 2,
-        alignSelf: "flex-start",
-        transition: (theme) =>
-          theme.transitions.create(["width", "padding"], { duration: theme.transitions.duration.shortest }),
-        position: "sticky",
-        top: 0,
+        borderRadius: 3,
+        border: "1px solid #E6E9EF",
+        bgcolor: "#F7F8FB",
+        px: 2.5,
+        py: 1.4,
+        mb: 2,
       }}
     >
-      {open ? (
-        <Box onClick={onToggle} sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", mb: 1, userSelect: "none" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, pr: 1.5 }}>
           <FilterList fontSize="small" />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Filters</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Filters</Typography>
         </Box>
-      ) : (
-        <Tooltip title="Open filters">
-          <IconButton onClick={onToggle} size="small" sx={{ mx: "auto", display: "block" }}>
-            <FilterList />
-          </IconButton>
-        </Tooltip>
-      )}
-
-      <Collapse in={open} timeout="auto" unmountOnExit>
-        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>
-          categories
-        </Typography>
-
-        <Box sx={{ display: "flex", height: 320, overflowY: "auto", }}>
-          <Tabs
-            orientation="vertical"
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            value={[ALL, ...cardSubcategories].indexOf(selectedSubCat)}
-            onChange={(_, idx: number) => {
-              const name = [ALL, ...cardSubcategories][idx] ?? ALL;
-              setSelectedSubCat(name);
-            }}
+        <FormControl size="small" sx={{ minWidth: 220 }}>
+          <Select
+            value={category}
+            displayEmpty
+            onChange={(e) => onCategoryChange(String(e.target.value))}
+            renderValue={(v) => (v === ALL ? "Category" : v)}
             sx={{
-              borderRight: 1,
-              borderColor: "transparent",
-              maxHeight: 320,
-              width: '100%',
-              "& .MuiTabs-scroller": { overflowY: "auto" },
-              "& .MuiTab-root": { alignItems: "flex-start", textTransform: "none" },
+              borderRadius: 999,
+              bgcolor: "#fff",
+              "& .MuiOutlinedInput-notchedOutline": { borderColor: "#D6DAE6" },
             }}
           >
-            <Tab label="All" />
-            {cardSubcategories.map((name) => (
-              <Tab key={name} label={name} />
+            <MenuItem value={ALL}>All categories</MenuItem>
+            {categories.map((name) => (
+              <MenuItem key={name} value={name}>{name}</MenuItem>
             ))}
-          </Tabs>
-        </Box>
+          </Select>
+        </FormControl>
 
-        {selectedSubCat !== ALL && (
-          <>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexDirection: 'column', }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>
-                {selectedSubCat} – Sub-filters
-              </Typography>
-              {selectedSubSubs.size > 0 && (
-                <Button size="small" onClick={clearSubSub} sx={{ textTransform: "none" }}>
-                  Clear
-                </Button>
-              )}
-            </Box>
-
-            <FormGroup sx={{ mt: 1, maxHeight: 350, overflowY: "hidden", width: '100%', display: 'flex', flexDirection: 'column' }}>
-              {visibleSubSubs.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No sub-subcategories.
-                </Typography>
-              ) : (
-                visibleSubSubs.map((name) => (
-                  <FormControlLabel
-                    key={name}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={selectedSubSubs.has(name)}
-                        onChange={() => toggleSubSub(name)}
-                      />
-                    }
-                    label={name}
-                  />
-                ))
-              )}
-            </FormGroup>
-          </>
-        )}
-
-        {/* <Typography>
-          Sale Card
-        </Typography> */}
-      </Collapse>
-    </Paper>
-  );
-}
-
-// NEW: Templates filter
-function TemplateFilterSidebar({
-  open,
-  onToggle,
-  ALL,
-  mainCats,
-  tMainCat, setTMainCat,
-  tSubcats,
-  tSubCat, setTSubCat,
-  tSubSubs, setTSubSubs,
-  tVisibleSubSubs,
-}: TemplateFilterSidebarProps) {
-  const toggleSubSub = (name: string) => {
-    setTSubSubs((prev) => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
-    });
-  };
-  const clearSubSub = () => setTSubSubs(new Set());
-
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        width: open ? 180 : 50,
-        p: open ? 2 : 1,
-        border: `1px solid ${COLORS.seconday}`,
-        borderRadius: 2,
-        alignSelf: "flex-start",
-        transition: (theme) =>
-          theme.transitions.create(["width", "padding"], { duration: theme.transitions.duration.shortest }),
-        position: "sticky",
-        top: 0,
-      }}
-    >
-      {open ? (
-        <Box onClick={onToggle} sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", mb: 1, userSelect: "none" }}>
-          <FilterList fontSize="small" />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Filters</Typography>
-        </Box>
-      ) : (
-        <Tooltip title="Open filters">
-          <IconButton onClick={onToggle} size="small" sx={{ mx: "auto", display: "block" }}>
-            <FilterList />
-          </IconButton>
-        </Tooltip>
-      )}
-
-      <Collapse in={open} timeout="auto" unmountOnExit>
-        {/* Main Category */}
-        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>
-          Category
-        </Typography>
-        <Box sx={{ display: "flex", height: 280, overflowY: "auto", mt: 1 }}>
-          <Tabs
-            orientation="vertical"
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            value={[ALL, ...mainCats].indexOf(tMainCat)}
-            onChange={(_, idx: number) => {
-              const name = [ALL, ...mainCats][idx] ?? ALL;
-              setTMainCat(name);
-              setTSubCat(ALL);
-              setTSubSubs(new Set());
-            }}
+        <FormControl size="small" sx={{ minWidth: 220 }}>
+          <Select
+            value={subcategory}
+            displayEmpty
+            onChange={(e) => onSubcategoryChange(String(e.target.value))}
+            renderValue={(v) => (v === ALL ? "Subcategory" : v)}
             sx={{
-              borderRight: 1, borderColor: "transparent", maxHeight: 300,
-              width: '100%',
-              "& .MuiTabs-scroller": { overflowY: "auto" },
-              "& .MuiTab-root": { alignItems: "flex-start", textTransform: "none" },
+              borderRadius: 999,
+              bgcolor: "#fff",
+              "& .MuiOutlinedInput-notchedOutline": { borderColor: "#D6DAE6" },
             }}
+            disabled={subcategories.length === 0}
           >
-            <Tab label="All" />
-            {mainCats.map((name) => <Tab key={name} label={name} />)}
-          </Tabs>
-        </Box>
+            <MenuItem value={ALL}>All subcategories</MenuItem>
+            {subcategories.map((name) => (
+              <MenuItem key={name} value={name}>{name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-        {/* SubCategory */}
-        <Divider sx={{ my: 2 }} />
-        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>
-          Subcategory
-        </Typography>
-        <Box sx={{ display: "flex", height: 300, overflowY: "auto", mt: 1 }}>
-          <Tabs
-            orientation="vertical"
-            variant="scrollable"
-            scrollButtons="auto"
-            value={[ALL, ...tSubcats].indexOf(tSubCat)}
-            onChange={(_, idx: number) => {
-              const name = [ALL, ...tSubcats][idx] ?? ALL;
-              setTSubCat(name);
-              setTSubSubs(new Set());
-            }}
+        <FormControl size="small" sx={{ minWidth: 220 }}>
+          <Select
+            value={subsubcategory}
+            displayEmpty
+            onChange={(e) => onSubsubcategoryChange(String(e.target.value))}
+            renderValue={(v) => (v === ALL ? "Sub‑subcategory" : v)}
             sx={{
-              borderRight: 1, borderColor: "transparent", maxHeight: 300,
-              width: '100%',
-              "& .MuiTabs-scroller": { overflowY: "auto" },
-              "& .MuiTab-root": { alignItems: "flex-start", textTransform: "none" },
+              borderRadius: 999,
+              bgcolor: "#fff",
+              "& .MuiOutlinedInput-notchedOutline": { borderColor: "#D6DAE6" },
             }}
+            disabled={subsubcategories.length === 0}
           >
-            <Tab label="All" />
-            {tSubcats.map((name) => <Tab key={name} label={name} />)}
-          </Tabs>
-        </Box>
-
-        {/* Sub-SubCategory */}
-        {tSubCat !== ALL && (
-          <>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexDirection: 'column' }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>
-                {tSubCat} – Sub-filters
-              </Typography>
-              {tSubSubs.size > 0 && (
-                <Button size="small" onClick={clearSubSub} sx={{ textTransform: "none" }}>
-                  Clear
-                </Button>
-              )}
-            </Box>
-
-            <FormGroup sx={{ mt: 1, maxHeight: 350, overflowY: "auto" }}>
-              {tVisibleSubSubs.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">No sub-subcategories.</Typography>
-              ) : (
-                tVisibleSubSubs.map((name) => (
-                  <FormControlLabel
-                    key={name}
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={tSubSubs.has(name)}
-                        onChange={() => toggleSubSub(name)}
-                      />
-                    }
-                    label={name}
-                  />
-                ))
-              )}
-            </FormGroup>
-          </>
-        )}
-      </Collapse>
+            <MenuItem value={ALL}>All sub‑subcategories</MenuItem>
+            {subsubcategories.map((name) => (
+              <MenuItem key={name} value={name}>{name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
     </Paper>
   );
 }
@@ -420,13 +218,14 @@ const Products = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("cards");
 
   // cards filter state
+  const [cardMainCat, setCardMainCat] = useState<string>(ALL);
   const [selectedSubCat, setSelectedSubCat] = useState<string>(ALL);
-  const [selectedSubSubs, setSelectedSubSubs] = useState<Set<string>>(new Set());
+  const [selectedSubSub, setSelectedSubSub] = useState<string>(ALL);
 
   // templates filter state
   const [tMainCat, setTMainCat] = useState<string>(ALL);
   const [tSubCat, setTSubCat] = useState<string>(ALL);
-  const [tSubSubs, setTSubSubs] = useState<Set<string>>(new Set());
+  const [tSubSub, setTSubSub] = useState<string>(ALL);
 
   const [selectedToDelete, setSelectedToDelete] = useState<DeletePick | null>(null);
 
@@ -435,9 +234,6 @@ const Products = () => {
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const [filtersOpen, setFiltersOpen] = useState(true);
-  const toggleFilters = () => setFiltersOpen((v) => !v);
 
   // queries
   const { data: cards = [], isLoading: isLoadingCards, isError: isErrorCards } = useQuery<CardRow[]>({
@@ -457,11 +253,23 @@ const Products = () => {
     staleTime: 1000 * 60 * 30,
   });
 
+  const norm = (s?: string | null) => (s ?? "").trim();
+  const ciEq = (a: string, b: string) =>
+    a.localeCompare(b, undefined, { sensitivity: "accent" }) === 0;
+
   // categories helpers
-  const cardsTree = useMemo(
-    () => categories.find((c) => (c?.name ?? "").trim() === "Cards") || null,
-    [categories]
-  );
+  const cardsTree = useMemo(() => {
+    const match = categories.find((c) => ciEq((c?.name ?? "").trim(), "Cards"));
+    return match || null;
+  }, [categories]);
+  const cardMainCats = useMemo(() => {
+    const set = new Set<string>();
+    cards.forEach((r) => {
+      const v = getCardMain(r);
+      if (v) set.add(v);
+    });
+    return Array.from(set).sort();
+  }, [cards]);
   const templateMainCats = useMemo(
     () => categories.map((c) => (c?.name ?? "").trim()).filter((n) => n && n !== "Cards"),
     [categories]
@@ -516,21 +324,17 @@ const Products = () => {
   // reset on tab change
   useEffect(() => {
     // cards
+    setCardMainCat(ALL);
     setSelectedSubCat(ALL);
-    setSelectedSubSubs(new Set());
+    setSelectedSubSub(ALL);
     // templates
     setTMainCat(ALL);
     setTSubCat(ALL);
-    setTSubSubs(new Set());
+    setTSubSub(ALL);
   }, [activeTab]);
 
   // domain items
   const domainItems = activeTab === "cards" ? cards : templates;
-
-
-  const norm = (s?: string | null) => (s ?? "").trim();
-  const ciEq = (a: string, b: string) =>
-    a.localeCompare(b, undefined, { sensitivity: "accent" }) === 0;
 
   const tplGetCat = (t: any) => norm(t.category);
   const tplGetSub = (t: any) => norm(t.subCategory ?? t.subcategory);
@@ -542,14 +346,14 @@ const Products = () => {
     if (activeTab === "cards") {
       let out = (domainItems as CardRow[]).slice();
 
+      if (cardMainCat !== ALL) {
+        out = out.filter((r) => ciEq(getCardMain(r), cardMainCat));
+      }
       if (selectedSubCat !== ALL) {
         out = out.filter((r) => ciEq(getSub(r), selectedSubCat));
       }
-      if (selectedSubSubs.size > 0) {
-        out = out.filter((r) => {
-          const s = getSubSub(r);
-          return !!s && Array.from(selectedSubSubs).some((v) => ciEq(s, v));
-        });
+      if (selectedSubSub !== ALL) {
+        out = out.filter((r) => ciEq(getSubSub(r), selectedSubSub));
       }
       return out;
     }
@@ -568,11 +372,8 @@ const Products = () => {
     }
 
     // subSubCategory (only apply if any boxes checked AND a subCategory is chosen)
-    if (tSubCat !== ALL && tSubSubs.size > 0) {
-      out = out.filter((t) => {
-        const s = tplGetSubSub(t);
-        return !!s && Array.from(tSubSubs).some((v) => ciEq(s, v));
-      });
+    if (tSubCat !== ALL && tSubSub !== ALL) {
+      out = out.filter((t) => ciEq(tplGetSubSub(t), tSubSub));
     }
 
     return out;
@@ -580,12 +381,13 @@ const Products = () => {
     domainItems,
     activeTab,
     // cards deps
+    cardMainCat,
     selectedSubCat,
-    selectedSubSubs,
+    selectedSubSub,
     // templates deps
     tMainCat,
     tSubCat,
-    tSubSubs,
+    tSubSub,
   ]);
 
 
@@ -716,16 +518,6 @@ const Products = () => {
 
 
 
-  // checkbox handlers (cards)
-  const toggleSubSub = (name: string) => {
-    setSelectedSubSubs((prev) => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
-    });
-  };
-  const clearSubSub = () => setSelectedSubSubs(new Set());
-
   return (
     <DashboardLayout
       title="Products"
@@ -759,39 +551,43 @@ const Products = () => {
         </Tabs>
       </Box>
 
-      <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
-        {/* Sidebar Filters */}
-        {activeTab === "cards" ? (
-          <CardsFilterSidebar
-            open={filtersOpen}
-            onToggle={toggleFilters}
-            ALL={ALL}
-            cardSubcategories={cardSubcategories}
-            selectedSubCat={selectedSubCat}
-            setSelectedSubCat={(v) => {
-              setSelectedSubCat(v);
-              setSelectedSubSubs(new Set());
-            }}
-            selectedSubSubs={selectedSubSubs}
-            toggleSubSub={toggleSubSub}
-            clearSubSub={clearSubSub}
-            visibleSubSubs={visibleSubSubs}
-          />
-        ) : (
-          <TemplateFilterSidebar
-            open={filtersOpen}
-            onToggle={toggleFilters}
-            ALL={ALL}
-            mainCats={templateMainCats}
-            tMainCat={tMainCat} setTMainCat={setTMainCat}
-            tSubcats={tSubcats}
-            tSubCat={tSubCat} setTSubCat={setTSubCat}
-            tSubSubs={tSubSubs} setTSubSubs={setTSubSubs}
-            tVisibleSubSubs={tVisibleSubSubs}
-          />
-        )}
+      <FilterBar
+        categories={activeTab === "cards" ? cardMainCats : templateMainCats}
+        category={activeTab === "cards" ? cardMainCat : tMainCat}
+        onCategoryChange={(name) => {
+          if (activeTab === "cards") {
+            setCardMainCat(name);
+            setSelectedSubCat(ALL);
+            setSelectedSubSub(ALL);
+            return;
+          }
+          setTMainCat(name);
+          setTSubCat(ALL);
+          setTSubSub(ALL);
+        }}
+        subcategories={activeTab === "cards" ? cardSubcategories : tSubcats}
+        subcategory={activeTab === "cards" ? selectedSubCat : tSubCat}
+        onSubcategoryChange={(name) => {
+          if (activeTab === "cards") {
+            setSelectedSubCat(name);
+            setSelectedSubSub(ALL);
+            return;
+          }
+          setTSubCat(name);
+          setTSubSub(ALL);
+        }}
+        subsubcategories={activeTab === "cards" ? visibleSubSubs : tVisibleSubSubs}
+        subsubcategory={activeTab === "cards" ? selectedSubSub : tSubSub}
+        onSubsubcategoryChange={(name) => {
+          if (activeTab === "cards") {
+            setSelectedSubSub(name);
+            return;
+          }
+          setTSubSub(name);
+        }}
+      />
 
-        {/* Main content */}
+      <Box sx={{ mt: 2 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {(activeTab === "cards" ? isLoadingCards : isLoadingTemplates) ? (
             <Box sx={{ width: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "40vh" }}>
@@ -803,7 +599,14 @@ const Products = () => {
           ) : filteredItems.length === 0 ? (
             <Typography>No items found.</Typography>
           ) : (
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: 2.5,
+                alignItems: "stretch",
+              }}
+            >
               {filteredItems.map((item: any) => (
                 <ProductCard
                   key={`${activeTab}-${item.id}`}

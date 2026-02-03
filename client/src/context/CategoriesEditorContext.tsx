@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useMemo, useRef, useState, useCallback } from "react";
 import * as htmlToImage from "html-to-image";
 import { CATEGORY_CONFIG, type CategoryKey } from "../constant/data";
-import { supabase } from "../supabase/supabase";
+import { supabaseAdmin } from "../supabase/supabase";
 import toast from "react-hot-toast";
 
 /* ---------- Types ---------- */
@@ -338,7 +338,8 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
         cacheBust: false,
         pixelRatio: 2,
         backgroundColor: "transparent",
-        skipFonts: false,
+        skipFonts: true,
+        fontEmbedCSS: "",
         filter: (n: Node) => !(n instanceof HTMLLinkElement && /fonts\.googleapis\.com/i.test(n.href)),
         imagePlaceholder: transparentPx,
         width: Math.round(w),
@@ -455,13 +456,23 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
       const isEdit = !!meta?.id;
 
+      const db = supabaseAdmin;
       const { error } = isEdit
-        ? await supabase.from("templetDesign").update(payload).eq("id", meta!.id)
-        : await supabase.from("templetDesign").insert([payload]);
+        ? await db.from("templetDesign").update(payload).eq("id", meta!.id)
+        : await db.from("templetDesign").insert([payload]);
 
       if (error) {
-        console.error("DB save failed:", error);
-        toast.error("Save failed");
+        console.error("DB save failed:", {
+          message: error.message,
+          code: (error as any).code,
+          details: (error as any).details,
+          hint: (error as any).hint,
+        });
+        if ((error as any).code === "42501") {
+          toast.error("Save blocked by RLS. Please sign in with an admin account.");
+        } else {
+          toast.error(error.message || "Save failed");
+        }
       } else {
         toast.success(isEdit ? "✅ Updated template Design" : "✅ Saved template Design");
         resetState();

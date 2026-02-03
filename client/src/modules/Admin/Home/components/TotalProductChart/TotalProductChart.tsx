@@ -93,6 +93,7 @@ const TotalProductChart = () => {
         maxWidth: { md: '100%', sm: '100%', xs: "100%" },
         minWidth: 300,
         mb: { md: 0, sm: 0, xs: 1 },
+        minHeight: 0,
       }}
     >
       <Box
@@ -114,6 +115,8 @@ const TotalProductChart = () => {
             left: 0,
             width: "100%",
             height: "100%",
+            minWidth: 1,
+            minHeight: 1,
             opacity: 0.7,
           }}
         >

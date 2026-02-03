@@ -68,8 +68,6 @@ const PreviewBookCard = () => {
     slide4: "",
   });
 
-  console.log(slideImages, '--')
-
   const captureSlides = async () => {
     setLoading(true)
     const results: any = {};
@@ -88,6 +86,8 @@ const PreviewBookCard = () => {
       const dataUrl = await toPng(node, {
         cacheBust: true,
         pixelRatio: 2,
+        skipFonts: true,
+        fontEmbedCSS: "",
       });
 
 
