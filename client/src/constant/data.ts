@@ -552,7 +552,6 @@ export const GOOGLE_FONTS = [
   "Xanh Mono",
 ];
 
-
 export const STICKERS_DATA = (() => {
   // ✅ اپنا والا array بالکل same رکھو (sticker path / order / items کچھ بھی change نہیں ہوگا)
   const RAW = [
@@ -651,7 +650,10 @@ export const STICKERS_DATA = (() => {
     { id: 92, sticker: "/assets/stickers/Blue star cluster sticker.png" },
     { id: 93, sticker: "/assets/stickers/Blues flowers sticker.png" },
     { id: 94, sticker: "/assets/stickers/Bravo sticker.png" },
-    { id: 95, sticker: "/assets/stickers/Bright Birthday balloons sticker.png" },
+    {
+      id: 95,
+      sticker: "/assets/stickers/Bright Birthday balloons sticker.png",
+    },
     { id: 96, sticker: "/assets/stickers/Bunch of Sunflowers sticker.png" },
     { id: 97, sticker: "/assets/stickers/Butterfly sticker.png" },
     { id: 98, sticker: "/assets/stickers/cake.png" },
@@ -660,8 +662,14 @@ export const STICKERS_DATA = (() => {
     { id: 101, sticker: "/assets/stickers/Cartoon Christmas Tree sticker.png" },
     { id: 102, sticker: "/assets/stickers/Champagne Cheers sticker.png" },
     { id: 103, sticker: "/assets/stickers/Christmas Capybara sticker.png" },
-    { id: 104, sticker: "/assets/stickers/Christmas present check sticker.png" },
-    { id: 105, sticker: "/assets/stickers/Congratulations celebration  sticker.png" },
+    {
+      id: 104,
+      sticker: "/assets/stickers/Christmas present check sticker.png",
+    },
+    {
+      id: 105,
+      sticker: "/assets/stickers/Congratulations celebration  sticker.png",
+    },
     { id: 106, sticker: "/assets/stickers/Congratulations Hearts sticker.png" },
     { id: 107, sticker: "/assets/stickers/Cool Dance sticker.png" },
     { id: 108, sticker: "/assets/stickers/Cool sticker.png" },
@@ -695,7 +703,10 @@ export const STICKERS_DATA = (() => {
     { id: 110, sticker: "/assets/stickers/Easter Egg Single sticker.png" },
     { id: 110, sticker: "/assets/stickers/Fathers Day sticker.png" },
     { id: 110, sticker: "/assets/stickers/Flamingo sticker.png" },
-    { id: 110, sticker: "/assets/stickers/Flurry of pretty hearts sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/Flurry of pretty hearts sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Football cup sticker.png" },
     { id: 110, sticker: "/assets/stickers/Football pitch sticker.png" },
     { id: 110, sticker: "/assets/stickers/Football sticker.png" },
@@ -706,17 +717,29 @@ export const STICKERS_DATA = (() => {
     { id: 110, sticker: "/assets/stickers/Gingerbread sticker.png" },
     { id: 110, sticker: "/assets/stickers/Golf bag sticker.png" },
     { id: 110, sticker: "/assets/stickers/Golf hole sticker.png" },
-    { id: 110, sticker: "/assets/stickers/Good Luck in your new job sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/Good Luck in your new job sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Gran the best sticker.png" },
     { id: 110, sticker: "/assets/stickers/Happy Birthday fun sticker.png" },
     { id: 110, sticker: "/assets/stickers/Happy Birthday ombre sticker.png" },
-    { id: 110, sticker: "/assets/stickers/Happy Birthday squiggle sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/Happy Birthday squiggle sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Happy Cactus sticker.png" },
     { id: 110, sticker: "/assets/stickers/Happy Easter Eggs sticker.png" },
     { id: 110, sticker: "/assets/stickers/Happy Easter sticker.png" },
-    { id: 110, sticker: "/assets/stickers/Happy Fathers Day envelope sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/Happy Fathers Day envelope sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Happy Grandparents Day sticker.png" },
-    { id: 110, sticker: "/assets/stickers/Happy Mothers Day Heart Banner sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/Happy Mothers Day Heart Banner sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Happy Mothers Day sticker.png" },
     { id: 110, sticker: "/assets/stickers/Happy sticker.png" },
     { id: 110, sticker: "/assets/stickers/Happy Sun sticker.png" },
@@ -727,7 +750,10 @@ export const STICKERS_DATA = (() => {
     { id: 110, sticker: "/assets/stickers/HBD sticker.png" },
     { id: 110, sticker: "/assets/stickers/Heart balloons sticker.png" },
     { id: 110, sticker: "/assets/stickers/Heart Flowers sticker.png" },
-    { id: 110, sticker: "/assets/stickers/Hearts & kisses envelope sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/Hearts & kisses envelope sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Hello sticker.png" },
     { id: 110, sticker: "/assets/stickers/Just Married sticker.png" },
     { id: 110, sticker: "/assets/stickers/King sticker.png" },
@@ -743,7 +769,10 @@ export const STICKERS_DATA = (() => {
     { id: 110, sticker: "/assets/stickers/Mothers Day Banner sticker.png" },
     { id: 110, sticker: "/assets/stickers/Music disco ball sticker.png" },
     { id: 110, sticker: "/assets/stickers/Octopus sticker.png" },
-    { id: 110, sticker: "/assets/stickers/One Big Thank You heart sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/One Big Thank You heart sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Pastel star explosion sticker.png" },
     { id: 110, sticker: "/assets/stickers/pastel-rainbow.png" },
     { id: 110, sticker: "/assets/stickers/Penguin sticker.png" },
@@ -753,7 +782,10 @@ export const STICKERS_DATA = (() => {
     { id: 110, sticker: "/assets/stickers/Pink Dog balloon sticker.png" },
     { id: 110, sticker: "/assets/stickers/Pink Easter Bunny sticker.png" },
     { id: 110, sticker: "/assets/stickers/Pram sticker.png" },
-    { id: 110, sticker: "/assets/stickers/Pretty bunch of flowers sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/Pretty bunch of flowers sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Pretty Heart floral sticker.png" },
     { id: 110, sticker: "/assets/stickers/Pretty rain cloud sticker.png" },
     { id: 110, sticker: "/assets/stickers/Pretty smiling stars sticker.png" },
@@ -762,7 +794,10 @@ export const STICKERS_DATA = (() => {
     { id: 110, sticker: "/assets/stickers/Pumpkin Sweet sticker.png" },
     { id: 110, sticker: "/assets/stickers/Purple Dog balloon sticker.png" },
     { id: 110, sticker: "/assets/stickers/Purple Present sticker.png" },
-    { id: 110, sticker: "/assets/stickers/Racing flags and flames sticker.png" },
+    {
+      id: 110,
+      sticker: "/assets/stickers/Racing flags and flames sticker.png",
+    },
     { id: 110, sticker: "/assets/stickers/Rainbow heart sticker.png" },
     { id: 110, sticker: "/assets/stickers/Rainbow Present sticker.png" },
     { id: 110, sticker: "/assets/stickers/Red flurry of hearts sticker.png" },
@@ -820,14 +855,13 @@ export const STICKERS_DATA = (() => {
     const file = (item.sticker.split("/").pop() ?? "").trim();
     const name = file.endsWith(".png") ? file.slice(0, -4) : file; // ✅ name add only
 
-    let id:any = item.id;
+    let id: any = item.id;
     if (seen.has(id)) id = nextId++; // ✅ duplicates ids only (42/53/110...) auto increase
     seen.add(id);
 
     return { ...item, id, name };
   });
 })();
-
 
 // Payment card
 export const PAYMENT_CARD = [
@@ -1727,7 +1761,7 @@ export const CATEGORY_CONFIG = {
   "Business Cards": {
     key: "Business Cards",
     label: "Business Cards",
-    mmWidth: 85,
+    mmWidth: 95,
     mmHeight: 55,
     slideLabels: ["Front", "Back"],
     maxSlides: 2,
@@ -1767,10 +1801,8 @@ export const PRIMARY_CATEGORIES = [
   "New Baby",
 ] as const;
 
-
-
 export function uid() {
-    return Math.random().toString(16).slice(2) + Date.now().toString(16);
+  return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
 
 export function defaultPricing() {
@@ -1792,11 +1824,23 @@ export function defaultPricing() {
         badgeText: "",
         ctaText: "Buy single card",
         features: [
-          { id: uid(), text: "One-time access to that card only", icon: "check" },
-          { id: uid(), text: "Great for entry / quick purchase", icon: "check" },
+          {
+            id: uid(),
+            text: "One-time access to that card only",
+            icon: "check",
+          },
+          {
+            id: uid(),
+            text: "Great for entry / quick purchase",
+            icon: "check",
+          },
           { id: uid(), text: "Not full library access", icon: "cross" },
           { id: uid(), text: "Bundle designs not included", icon: "cross" },
-          { id: uid(), text: "Creator subscription not included", icon: "cross" },
+          {
+            id: uid(),
+            text: "Creator subscription not included",
+            icon: "cross",
+          },
         ],
       },
 
@@ -1813,11 +1857,31 @@ export function defaultPricing() {
         ctaText: "Buy bundle",
         features: [
           { id: uid(), text: "~12 cards per bundle", icon: "check" },
-          { id: uid(), text: "Lifetime access to purchased bundle", icon: "check" },
-          { id: uid(), text: "Bundle-only access (not full library)", icon: "check" },
-          { id: uid(), text: "Mother’s Day, Father’s Day, Baby Shower, Wedding", icon: "check" },
-          { id: uid(), text: "Seasonal drops: Halloween, Christmas, Valentine’s", icon: "check" },
-          { id: uid(), text: "Upsell: upgrade to Creator subscription anytime", icon: "check" },
+          {
+            id: uid(),
+            text: "Lifetime access to purchased bundle",
+            icon: "check",
+          },
+          {
+            id: uid(),
+            text: "Bundle-only access (not full library)",
+            icon: "check",
+          },
+          {
+            id: uid(),
+            text: "Mother’s Day, Father’s Day, Baby Shower, Wedding",
+            icon: "check",
+          },
+          {
+            id: uid(),
+            text: "Seasonal drops: Halloween, Christmas, Valentine’s",
+            icon: "check",
+          },
+          {
+            id: uid(),
+            text: "Upsell: upgrade to Creator subscription anytime",
+            icon: "check",
+          },
         ],
       },
 
@@ -1833,11 +1897,23 @@ export function defaultPricing() {
         badgeText: "BEST VALUE",
         ctaText: "Buy subscription",
         features: [
-          { id: uid(), text: "Access ALL products across ALL categories", icon: "check" },
+          {
+            id: uid(),
+            text: "Access ALL products across ALL categories",
+            icon: "check",
+          },
           { id: uid(), text: "Cancel anytime", icon: "check" },
           { id: uid(), text: "New designs added regularly", icon: "check" },
-          { id: uid(), text: "Overrides single + bundle access (full library)", icon: "check" },
-          { id: uid(), text: "Unlimited designing + downloads (premium access)", icon: "check" },
+          {
+            id: uid(),
+            text: "Overrides single + bundle access (full library)",
+            icon: "check",
+          },
+          {
+            id: uid(),
+            text: "Unlimited designing + downloads (premium access)",
+            icon: "check",
+          },
         ],
       },
     ],

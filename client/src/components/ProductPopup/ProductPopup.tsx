@@ -1,10 +1,3 @@
-// ProductPopup.tsx (FULL UPDATED COMPONENT)
-// ✅ Personalise click par agar price/size select nahi kiya (ya selected size ka price 0/empty ho) => EDITOR par nahi jayega
-// ✅ EXACT sizes show (1/2/4/5 jitni bhi config me hon)
-// ✅ Only ACTUAL prices (no sale)
-// ✅ Auto-selects first available priced size when modal opens
-// ✅ Add to basket bhi blocked if selected size invalid
-
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
@@ -43,6 +36,7 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     } catch {}
     return;
   }
+  
   try {
     const KEYS = ["selectedSize", "selectedVariant", "categorieTemplet", "3dModel", "selectedPrices", "selectedProduct"];
     KEYS.forEach((k) => localStorage.removeItem(k));
@@ -193,10 +187,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
     const base = getPricingConfig(categoryName).sizes ?? [];
     if (!isTempletDesign || isBusinessCard) return base;
 
-    const has = (k: any) => base.some((s) => s.key === k);
+    // const has = (k: any) => base.some((s) => s.key === k);
     const next = [...base];
-    if (!has("A3")) next.push({ key: "A3", title: "A3" });
-    if (!has("US_TABLOID")) next.push({ key: "US_TABLOID", title: "US Tabloid (11×17)" });
+    // if (!has("A3")) next.push({ key: "A3", title: "A3" });
+    // if (!has("US_TABLOID")) next.push({ key: "US_TABLOID", title: "US Tabloid (11×17)" });
 
     const order = [
       "A5",

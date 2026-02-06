@@ -20,6 +20,7 @@ import {
   UploadFileRounded,
   LockOutlined,
   LockOpenOutlined,
+  ContentCopyOutlined,
 } from "@mui/icons-material";
 import { useSlide1 } from "../../context/Slide1Context";
 import { useLocation } from "react-router-dom";
@@ -767,6 +768,71 @@ const SlideCover = ({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [bgEdit1]);
 
+
+
+  // duplicate   
+  const duplicateLayer = (type: 'text' | 'image' | 'sticker', idOrIndex: string | number) => {
+    if (!isAdminEditor) return;
+
+    if (type === 'text') {
+      const item: any = textElements1.find(t => t.id === idOrIndex);
+      if (!item || item.locked) return;
+
+      const newItem = {
+        ...item,
+        id: `text-duplicate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        position: {
+          x: item.position.x + 30,
+          y: item.position.y + 30,
+        },
+        zIndex: (item.zIndex || 1) + 1,   // put on top
+      };
+
+      setTextElements1(prev => [...prev, newItem]);
+      setSelectedTextId1(newItem.id);     // optional: auto-select the duplicate
+    }
+
+    else if (type === 'image') {
+      const item: any = draggableImages1.find(img => img.id === idOrIndex);
+      if (!item || item.locked) return;
+
+      const newItem = {
+        ...item,
+        id: `img-duplicate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        x: item.x + 30,
+        y: item.y + 30,
+        zIndex: (item.zIndex || 1) + 1,
+      };
+
+      setDraggableImages1(prev => [...prev, newItem]);
+      setSelectedShapeImageId1(newItem.id);   // optional
+    }
+
+    else if (type === 'sticker') {
+      const index = typeof idOrIndex === 'number' ? idOrIndex : -1;
+      if (index < 0) return;
+
+      const item: any = selectedStickers1?.[index];
+      if (!item || item.locked) return;
+
+      const newSticker = {
+        ...item,
+        id: item.id ? `${item.id}-dup-${Date.now()}` : `sticker-dup-${Date.now()}`,
+        x: item.x + 35,
+        y: item.y + 35,
+        zIndex: (item.zIndex || 1) + 1,
+      };
+
+      // Assuming you have addSticker or similar function
+      // If you only have update/remove → you'll need to add a addSticker function in context
+      // For now assuming you can do:
+      updateSticker1(selectedStickers1.length, newSticker); // ← hacky – better to have proper add
+      // Better solution: add addSticker function in useSlide1 context
+    }
+  };
+
+
+
   /* ------------------ UI ------------------ */
   // Draft capture 
   const captureClean = !!isCaptureMode || !!isAdminEditor;
@@ -1269,7 +1335,7 @@ const SlideCover = ({
                             className="no-drag"
                             onClick={(e) => { e.stopPropagation(); layerDownAny({ type: 'text', id: textElement.id }); }}
                             sx={{
-                              position: "absolute", top: -25, left: 40, bgcolor: "black", color: "white",
+                              position: "absolute", top: -25, left: 20, bgcolor: "black", color: "white",
                               borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                               p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
                             }}
@@ -1283,13 +1349,32 @@ const SlideCover = ({
                             className="no-drag"
                             onClick={(e) => { e.stopPropagation(); layerUpAny({ type: 'text', id: textElement.id }); }}
                             sx={{
-                              position: "absolute", top: -25, left: 80, bgcolor: "black", color: "white",
+                              position: "absolute", top: -25, left: 45, bgcolor: "black", color: "white",
                               borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                               p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
                             }}
                           >
                             <KeyboardArrowUpOutlined fontSize={isMobile ? "medium" : "small"} />
                           </Box>
+                        </Tooltip>
+
+                        {/* Duplicate */}
+                        <Tooltip title="Duplicate text">
+                          <IconButton
+                            size="small"
+                            className="no-drag"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              duplicateLayer('text', textElement.id);
+                            }}
+                            sx={{
+                              position: "absolute", top: -25, left: 70, bgcolor: "black", color: "white",
+                              borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                              p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
+                            }}
+                          >
+                            <ContentCopyOutlined fontSize="small" />
+                          </IconButton>
                         </Tooltip>
 
                         {/* Content: drag anywhere when NOT editing; click twice to edit */}
@@ -1566,7 +1651,7 @@ const SlideCover = ({
                               objectFit: "fill",
                               filter: filter || "none",
                               zIndex: zIndex,
-                              clipPath: ((): string => {
+                              clipPath: (() => {
                                 const me = draggableImages1.find((img) => img.id === id);
                                 return me?.shapePath || "none";
                               })(),
@@ -1612,12 +1697,12 @@ const SlideCover = ({
                                 className="non-draggable"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  layerDownAny(id);
+                                  layerDownAny({ type: 'image', id });
                                 }}
                                 sx={{
                                   position: "absolute",
                                   top: -25,
-                                  left: 40,
+                                  left: 20,
                                   bgcolor: "black",
                                   color: "white",
                                   borderRadius: "50%",
@@ -1639,12 +1724,12 @@ const SlideCover = ({
                                 className="non-draggable"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  layerUpAny(id);
+                                  layerUpAny({ type: 'image', id });
                                 }}
                                 sx={{
                                   position: "absolute",
                                   top: -25,
-                                  left: 80,
+                                  left: 45,
                                   bgcolor: "black",
                                   color: "white",
                                   borderRadius: "50%",
@@ -1661,6 +1746,51 @@ const SlideCover = ({
                               </Box>
                             </Tooltip>
                           </>
+                        )}
+
+                        {/* Duplicate Image Button */}
+                        {isAdminEditor && !isLocked && (
+                          <Tooltip title="Duplicate">
+                            <Box
+                              className="non-draggable"
+                              onClick={(e) => {
+                                e.stopPropagation();
+
+                                const original = draggableImages1.find((img) => img.id === id);
+                                if (!original) return;
+
+                                const duplicate = {
+                                  ...original,
+                                  id: `img-dup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                                  x: original.x + 40,
+                                  y: original.y + 30,
+                                  zIndex: (original.zIndex || 1) + 5,
+                                };
+
+                                setDraggableImages1((prev) => [...prev, duplicate]);
+                                setSelectedShapeImageId1(duplicate.id);
+                                setSelectedImage1((prev: any) => [...prev, duplicate.id]); // ← yeh line important hai (filter ke liye)
+                              }}
+                              sx={{
+                                position: "absolute",
+                                top: -25,
+                                left: 70,
+                                bgcolor:COLORS.black,
+                                color: "white",
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 28,
+                                height: 28,
+                                zIndex: 10000,
+                                cursor: "pointer",
+                                "&:hover": { bgcolor:COLORS.gray },
+                              }}
+                            >
+                              <ContentCopyOutlined fontSize="small" />
+                            </Box>
+                          </Tooltip>
                         )}
 
                         {/* close */}

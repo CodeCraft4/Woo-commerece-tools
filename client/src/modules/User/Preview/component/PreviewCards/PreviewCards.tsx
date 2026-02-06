@@ -68,6 +68,9 @@ const PreviewBookCard = () => {
     slide4: "",
   });
 
+
+  console.log(slideImages, "slideImages")
+
   const captureSlides = async () => {
     setLoading(true)
     const results: any = {};
