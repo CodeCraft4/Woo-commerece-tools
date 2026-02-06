@@ -34,7 +34,7 @@ const upsertUser = async (authUser: User) => {
       .from("Users")
       .select("id")
       .eq("auth_id", authUser.id)
-      .single();
+      .maybeSingle();
 
     if (!existing) {
       await supabase.from("Users").insert([

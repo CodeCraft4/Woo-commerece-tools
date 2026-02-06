@@ -37,6 +37,9 @@ import UploadToturial from "../../modules/Admin/UploadToturial/UploadToturial";
 import UserProfile from "../../modules/User/UserProfile/UserProfile";
 import AddNewTemplets from "../../modules/Admin/AddNewTemplets/AddNewTemplets";
 import Draft from "../../modules/User/Drafts/Draft";
+import PremiumPlan from "../../modules/Admin/PremiumPlan/PremiumPlan";
+import PremiumPlans from "../../modules/User/PremiumPlans/PremiumPlans";
+import OccasionBundle from "../../modules/Admin/OccasionBundle/OccasionBundle";
 
 const Router = () => {
   return (
@@ -60,9 +63,10 @@ const Router = () => {
         element={<CategoriesWisePreview />}
       />
       <Route path={USER_ROUTES.PREVIEW} element={<Preview />} />
-      <Route path={`${USER_ROUTES.VIEW_ALL}/:search`} element={<ViewAll />} />
+      <Route path={`${USER_ROUTES.VIEW_ALL}/:search?`} element={<ViewAll />} />
       <Route path={`${USER_ROUTES.USER_DRAFTS_CARDS}`} element={<Draft />} />
       <Route path={USER_ROUTES.ADD_TO_CART} element={<AddToCart />} />
+      <Route path={USER_ROUTES.PREMIUM_PLANS} element={<PremiumPlans />} />
       <Route path={USER_ROUTES.SUBSCRIPTION} element={<Subscription />} />
       <Route path={USER_ROUTES.COMMUNITY_HUB} element={<CommunityHub />} />
       <Route path={USER_ROUTES.SUCCESS_PAY} element={<SuccessPayment />} />
@@ -174,6 +178,22 @@ const Router = () => {
         element={
           <SecureRoute>
             <OurCommunityHub />
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={ADMINS_DASHBOARD.ADMIN_SUBSCRIPTION_PLANS}
+        element={
+          <SecureRoute>
+            <PremiumPlan />
+          </SecureRoute>
+        }
+      />
+      <Route
+        path={`${ADMINS_DASHBOARD.ADMIN_BUNDLES}/:plan`}
+        element={
+          <SecureRoute>
+            <OccasionBundle />
           </SecureRoute>
         }
       />

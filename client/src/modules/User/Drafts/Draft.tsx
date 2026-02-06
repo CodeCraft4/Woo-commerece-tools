@@ -69,9 +69,6 @@ const Draft = () => {
             My Drafts
           </Typography>
         </Box>
-
-        {/* ✅ Only current authenticated user's drafts */}
-        {/* ✅ Auto-opens DraftPopup if autoOpenDraftId provided */}
         <DraftSlider autoOpenCardId={autoOpenDraftId ?? undefined} />
       </Box>
     </MainLayout>

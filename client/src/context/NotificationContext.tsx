@@ -6,7 +6,7 @@ export type NotificationType = "user" | "topic" | "order" | "blog";
 
 export type NotificationItem = {
   id: string;                // synthetic: `${table}:${rowId}`
-  table: "Users" | "topic_messages" | "orders" | "blog";
+  table: "Users" | "topic_messages" | "orders" | "blogs";
   type: NotificationType;
   title: string;
   body?: string | null;
@@ -35,7 +35,7 @@ function safeCreatedAt(row: any) {
   return row?.created_at ?? new Date().toISOString();
 }
 
-function normalizeRow(table: "Users" | "topic_messages" | "orders" | "blog", row: any): NotificationItem {
+function normalizeRow(table: "Users" | "topic_messages" | "orders" | "blogs", row: any): NotificationItem {
   switch (table) {
     case "Users":
       return {
@@ -73,7 +73,7 @@ function normalizeRow(table: "Users" | "topic_messages" | "orders" | "blog", row
         read: false,
         payload: row,
       };
-    case "blog":
+    case "blogs":
       return {
         id: makeId(table, row.id),
         table,
@@ -125,7 +125,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         supabase.from("Users").select("*").order("created_at", { ascending: false }).limit(50),
         supabase.from("topic_messages").select("*").order("created_at", { ascending: false }).limit(50),
         supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(50),
-        supabase.from("blog").select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("blogs").select("*").order("created_at", { ascending: false }).limit(50),
       ] as const;
 
       const [u, t, o, b] = await Promise.all(queries);
@@ -134,7 +134,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       if (u.data) list.push(...u.data.map((r: any) => normalizeRow("Users", r)));
       if (t.data) list.push(...t.data.map((r: any) => normalizeRow("topic_messages", r)));
       if (o.data) list.push(...o.data.map((r: any) => normalizeRow("orders", r)));
-      if (b.data) list.push(...b.data.map((r: any) => normalizeRow("blog", r)));
+      if (b.data) list.push(...b.data.map((r: any) => normalizeRow("blogs", r)));
 
       list.sort((a, b) => b.created_at.localeCompare(a.created_at));
       setNotifications(list);
@@ -175,8 +175,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     // Blog INSERT
     channel.on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "blog" },
-      (payload) => addOrReplace(normalizeRow("blog", payload.new))
+      { event: "INSERT", schema: "public", table: "blogs" },
+      (payload) => addOrReplace(normalizeRow("blogs", payload.new))
     );
 
     channel.subscribe((status) => {

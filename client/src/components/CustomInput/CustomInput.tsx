@@ -20,7 +20,7 @@ type InputTypes = {
   placeholder?: string;
   icon?: string;
   register?: UseFormRegisterReturn;
-  error?: string;
+  error?: any;
   options?: Option[];
   description?: boolean;
   defaultValue?: string | number;

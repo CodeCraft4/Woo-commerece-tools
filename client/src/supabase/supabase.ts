@@ -13,3 +13,14 @@ export const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
     storageKey: "diy-auth",
   },
 });
+
+// Admin client: isolated storage key to avoid user-session tokens overriding service role.
+// TODO: Move service-role usage to server/edge functions for security.
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    storageKey: "diy-auth-admin",
+  },
+});

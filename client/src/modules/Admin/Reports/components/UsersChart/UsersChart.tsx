@@ -19,6 +19,7 @@ import {
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllUsersFromDB } from "../../../../../source/source";
+import { COLORS } from "../../../../../constant/color";
 
 // ----- Types -----
 type UserRow = { id: string | number; created_at: string };
@@ -117,17 +118,19 @@ const UsersChart = () => {
   return (
     <Box
       sx={{
-        background: "linear-gradient(190deg, rgba(0,0,0,0.9), rgba(1,52,61,0.9))",
+        background: "#ffffff",
         borderRadius: 3,
         p: 3,
         width: { md: "49%", sm: "100%", xs: "100%" },
         height: 400,
-        boxShadow: 2,
+        minWidth: 0,
+        boxShadow: "0 14px 30px rgba(5,10,36,0.08)",
+        border: "1px solid rgba(0,0,0,0.06)",
       }}
     >
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: "orange" }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: COLORS.black }}>
           Customer Growth
         </Typography>
 
@@ -139,7 +142,7 @@ const UsersChart = () => {
             fontSize: 14,
             bgcolor: "#fff",
             borderRadius: 2,
-            border: "1px solid gray",
+            border: "1px solid rgba(0,0,0,0.2)",
             "& .MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >
@@ -152,34 +155,36 @@ const UsersChart = () => {
 
       {/* States */}
       {isLoading ? (
-        <Box sx={{ height: "90%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box sx={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <CircularProgress />
         </Box>
       ) : isError ? (
-        <Box sx={{ height: "90%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box sx={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Typography color="error">Failed to load users</Typography>
         </Box>
       ) : (
-        <ResponsiveContainer width="100%" height="90%">
-          <BarChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="name"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#bbb", fontSize: 12, dy: 8 }}
-              interval={0}
-            />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#bbb", fontSize: 12 }} />
-            <Tooltip
-              cursor={{ fill: "rgba(0,0,0,0.03)" }}
-              contentStyle={{ borderRadius: 10, backgroundColor: "#fff", border: "1px solid #eee" }}
-            />
-            <Legend verticalAlign="top" align="left" iconType="circle" iconSize={10} wrapperStyle={{ top: -5, fontWeight: 500 }} />
-            <Bar dataKey="returning" name="Returning customers" fill="#d8e0edff" barSize={18} />
-            <Bar dataKey="new" name="New customers" fill="#c66beaff" barSize={18} radius={[10, 10, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <Box sx={{ height: 320, minHeight: 320 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.12)" />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#000000", fontSize: 12, dy: 8, opacity: 0.7 }}
+                interval={0}
+              />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: "#000000", fontSize: 12, opacity: 0.7 }} />
+              <Tooltip
+                cursor={{ fill: "rgba(0,0,0,0.03)" }}
+                contentStyle={{ borderRadius: 10, backgroundColor: "#fff", border: "1px solid rgba(0,0,0,0.08)" }}
+              />
+              <Legend verticalAlign="top" align="left" iconType="circle" iconSize={10} wrapperStyle={{ top: -5, fontWeight: 500, color: "#000000" }} />
+              <Bar dataKey="returning" name="Returning customers" fill="rgba(86,190,204,0.65)" barSize={18} />
+              <Bar dataKey="new" name="New customers" fill="rgba(141,109,161,0.8)" barSize={18} radius={[10, 10, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
       )}
     </Box>
   );

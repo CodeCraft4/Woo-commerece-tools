@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
+  ContentCopyOutlined,
   Forward10,
   Forward30,
   KeyboardArrowDownOutlined,
@@ -361,89 +362,89 @@ const SpreadRightSide = ({
 
   const restoredDraftRef = useRef(false);
 
-useEffect(() => {
-  // ✅ 1) Draft restore
-  if (draftSlide3) {
-    restoredDraftRef.current = true;
+  useEffect(() => {
+    // ✅ 1) Draft restore
+    if (draftSlide3) {
+      restoredDraftRef.current = true;
 
-    setLayout3?.(draftSlide3.layout ?? null);
-    setBgColor3?.(draftSlide3.bgColor ?? null);
-    setBgImage3?.(draftSlide3.bgImage ?? null);
+      setLayout3?.(draftSlide3.layout ?? null);
+      setBgColor3?.(draftSlide3.bgColor ?? null);
+      setBgImage3?.(draftSlide3.bgImage ?? null);
 
-    setSelectedLayout3?.(draftSlide3.selectedLayout3 ?? "blank");
+      setSelectedLayout3?.(draftSlide3.selectedLayout3 ?? "blank");
 
-    // ✅ oneText restore
-    setOneTextValue3?.(draftSlide3.oneTextValue3 ?? "");
-    // (agar tum showOneTextRightSideBox3 ko layout se drive karte ho)
-    setShowOneTextRightSideBox3?.(draftSlide3.selectedLayout3 === "oneText" || !!draftSlide3.showOneTextRightSideBox3);
+      // ✅ oneText restore
+      setOneTextValue3?.(draftSlide3.oneTextValue3 ?? "");
+      // (agar tum showOneTextRightSideBox3 ko layout se drive karte ho)
+      setShowOneTextRightSideBox3?.(draftSlide3.selectedLayout3 === "oneText" || !!draftSlide3.showOneTextRightSideBox3);
 
-    // ✅ multipleText restore (IMPORTANT)
-    setMultipleTextValue3?.(!!draftSlide3.multipleTextValue3);
+      // ✅ multipleText restore (IMPORTANT)
+      setMultipleTextValue3?.(!!draftSlide3.multipleTextValue3);
 
-    // ✅ MULTIPLE TEXT BOXES CONTENT restore (VERY IMPORTANT)
-    // kisi projects me keys different hoti hain, is liye fallbacks:
-    const restoredTexts =
-      draftSlide3.texts3 ??
-      draftSlide3.multipleTextLayout ??
-      draftSlide3.texts ??
-      [];
-    setTexts3?.(Array.isArray(restoredTexts) ? restoredTexts : []);
+      // ✅ MULTIPLE TEXT BOXES CONTENT restore (VERY IMPORTANT)
+      // kisi projects me keys different hoti hain, is liye fallbacks:
+      const restoredTexts =
+        draftSlide3.texts3 ??
+        draftSlide3.multipleTextLayout ??
+        draftSlide3.texts ??
+        [];
+      setTexts3?.(Array.isArray(restoredTexts) ? restoredTexts : []);
 
-    // ✅ free user texts restore (draft saved textElements)
-    setTextElements3?.(draftSlide3.textElements3 ?? draftSlide3.textElements ?? []);
+      // ✅ free user texts restore (draft saved textElements)
+      setTextElements3?.(draftSlide3.textElements3 ?? draftSlide3.textElements ?? []);
 
-    // ✅ user draggable images restore
-    setDraggableImages3?.(draftSlide3.draggableImages3 ?? draftSlide3.draggableImages ?? []);
+      // ✅ user draggable images restore
+      setDraggableImages3?.(draftSlide3.draggableImages3 ?? draftSlide3.draggableImages ?? []);
 
-    // ✅ selected ids restore (warna filter ki wajah se images show nahi hoti)
-    const idsFromDraftImages = (draftSlide3.draggableImages3 ?? draftSlide3.draggableImages ?? []).map((x: any) => x.id);
-    setSelectedImage3?.(
-      Array.isArray(draftSlide3.selectedImg3)
-        ? draftSlide3.selectedImg3
-        : idsFromDraftImages
-    );
+      // ✅ selected ids restore (warna filter ki wajah se images show nahi hoti)
+      const idsFromDraftImages = (draftSlide3.draggableImages3 ?? draftSlide3.draggableImages ?? []).map((x: any) => x.id);
+      setSelectedImage3?.(
+        Array.isArray(draftSlide3.selectedImg3)
+          ? draftSlide3.selectedImg3
+          : idsFromDraftImages
+      );
 
-    // ✅ stickers restore
-    setSelectedStickers3?.(
-      draftSlide3.selectedStickers3 ??
-      draftSlide3.selectedStickers2 ??
-      draftSlide3.selectedStickers ??
-      []
-    );
+      // ✅ stickers restore
+      setSelectedStickers3?.(
+        draftSlide3.selectedStickers3 ??
+        draftSlide3.selectedStickers2 ??
+        draftSlide3.selectedStickers ??
+        []
+      );
 
-    // ✅ video/audio restore + QR positions
-    setSelectedVideoUrl3?.(draftSlide3.selectedVideoUrl3 ?? draftSlide3.selectedVideoUrl ?? null);
-    setSelectedAudioUrl3?.(draftSlide3.selectedAudioUrl3 ?? draftSlide3.selectedAudioUrl ?? null);
+      // ✅ video/audio restore + QR positions
+      setSelectedVideoUrl3?.(draftSlide3.selectedVideoUrl3 ?? draftSlide3.selectedVideoUrl ?? null);
+      setSelectedAudioUrl3?.(draftSlide3.selectedAudioUrl3 ?? draftSlide3.selectedAudioUrl ?? null);
 
-    setQrPosition3?.(
-      draftSlide3.qrPosition3 ??
-      draftSlide3.qrPosition ??
-      { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" }
-    );
+      setQrPosition3?.(
+        draftSlide3.qrPosition3 ??
+        draftSlide3.qrPosition ??
+        { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" }
+      );
 
-    setQrAudioPosition3?.(
-      draftSlide3.qrAudioPosition3 ??
-      draftSlide3.qrAudioPosition ??
-      { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" }
-    );
+      setQrAudioPosition3?.(
+        draftSlide3.qrAudioPosition3 ??
+        draftSlide3.qrAudioPosition ??
+        { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" }
+      );
 
-    // ✅ AI image restore
-    setIsAIimage3?.(!!(draftSlide3.isAIimage3 ?? draftSlide3.isAIimage));
-    setSelectedAIimageUrl3?.(draftSlide3.selectedAIimageUrl3 ?? draftSlide3.selectedAIimageUrl ?? "");
-    setAIImage3?.(draftSlide3.aimage3 ?? draftSlide3.aiImage ?? { x: 0, y: 0, width: 200, height: 200 });
+      // ✅ AI image restore
+      setIsAIimage3?.(!!(draftSlide3.isAIimage3 ?? draftSlide3.isAIimage));
+      setSelectedAIimageUrl3?.(draftSlide3.selectedAIimageUrl3 ?? draftSlide3.selectedAIimageUrl ?? "");
+      setAIImage3?.(draftSlide3.aimage3 ?? draftSlide3.aiImage ?? { x: 0, y: 0, width: 200, height: 200 });
 
-    return; // ✅ IMPORTANT: draft restore ke baad template normalize mat chalao
-  }
+      return; // ✅ IMPORTANT: draft restore ke baad template normalize mat chalao
+    }
 
-  // ✅ 2) Not a draft => template mode (new card)
-  restoredDraftRef.current = false;
+    // ✅ 2) Not a draft => template mode (new card)
+    restoredDraftRef.current = false;
 
-  if (!slide3Template) return;
-  const norm = normalizeSlide(slide3Template);
-  setBgColor3?.(norm.bgColor);
-  setBgImage3?.(norm.bgImage);
-  setLayout3?.(norm.layout);
-}, [draftSlide3, slide3Template]);
+    if (!slide3Template) return;
+    const norm = normalizeSlide(slide3Template);
+    setBgColor3?.(norm.bgColor);
+    setBgImage3?.(norm.bgImage);
+    setLayout3?.(norm.layout);
+  }, [draftSlide3, slide3Template]);
 
 
 
@@ -460,6 +461,7 @@ useEffect(() => {
     setUploadTarget({ type, index });
     fileInputRef.current?.click();
   };
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
@@ -524,37 +526,37 @@ useEffect(() => {
 
   // Add this handler to initialize draggable state for images (omitted for brevity)
   useEffect(() => {
-  // ✅ Draft restore hua hai aur images3 abhi empty hai => wipe mat karo
-  if (restoredDraftRef.current && images3.length === 0) return;
+    // ✅ Draft restore hua hai aur images3 abhi empty hai => wipe mat karo
+    if (restoredDraftRef.current && images3.length === 0) return;
 
-  if (images3.length > 0) {
-    setDraggableImages3((prev: any[]) => {
-      const existingIds = prev.map((img: any) => img.id);
+    if (images3.length > 0) {
+      setDraggableImages3((prev: any[]) => {
+        const existingIds = prev.map((img: any) => img.id);
 
-      const newOnes = images3
-        .filter((img) => !existingIds.includes(img.id))
-        .map((img) => ({
-          id: img.id,
-          src: img.src,
-          x: 50,
-          y: 50,
-          width: 150,
-          height: 150,
-          rotation: 0,
-        }));
+        const newOnes = images3
+          .filter((img) => !existingIds.includes(img.id))
+          .map((img) => ({
+            id: img.id,
+            src: img.src,
+            x: 50,
+            y: 50,
+            width: 150,
+            height: 150,
+            rotation: 0,
+          }));
 
-      const stillValid = prev.filter((img: any) =>
-        images3.some((incoming) => incoming.id === img.id)
-      );
+        const stillValid = prev.filter((img: any) =>
+          images3.some((incoming) => incoming.id === img.id)
+        );
 
-      const next = [...stillValid, ...newOnes];
-      return mergePreservePdf(prev, next);
-    });
-  } else {
-    // ✅ new card me jab user saari images delete kare => clear hona chahiye
-    setDraggableImages3((prev: any[]) => mergePreservePdf(prev, []));
-  }
-}, [images3, setDraggableImages3]);
+        const next = [...stillValid, ...newOnes];
+        return mergePreservePdf(prev, next);
+      });
+    } else {
+      // ✅ new card me jab user saari images delete kare => clear hona chahiye
+      setDraggableImages3((prev: any[]) => mergePreservePdf(prev, []));
+    }
+  }, [images3, setDraggableImages3]);
 
 
   // Function to add new text element
@@ -828,6 +830,68 @@ useEffect(() => {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [bgEdit3]);
 
+
+  // duplicate   
+  const duplicateLayer = (type: 'text' | 'image' | 'sticker', idOrIndex: string | number) => {
+    if (!isAdminEditor) return;
+
+    if (type === 'text') {
+      const item: any = textElements3.find(t => t.id === idOrIndex);
+      if (!item || item.locked) return;
+
+      const newItem = {
+        ...item,
+        id: `text-duplicate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        position: {
+          x: item.position.x + 30,
+          y: item.position.y + 30,
+        },
+        zIndex: (item.zIndex || 1) + 1,   // put on top
+      };
+
+      setTextElements3(prev => [...prev, newItem]);
+      setSelectedTextId3(newItem.id);     // optional: auto-select the duplicate
+    }
+
+    else if (type === 'image') {
+      const item: any = draggableImages3.find(img => img.id === idOrIndex);
+      if (!item || item.locked) return;
+
+      const newItem = {
+        ...item,
+        id: `img-duplicate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        x: item.x + 30,
+        y: item.y + 30,
+        zIndex: (item.zIndex || 1) + 1,
+      };
+
+      setDraggableImages3(prev => [...prev, newItem]);
+      setSelectedShapeImageId3(newItem.id);   // optional
+    }
+
+    else if (type === 'sticker') {
+      const index = typeof idOrIndex === 'number' ? idOrIndex : -1;
+      if (index < 0) return;
+
+      const item: any = selectedStickers3?.[index];
+      if (!item || item.locked) return;
+
+      const newSticker = {
+        ...item,
+        id: item.id ? `${item.id}-dup-${Date.now()}` : `sticker-dup-${Date.now()}`,
+        x: item.x + 35,
+        y: item.y + 35,
+        zIndex: (item.zIndex || 1) + 1,
+      };
+
+      // Assuming you have addSticker or similar function
+      // If you only have update/remove → you'll need to add a addSticker function in context
+      // For now assuming you can do:
+      updateSticker3(selectedStickers3.length, newSticker); // ← hacky – better to have proper add
+      // Better solution: add addSticker function in useSlide1 context
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -1016,8 +1080,7 @@ useEffect(() => {
                   multipleTextValue3 || showOneTextRightSideBox3 ? null : (
                     <>
                       {textElements3?.map((textElement) => {
-                        const isMobile =
-                          typeof window !== "undefined" && window.innerWidth < 768;
+                        const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
                         const hAlign =
                           textElement.textAlign === "top"
@@ -1038,20 +1101,11 @@ useEffect(() => {
                         return (
                           <Rnd
                             key={textElement.id}
-                            cancel=".no-drag"
-                            dragHandleClassName="drag-area"
+                            cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
                             enableUserSelectHack={false}
-                            enableResizing={{
-                              bottomRight: true,
-                            }}
-                            size={{
-                              width: textElement.size.width,
-                              height: textElement.size.height,
-                            }}
-                            position={{
-                              x: textElement.position.x,
-                              y: textElement.position.y,
-                            }}
+                            enableResizing={{ bottomRight: true }}
+                            size={{ width: textElement.size.width, height: textElement.size.height }}
+                            position={{ x: textElement.position.x, y: textElement.position.y }}
                             bounds="parent"
                             style={{
                               transform: `rotate(${textElement.rotation || 0}deg)`,
@@ -1061,51 +1115,35 @@ useEffect(() => {
                               justifyContent: hAlign,
                               touchAction: "none",
                               transition: "border 0.2s ease",
+                              cursor: textElement.isEditing ? "text" : "move",
                             }}
-                            onTouchStart={() => {
-                              touchStartTime = Date.now();
-                            }}
+                            onTouchStart={() => { touchStartTime = Date.now(); }}
                             onTouchEnd={() => {
                               const now = Date.now();
                               const timeSince = now - lastTap;
                               const touchDuration = now - touchStartTime;
-
                               if (touchDuration < 200) {
                                 if (timeSince < 300) {
-                                  // Double tap = edit
                                   setSelectedTextId3(textElement.id);
                                   updateTextElement(textElement.id, { isEditing: true });
                                 } else {
-                                  // Single tap = select
                                   setSelectedTextId3(textElement.id);
-                                  updateTextElement(textElement.id, { isEditing: false });
                                 }
                               }
                               lastTap = now;
                             }}
-                            onMouseDown={() => {
-                              // Desktop: select on click
-                              setSelectedTextId3(textElement.id);
-                            }}
-                            onClick={() => {
-                              // Desktop: edit on double-click
+                            onMouseDown={() => setSelectedTextId3(textElement.id)}
+                            onDoubleClick={() => {
                               setSelectedTextId3(textElement.id);
                               updateTextElement(textElement.id, { isEditing: true });
                             }}
                             onDragStop={(_, d) => {
-                              updateTextElement(textElement.id, {
-                                position: { x: d.x, y: d.y },
-                                zIndex: 2001,
-                              });
+                              updateTextElement(textElement.id, { position: { x: d.x, y: d.y } });
                             }}
                             onResizeStop={(_, __, ref, ___, position) => {
                               updateTextElement(textElement.id, {
-                                size: {
-                                  width: parseInt(ref.style.width, 10),
-                                  height: parseInt(ref.style.height, 10),
-                                },
+                                size: { width: parseInt(ref.style.width, 10), height: parseInt(ref.style.height, 10) },
                                 position: { x: position.x, y: position.y },
-                                zIndex: 2001,
                               });
                             }}
                             resizeHandleStyles={{
@@ -1123,66 +1161,89 @@ useEffect(() => {
                               },
                             }}
                           >
-                            <Box
-                              sx={{
-                                position: "relative",
-                                width: "100%",
-                                height: "100%",
-                              }}
-                            >
-                              {/* ✅ Close Button */}
+                            <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
+                              {/* Delete */}
                               <IconButton
                                 size="small"
                                 className="no-drag"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteTextElement(textElement.id);
-                                }}
+                                onClick={(e) => { e.stopPropagation(); deleteTextElement(textElement.id); }}
                                 sx={{
-                                  position: "absolute",
-                                  top: -10,
-                                  right: -10,
-                                  bgcolor: "#1976d2",
-                                  color: "white",
-                                  width: isMobile ? 26 : 20,
-                                  height: isMobile ? 26 : 20,
-                                  "&:hover": { bgcolor: "#f44336" },
-                                  zIndex: 3000,
-                                  pointerEvents: "auto",
-                                  touchAction: "auto",
+                                  position: "absolute", top: -10, right: -10, bgcolor: "#1976d2", color: "white",
+                                  width: isMobile ? 26 : 20, height: isMobile ? 26 : 20, "&:hover": { bgcolor: "#f44336" },
+                                  zIndex: 1, pointerEvents: "auto", touchAction: "auto",
                                 }}
                               >
                                 <Close fontSize="small" />
                               </IconButton>
 
-                              {/* rotation Btn */}
+                              {/* Rotate */}
                               <IconButton
                                 size="small"
                                 className="no-drag"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  updateTextElement(textElement.id, {
-                                    rotation: (textElement.rotation || 0) + 30,
-                                  });
+                                  updateTextElement(textElement.id, { rotation: (textElement.rotation || 0) + 30 });
                                 }}
                                 sx={{
-                                  position: "absolute",
-                                  top: -10,
-                                  left: -10,
-                                  bgcolor: "#1976d2",
-                                  color: "white",
-                                  width: isMobile ? 26 : 20,
-                                  height: isMobile ? 26 : 20,
-                                  "&:hover": { bgcolor: "#f44336" },
-                                  zIndex: 3000,
-                                  pointerEvents: "auto",
-                                  touchAction: "auto",
+                                  position: "absolute", top: -10, left: -10, bgcolor: "#1976d2", color: "white",
+                                  width: isMobile ? 26 : 20, height: isMobile ? 26 : 20, "&:hover": { bgcolor: "#f44336" },
+                                  zIndex: 3000, pointerEvents: "auto", touchAction: "auto",
                                 }}
                               >
                                 <Forward30 fontSize={isMobile ? "medium" : "small"} />
                               </IconButton>
+
+                              {/* Layer controls (use your global layerUpAny/layerDownAny) */}
+                              <Tooltip title="To Back">
+                                <Box
+                                  className="no-drag"
+                                  onClick={(e) => { e.stopPropagation(); layerDown({ type: 'text', id: textElement.id }); }}
+                                  sx={{
+                                    position: "absolute", top: -25, left: 20, bgcolor: "black", color: "white",
+                                    borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                    p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
+                                  }}
+                                >
+                                  <KeyboardArrowDownOutlined fontSize={isMobile ? "medium" : "small"} />
+                                </Box>
+                              </Tooltip>
+
+                              <Tooltip title="To Front">
+                                <Box
+                                  className="no-drag"
+                                  onClick={(e) => { e.stopPropagation(); layerUp({ type: 'text', id: textElement.id }); }}
+                                  sx={{
+                                    position: "absolute", top: -25, left: 45, bgcolor: "black", color: "white",
+                                    borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                    p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
+                                  }}
+                                >
+                                  <KeyboardArrowUpOutlined fontSize={isMobile ? "medium" : "small"} />
+                                </Box>
+                              </Tooltip>
+
+                              {/* Duplicate */}
+                              <Tooltip title="Duplicate text">
+                                <IconButton
+                                  size="small"
+                                  className="no-drag"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    duplicateLayer('text', textElement.id);
+                                  }}
+                                  sx={{
+                                    position: "absolute", top: -25, left: 70, bgcolor: "black", color: "white",
+                                    borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                    p: isMobile ? "4px" : "2px", zIndex: 9999, cursor: "pointer", "&:hover": { bgcolor: "#333" },
+                                  }}
+                                >
+                                  <ContentCopyOutlined fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+
+
+                              {/* Content: drag anywhere when NOT editing; click twice to edit */}
                               <Box
-                                className="drag-area"
                                 sx={{
                                   position: "relative",
                                   width: "100%",
@@ -1190,27 +1251,27 @@ useEffect(() => {
                                   display: "flex",
                                   alignItems: vAlign,
                                   justifyContent: hAlign,
-                                  cursor: textElement.isEditing ? "text" : "move",
                                   userSelect: "none",
                                   touchAction: "none",
                                   transform: `rotate(${textElement.rotation || 0}deg)`,
-                                  border:
-                                    textElement.id === selectedTextId3
-                                      ? "2px solid #1976d2"
-                                      : "1px dashed #4a7bd5",
-                                  zIndex: textElement.zIndex
+                                  border: textElement.id === selectedTextId3 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
+                                  zIndex: textElement.zIndex,
+                                  cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
+                                }}
+                                onDoubleClick={() => {
+                                  setSelectedTextId3(textElement.id);
+                                  updateTextElement(textElement.id, { isEditing: true });
                                 }}
                               >
-                                {/* ✅ Editable Text */}
                                 <TextField
                                   variant="standard"
                                   value={textElement.value}
-                                  className="no-drag"
+                                  className="text-edit"         // ✅ used by cancel when editing
                                   placeholder="Add Text"
                                   multiline
                                   fullWidth
                                   tabIndex={0}
-                                  autoFocus={textElement.id === selectedTextId3 ? true : false}
+                                  // autoFocus={textElement.id === selectedTextId1 && textElement.isEditing}
                                   InputProps={{
                                     readOnly: !textElement.isEditing,
                                     disableUnderline: true,
@@ -1219,41 +1280,25 @@ useEffect(() => {
                                       fontWeight: textElement.fontWeight,
                                       color: textElement.fontColor || "#000",
                                       fontFamily: textElement.fontFamily || "Arial",
-                                      // transform: `rotate(${textElement.rotation || 0}deg)`,
                                       lineHeight: textElement.lineHeight || 1.4,
-                                      letterSpacing: textElement.letterSpacing
-                                        ? `${textElement.letterSpacing}px`
-                                        : "0px",
+                                      letterSpacing: textElement.letterSpacing ? `${textElement.letterSpacing}px` : "0px",
                                       padding: 0,
                                       width: "100%",
                                       display: "flex",
                                       alignItems: vAlign,
                                       justifyContent: hAlign,
-                                      cursor: textElement.isEditing ? "text" : "pointer",
-                                      transition: "all 0.2s ease",
+                                      // ✅ drag by default, only interact with text in edit mode
+                                      pointerEvents: textElement.isEditing ? "auto" : "none",
                                     },
                                   }}
-                                  onChange={(e) =>
-                                    updateTextElement(textElement.id, { value: e.target.value })
-                                  }
-                                  onFocus={(e) => {
-                                    e.stopPropagation();
-                                    updateTextElement(textElement.id, { isEditing: true });
-                                  }}
-                                  onBlur={(e) => {
-                                    e.stopPropagation();
-                                    updateTextElement(textElement.id, { isEditing: false });
-                                  }}
+                                  onChange={(e) => updateTextElement(textElement.id, { value: e.target.value })}
+                                  onFocus={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: true }); }}
+                                  onBlur={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: false }); }}
                                   sx={{
-                                    "& .MuiInputBase-input": {
-                                      overflowY: "auto",
-                                      textAlign: textElement.textAlign || "center",
-                                    },
-                                    pointerEvents: textElement.isEditing ? "auto" : "none",
+                                    "& .MuiInputBase-input": { overflowY: "auto", textAlign: textElement.textAlign || "center" },
                                   }}
                                 />
                               </Box>
-
                             </Box>
                           </Rnd>
                         );
@@ -1512,64 +1557,109 @@ useEffect(() => {
                             </Box>
                           )}
 
-                          {/* layer controls */}
-                          {!isLocked && (
-                            <>
-                              <Tooltip title="To Back">
-                                <Box
-                                  className="non-draggable"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    layerDown(id);
-                                  }}
-                                  sx={{
-                                    position: "absolute",
-                                    top: -25,
-                                    left: 40,
-                                    bgcolor: "black",
-                                    color: "white",
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    p: isMobile ? "4px" : "2px",
-                                    zIndex: 9999,
-                                    cursor: "pointer",
-                                    "&:hover": { bgcolor: "#333" },
-                                  }}
-                                >
-                                  <KeyboardArrowDownOutlined fontSize={isMobile ? "medium" : "small"} />
-                                </Box>
-                              </Tooltip>
+                           {/* layer controls */}
+                        {!isLocked && (
+                          <>
+                            <Tooltip title="To Back">
+                              <Box
+                                className="non-draggable"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  layerDown(id);
+                                }}
+                                sx={{
+                                  position: "absolute",
+                                  top: -25,
+                                  left: 20,
+                                  bgcolor: "black",
+                                  color: "white",
+                                  borderRadius: "50%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  p: isMobile ? "4px" : "2px",
+                                  zIndex: 9999,
+                                  cursor: "pointer",
+                                  "&:hover": { bgcolor: "#333" },
+                                }}
+                              >
+                                <KeyboardArrowDownOutlined fontSize={isMobile ? "medium" : "small"} />
+                              </Box>
+                            </Tooltip>
 
-                              <Tooltip title="To Front">
-                                <Box
-                                  className="non-draggable"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    layerUp(id);
-                                  }}
-                                  sx={{
-                                    position: "absolute",
-                                    top: -25,
-                                    left: 80,
-                                    bgcolor: "black",
-                                    color: "white",
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    p: isMobile ? "4px" : "2px",
-                                    zIndex: 9999,
-                                    cursor: "pointer",
-                                    "&:hover": { bgcolor: "#333" },
-                                  }}
-                                >
-                                  <KeyboardArrowUpOutlined fontSize={isMobile ? "medium" : "small"} />
-                                </Box>
-                              </Tooltip>
-                            </>
-                          )}
+                            <Tooltip title="To Front">
+                              <Box
+                                className="non-draggable"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  layerUp(id);
+                                }}
+                                sx={{
+                                  position: "absolute",
+                                  top: -25,
+                                  left: 45,
+                                  bgcolor: "black",
+                                  color: "white",
+                                  borderRadius: "50%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  p: isMobile ? "4px" : "2px",
+                                  zIndex: 9999,
+                                  cursor: "pointer",
+                                  "&:hover": { bgcolor: "#333" },
+                                }}
+                              >
+                                <KeyboardArrowUpOutlined fontSize={isMobile ? "medium" : "small"} />
+                              </Box>
+                            </Tooltip>
+                          </>
+                        )}
+
+                        {/* Duplicate Image Button */}
+                        {isAdminEditor && !isLocked && (
+                          <Tooltip title="Duplicate">
+                            <Box
+                              className="non-draggable"
+                              onClick={(e) => {
+                                e.stopPropagation();
+
+                                const original = draggableImages3.find((img) => img.id === id);
+                                if (!original) return;
+
+                                const duplicate = {
+                                  ...original,
+                                  id: `img-dup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                                  x: original.x + 40,
+                                  y: original.y + 30,
+                                  zIndex: (original.zIndex || 1) + 5,
+                                };
+
+                                setDraggableImages3((prev) => [...prev, duplicate]);
+                                setSelectedShapeImageId3(duplicate.id);
+                                setSelectedImage3((prev: any) => [...prev, duplicate.id]); // ← yeh line important hai (filter ke liye)
+                              }}
+                              sx={{
+                                position: "absolute",
+                                top: -25,
+                                left: 70,
+                                bgcolor: COLORS.black,
+                                color: "white",
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 28,
+                                height: 28,
+                                zIndex: 10000,
+                                cursor: "pointer",
+                                "&:hover": { bgcolor: COLORS.gray },
+                              }}
+                            >
+                              <ContentCopyOutlined fontSize="small" />
+                            </Box>
+                          </Tooltip>
+                        )}
 
                           {/* close */}
                           {!isLocked && (

@@ -13,7 +13,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { COLORS } from "../../../constant/color";
 import LOGO from "/assets/images/blackLOGO.png";
-import { ChevronLeft, ChevronRight, Close, Drafts, Logout, Person, Search, Settings } from "@mui/icons-material";
+import { ChevronLeft, ChevronRight, Close, Drafts, Logout, Person, Search, Settings, WorkspacePremium } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../constant/route";
 import MegaMenu from "../../../components/MegaMenu/MegaMenu";
@@ -22,9 +22,9 @@ import { Avatar, Badge, Link, ListItemIcon, Menu, MenuItem } from "@mui/material
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { useAuth } from "../../../context/AuthContext";
-import { fetchAllCategoriesFromDB } from "../../../source/source";
 import { useQuery } from "@tanstack/react-query";
 import RemindersDrawer from "../../../components/RemindersDrawer/RemindersDrawer";
+import { supabase } from "../../../supabase/supabase";
 
 interface Props {
   window?: () => Window;
@@ -70,6 +70,15 @@ function useHScrollArrows() {
   return { listRef, canLeft, canRight, scrollByAmount };
 }
 
+async function fetchCategoriesLight(): Promise<any[]> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id,name,subcategories")
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+};
+
 
 export default function Header(props: Props) {
   const { window } = props;
@@ -78,12 +87,13 @@ export default function Header(props: Props) {
   const { cart } = useCartStore();
   const location = useLocation()
 
+
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
   const { data: navCategories = [], isLoading, isError } = useQuery<any[]>({
     queryKey: ["navCategories"],
-    queryFn: fetchAllCategoriesFromDB,
+    queryFn: fetchCategoriesLight,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
@@ -474,7 +484,7 @@ export default function Header(props: Props) {
                       >
                         <MenuItem
                           onClick={() => {
-                            // navigate(USER_ROUTES.ACCOUNT_SETTINGS);
+                            navigate(USER_ROUTES.USER_PROFILE);
                             handleCloseMenu();
                           }}
                           sx={{ width: 150 }}
@@ -496,17 +506,17 @@ export default function Header(props: Props) {
                           </ListItemIcon>
                           <Typography>Draft Card</Typography>
                         </MenuItem>
-                        {/* <MenuItem
+                        <MenuItem
                           onClick={() => {
-                            // navigate(USER_ROUTES.SETTINGS);
+                            navigate(USER_ROUTES.PREMIUM_PLANS);
                             handleCloseMenu();
                           }}
                         >
                           <ListItemIcon>
-                            <Settings fontSize="small" />
+                            <WorkspacePremium fontSize="small" />
                           </ListItemIcon>
-                          <Typography>Settings</Typography>
-                        </MenuItem> */}
+                          <Typography>Subscription</Typography>
+                        </MenuItem>
 
                         <MenuItem onClick={handleLogout}>
                           <ListItemIcon>
@@ -586,7 +596,7 @@ export default function Header(props: Props) {
         </nav>
       </Box>
       {
-        location.pathname === USER_ROUTES.USER_PROFILE ? null :
+        location.pathname === USER_ROUTES.USER_PROFILE || location.pathname === USER_ROUTES.SUBSCRIPTION ? null :
           <Box
             sx={{
               width: "100%",

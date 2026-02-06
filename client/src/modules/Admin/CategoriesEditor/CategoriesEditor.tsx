@@ -12,6 +12,7 @@ import {
   KeyboardArrowUpOutlined, KeyboardArrowDownOutlined,
   FilterFramesOutlined,
   AddOutlined,
+  ContentCopyOutlined, // ✅ NEW
 } from "@mui/icons-material";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { Rnd } from "react-rnd";
@@ -27,7 +28,6 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
 import { fitCanvas, uuid } from "../../../lib/lib";
-// import WishCard from "../../../components/WishCard/WishCard";
 
 /* ----------------- Utils ----------------- */
 const readFileAsDataUrl = (file: File): Promise<string> =>
@@ -82,7 +82,6 @@ const CategoriesEditor = () => {
     setSlideBg,
   } = useCategoriesEditorState();
 
-
   const location = useLocation();
   const hydratedRef = useRef(false);
 
@@ -103,7 +102,6 @@ const CategoriesEditor = () => {
     setSelectedTextId(null);
     setSelectedImageId(null);
   }, [location.state, setCategory, setSlides, setTextElements, setImageElements, setSlideBg]);
-
 
   // ====== Local UI-only state ======
   const [fontSizeInput, setFontSizeInput] = useState<string>("20");
@@ -136,9 +134,9 @@ const CategoriesEditor = () => {
     [config.mmWidth, config.mmHeight, viewport, isTablet]
   );
 
-  const artboardWidth = canvasSize.width;
-
   // current slide id
+  const artboardWidth = canvasSize.width;
+  const artboardHeight = canvasSize.height;
   const currentSlideId = slides[selectedSlide]?.id ?? null;
   const colorInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -256,6 +254,69 @@ const CategoriesEditor = () => {
     if (selectedImageId === id) setSelectedImageId(null);
   };
 
+  /* ✅ NEW: Duplicate / Copy element */
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  const getMaxZOnSlide = useCallback((slideId: number, type: "text" | "image") => {
+    if (type === "text") {
+      return textElements
+        .filter(t => t.slideId === slideId)
+        .reduce((m, t: any) => Math.max(m, Number(t.zIndex ?? 1)), 1);
+    }
+    return imageElements
+      .filter(i => i.slideId === slideId)
+      .reduce((m, i: any) => Math.max(m, Number(i.zIndex ?? 1)), 1);
+  }, [textElements, imageElements]);
+
+  const duplicateElement = useCallback((target: { type: "text" | "image"; id: string }) => {
+    const slideId = slides[selectedSlide]?.id;
+    if (!slideId) return;
+
+    const OFFSET = 24;
+
+    if (target.type === "text") {
+      const src = textElements.find(t => t.id === target.id);
+      if (!src) return;
+
+      const maxZ = getMaxZOnSlide(slideId, "text");
+      const newW = src.width;
+      const newH = src.height;
+
+      const copy: CtxTextEl = {
+        ...src,
+        id: uuid("txt"),
+        x: clamp((src.x ?? 0) + OFFSET, 0, Math.max(0, artboardWidth - newW)),
+        y: clamp((src.y ?? 0) + OFFSET, 0, Math.max(0, artboardHeight - newH)),
+        ...(typeof (src as any).zIndex !== "undefined" ? { zIndex: maxZ + 1 } as any : { zIndex: maxZ + 1 } as any),
+      };
+
+      setTextElements(prev => [...prev, copy]);
+      setSelectedTextId(copy.id);
+      setSelectedImageId(null);
+      return;
+    }
+
+    // image
+    const src = imageElements.find(i => i.id === target.id);
+    if (!src) return;
+
+    const maxZ = getMaxZOnSlide(slideId, "image");
+    const newW = src.width;
+    const newH = src.height;
+
+    const copy: CtxImageEl = {
+      ...src,
+      id: uuid("img"),
+      x: clamp((src.x ?? 0) + OFFSET, 0, Math.max(0, artboardWidth - newW)),
+      y: clamp((src.y ?? 0) + OFFSET, 0, Math.max(0, artboardHeight - newH)),
+      ...(typeof (src as any).zIndex !== "undefined" ? { zIndex: maxZ + 1 } as any : { zIndex: maxZ + 1 } as any),
+    };
+
+    setImageElements(prev => [...prev, copy]);
+    setSelectedImageId(copy.id);
+    setSelectedTextId(null);
+  }, [slides, selectedSlide, textElements, imageElements, getMaxZOnSlide, artboardWidth, artboardHeight, setTextElements, setImageElements]);
+
   /* -------------- File input -------------- */
   const onClickPhoto = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -287,40 +348,29 @@ const CategoriesEditor = () => {
   );
 
   /* ---------- Drag scrolling ---------- */
-
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
 
-  // measure: visible chips + arrow enabled/disabled
   const recalc = () => {
     const el = thumbRef.current;
     if (!el) return;
 
     const { scrollLeft, scrollWidth, clientWidth } = el;
 
-    // arrow states
     const left = scrollLeft > 0;
-    const right = scrollLeft + clientWidth < scrollWidth - 1; // -1 tolerance
+    const right = scrollLeft + clientWidth < scrollWidth - 1;
     setCanLeft(left);
     setCanRight(right);
 
-    // visibleCount
     const firstChip = el.firstElementChild as HTMLElement | null;
-    if (!firstChip) {
-      // setVisibleCount(0);
-      return;
-    }
+    if (!firstChip) return;
 
-    // chip width + gap
     const chipRect = firstChip.getBoundingClientRect();
     const styles = window.getComputedStyle(el);
     const gap = parseFloat(styles.columnGap || styles.gap || "0") || 0;
 
     const chipW = chipRect.width + gap;
-    if (chipW <= 0) {
-      // setVisibleCount(0);
-      return;
-    }
+    if (chipW <= 0) return;
   };
 
   useEffect(() => {
@@ -338,10 +388,8 @@ const CategoriesEditor = () => {
       el.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
     };
-    // slides length affects scrollWidth; selectedSlide doesn’t necessarily
   }, [slides.length]);
 
-  // scroll by 1 chip
   const scrollByOne = (dir: "left" | "right") => {
     const el = thumbRef.current;
     if (!el) return;
@@ -357,10 +405,8 @@ const CategoriesEditor = () => {
     el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
 
-
-  // Pick one:
-  const slideScrollLeft = () => scrollByOne("left"); // or scrollByPage("left")
-  const slideScrollRight = () => scrollByOne("right"); // or scrollByPage("right")
+  const slideScrollLeft = () => scrollByOne("left");
+  const slideScrollRight = () => scrollByOne("right");
 
   // ====== Align helpers ======
   type TextAlignVal = "left" | "center" | "right";
@@ -411,7 +457,7 @@ const CategoriesEditor = () => {
   };
 
   const bringForward = (target: { type: "text" | "image"; id: string }) => {
-    const nodes = buildLayers().filter(n => n.type === target.type); // why: within type
+    const nodes = buildLayers().filter(n => n.type === target.type);
     const idx = nodes.findIndex(n => n.id === target.id);
     if (idx === -1 || idx === nodes.length - 1) return;
     const swapped = nodes.slice();
@@ -419,7 +465,7 @@ const CategoriesEditor = () => {
     writeBackZ(normalizeZ(swapped));
   };
   const sendBackward = (target: { type: "text" | "image"; id: string }) => {
-    const nodes = buildLayers().filter(n => n.type === target.type); // why: within type
+    const nodes = buildLayers().filter(n => n.type === target.type);
     const idx = nodes.findIndex(n => n.id === target.id);
     if (idx <= 0) return;
     const swapped = nodes.slice();
@@ -427,7 +473,7 @@ const CategoriesEditor = () => {
     writeBackZ(normalizeZ(swapped));
   };
 
-  const [showShapePopup, setShowShapePopup] = useState(false)
+  const [showShapePopup, setShowShapePopup] = useState(false);
 
   // ====== Toolbar (responsive)
   const Toolbar = (
@@ -615,49 +661,40 @@ const CategoriesEditor = () => {
   );
 
   const navigate = useNavigate();
- const goNextWithRawStores = () => {
-  const configWithFit = {
-    ...config,
-    fitCanvas: {
-      width: Math.round(canvasSize.width),
-      height: Math.round(canvasSize.height),
-    },
+
+  const goNextWithRawStores = () => {
+    const configWithFit = {
+      ...config,
+      fitCanvas: {
+        width: Math.round(canvasSize.width),
+        height: Math.round(canvasSize.height),
+      },
+    };
+
+    const rawStores = {
+      category,
+      config: configWithFit,
+      slides,
+      textElements,
+      imageElements,
+      slideBg,
+    };
+
+    const navState: any = { rawStores };
+
+    const st = location.state as any;
+    if (st?.mode) navState.mode = st.mode;
+    if (st?.id) navState.id = st.id;
+    if (st?.product) navState.product = st.product;
+
+    navigate(ADMINS_DASHBOARD.ADD_NEW_TEMPLETS_CARDS, { state: navState });
   };
-
-  const rawStores = {
-    category,
-    config: configWithFit,
-    slides,
-    textElements,
-    imageElements,
-    slideBg,
-  };
-
-  const navState: any = {
-    rawStores,
-  };
-
-  // ✅ if coming from edit mode
-  const st = location.state as any;
-  if (st?.mode) navState.mode = st.mode;
-  if (st?.id) navState.id = st.id;
-  if (st?.product) navState.product = st.product;
-
-  navigate(ADMINS_DASHBOARD.ADD_NEW_TEMPLETS_CARDS, { state: navState });
-};
-
 
   const addSlide = () => {
-    const newSlideId = Date.now(); // or uuid("slide")
+    const newSlideId = Date.now();
 
-    setSlides(prev => [
-      ...prev,
-      {
-        id: newSlideId,
-      },
-    ]);
+    setSlides(prev => [...prev, { id: newSlideId }]);
 
-    // OPTIONAL: copy background from current slide
     const currentId = slides[selectedSlide]?.id;
     if (currentId && slideBg[currentId]) {
       setSlideBg((prev: any) => ({
@@ -666,21 +703,16 @@ const CategoriesEditor = () => {
       }));
     }
 
-    // Reset selection
     setSelectedTextId(null);
     setSelectedImageId(null);
 
-    // Select the new slide
     const nextIndex = slides.length;
     setSelectedSlide(nextIndex);
 
-    // Scroll after DOM updates
     requestAnimationFrame(() => {
       scrollToSlide(nextIndex);
     });
   };
-
-
 
   return (
     <DashboardLayout title="Categories Wise Editor">
@@ -703,7 +735,6 @@ const CategoriesEditor = () => {
             </Select>
           </FormControl>
           <Chip label={`${config.mmWidth}×${config.mmHeight} mm`} size="small" />
-          {/* Per-selected-slide Mirror switch */}
           {currentSlideId != null && (
             <Stack direction="row" alignItems="center" spacing={1}>
               <Typography variant="caption">Mirror</Typography>
@@ -725,39 +756,23 @@ const CategoriesEditor = () => {
         </Stack>
       </Box>
 
-      {/* <WishCard adminEditor={true} /> */}
-
       {/* MAIN SLIDE SCROLLER */}
       <Box
         ref={mainScrollerRef}
-        // onMouseDown={onMainMouseDown}
-        // onMouseUp={onMainMouseUp}
-        // onMouseLeave={onMainMouseLeave}
-        // onMouseMove={onMainMouseMove}
         sx={{
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
-
           overflowX: "auto",
           overflowY: "hidden",
-
           width: "100%",
           p: 2,
           gap: "75px",
-
           scrollBehavior: "smooth",
           userSelect: "none",
-
-          /* ❌ remove centering */
           justifyContent: "flex-start",
-
-          /* ✅ ensure unlimited horizontal growth */
           minWidth: "100%",
-
-          /* Optional but recommended */
           scrollSnapType: "x mandatory",
-
           "&::-webkit-scrollbar": { height: 6, width: 6 },
           "&::-webkit-scrollbar-thumb": {
             backgroundColor: COLORS.primary,
@@ -765,8 +780,6 @@ const CategoriesEditor = () => {
           },
         }}
       >
-
-
         {slides.map((slide, index) => {
           const isInactive = index !== selectedSlide;
           const mirrorOn = !!mirrorBySlide[slide.id as number];
@@ -777,8 +790,8 @@ const CategoriesEditor = () => {
               key={slide.id}
               ref={index === 0 ? registerFirstSlideNode : undefined}
               sx={{
-                flex: "0 0 auto", width: canvasSize.width, height: canvasSize.height,
-                // bgcolor: isInactive ? "#b6b0b06b" : "#fff",
+                flex: "0 0 auto",
+                width: canvasSize.width, height: canvasSize.height,
                 borderRadius: 2,
                 boxShadow: index === selectedSlide ? 8 : 4,
                 position: "relative",
@@ -786,15 +799,14 @@ const CategoriesEditor = () => {
                 transition: "box-shadow .2s ease, outline .2s ease, filter .2s ease, opacity .2s ease, background-color .2s ease",
                 opacity: isInactive ? 0.45 : 1,
                 filter: isInactive ? "grayscale(0.4)" : "none",
-                // bgcolor: slideBg[slide.id]?.color ?? "#fff",
                 ml: index === 0 ? 30 : 0,
               }}
               onClick={() => { setSelectedTextId(null); setSelectedImageId(null); }}
             >
-              {
-                !isInactive && (<>
+              {!isInactive && (
+                <>
                   {(selectedTextId || selectedImageId) && (
-                    <Paper elevation={2} sx={{ width: 100, p: 1, position: 'absolute', top: 3, left: 3, zIndex: 99 }}>
+                    <Paper elevation={2} sx={{ width: 100, p: 1, position: 'absolute', top: 3, left: 3, zIndex: 99999 }}>
                       <Typography variant="caption">Editable</Typography>
                       <Switch
                         size="small"
@@ -819,9 +831,8 @@ const CategoriesEditor = () => {
                       />
                     </Paper>
                   )}
-
-                </>)
-              }
+                </>
+              )}
 
               {/* Toolbar */}
               {index === selectedSlide && (
@@ -858,7 +869,6 @@ const CategoriesEditor = () => {
                 </Rnd>
               )}
 
-
               {/* Elements */}
               <Box
                 sx={{
@@ -868,7 +878,6 @@ const CategoriesEditor = () => {
               >
                 {elements.map((el: any) => {
                   const isEditable = el.editable !== false;
-
                   const isSelected = selectedTextId === el.id || selectedImageId === el.id;
 
                   const viewX = toViewX(mirrorOn, artboardWidth, el.x, el.width);
@@ -942,17 +951,40 @@ const CategoriesEditor = () => {
                             draggable={false}
                           />
 
-                          {/* Layer controls (image-only) */}
+                          {/* Layer + Copy controls (image-only) */}
                           {!isInactive && isSelected && (
                             <Box sx={{ position: "absolute", top: -15, left: -2, display: "flex", gap: 0.5, zIndex: 9999 }}>
                               <Tooltip title="Backward">
-                                <IconButton sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18 }} className="no-drag" size="small" onClick={(e) => { e.stopPropagation(); sendBackward({ type: "image", id: el.id }); }}>
+                                <IconButton
+                                  sx={{ bgcolor: 'black', color: 'white', width: 20, height: 20,'&:hover': { bgcolor: '#424242' } }}
+                                  className="no-drag"
+                                  size="small"
+                                  onClick={(e) => { e.stopPropagation(); sendBackward({ type: "image", id: el.id }); }}
+                                >
                                   <KeyboardArrowDownOutlined fontSize="small" />
                                 </IconButton>
                               </Tooltip>
+
                               <Tooltip title="Forward">
-                                <IconButton sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18 }} className="no-drag" size="small" onClick={(e) => { e.stopPropagation(); bringForward({ type: "image", id: el.id }); }}>
+                                <IconButton
+                                  sx={{ bgcolor: 'black', color: 'white', width: 20, height: 20,'&:hover': { bgcolor: '#424242' } }}
+                                  className="no-drag"
+                                  size="small"
+                                  onClick={(e) => { e.stopPropagation(); bringForward({ type: "image", id: el.id }); }}
+                                >
                                   <KeyboardArrowUpOutlined fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+
+                              {/* ✅ NEW: Copy/Duplicate */}
+                              <Tooltip title="Duplicate">
+                                <IconButton
+                                  sx={{ bgcolor: 'black', color: 'white', width: 24, height: 26,'&:hover': { bgcolor: '#424242' } }}
+                                  className="no-drag"
+                                  size="small"
+                                  onClick={(e) => { e.stopPropagation(); duplicateElement({ type: "image", id: el.id }); }}
+                                >
+                                  <ContentCopyOutlined fontSize="inherit" />
                                 </IconButton>
                               </Tooltip>
                             </Box>
@@ -986,17 +1018,41 @@ const CategoriesEditor = () => {
                       }}
                     >
                       <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: justify, p: 1, position: "relative" }}>
-                        {/* Layer controls (text-only within text stack) */}
+
+                        {/* Layer + Copy controls (text-only) */}
                         {!isInactive && isSelected && (
                           <Box sx={{ position: "absolute", top: -15, left: -2, display: "flex", gap: 0.5, zIndex: 9999 }}>
                             <Tooltip title="Backward">
-                              <IconButton sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18 }} className="no-drag" size="small" onClick={(e) => { e.stopPropagation(); sendBackward({ type: "text", id: el.id }); }}>
+                              <IconButton
+                                sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18,'&:hover': { bgcolor: '#424242' } }}
+                                className="no-drag"
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); sendBackward({ type: "text", id: el.id }); }}
+                              >
                                 <KeyboardArrowDownOutlined fontSize="small" />
                               </IconButton>
                             </Tooltip>
+
                             <Tooltip title="Forward">
-                              <IconButton sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18 }} className="no-drag" size="small" onClick={(e) => { e.stopPropagation(); bringForward({ type: "text", id: el.id }); }}>
+                              <IconButton
+                                sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18,'&:hover': { bgcolor: '#424242' } }}
+                                className="no-drag"
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); bringForward({ type: "text", id: el.id }); }}
+                              >
                                 <KeyboardArrowUpOutlined fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+
+                            {/* ✅ NEW: Copy/Duplicate */}
+                            <Tooltip title="Duplicate">
+                              <IconButton
+                                sx={{ bgcolor: 'black', color: 'white', width: 24, height: 24,'&:hover': { bgcolor: '#424242' } }}
+                                className="no-drag"
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); duplicateElement({ type: "text", id: el.id }); }}
+                              >
+                                <ContentCopyOutlined fontSize="inherit" />
                               </IconButton>
                             </Tooltip>
                           </Box>
@@ -1106,10 +1162,9 @@ const CategoriesEditor = () => {
                   </Box>
                 )}
 
-
                 {/* Shapes */}
-                {
-                  !isInactive && <PopupWrapper
+                {!isInactive && (
+                  <PopupWrapper
                     title="Frames"
                     open={showShapePopup}
                     onClose={() => setShowShapePopup(false)}
@@ -1141,9 +1196,7 @@ const CategoriesEditor = () => {
                       ))}
                     </Box>
                   </PopupWrapper>
-                }
-
-
+                )}
               </Box>
             </Box>
           );
@@ -1160,9 +1213,7 @@ const CategoriesEditor = () => {
             transition: "box-shadow .2s ease, outline .2s ease, filter .2s ease, opacity .2s ease, background-color .2s ease",
             cursor: 'pointer',
             background: '#eceaeaff',
-            "&:hover": {
-              bgcolor: '#c7c7c7ff'
-            }
+            "&:hover": { bgcolor: '#c7c7c7ff' }
           }}>
           <Tooltip title='Click to Add Slide'>
             <IconButton
@@ -1176,102 +1227,100 @@ const CategoriesEditor = () => {
               <AddOutlined sx={{ fontSize: 80 }} />
             </IconButton>
           </Tooltip>
-
         </Box>
       </Box>
 
       {/* Thumbnails */}
-     <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 3,
-        width: { xs: "96%", md: "60%" },
-        justifyContent: "center",
-        m: "16px auto 0",
-        flexDirection: "column",
-      }}
-    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 3,
+          width: { xs: "96%", md: "60%" },
+          justifyContent: "center",
+          m: "16px auto 0",
+          flexDirection: "column",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%", justifyContent: "center" }}>
+          <IconButton onClick={slideScrollLeft} disabled={!canLeft}>
+            <ArrowBackIos />
+          </IconButton>
 
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%", justifyContent: "center" }}>
-        <IconButton onClick={slideScrollLeft} disabled={!canLeft}>
-          <ArrowBackIos />
-        </IconButton>
+          <Box
+            ref={thumbRef}
+            sx={{
+              display: "flex",
+              overflowX: "auto",
+              gap: 1,
+              width: "64%",
+              "&::-webkit-scrollbar": { display: "none" },
+              cursor: "grab",
+              justifyContent: "flex-start",
+              scrollBehavior: "smooth",
+            }}
+          >
+            {slides.map((s, index) => {
+              const mirrored = !!mirrorBySlide[s.id as number];
+              return (
+                <Box
+                  key={s.id ?? index}
+                  sx={{
+                    px: 1.5,
+                    height: 40,
+                    minWidth: 60,
+                    bgcolor: index === selectedSlide ? "#1976d2" : "#eceff1",
+                    color: index === selectedSlide ? "white" : "#263238",
+                    borderRadius: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    fontWeight: 600,
+                    flexShrink: 0,
+                    cursor: "pointer",
+                    transition: ".2s",
+                    position: "relative",
+                    boxShadow: index === selectedSlide ? 4 : 0,
+                  }}
+                  onClick={() => scrollToSlide(index)}
+                >
+                  <Typography variant="body2">
+                    {config.slideLabels?.[index] ?? `Slide ${index + 1}`} {mirrored ? "⟲" : ""}
+                  </Typography>
 
-        <Box
-          ref={thumbRef}
-          sx={{
-            display: "flex",
-            overflowX: "auto",
-            gap: 1,
-            width: "64%",
-            "&::-webkit-scrollbar": { display: "none" },
-            cursor: "grab",
-            justifyContent: "flex-start",
-            scrollBehavior: "smooth",
-          }}
-        >
-          {slides.map((s, index) => {
-            const mirrored = !!mirrorBySlide[s.id as number];
-            return (
-              <Box
-                key={s.id ?? index}
-                sx={{
-                  px: 1.5,
-                  height: 40,
-                  minWidth: 60,
-                  bgcolor: index === selectedSlide ? "#1976d2" : "#eceff1",
-                  color: index === selectedSlide ? "white" : "#263238",
-                  borderRadius: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  fontWeight: 600,
-                  flexShrink: 0,
-                  cursor: "pointer",
-                  transition: ".2s",
-                  position: "relative",
-                  boxShadow: index === selectedSlide ? 4 : 0,
-                }}
-                onClick={() => scrollToSlide(index)}
-              >
-                <Typography variant="body2">
-                  {config.slideLabels?.[index] ?? `Slide ${index + 1}`} {mirrored ? "⟲" : ""}
-                </Typography>
+                  {slides.length > 1 && (
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSlide(index);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        right: -8,
+                        width: 18,
+                        height: 18,
+                        bgcolor: "#263238",
+                        color: "white",
+                        borderRadius: "50%",
+                        "&:hover": { bgcolor: "#c62828" },
+                        zIndex: 5,
+                      }}
+                    >
+                      <Close fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
 
-                {slides.length > 1 && (
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteSlide(index);
-                    }}
-                    sx={{
-                      position: "absolute",
-                      top: 0,
-                      right: -8,
-                      width: 18,
-                      height: 18,
-                      bgcolor: "#263238",
-                      color: "white",
-                      borderRadius: "50%",
-                      "&:hover": { bgcolor: "#c62828" },
-                      zIndex: 5,
-                    }}
-                  >
-                    <Close fontSize="small" />
-                  </IconButton>
-                )}
-              </Box>
-            );
-          })}
+          <IconButton onClick={slideScrollRight} disabled={!canRight}>
+            <ArrowForwardIos />
+          </IconButton>
         </Box>
-
-        <IconButton onClick={slideScrollRight} disabled={!canRight}>
-          <ArrowForwardIos />
-        </IconButton>
       </Box>
-    </Box>
     </DashboardLayout>
   );
 };
