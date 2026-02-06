@@ -81,15 +81,18 @@ export const getPricingConfig = (
         { key: "A4", title: "A4" },
         { key: "A3", title: "A3" },
         { key: "US_LETTER", title: "US Letter" },
-        { key: "US_TABLOID", title: "US Tabloid (11×17)" },
+        { key: "US_TABLOID", title: "US Tabloid" },
       ],
     };
-  if (name.includes("mug"))
+
+  if (name.includes("mugs"))
     return {
       sizes: [{ key: "MUG_WRAP_11OZ", title: "228mm × 88.9mm (11oz mug)" }],
     };
+
   if (name.includes("coaster"))
     return { sizes: [{ key: "COASTER_95", title: "95mm × 95mm (×2)" }] };
+
   if (name.includes("sticker"))
     return {
       sizes: [
@@ -98,6 +101,7 @@ export const getPricingConfig = (
         { key: "US_LETTER", title: "US Letter" },
       ],
     };
+
   if (name.includes("notebook"))
     return {
       sizes: [
@@ -107,13 +111,35 @@ export const getPricingConfig = (
         { key: "US_LETTER", title: "US Letter" },
       ],
     };
+
+  if (name.includes("business leaflets"))
+    return {
+      sizes: [
+        { key: "A5", title: "A5" },
+        { key: "A4", title: "A4" },
+        { key: "HALF_US_LETTER", title: "Half US Letter" },
+        { key: "US_LETTER", title: "US Letter" },
+        { key: "US_TABLOID", title: "US Tabloid" },
+      ],
+    };
+  if (name.includes("business cards"))
+    return {
+      sizes: [
+        { key: "A5", title: "A5" },
+        { key: "A4", title: "A4" },
+        { key: "HALF_US_LETTER", title: "Half US Letter" },
+        { key: "US_LETTER", title: "US Letter" },
+        { key: "US_TABLOID", title: "US Tabloid" },
+      ],
+    };
+
   if (name.includes("wall art"))
     return {
       sizes: [
         { key: "A4", title: "A4" },
         { key: "A3", title: "A3" },
         { key: "US_LETTER", title: "US Letter" },
-        { key: "US_TABLOID", title: "US Tabloid (11×17)" },
+        { key: "US_TABLOID", title: "US Tabloid" },
       ],
     };
   if (name.includes("photo art"))
@@ -122,7 +148,7 @@ export const getPricingConfig = (
         { key: "A4", title: "A4" },
         { key: "A3", title: "A3" },
         { key: "US_LETTER", title: "US Letter" },
-        { key: "US_TABLOID", title: "US Tabloid (11×17)" },
+        { key: "US_TABLOID", title: "US Tabloid" },
       ],
     };
   if (name.includes("bag"))
@@ -131,7 +157,7 @@ export const getPricingConfig = (
         { key: "A4", title: "A4" },
         { key: "A3", title: "A3" },
         { key: "US_LETTER", title: "US Letter" },
-        { key: "US_TABLOID", title: "US Tabloid (11×17)" },
+        { key: "US_TABLOID", title: "US Tabloid" },
       ],
     };
 

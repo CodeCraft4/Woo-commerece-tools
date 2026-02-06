@@ -20,6 +20,7 @@ import { fetchTempletDesignById } from "../../../source/source";
 import { COLORS } from "../../../constant/color";
 import { fitCanvas } from "../../../lib/lib";
 import { CATEGORY_CONFIG, type CategoryKey } from "../../../constant/data";
+import toast from "react-hot-toast";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -60,7 +61,7 @@ type AdminPreview = {
 
 /* --------- Utils --------- */
 // const TRANSPARENT_PX =
-  // "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+// "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
 const cloneSlides = (slides: Slide[]): Slide[] => JSON.parse(JSON.stringify(slides));
 const asNum = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -136,19 +137,19 @@ async function waitForAssets(root: HTMLElement) {
   }
 }
 
-const captureFilter = (node: unknown) => {
-  if (!(node instanceof Element)) return true;
-  if (node.classList?.contains("capture-exclude")) return false;
-  if (node.tagName?.toUpperCase() === "INPUT") {
-    const t = (node as HTMLInputElement).type?.toLowerCase?.();
-    if (t === "file" || t === "hidden") return false;
-  }
-  return true;
-};
+// const captureFilter = (node: unknown) => {
+//   if (!(node instanceof Element)) return true;
+//   if (node.classList?.contains("capture-exclude")) return false;
+//   if (node.tagName?.toUpperCase() === "INPUT") {
+//     const t = (node as HTMLInputElement).type?.toLowerCase?.();
+//     if (t === "file" || t === "hidden") return false;
+//   }
+//   return true;
+// };
 
-function hasBlobImages(root: HTMLElement) {
-  return !!root.querySelector('img[src^="blob:"]');
-}
+// function hasBlobImages(root: HTMLElement) {
+//   return !!root.querySelector('img[src^="blob:"]');
+// }
 
 /* --------- Persist helpers --------- */
 const storageKey = (productId?: string) => `templet_editor_state:${productId ?? "state"}`;
@@ -461,92 +462,121 @@ export default function TempletEditor() {
   };
 
   const isMugCategory = (cat?: string) => /mug/i.test(String(cat ?? ""));
-  const isBusinessCardCategory = (cat?: string) => /business\s*card/i.test(String(cat ?? ""));
+  // const isBusinessCardCategory = (cat?: string) => /business\s*card/i.test(String(cat ?? ""));
   const is3DCategory = (cat?: string) =>
-    /mug|tote bag|apparel/i.test(String(cat ?? ""));
+    /mug/i.test(String(cat ?? ""));
 
-  // ✅ NEW: JPEG capture helper (small size, less heavy)
-  const captureJpegFromNode = async (
+  // 1. Capture function ko PNG banao + fonts include karo + blob handle karo
+  const capturePngFromNode = async (
     node: HTMLElement,
     opts?: { width?: number; height?: number; background?: string }
   ): Promise<string | null> => {
     try {
-      await waitForAssets(node);
+      await waitForAssets(node); // images aur fonts load hone do
 
       const rect = node.getBoundingClientRect();
       const w = Math.max(1, Math.round(opts?.width ?? rect.width));
       const h = Math.max(1, Math.round(opts?.height ?? rect.height));
 
-      return await htmlToImage.toJpeg(node, {
-        quality: 0.72,
-        pixelRatio: 1,
+      // PNG capture — quality full, fonts skip nahi karo
+      return await htmlToImage.toPng(node, {
+        quality: 1.0,                    // full quality PNG
+        pixelRatio: 2,                   // sharp output
         backgroundColor: opts?.background ?? "transparent",
-        filter: captureFilter,
-        cacheBust: hasBlobImages(node) ? false : true,
-        skipFonts: true,
-        fontEmbedCSS: "",
-        // imagePlaceholder: TRANSPARENT_PX,
+        filter: (n: Node) => {
+          // sirf capture-exclude class wale exclude karo
+          return !(n instanceof Element && n.classList?.contains("capture-exclude"));
+        },
+        cacheBust: true,                 // fresh images
+        skipFonts: false,                // ← fonts skip NAHI karo
+        // fontEmbedCSS: "",                // auto embed fonts
+        // imagePlaceholder: "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==", // transparent placeholder
         width: w,
         height: h,
         style: { transform: "none" },
       });
+
     } catch (e) {
-      console.error("captureJpegFromNode failed:", e);
+      console.error("capturePngFromNode failed:", e);
       return null;
     }
   };
 
- const handleNavigatePrview = async () => {
-  if (!adminDesign?.category) return;
+  // 2. Har slide capture karo function
+  const captureAllSlidesPng = async (): Promise<string[]> => {
+    const captured: string[] = [];
 
-  setPreviewLoading(true);
+    for (let i = 0; i < userSlides.length; i++) {
+      const node = slideRefs.current[i];
+      if (!node) continue;
 
-  const category = encodeURIComponent(adminDesign.category);
+      const pngData = await capturePngFromNode(node, {
+        width: artboardWidth,
+        height: artboardHeight,
+        background: isMugCategory(adminDesign?.category) ? "#ffffff" : "transparent",
+      });
 
-  const navStateBase: any = {
-    slides: userSlides,
-    config: { mmWidth: mmW, mmHeight: mmH, slideLabels: adminDesign.config.slideLabels },
-    canvasPx: adminDesign.canvasPx,
-    slideIndex: activeSlide,
-    category: adminDesign.category,
+      if (pngData) {
+        captured.push(pngData);
+      }
+    }
+
+    return captured;
   };
 
-  try {
-    // ✅ ONLY capture active slide
-    const activeNode = slideRefs.current[activeSlide];
-    const forceSize =
-      isMugCategory(adminDesign.category) || isBusinessCardCategory(adminDesign.category)
-        ? { width: artboardWidth, height: artboardHeight, background: "#ffffff" }
-        : undefined;
-    const activeJpeg = activeNode ? await captureJpegFromNode(activeNode, forceSize) : null;
+  // 3. handleNavigatePrview ko update karo — har slide capture + PNG
+  const handleNavigatePrview = async () => {
+    if (!adminDesign?.category) return;
 
-    // ✅ store ONLY 1 (super fast)
-    if (activeJpeg) {
-      sessionStorage.setItem("slides", JSON.stringify({ slide1: activeJpeg }));
+    setPreviewLoading(true);
+
+    const category = encodeURIComponent(adminDesign.category);
+
+    const navStateBase: any = {
+      slides: userSlides,
+      config: { mmWidth: mmW, mmHeight: mmH, slideLabels: adminDesign.config.slideLabels },
+      canvasPx: adminDesign.canvasPx,
+      slideIndex: activeSlide,
+      category: adminDesign.category,
+    };
+
+    try {
+      // Har slide ka PNG capture karo
+      const allPngs = await captureAllSlidesPng();
+
+      // Session mein store karo (preview ke liye)
+      if (allPngs.length > 0) {
+        sessionStorage.setItem("slides", JSON.stringify({
+          capturedSlides: allPngs
+        }));
+      }
+
+      navStateBase.capturedSlides = allPngs;
+
+      // Mugs ke liye special handling (first slide ya all)
+      if (isMugCategory(adminDesign.category)) {
+        navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
+          state: { ...navStateBase, mugImage: allPngs[0] || null }, // first slide as main
+        });
+        return;
+      }
+
+      if (is3DCategory(adminDesign.category)) {
+        navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
+          state: navStateBase,
+        });
+      } else {
+        navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, {
+          state: navStateBase,
+        });
+      }
+    } catch (err) {
+      console.error("Capture failed:", err);
+      toast.error("Preview capture failed. Try again.");
+    } finally {
+      setPreviewLoading(false);
     }
-
-    navStateBase.capturedSlides = activeJpeg ? [activeJpeg] : [];
-
-    if (isMugCategory(adminDesign.category)) {
-      navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
-        state: { ...navStateBase, mugImage: activeJpeg },
-      });
-      return;
-    }
-
-    if (is3DCategory(adminDesign.category)) {
-      navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
-        state: navStateBase,
-      });
-    } else {
-      navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, {
-        state: navStateBase,
-      });
-    }
-  } finally {
-    setPreviewLoading(false);
-  }
-};
+  };
 
 
   // --------- Render ---------

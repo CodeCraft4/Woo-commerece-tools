@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
-import { TuneOutlined, CardGiftcard } from "@mui/icons-material";
+import { TuneOutlined } from "@mui/icons-material";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../supabase/supabase";
@@ -43,34 +43,34 @@ const getAccessPlan = (x: any): "free" | "bundle" | "pro" => {
   return "free";
 };
 
-const IconBadge = ({ kind }: { kind: "pro" | "bundle" }) => {
-  const isPro = kind === "pro";
-  return (
-    <Box
-      sx={{
-        position: "absolute",
-        top: 5,
-        left: 5,
-        zIndex: 2,
-        width: 50,
-        height: 50,
-        borderRadius: 999,
-        display: "grid",
-        placeItems: "center",
-        bgcolor: "rgba(255,255,255,0.92)",
-        boxShadow: 5,
-        transform: "rotate(-12deg)",
-        // border: "1px solid rgba(80, 80, 80, 0.73)",
-      }}
-    >
-      {isPro ? (
-        <Box component="img" src="/assets/icons/premiumuser.png" sx={{ width: 40, height: 40 }} />
-      ) : (
-        <CardGiftcard sx={{ color: COLORS.primary, fontSize: 24 }} />
-      )}
-    </Box>
-  );
-};
+// const IconBadge = ({ kind }: { kind: "pro" | "bundle" }) => {
+//   const isPro = kind === "pro";
+//   return (
+//     <Box
+//       sx={{
+//         position: "absolute",
+//         top: 5,
+//         left: 5,
+//         zIndex: 2,
+//         width: 50,
+//         height: 50,
+//         borderRadius: 999,
+//         display: "grid",
+//         placeItems: "center",
+//         bgcolor: "rgba(255,255,255,0.92)",
+//         boxShadow: 5,
+//         transform: "rotate(-12deg)",
+//         // border: "1px solid rgba(80, 80, 80, 0.73)",
+//       }}
+//     >
+//       {isPro ? (
+//         <Box component="img" src="/assets/icons/premiumuser.png" sx={{ width: 40, height: 40 }} />
+//       ) : (
+//         <CardGiftcard sx={{ color: COLORS.primary, fontSize: 24 }} />
+//       )}
+//     </Box>
+//   );
+// };
 
 async function fetchCategoriesLight(): Promise<any[]> {
   const { data, error } = await supabase.from("categories").select("id,name");
@@ -340,12 +340,17 @@ const ViewAllCard = () => {
                 const plan = getAccessPlan(e);
                 const src = e.__type === "templet" ? getTempletImage(e) : getCardImage(e);
 
+                // const MUGS = e.category === "Mugs";
+                // const B_CARD = e.category == 'Business Cards'
+
                 return (
                   <Box
                     key={e.id ?? e._id ?? `${idx}-${Math.random()}`}
                     onClick={() => openCategoryModalPopup(e)}
                     sx={{
                       position: "relative",
+                      // width: MUGS || B_CARD ? 380 : 248,
+                      // height: MUGS || B_CARD ? 230 : 350,
                       width: 248,
                       height: 350,
                       borderRadius: 2,
@@ -354,8 +359,8 @@ const ViewAllCard = () => {
                       overflow: "hidden",
                     }}
                   >
-                    {plan === "pro" ? <IconBadge kind="pro" /> : null}
-                    {plan === "bundle" ? <IconBadge kind="bundle" /> : null}
+                    {/* {plan === "pro" && <IconBadge kind="pro" /> : null} */}
+                    {plan === "bundle" && null}
 
                     <Box component="img" src={src} alt={e.title || e.name || e.cardname || "product"} sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
                   </Box>

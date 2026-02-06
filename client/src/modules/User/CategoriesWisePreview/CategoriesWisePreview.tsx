@@ -83,12 +83,22 @@ const CategoriesWisePreview: React.FC = () => {
   const category = state?.category ?? "";
   const start = state?.slideIndex ?? 0;
 
-  // ✅ captured images list (mug fallback)
+  // Change to (sessionStorage se fallback bhi add kar sakte ho)
   const captured = useMemo(() => {
-    const list = state?.capturedSlides ?? [];
-    if (state?.mugImage && !list.length) return [state.mugImage];
-    return list;
-  }, [state?.capturedSlides, state?.mugImage]);
+    // Priority 1: route state se
+    if (state?.capturedSlides?.length) return state.capturedSlides;
+
+    // Priority 2: sessionStorage se
+    try {
+      const stored = sessionStorage.getItem("capturedSlides");
+      if (stored) return JSON.parse(stored);
+    } catch { }
+
+    // Fallback to single mug image
+    if (state?.mugImage) return [state.mugImage];
+
+    return [];
+  }, [state]);
 
   const [active, setActive] = useState(start);
 
@@ -135,37 +145,37 @@ const CategoriesWisePreview: React.FC = () => {
   // ✅ Download loading
   const [downloading, setDownloading] = useState(false);
 
- const handleDownload = async () => {
-  try {
-    setDownloading(true);
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
 
-    const list = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+      const list = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
 
-    // ✅ Convert ALL to JPEG (sequential)
-    const out: string[] = [];
-    for (let i = 0; i < list.length; i++) {
-      const jpg = await toJpegDataUrl(list[i], 0.78, 1600);
-      out.push(jpg);
-      await new Promise((r) => setTimeout(r, 0));
+      // ✅ Convert ALL to JPEG (sequential)
+      const out: string[] = [];
+      for (let i = 0; i < list.length; i++) {
+        const jpg = await toJpegDataUrl(list[i], 0.78, 1600);
+        out.push(jpg);
+        await new Promise((r) => setTimeout(r, 0));
+      }
+
+      // ✅ store one-by-one (slide1, slide2, slide3...)
+      const slidesObj = Object.fromEntries(out.map((u, idx) => [`slide${idx + 1}`, u]));
+
+      // ✅ Full slides for PDF after payment
+      localStorage.setItem("slides_backup", JSON.stringify(slidesObj));
+      sessionStorage.removeItem("slides");
+
+      // ✅ pass slides to subscription via route-state
+      navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesObj } });
+
+      console.log(slidesObj, "stored slides obj");
+    } catch (e) {
+      console.error("Download capture failed:", e);
+    } finally {
+      setDownloading(false);
     }
-
-    // ✅ store one-by-one (slide1, slide2, slide3...)
-    const slidesObj = Object.fromEntries(out.map((u, idx) => [`slide${idx + 1}`, u]));
-
-    // ✅ Full slides for PDF after payment
-    localStorage.setItem("slides_backup", JSON.stringify(slidesObj));
-    sessionStorage.removeItem("slides");
-
-    // ✅ pass slides to subscription via route-state
-    navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesObj } });
-
-    console.log(slidesObj, "stored slides obj");
-  } catch (e) {
-    console.error("Download capture failed:", e);
-  } finally {
-    setDownloading(false);
-  }
-};
+  };
 
   /**
    * ✅ Dynamic box sizing (same as before)
