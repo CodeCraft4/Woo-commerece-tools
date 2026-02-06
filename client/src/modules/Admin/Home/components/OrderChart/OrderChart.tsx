@@ -35,7 +35,7 @@ const MinimalGradientAreaChart = ({
         dataKey="name"
         tickLine={false}
         axisLine={false}
-        tick={{ stroke: "rgba(255,255,255,0.3)", fontSize: 10 }}
+        tick={{ stroke: "rgba(0,0,0,0.3)", fontSize: 10 }}
         // Hide actual text labels as per the original design (only showing subtle vertical ticks)
         tickFormatter={() => ""}
       />
@@ -70,12 +70,13 @@ const OrderChart = () => {
         sx={{
           position: "relative",
           p: 3,
-          color: "white",
+          color: COLORS.black,
           height: { md: 200, sm: 200, xs: 180 },
-          boxShadow: 8,
+          boxShadow: "0 14px 30px rgba(5,10,36,0.08)",
           borderRadius: 4,
           mb: { md: 0, sm: 0, xs: 2 },
-          background: `linear-gradient(135deg, ${COLORS.green} 0%, ${COLORS.primary} 100%)`,
+          border: "1px solid rgba(0,0,0,0.06)",
+          background: "#ffffff",
           overflow: "hidden",
         }}
       >
@@ -87,15 +88,17 @@ const OrderChart = () => {
             left: 0,
             width: "100%",
             height: "100%",
+            minWidth: 1,
+            minHeight: 1,
             opacity: 0.7,
           }}
         >
           <MinimalGradientAreaChart
             data={orderData}
             colorId="colorOrder"
-            colorStart="#ffffff"
-            colorEnd="#ffffff"
-            strokeColor="#ffffff"
+            colorStart="rgba(141,109,161,0.4)"
+            colorEnd="rgba(141,109,161,0.05)"
+            strokeColor={COLORS.seconday}
           />
         </Box>
 
@@ -105,7 +108,7 @@ const OrderChart = () => {
             variant="body1"
             fontWeight="medium"
             letterSpacing={1.5}
-            sx={{ opacity: 0.9 }}
+            sx={{ opacity: 0.8, color: COLORS.black }}
           >
             TOTAL ORDERS
           </Typography>
@@ -131,7 +134,7 @@ const OrderChart = () => {
             <Typography
               variant="body2"
               fontWeight="semibold"
-              sx={{ opacity: 0.8, color: COLORS.white }}
+              sx={{ opacity: 0.7, color: COLORS.black }}
             >
               ALL TIMES ORDERS
             </Typography>

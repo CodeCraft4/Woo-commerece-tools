@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useMemo, useRef, useState, useCallback } from "react";
 import * as htmlToImage from "html-to-image";
 import { CATEGORY_CONFIG, type CategoryKey } from "../constant/data";
-import { supabase } from "../supabase/supabase";
+import { supabaseAdmin } from "../supabase/supabase";
 import toast from "react-hot-toast";
 
 /* ---------- Types ---------- */
@@ -62,31 +62,45 @@ export type SnapshotSlide = {
   elements: SnapshotAnyEl[];
 };
 
+
+// path: src/context/CategoriesEditorContext.ts
+export type PriceText = string | number | null | undefined;
+
 export type PublishMeta = {
-  id?: string;     // ✅ add
+  id?: string;
   mode?: "edit" | "create" | string;
+
+  // UI fields
   cardname?: string;
-
-  // IMPORTANT: this is the product category chosen in the form
   cardcategory?: string;
-
   subCategory?: string;
   subSubCategory?: string;
 
-  actualprice?: any;
-  a4price?: any;
-  a5price?: any;
-  usletter?: any;
+  // Legacy DB columns (already in schema)
+  actualprice?: PriceText;
+  a4price?: PriceText;
+  a5price?: PriceText;
+  usletter?: PriceText;
 
-  saleprice?: any;
-  salea4price?: any;
-  salea5price?: any;
-  saleusletter?: any;
+  saleprice?: PriceText;
+  salea4price?: PriceText;
+  salea5price?: PriceText;
+  saleusletter?: PriceText;
+
+  // ✅ New DB columns (you added)
+  a3price?: PriceText;
+  halfusletter?: PriceText;
+  ustabloid?: PriceText;
+
+  salea3price?: PriceText;
+  salehalfusletter?: PriceText;
+  saleustabloid?: PriceText;
 
   description?: string;
   sku?: string;
   imgUrl?: string;
 };
+
 
 type CategoriesEditorContextType = {
   // editor "template type"
@@ -146,7 +160,7 @@ type CategoriesEditorContextType = {
   mainScrollerRef: React.MutableRefObject<HTMLDivElement | null>;
   registerFirstSlideNode: (node: HTMLDivElement | null) => void;
 
-  reset: () => void;
+  resetState: () => void;
 };
 
 const CategoriesEditorContext = createContext<CategoriesEditorContextType | undefined>(undefined);
@@ -223,7 +237,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
   const getSlidesWithElements = useCallback(() => buildSlidesWithElements(), [buildSlidesWithElements]);
 
-  const reset = () => {
+  const resetState = () => {
     const cfg = CATEGORY_CONFIG[category];
     const newSlides = cfg.slideLabels?.length ? cfg.slideLabels.map((_, i) => ({ id: i + 1 })) : [{ id: 1 }];
     setSlides(newSlides);
@@ -324,7 +338,8 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
         cacheBust: false,
         pixelRatio: 2,
         backgroundColor: "transparent",
-        skipFonts: false,
+        skipFonts: true,
+        fontEmbedCSS: "",
         filter: (n: Node) => !(n instanceof HTMLLinkElement && /fonts\.googleapis\.com/i.test(n.href)),
         imagePlaceholder: transparentPx,
         width: Math.round(w),
@@ -441,23 +456,33 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
       const isEdit = !!meta?.id;
 
+      const db = supabaseAdmin;
       const { error } = isEdit
-        ? await supabase.from("templetDesign").update(payload).eq("id", meta!.id)
-        : await supabase.from("templetDesign").insert([payload]);
+        ? await db.from("templetDesign").update(payload).eq("id", meta!.id)
+        : await db.from("templetDesign").insert([payload]);
 
       if (error) {
-        console.error("DB save failed:", error);
-        toast.error("Save failed");
+        console.error("DB save failed:", {
+          message: error.message,
+          code: (error as any).code,
+          details: (error as any).details,
+          hint: (error as any).hint,
+        });
+        if ((error as any).code === "42501") {
+          toast.error("Save blocked by RLS. Please sign in with an admin account.");
+        } else {
+          toast.error(error.message || "Save failed");
+        }
       } else {
         toast.success(isEdit ? "✅ Updated template Design" : "✅ Saved template Design");
-        reset();
+        resetState();
       }
     } catch (e) {
       console.error("Save error:", e);
       toast.error("Save error");
     } finally {
       setLoading(false);
-      reset();
+      // resetState();
     }
   };
 
@@ -505,7 +530,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
       mainScrollerRef,
       registerFirstSlideNode,
 
-      reset,
+      resetState,
     }),
     [
       category,

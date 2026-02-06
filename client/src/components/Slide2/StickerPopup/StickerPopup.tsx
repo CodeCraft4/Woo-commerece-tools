@@ -1,9 +1,9 @@
-// Sticker1Popup.tsx
-import { Box } from "@mui/material";
+import { Box, TextField } from "@mui/material";
 import PopupWrapper from "../../PopupWrapper/PopupWrapper";
 import { STICKERS_DATA } from "../../../constant/data";
 import { COLORS } from "../../../constant/color";
 import { useSlide2 } from "../../../context/Slide2Context";
+import { useMemo, useState } from "react";
 
 interface Sticker1PopupProps {
   onClose: () => void;
@@ -12,6 +12,19 @@ interface Sticker1PopupProps {
 
 const StickerPopup = ({ onClose }: Sticker1PopupProps) => {
   const { addSticker2 } = useSlide2();
+
+  const [search, setSearch] = useState('')
+
+  const filteredStickers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return STICKERS_DATA;
+
+    return STICKERS_DATA.filter((s) => {
+      const name = s.name.toLowerCase();
+      const path = s.sticker.toLowerCase();
+      return name.includes(q) || path.includes(q);
+    });
+  }, [search]);
 
   const handleSelectSticker = (stick: any) => {
     addSticker2(stick);
@@ -33,6 +46,8 @@ const StickerPopup = ({ onClose }: Sticker1PopupProps) => {
           mt: 2,
           display: "flex",
           flexWrap: "wrap",
+          justifyContent: "flex-start",
+          alignContent: "flex-start",
           gap: 1,
           overflowY: "auto",
           "&::-webkit-scrollbar": {
@@ -50,10 +65,11 @@ const StickerPopup = ({ onClose }: Sticker1PopupProps) => {
           height: 500,
         }}
       >
-        {STICKERS_DATA.map((stick) => (
+        <TextField variant="outlined" type="search" placeholder="search Icon ╰(*°▽°*)╯" value={search} fullWidth onChange={(e) => setSearch(e.target.value)} />
+        {filteredStickers.map((stick) => (
           <Box
             key={stick.id}
-            onClick={() => handleSelectSticker(stick)} // ✅ handle click
+            onClick={() => handleSelectSticker(stick)}
             sx={{
               width: { md: "80px", sm: "80px", xs: "70px" },
               height: "90px",

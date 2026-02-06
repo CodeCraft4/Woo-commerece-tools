@@ -1,3 +1,4 @@
+// src/components/SaveDraftCardSlider/SaveDraftCardSlider.tsx
 import { Box, Typography, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import { DeleteOutline, Edit } from "@mui/icons-material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +8,8 @@ import { supabase } from "../../supabase/supabase";
 import { useAuth } from "../../context/AuthContext";
 import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import DraftPopup, { type DraftFullRow } from "../DraftPopup/DraftPopup";
+import LandingButton from "../LandingButton/LandingButton";
+import useModal from "../../hooks/useModal";
 
 const fetchMyDrafts = async (userId: string): Promise<DraftFullRow[]> => {
   const { data, error } = await supabase
@@ -19,7 +22,6 @@ const fetchMyDrafts = async (userId: string): Promise<DraftFullRow[]> => {
         "category",
         "description",
         "updated_at",
-        // ✅ include full slide/layout so each draft can open with its own state
         "layout",
         "slide1",
         "slide2",
@@ -39,28 +41,29 @@ const fetchMyDrafts = async (userId: string): Promise<DraftFullRow[]> => {
 };
 
 type DraftSliderProps = {
-  /** ✅ optional: auto open this card_id in DraftPopup (after saveDraft redirect) */
   autoOpenCardId?: string;
+  isUserProfile?: boolean;
 };
 
-export default function DraftSlider({ autoOpenCardId }: DraftSliderProps) {
+export default function DraftSlider({ autoOpenCardId, isUserProfile }: DraftSliderProps) {
   const queryClient = useQueryClient();
   const { user, loading } = useAuth();
 
   const [openDelete, setOpenDelete] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  // ✅ Draft popup state
+  const {
+    open: isClearDraftModal,
+    openModal: openClearDraftModal,
+    closeModal: closeClearDraftModal,
+  } = useModal();
+
   const [openDraft, setOpenDraft] = useState(false);
   const [activeDraft, setActiveDraft] = useState<DraftFullRow | null>(null);
 
   const queryKey = ["myDrafts", user?.id];
 
-  const {
-    data = [],
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data = [], isLoading, isError } = useQuery({
     queryKey,
     queryFn: () => fetchMyDrafts(user!.id),
     enabled: !!user && !loading,
@@ -79,7 +82,6 @@ export default function DraftSlider({ autoOpenCardId }: DraftSliderProps) {
     setActiveDraft(null);
   };
 
-  // ✅ auto open just-saved draft once (after redirect)
   const autoOpenedRef = useRef(false);
   useEffect(() => {
     if (!autoOpenCardId) return;
@@ -130,6 +132,40 @@ export default function DraftSlider({ autoOpenCardId }: DraftSliderProps) {
     },
   });
 
+  // ✅ CLEAR ALL drafts (user only)
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("No user");
+
+      const { error } = await supabase.from("draft").delete().eq("user_id", user.id);
+      if (error) throw error;
+
+      return true;
+    },
+
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const prev = queryClient.getQueryData<DraftFullRow[]>(queryKey) ?? [];
+      queryClient.setQueryData<DraftFullRow[]>(queryKey, []); // optimistic
+      return { prev };
+    },
+
+    onError: (err: any, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(queryKey, ctx.prev);
+      toast.error(err?.message ?? "Clear all failed");
+    },
+
+    onSuccess: () => {
+      toast.success("All drafts cleared ✅");
+      closeClearDraftModal();
+    },
+
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   const openDeleteModal = (cardId: string) => {
     setPendingDeleteId(cardId);
     setOpenDelete(true);
@@ -151,6 +187,10 @@ export default function DraftSlider({ autoOpenCardId }: DraftSliderProps) {
     });
   };
 
+  const confirmClearAll = () => {
+    clearAllMutation.mutate();
+  };
+
   if (loading) return null;
   if (!user) return null;
   if (isLoading) return <CircularProgress />;
@@ -161,13 +201,18 @@ export default function DraftSlider({ autoOpenCardId }: DraftSliderProps) {
     <Box sx={{ mt: 4 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Typography fontWeight={700} fontSize={22}>
-          Continue Your Drafts Personalization
+          Click to edit and continue personalising your drafts
         </Typography>
+
+        {isUserProfile ? (
+          <LandingButton title="Clear all" width="150px" onClick={openClearDraftModal} />
+        ) : null}
       </Box>
 
       <Box sx={{ display: "flex", gap: 2, overflowX: "auto", mt: 2, pb: 1 }}>
         {data.map((d) => {
-          const isDeletingThis = deleteMutation.isPending && deleteMutation.variables === d.card_id;
+          const isDeletingThis =
+            deleteMutation.isPending && deleteMutation.variables === d.card_id;
 
           return (
             <Box
@@ -225,17 +270,22 @@ export default function DraftSlider({ autoOpenCardId }: DraftSliderProps) {
                   </IconButton>
                 </Tooltip>
 
-                <Tooltip title="Delete">
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDeleteModal(d.card_id);
-                    }}
-                    sx={{ bgcolor: "white", "&:hover": { bgcolor: "#ffe5e5", color: "red" } }}
-                  >
-                    <DeleteOutline />
-                  </IconButton>
-                </Tooltip>
+                {isUserProfile ? null : (
+                  <Tooltip title="Delete">
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDeleteModal(d.card_id);
+                      }}
+                      sx={{
+                        bgcolor: "white",
+                        "&:hover": { bgcolor: "#ffe5e5", color: "red" },
+                      }}
+                    >
+                      <DeleteOutline />
+                    </IconButton>
+                  </Tooltip>
+                )}
               </Box>
 
               {isDeletingThis && (
@@ -256,17 +306,32 @@ export default function DraftSlider({ autoOpenCardId }: DraftSliderProps) {
         })}
       </Box>
 
-      {/* ✅ ProductPopup style draft modal */}
       <DraftPopup open={openDraft} onClose={closeDraftModal} draft={activeDraft} />
 
-      <ConfirmModal
-        open={openDelete}
-        onCloseModal={closeDeleteModal}
-        title="Do you want to delete this draft?"
-        btnText={deleteMutation.isPending ? "Deleting..." : "Delete"}
-        onClick={confirmDelete}
-        icon={<DeleteOutline />}
-      />
+      {openDelete && (
+        <ConfirmModal
+          open={openDelete}
+          onCloseModal={closeDeleteModal}
+          title="Do you want to delete this draft?"
+          btnText={deleteMutation.isPending ? "Deleting..." : "Delete"}
+          onClick={confirmDelete}
+          icon={<DeleteOutline />}
+        />
+      )}
+
+      {isClearDraftModal && (
+        <ConfirmModal
+          open={isClearDraftModal}
+          onCloseModal={() => {
+            if (clearAllMutation.isPending) return;
+            closeClearDraftModal();
+          }}
+          title="Do you want to Clear All drafts?"
+          btnText={clearAllMutation.isPending ? "Clearing..." : "Clear All"}
+          onClick={confirmClearAll}
+          icon={<DeleteOutline />}
+        />
+      )}
     </Box>
   );
 }

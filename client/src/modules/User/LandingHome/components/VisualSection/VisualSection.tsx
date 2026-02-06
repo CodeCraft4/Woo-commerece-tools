@@ -26,7 +26,7 @@ const steps = [
 const VisualSection = () => {
     return (
         <Box py={3}>
-            <Typography sx={{ fontSize: { md: 30, sm: 25, xs: 20 }, fontWeight: 800, textAlign: 'center' }}>
+            <Typography sx={{ fontSize: { md: 30, sm: 25, xs: 20 }, fontWeight: 600, textAlign: 'center' }}>
                 DIY Personalisations 3 step Process
             </Typography>
 

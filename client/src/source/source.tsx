@@ -1,4 +1,4 @@
-import { supabase } from "../supabase/supabase";
+import { supabase, supabaseAdmin } from "../supabase/supabase";
 import { toast } from 'react-hot-toast';
 
 // Fetch all cards from the database
@@ -8,8 +8,55 @@ export const fetchAllCardsFromDB = async () => {
   return data;
 };
 
+export const fetchAllCardsLight = async () => {
+  const { data, error } = await supabase
+    .from("cards")
+    .select(`
+      id,
+      cardname,
+      cardName,
+      cardcategory,
+      cardCategory,
+      imageurl,
+      image_url,
+      lastpageimageurl,
+      lastpageImageUrl,
+      accessplan
+    `);
+
+  if (error) throw error;
+  return data ?? [];
+};
+
+
+export const fetchCardById = async (id: string) => {
+  const { data, error } = await supabase
+    .from("cards")
+    .select(`
+      id,
+      cardname,
+      cardName,
+      cardcategory,
+      cardCategory,
+      imageurl,
+      image_url,
+      lastpageimageurl,
+      lastpageImageUrl,
+      accessplan,
+      polygonlayout,
+      raw_stores,
+      rawStores,
+      raw_store
+    `)
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+
 // Fetch all Categories from Subapase.
-// src/source/source.ts
 export const fetchAllCategoriesFromDB = async () => {
   const { data, error } = await supabase.from("categories").select("*");
   if (error) throw new Error(error.message);
@@ -70,6 +117,26 @@ export const fetchOrderCount = async () => {
   return count;
 };
 
+// user orders 
+export async function fetchMyOrders() {
+  // ✅ get logged-in user (client-side)
+  const { data: userRes, error: userErr } = await supabase.auth.getUser();
+  if (userErr) throw new Error(userErr.message);
+
+  const user = userRes?.user;
+  if (!user?.id) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id,user_id,session_id,payer_name,payer_email,currency,amount,status,preview_image,created_at"
+    )
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []);
+}
 
 // Fetch All Blogs from Db
 export const fetchAllBlogs = async () => {
@@ -129,49 +196,132 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
   return null;
 }
 
-
-// Fetch all template designs from DB
 export const fetchAllTempletDesigns = async () => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("templetDesign")
-    .select("*");
+    .select("*")
 
   if (error) {
-    console.error("Error fetching template designs:", error);
-    return [];
+    console.error("Supabase error:", {
+      message: error.message,
+      details: (error as any).details,
+      hint: (error as any).hint,
+      code: (error as any).code,
+    });
+    throw error;
   }
 
-  return data || [];
+  return data ?? [];
+};
+
+export const fetchAllTempletDesignsLight = async () => {
+  const PAGE_SIZE = 20; // light rows pe 20/30 theek
+  let from = 0;
+  const out: any[] = [];
+
+  while (true) {
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, error } = await supabaseAdmin
+      .from("templetDesign")
+      .select(`
+        id,
+        img_url,
+        category,
+        title,
+        description,
+        actualprice,
+        saleprice,
+        a4price,
+        a5price,
+        a3price,
+        usletter,
+        halfusletter,
+        ustabloid,
+        salea4price,
+        salea5price,
+        salea3price,
+        saleusletter,
+        salehalfusletter,
+        saleustabloid,
+        subCategory,
+        subSubCategory
+      `)
+      .range(from, to);
+
+    if (error) throw error;
+
+    const rows = data ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return out;
 };
 
 
-// Fetch All card Length
 export const fetchTempletCardCount = async () => {
-  const { count, error } = await supabase
+  const { count, error } = await supabaseAdmin
     .from("templetDesign")
     .select("*", { count: "exact", head: true });
 
-  if (error) throw new Error(error.message);
-  return count;
+  if (error) throw error;
+  return count ?? 0;
 };
 
-
-// db/templetDesign.ts
 export const fetchTempletDesignById = async (id: string) => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("templetDesign")
-    .select("*")
+    .select("id, category, raw_stores, created_at")
     .eq("id", id)
     .single();
 
-  if (error) {
-    console.error("Error fetching template:", error);
-    return null;
-  }
-
+  if (error) throw error;
   return data;
 };
 
+export const fetchTempletDesignFullById = async (id: string | number) => {
+  const { data, error } = await supabaseAdmin
+    .from("templetDesign")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ?? null;
+};
+
+// ✅ Jab need ho tab (open/preview) raw_stores lao
+export const fetchTempletRawStoresById = async (id: string | number) => {
+  const { data, error } = await supabaseAdmin
+    .from("templetDesign")
+    .select("id, raw_stores")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export async function fetchAllBundlesFromDB(): Promise<any> {
+  const { data, error } = await supabase
+    .from("bundles")
+    .select("id,name,image_base64,main_category,sub_categories,sub_sub_categories,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    image_base64: r.image_base64 ?? null,
+    main_category: r.main_category ?? "",
+    sub_categories: Array.isArray(r.sub_categories) ? r.sub_categories : [],
+    sub_sub_categories: Array.isArray(r.sub_sub_categories) ? r.sub_sub_categories : [],
+    created_at: r.created_at,
+  }));
+}
 
 // Blogs-----------------------------
 export async function saveBlog({

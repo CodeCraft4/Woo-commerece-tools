@@ -5,7 +5,6 @@ import {
   ArrowForwardIos,
   AudiotrackOutlined,
   AutoAwesomeMosaicOutlined,
-  BlurOn,
   CollectionsOutlined,
   EmojiEmotionsOutlined,
   FilterFramesOutlined,
@@ -840,6 +839,13 @@ const WishCard = (props: wishCardType) => {
                 />
               )}
 
+              {activePopup === "art" && (
+                <GeneAI2Popup
+                  onClose={() => setActivePopup(null)}
+                  activeIndex={activeIndex}
+                  photoArt={true}
+                />
+              )}
               {activePopup === "geneAi" && (
                 <GeneAI2Popup
                   onClose={() => setActivePopup(null)}
@@ -1158,7 +1164,7 @@ const WishCard = (props: wishCardType) => {
                     <AudiotrackOutlined fontSize="large" />
                     Audio
                   </IconButton>
-                  <IconButton
+                  {/* <IconButton
                     onClick={() => {
                       togglePopup("geneAi");
                     }}
@@ -1166,12 +1172,11 @@ const WishCard = (props: wishCardType) => {
                   >
                     <BlurOn fontSize="large" />
                     GenAI
-                  </IconButton>
+                  </IconButton> */}
                 </Box>
               )}
             </>
           }
-
           {/* 2nd Card */}
           {activeIndex === 1 && (
             <Box
@@ -1290,15 +1295,24 @@ const WishCard = (props: wishCardType) => {
                 <AudiotrackOutlined fontSize="large" />
                 Audio
               </IconButton>
-              <IconButton
+              {/* <IconButton
                 onClick={() => {
-                  togglePopup("geneAi");
+                  togglePopup("art");
                 }}
                 sx={editingButtonStyle}
               >
-                <BlurOn fontSize="large" />
-                GenAI
+                <PhotoFilterOutlined fontSize="large" />
+                Art
               </IconButton>
+              // <IconButton
+              //   onClick={() => {
+              //     togglePopup("geneAi");
+              //   }}
+              //   sx={editingButtonStyle}
+              // >
+              //   <BlurOn fontSize="large" />
+              //   GenAI
+              // </IconButton> */}
             </Box>
           )}
           {/* 3rd Card */}
@@ -1406,7 +1420,7 @@ const WishCard = (props: wishCardType) => {
                 <AudiotrackOutlined fontSize="large" />
                 Audio
               </IconButton>
-              <IconButton
+              {/* <IconButton
                 onClick={() => {
                   togglePopup("geneAi");
                 }}
@@ -1414,10 +1428,9 @@ const WishCard = (props: wishCardType) => {
               >
                 <BlurOn fontSize="large" />
                 GenAI
-              </IconButton>
+              </IconButton> */}
             </Box>
           )}
-
           {/* 4th card */}
           {adminEditor &&
             <>
@@ -1514,7 +1527,7 @@ const WishCard = (props: wishCardType) => {
                     Audio
                   </IconButton>
 
-                  <IconButton
+                  {/* <IconButton
                     onClick={() => {
                       togglePopup("geneAi");
                     }}
@@ -1522,7 +1535,7 @@ const WishCard = (props: wishCardType) => {
                   >
                     <BlurOn fontSize="large" />
                     GenAI
-                  </IconButton>
+                  </IconButton> */}
                 </Box>
               )}
             </>}

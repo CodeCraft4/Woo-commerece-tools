@@ -1,164 +1,113 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ErrorOutline, HourglassEmptyOutlined } from "@mui/icons-material";
 import { Box } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { supabase } from "../../../supabase/supabase";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
+import { Check, ErrorOutline, HourglassEmptyOutlined } from "@mui/icons-material";
 
-const EMPTY_1PX =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+type Status = "loading" | "success" | "error";
 
-const isNonEmptySlide = (s: any) => {
-  if (!s) return false;
+async function getTokenSafely() {
+  const { data } = await supabase.auth.getSession();
+  if (data?.session?.access_token) return data.session.access_token;
 
-  if (typeof s === "string") {
-    const str = s.trim();
-    if (!str) return false;
-    if (str === EMPTY_1PX) return false;
-    if (str.length < 200) return false;
-    return true;
+  await new Promise((r) => setTimeout(r, 500));
+  const retry = await supabase.auth.getSession();
+  return retry.data?.session?.access_token || null;
+}
+
+function getSlidesPayload() {
+  try {
+    const raw =
+      sessionStorage.getItem("slides") ||
+      localStorage.getItem("slides_backup") ||
+      "{}";
+    return JSON.parse(raw);
+  } catch {
+    return {};
   }
+}
 
-  if (typeof s === "object") {
-    const img = (s.image ?? s.src ?? s.png ?? s.dataUrl ?? "").trim?.() || "";
-    if (!img) return false;
-    if (img === EMPTY_1PX) return false;
-    if (img.length < 200) return false;
-    return true;
-  }
+function getSelectedPlan() {
+  return (
+    localStorage.getItem("selectedSize") ||
+    JSON.parse(localStorage.getItem("selectedVariant") || "{}")?.key ||
+    null
+  );
+}
 
-  return false;
-};
-
-type PdfStatus = "idle" | "loading" | "success" | "error";
-
-const SuccessPayment = () => {
+export default function PremiumSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
-  const { open: isPDFModal, openModal: openPDFModal, closeModal: closePDFModal } = useModal();
-
-  const [status, setStatus] = useState<PdfStatus>("idle");
-  const [errorMsg, setErrorMsg] = useState<string>("");
-
   const sessionId = useMemo(() => searchParams.get("session_id"), [searchParams]);
 
-  // ✅ Read slides from sessionStorage (and fallback to localStorage backup if you add it)
-  const getRawSlidesString = () => {
-    return sessionStorage.getItem("slides") || localStorage.getItem("slides_backup");
-  };
+  const { open, openModal, closeModal } = useModal();
+  const [status, setStatus] = useState<Status>("loading");
+  const [msg, setMsg] = useState("");
 
-  const normalizeSlidesToArray = (slides: any): string[] => {
-    // If already array, keep it
-    if (Array.isArray(slides)) {
-      return slides
-        .map((x) => {
-          if (typeof x === "string") return x;
-          if (x && typeof x === "object") return x.image ?? x.src ?? x.png ?? x.dataUrl ?? "";
-          return "";
-        })
-        .filter(Boolean);
-    }
-
-    // ✅ If object: { slide1, slide2, slide3, slide4 }
-    if (slides && typeof slides === "object") {
-      return [slides.slide1, slides.slide2, slides.slide3, slides.slide4].filter(Boolean);
-    }
-
-    return [];
-  };
-
-  const getCleanedSlides = () => {
-    let slides: any = null;
-    const raw = getRawSlidesString();
-
-    if (raw && raw !== "undefined") {
-      try {
-        slides = JSON.parse(raw);
-      } catch (e) {
-        console.log("🟥 JSON parse error:", e);
-        slides = null;
-      }
-    }
-
-    console.log("🟦 Parsed slides:", slides);
-
-    const slidesArray = normalizeSlidesToArray(slides);
-    const cleanedSlides = slidesArray.filter(isNonEmptySlide);
-    return cleanedSlides;
-  };
-
-  const sendPdf = async () => {
+  async function handlePaymentSuccess() {
     if (!sessionId) return;
 
-    openPDFModal();
+    openModal();
     setStatus("loading");
-    setErrorMsg("");
-
-    const cleanedSlides = getCleanedSlides();
-
-    // ✅ if no slides => don't call API
-    if (!cleanedSlides.length) {
-      setStatus("error");
-      setErrorMsg("No valid slides were found, so the PDF could not be generated.");
-      toast.error("PDF not generated: No valid slides found.");
-      return;
-    }
 
     try {
-      const res = await fetch("https://diypersonalisation.com/api/send-pdf-after-success", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          cardSize: localStorage.getItem("selectedSize"),
-          slides: cleanedSlides,
-        }),
-      });
+      const token = await getTokenSafely();
+      if (!token) throw new Error("Login required");
+
+      const slides = getSlidesPayload();
+      const cardSize = getSelectedPlan();
+
+      if (!Object.keys(slides).length) {
+        throw new Error("Slides data missing");
+      }
+
+      const res = await fetch(
+        "https://diypersonalisation.com/api/send-pdf-after-success",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            sessionId,
+            slides,
+            cardSize,
+          }),
+        }
+      );
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Request failed (HTTP ${res.status})`);
+        throw new Error(err?.error || `Failed (${res.status})`);
       }
 
-      await res.json();
       setStatus("success");
-      toast.success("Payment successful! PDF has been emailed to you.");
+      setMsg("Payment successful. PDF sent to your email 📧");
+      toast.success("PDF generated & sent to your email!");
     } catch (e: any) {
-      const msg = e?.message || "We couldn't generate your PDF right now. Please try again.";
-
       setStatus("error");
-      setErrorMsg(msg);
-      toast.error(`PDF could not be sent: ${msg}`);
+      setMsg(e?.message || "Failed");
+      toast.error(e?.message || "Failed");
     }
-  };
+  }
 
   useEffect(() => {
-    if (!sessionId) return;
-    sendPdf();
+    handlePaymentSuccess();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  const openGmail = () => {
-    window.open("https://mail.google.com/mail/u/0/#inbox", "_blank", "noopener,noreferrer");
-  };
-
-  const handleCloseModal = () => {
-    // ✅ block close only while loading
-    if (status === "loading") return;
-    closePDFModal();
-    navigate(-4);
-  };
-
-  const modalTitle =
+  const title =
     status === "loading"
-      ? "Generating your PDF…"
+      ? "Processing your payment..."
       : status === "success"
-        ? "✅ PDF generated & sent to your email"
-        : "❌ PDF was not generated";
+      ? "✅ Payment Successful"
+      : "❌ Payment Failed";
 
-  const modalIcon =
+  const icon =
     status === "loading" ? (
       <HourglassEmptyOutlined fontSize="large" />
     ) : status === "success" ? (
@@ -167,12 +116,25 @@ const SuccessPayment = () => {
       <ErrorOutline color="error" fontSize="large" />
     );
 
-  const modalBtnText =
-    status === "loading" ? "Please wait…" : status === "success" ? "Open Gmail" : "Try Again";
+  const btnText =
+    status === "loading"
+      ? "Please wait..."
+      : status === "success"
+      ? "Open Gmail"
+      : "Try Again";
 
-  const handlePrimaryClick = () => {
-    if (status === "success") openGmail();
-    if (status === "error") sendPdf();
+  const onPrimary = () => {
+    if (status === "success") {
+      window.open("https://mail.google.com", "_blank");
+      return;
+    }
+    handlePaymentSuccess();
+  };
+
+  const onClose = () => {
+    if (status === "loading") return;
+    closeModal();
+    navigate("/subscription");
   };
 
   return (
@@ -183,25 +145,21 @@ const SuccessPayment = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        m: "auto",
         bgcolor: "white",
       }}
     >
-      {isPDFModal && (
+      {open && (
         <ConfirmModal
-          open={isPDFModal}
-          onCloseModal={handleCloseModal}
-          title={modalTitle}
-          icon={modalIcon}
-          btnText={modalBtnText}
-          onClick={handlePrimaryClick}
-        // ✅ If your ConfirmModal supports description prop, uncomment:
-        // description={status === "error" ? errorMsg : undefined}
+          open={open}
+          onCloseModal={onClose}
+          title={title}
+          icon={icon}
+          btnText={btnText}
+          onClick={onPrimary}
         />
       )}
 
-      {/* ✅ If ConfirmModal doesn't support description prop, show error below */}
-      {isPDFModal && status === "error" && (
+      {open && status === "error" && (
         <Box
           sx={{
             position: "fixed",
@@ -213,16 +171,11 @@ const SuccessPayment = () => {
             px: 2,
             py: 1,
             borderRadius: 2,
-            maxWidth: 520,
-            boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-            fontSize: 14,
           }}
         >
-          {errorMsg || "We couldn't generate your PDF. Please try again."}
+          {msg}
         </Box>
       )}
     </Box>
   );
-};
-
-export default SuccessPayment;
+}

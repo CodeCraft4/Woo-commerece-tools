@@ -1,376 +1,369 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Box, IconButton, Typography, useMediaQuery } from "@mui/material";
 import { ArrowBackIos, KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import LandingButton from "../../../components/LandingButton/LandingButton";
-import { toPng } from "html-to-image";
 import { USER_ROUTES } from "../../../constant/route";
 
 /* ---------- Types ---------- */
-type BaseEl = { id: string; x: number; y: number; width: number; height: number; zIndex?: number; editable?: boolean };
-type TextEl = BaseEl & {
-    type: "text";
-    text: string;
-    bold: boolean;
-    italic: boolean;
-    color: string;
-    fontSize: number;
-    fontFamily: string;
-    align?: "left" | "center" | "right";
-};
-type ImageEl = BaseEl & { type: "image"; src: string };
-type StickerEl = BaseEl & { type: "sticker"; src: string };
-type AnyEl = TextEl | ImageEl | StickerEl;
-type Slide = { id: number; label: string; elements: AnyEl[] };
+type Slide = { id: number; label: string; elements: any[] };
 
 type ArtboardConfig = {
-    mmWidth: number;
-    mmHeight: number;
-    slideLabels?: string[];
-    maxWidth?: number;
-    maxHeight?: number;
-    fitCanvas?: { width: number; height: number }; // ✅ if you stored it in config
+  mmWidth: number;
+  mmHeight: number;
+  slideLabels?: string[];
 };
 
 type NavState = {
-    slides?: Slide[];
-    config?: ArtboardConfig;
-    canvasPx?: { w: number; h: number }; // ✅ you already pass this from editor
-    slideIndex?: number;
-    category?: string;
+  slides?: Slide[];
+  config?: ArtboardConfig;
+  canvasPx?: { w: number; h: number };
+  slideIndex?: number;
+  category?: string;
 
-    // sometimes you might pass full templetDesign row (optional)
-    templetDesign?: any;
+  // ✅ from TempletEditor (new)
+  capturedSlides?: string[];
+  mugImage?: string;
 };
 
 /* ---------- Helpers ---------- */
-const TRANSPARENT_PX =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+async function toJpegDataUrl(
+  inputDataUrl: string,
+  quality = 0.78,
+  maxDim = 1600
+): Promise<string> {
+  if (!inputDataUrl) return "";
+  if (inputDataUrl.startsWith("data:image/jpeg")) return inputDataUrl;
 
-async function blobToDataURL(url: string): Promise<string | null> {
-    try {
-        const resp = await fetch(url);
-        if (!resp.ok) return null;
-        const blob = await resp.blob();
-        return await new Promise<string>((resolve, reject) => {
-            const fr = new FileReader();
-            fr.onload = () => resolve(String(fr.result));
-            fr.onerror = reject;
-            fr.readAsDataURL(blob);
-        });
-    } catch {
-        return null;
-    }
+  return await new Promise<string>((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.decoding = "async";
+    img.src = inputDataUrl;
+
+    img.onload = () => {
+      const nw = img.naturalWidth || 1;
+      const nh = img.naturalHeight || 1;
+
+      // ✅ downscale to avoid huge localStorage payload
+      const scale = Math.min(1, maxDim / Math.max(nw, nh));
+      const w = Math.max(1, Math.round(nw * scale));
+      const h = Math.max(1, Math.round(nh * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) return resolve(inputDataUrl);
+
+      // white background for jpeg
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+
+      try {
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      } catch {
+        resolve(inputDataUrl);
+      }
+    };
+
+    img.onerror = () => resolve(inputDataUrl);
+  });
 }
 
-async function ensureDataUrls(slides: Slide[]): Promise<Slide[]> {
-    const copy: Slide[] = JSON.parse(JSON.stringify(slides));
-    await Promise.all(
-        copy.flatMap((sl) =>
-            sl.elements.map(async (el) => {
-                if ((el.type === "image" || el.type === "sticker") && typeof (el as any).src === "string") {
-                    const s = (el as ImageEl | StickerEl).src;
-                    if (s?.startsWith("blob:")) {
-                        const data = await blobToDataURL(s);
-                        if (data) (el as ImageEl | StickerEl).src = data;
-                    }
-                }
-            })
-        )
-    );
-    return copy;
-}
 
-/* ---------- Slide DOM (base coords) ---------- */
-const SlideView: React.FC<{ slide: Slide, captureRef?: any }> = ({ slide, captureRef }) => {
-    const ordered = useMemo(
-        () => [...slide.elements].sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1)),
-        [slide.elements]
-    );
-
-    return (
-        <Box ref={captureRef} sx={{ position: "relative", width: "100%", height: "100%" }}>
-            {ordered.map((el) => {
-                const style = {
-                    position: "absolute" as const,
-                    left: el.x,
-                    top: el.y,
-                    width: el.width,
-                    height: el.height,
-                    zIndex: el.zIndex ?? 1,
-                };
-
-                if (el.type === "image") {
-                    const img = el as ImageEl;
-                    return (
-                        <Box key={el.id} sx={style}>
-                            <img
-                                src={img.src}
-                                alt=""
-                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                                crossOrigin="anonymous"
-                                loading="eager"
-                            />
-                        </Box>
-                    );
-                }
-
-                if (el.type === "sticker") {
-                    const s = el as StickerEl;
-                    return (
-                        <Box
-                            key={el.id}
-                            component="img"
-                            src={s.src}
-                            alt=""
-                            sx={{ ...style, objectFit: "contain", display: "block", pointerEvents: "none", userSelect: "none" }}
-                        />
-                    );
-                }
-
-                const t = el as TextEl;
-                const align = t.align ?? "center";
-                const justify =
-                    align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
-
-                return (
-                    <Box key={el.id} sx={style}>
-                        <Box
-                            sx={{
-                                width: "100%",
-                                height: "100%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: justify,
-                                px: 1,
-                                fontWeight: t.bold ? 700 : 400,
-                                fontStyle: t.italic ? "italic" : "normal",
-                                fontSize: `${t.fontSize}px`,
-                                fontFamily: t.fontFamily || "inherit",
-                                color: t.color,
-                                // lineHeight: 1.2,
-                                whiteSpace: "pre-wrap",
-                                overflow: "hidden",
-                                userSelect: "none",
-                                textAlign: align as any,
-                            }}
-                        >
-                            {t.text}
-                        </Box>
-                    </Box>
-                );
-            })}
-        </Box>
-    );
-};
-
-/* ---------- Component ---------- */
 const CategoriesWisePreview: React.FC = () => {
-    const { state } = useLocation() as { state?: NavState };
-    const navigate = useNavigate();
-    const isMobile = useMediaQuery("(max-width:480px)");
+  const { state } = useLocation() as { state?: NavState };
+  const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width:450px)");
 
-    const config = state?.config;
-    const start = state?.slideIndex ?? 0;
+  const config = state?.config;
+  const category = state?.category ?? "";
+  const start = state?.slideIndex ?? 0;
 
-    const initialSlides = state?.slides ?? [];
-    const [slides, setSlides] = useState<Slide[]>(initialSlides);
-    const [active, setActive] = useState(start);
+  // Change to (sessionStorage se fallback bhi add kar sakte ho)
+  const captured = useMemo(() => {
+    // Priority 1: route state se
+    if (state?.capturedSlides?.length) return state.capturedSlides;
 
-    // book animation
-    const [flipDir, setFlipDir] = useState<"next" | "prev">("next");
-    const [flipping, setFlipping] = useState(false);
+    // Priority 2: sessionStorage se
+    try {
+      const stored = sessionStorage.getItem("capturedSlides");
+      if (stored) return JSON.parse(stored);
+    } catch { }
 
-    useEffect(() => {
-        (async () => setSlides(await ensureDataUrls(initialSlides)))();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    // Fallback to single mug image
+    if (state?.mugImage) return [state.mugImage];
 
-    if (!config || !slides.length) {
-        return (
-            <Box sx={{ height: "92vh", display: "grid", placeItems: "center" }}>
-                <Typography>No preview data.</Typography>
-            </Box>
-        );
-    }
+    return [];
+  }, [state]);
 
-    // ✅ preview viewport size
-    const boxW = isMobile ? 320 : 480;
-    const boxH = isMobile ? 440 : 650;
+  const [active, setActive] = useState(start);
 
-    // ✅ EXACT same logic as editor: coverScale
-    // const fit = useMemo(() => coverScale(baseW, baseH, boxW, boxH), [baseW, baseH, boxW, boxH]);
+  // book animation
+  const [flipDir, setFlipDir] = useState<"next" | "prev">("next");
+  const [flipping, setFlipping] = useState(false);
 
-    const slideCount = slides.length;
-
-    const goNext = () => {
-        if (active >= slideCount - 1 || flipping) return;
-        setFlipDir("next");
-        setFlipping(true);
-        setTimeout(() => {
-            setActive((p) => Math.min(p + 1, slideCount - 1));
-            setTimeout(() => setFlipping(false), 50);
-        }, 260);
-    };
-
-    const goPrev = () => {
-        if (active <= 0 || flipping) return;
-        setFlipDir("prev");
-        setFlipping(true);
-        setTimeout(() => {
-            setActive((p) => Math.max(p - 1, 0));
-            setTimeout(() => setFlipping(false), 50);
-        }, 260);
-    };
-
-    // capture / download
-    const previewRef = useRef<HTMLDivElement | null>(null);
-    const [downloading, setDownloading] = useState(false);
-
-    async function captureNode(node: HTMLElement, w: number, h: number) {
-        try { await (document as any).fonts?.ready; } catch { }
-
-        const clone = node.cloneNode(true) as HTMLElement;
-        clone.querySelectorAll("img").forEach((img) => {
-            img.setAttribute("crossorigin", "anonymous");
-            (img as HTMLImageElement).decoding = "sync";
-            (img as HTMLImageElement).loading = "eager";
-        });
-
-        const sandbox = document.createElement("div");
-        sandbox.style.position = "fixed";
-        sandbox.style.left = "-10000px";
-        sandbox.style.top = "-10000px";
-        sandbox.style.width = `${w}px`;
-        sandbox.style.height = `${h}px`;
-        sandbox.style.pointerEvents = "none";
-        sandbox.appendChild(clone);
-        document.body.appendChild(sandbox);
-
-        clone.style.width = `${w}px`;
-        clone.style.height = `${h}px`;
-        clone.style.transform = "none";
-
-        try {
-            return await toPng(clone, {
-                cacheBust: true,
-                backgroundColor: "#ffffff",
-                pixelRatio: 2,
-                width: w,
-                height: h,
-                imagePlaceholder: TRANSPARENT_PX,
-                style: { width: `${w}px`, height: `${h}px`, transform: "none" },
-            });
-        } finally {
-            sandbox.remove();
-        }
-    }
-
-    async function captureAllPreviews(): Promise<string[]> {
-        const out: string[] = [];
-        const CAP_W = boxW;
-        const CAP_H = boxH;
-
-        for (let i = 0; i < slideCount; i++) {
-            setActive(i);
-            await new Promise<void>((r) => requestAnimationFrame(() => r()));
-            if (previewRef.current) out.push(await captureNode(previewRef.current, CAP_W, CAP_H));
-        }
-        return out;
-    }
-
+  if (!config) {
     return (
-        <>
-            {/* Header */}
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 3 }}>
-                <Typography
-                    sx={{ p: 2, display: "flex", alignItems: "center", color: "blue", "&:hover": { textDecoration: "underline", cursor: "pointer" } }}
-                    onClick={() => navigate(-1)}
-                >
-                    <ArrowBackIos fontSize="small" /> exit
-                </Typography>
+      <Box sx={{ height: "92vh", display: "grid", placeItems: "center" }}>
+        <Typography>No preview data.</Typography>
+      </Box>
+    );
+  }
 
-                <Box sx={{ display: "flex", gap: 2 }}>
-                    {/* <LandingButton title="Add to basket" variant="outlined" /> */}
-                    <LandingButton
-                        title="Download"
-                        loading={downloading}
-                        onClick={async () => {
-                            try {
-                                setDownloading(true);
-                                const urls = await captureAllPreviews();
-                                const slidesObj = Object.fromEntries(urls.map((u, i) => [`slide${i + 1}`, u]));
-                                sessionStorage.setItem("slides", JSON.stringify(slidesObj));
-                                navigate(USER_ROUTES.SUBSCRIPTION);
-                            } finally {
-                                setDownloading(false);
-                            }
-                        }}
-                    />
-                </Box>
+  // ✅ slides count
+  const slideCount = Math.max(1, captured?.length || 0);
+
+  // ✅ current/next imgs
+  const currentImg = captured?.[active] || "";
+  const nextIndex = flipDir === "next" ? Math.min(active + 1, slideCount - 1) : Math.max(active - 1, 0);
+  const nextImg = captured?.[nextIndex] || currentImg;
+
+  const goNext = () => {
+    if (active >= slideCount - 1 || flipping) return;
+    setFlipDir("next");
+    setFlipping(true);
+    setTimeout(() => {
+      setActive((p) => Math.min(p + 1, slideCount - 1));
+      setFlipping(false);
+    }, 360);
+  };
+
+  const goPrev = () => {
+    if (active <= 0 || flipping) return;
+    setFlipDir("prev");
+    setFlipping(true);
+    setTimeout(() => {
+      setActive((p) => Math.max(p - 1, 0));
+      setFlipping(false);
+    }, 360);
+  };
+
+  // ✅ Download loading
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+
+      const list = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+
+      // ✅ Convert ALL to JPEG (sequential)
+      const out: string[] = [];
+      for (let i = 0; i < list.length; i++) {
+        const jpg = await toJpegDataUrl(list[i], 0.78, 1600);
+        out.push(jpg);
+        await new Promise((r) => setTimeout(r, 0));
+      }
+
+      // ✅ store one-by-one (slide1, slide2, slide3...)
+      const slidesObj = Object.fromEntries(out.map((u, idx) => [`slide${idx + 1}`, u]));
+
+      // ✅ Full slides for PDF after payment
+      localStorage.setItem("slides_backup", JSON.stringify(slidesObj));
+      sessionStorage.removeItem("slides");
+
+      // ✅ pass slides to subscription via route-state
+      navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesObj } });
+
+      console.log(slidesObj, "stored slides obj");
+    } catch (e) {
+      console.error("Download capture failed:", e);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  /**
+   * ✅ Dynamic box sizing (same as before)
+   */
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+
+  const computeBoxForImage = useCallback(
+    (src: string) => {
+      if (!src) {
+        setBox(null);
+        return;
+      }
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.decoding = "async";
+      img.src = src;
+
+      img.onload = () => {
+        const nw = img.naturalWidth || 1;
+        const nh = img.naturalHeight || 1;
+
+        const maxW = Math.floor(window.innerWidth * (isMobile ? 0.92 : 0.70));
+        const maxH = Math.floor(window.innerHeight * 0.72);
+
+        const scale = Math.min(1, maxW / nw, maxH / nh);
+
+        setBox({
+          w: Math.max(1, Math.floor(nw * scale)),
+          h: Math.max(1, Math.floor(nh * scale)),
+        });
+      };
+
+      img.onerror = () => setBox(null);
+    },
+    [isMobile]
+  );
+
+  useEffect(() => {
+    computeBoxForImage(currentImg);
+  }, [currentImg, computeBoxForImage]);
+
+  useEffect(() => {
+    const onResize = () => computeBoxForImage(currentImg);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [currentImg, computeBoxForImage]);
+
+  return (
+    <>
+      {/* Header */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 3 }}>
+        <Typography
+          sx={{
+            p: 2,
+            display: "flex",
+            alignItems: "center",
+            color: "blue",
+            "&:hover": { textDecoration: "underline", cursor: "pointer" },
+          }}
+          onClick={() => navigate(-1)}
+        >
+          <ArrowBackIos fontSize="small" /> exit
+        </Typography>
+
+        {/* category size + download */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ textAlign: "right" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{category || "Preview"}</Typography>
+            <Typography sx={{ fontSize: 12, opacity: 0.7 }}>
+              {config.mmWidth} × {config.mmHeight} mm
+            </Typography>
+          </Box>
+
+          {/* ✅ loading passed here */}
+          <LandingButton title="Download" loading={downloading} onClick={handleDownload} />
+        </Box>
+      </Box>
+
+      {/* Body */}
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
+        {/* Preview box */}
+        <Box
+          sx={{
+            width: box?.w ?? "auto",
+            height: box?.h ?? "auto",
+            maxWidth: "92vw",
+            maxHeight: "72vh",
+            overflow: "hidden",
+            borderRadius: 3,
+            boxShadow: 3,
+            perspective: "1400px",
+            position: "relative",
+            bgcolor: "transparent",
+          }}
+        >
+          {/* BOOK */}
+          <Box sx={{ position: "absolute", inset: 0, transformStyle: "preserve-3d" }}>
+            {/* CURRENT */}
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                backfaceVisibility: "hidden",
+                transformOrigin: flipDir === "next" ? "left center" : "right center",
+                transform:
+                  flipping && flipDir === "next"
+                    ? "rotateY(-180deg)"
+                    : flipping && flipDir === "prev"
+                      ? "rotateY(180deg)"
+                      : "rotateY(0deg)",
+                transition: "transform 360ms cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+            >
+              <Box
+                component="img"
+                src={currentImg}
+                alt="preview"
+                sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
+              />
             </Box>
 
-            {/* Body */}
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-                {/* PREVIEW BOX (same cover behavior as editor) */}
-                <Box
-                    // ref={previewRef}
-                    sx={{
-                        width: boxW,
-                        height: boxH,
-                        // position: "relative",
-                        overflow: "hidden",
-                        borderRadius: 2,
-                        border: "1px solid rgba(0,0,0,0.12)",
-                        // boxShadow: 3,
-                        perspective: "1400px",
-                    }}
-                >
-                    {/* Flip container */}
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            inset: 0,
-                            transformStyle: "preserve-3d",
-                            transition: "transform 260ms ease",
-                            transform:
-                                !flipping
-                                    ? "rotateY(0deg)"
-                                    : flipDir === "next"
-                                        ? "rotateY(-180deg)"
-                                        : "rotateY(180deg)",
-                        }}
-                    >
-                        {/* FRONT */}
-                        <SlideView slide={slides[active]} captureRef={previewRef} />
+            {/* NEXT (behind) */}
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                backfaceVisibility: "hidden",
+                transformOrigin: flipDir === "next" ? "left center" : "right center",
+                transform: flipDir === "next" ? "rotateY(180deg)" : "rotateY(-180deg)",
+              }}
+            >
+              <Box
+                component="img"
+                src={nextImg}
+                alt="next"
+                sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
+              />
+            </Box>
 
-                    </Box>
-                </Box>
+            {/* shadow */}
+            {flipping && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  pointerEvents: "none",
+                  background:
+                    flipDir === "next"
+                      ? "linear-gradient(90deg, rgba(0,0,0,0.15), transparent 60%)"
+                      : "linear-gradient(270deg, rgba(0,0,0,0.15), transparent 60%)",
+                  opacity: 0.9,
+                  transition: "opacity 360ms ease",
+                }}
+              />
+            )}
+          </Box>
+        </Box>
 
-                {/* Pager */}
-                {slideCount >= 2 && (
-                    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-                        <IconButton
-                            onClick={goPrev}
-                            disabled={active === 0 || flipping}
-                            sx={{ border: `1px solid ${active === 0 ? "gray" : "#8D6DA1"}`, p: 1 }}
-                            aria-label="Previous"
-                        >
-                            <KeyboardArrowLeft fontSize="large" />
-                        </IconButton>
-                        <IconButton
-                            onClick={goNext}
-                            disabled={active === slideCount - 1 || flipping}
-                            sx={{ border: `1px solid ${active === slideCount - 1 ? "gray" : "#8D6DA1"}`, p: 1 }}
-                            aria-label="Next"
-                        >
-                            <KeyboardArrowRight fontSize="large" />
-                        </IconButton>
-                    </Box>
-                )}
-            </Box >
-        </>
-    );
+        {/* Pager */}
+        {slideCount >= 2 && (
+          <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+            <IconButton
+              onClick={goPrev}
+              disabled={active === 0 || flipping}
+              sx={{ border: `1px solid ${active === 0 ? "gray" : "#8D6DA1"}`, p: 1 }}
+              aria-label="Previous"
+            >
+              <KeyboardArrowLeft fontSize="large" />
+            </IconButton>
+
+            <Typography sx={{ fontSize: 13, opacity: 0.8 }}>
+              {active + 1} / {slideCount}
+            </Typography>
+
+            <IconButton
+              onClick={goNext}
+              disabled={active === slideCount - 1 || flipping}
+              sx={{ border: `1px solid ${active === slideCount - 1 ? "gray" : "#8D6DA1"}`, p: 1 }}
+              aria-label="Next"
+            >
+              <KeyboardArrowRight fontSize="large" />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
+    </>
+  );
 };
 
 export default CategoriesWisePreview;

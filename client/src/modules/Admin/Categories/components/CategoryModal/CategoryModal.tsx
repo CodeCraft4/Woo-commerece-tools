@@ -384,7 +384,7 @@ const CategoryModal: React.FC<Props> = ({
             "&:hover .overlay": { opacity: 1 },
             "&:hover .upload-btn": { opacity: 1, transform: "translate(-50%, -50%) scale(1)" },
           }}
-          onClick={() => fileInputRef.current?.click()}
+          // onClick={() => fileInputRef.current?.click()}
         >
           <Box
             component="img"
