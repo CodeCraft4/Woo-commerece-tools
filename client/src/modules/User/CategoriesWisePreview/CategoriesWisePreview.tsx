@@ -168,8 +168,6 @@ const CategoriesWisePreview: React.FC = () => {
 
       // ✅ pass slides to subscription via route-state
       navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesObj } });
-
-      console.log(slidesObj, "stored slides obj");
     } catch (e) {
       console.error("Download capture failed:", e);
     } finally {
@@ -180,14 +178,14 @@ const CategoriesWisePreview: React.FC = () => {
   /**
    * ✅ Dynamic box sizing (same as before)
    */
-  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  // const [box, setBox] = useState<{ w: number; h: number } | null>(null);
 
   const computeBoxForImage = useCallback(
     (src: string) => {
-      if (!src) {
-        setBox(null);
-        return;
-      }
+      // if (!src) {
+      //   setBox(null);
+      //   return;
+      // }
 
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -195,21 +193,21 @@ const CategoriesWisePreview: React.FC = () => {
       img.src = src;
 
       img.onload = () => {
-        const nw = img.naturalWidth || 1;
-        const nh = img.naturalHeight || 1;
+        // const nw = img.naturalWidth || 1;
+        // const nh = img.naturalHeight || 1;
 
-        const maxW = Math.floor(window.innerWidth * (isMobile ? 0.5 : 0.5));
-        const maxH = Math.floor(window.innerHeight * 0.5);
+        // const maxW = Math.floor(window.innerWidth * (isMobile ? 0.5 : 0.5));
+        // const maxH = Math.floor(window.innerHeight * 0.5);
 
-        const scale = Math.min(1, maxW / nw, maxH / nh);
+        // const scale = Math.min(1, maxW / nw, maxH / nh);
 
-        setBox({
-          w: Math.max(1, Math.floor(nw * scale)),
-          h: Math.max(1, Math.floor(nh * scale)),
-        });
+        // setBox({
+        //   w: Math.max(1, Math.floor(nw * scale)),
+        //   h: Math.max(1, Math.floor(nh * scale)),
+        // });
       };
 
-      img.onerror = () => setBox(null);
+      // img.onerror = () => setBox(null);
     },
     [isMobile]
   );
@@ -259,12 +257,12 @@ const CategoriesWisePreview: React.FC = () => {
       <Box
         sx={{
           width: "100%",
-          height: "91vh",                 // پورا viewport height
+          height: "91vh",
           display: "flex",
-          alignItems: "center",            // عمودی مرکز
-          justifyContent: "center",        // افقی مرکز
-          bgcolor: "transparent",          // red ہٹا دیا (اگر چاہیے تو رکھ لو)
-          p: 2,                            // تھوڑا padding اگر چاہیے
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: "transparent",
+          p: 2,
         }}>
 
         <Box
@@ -272,8 +270,8 @@ const CategoriesWisePreview: React.FC = () => {
           {/* Preview box */}
           <Box
             sx={{
-              width: box?.w ?? "auto",
-              height: box?.h ?? "auto",
+              width: config.mmWidth ?? "auto",
+              height: config.mmHeight ?? "auto",
               maxWidth: "92vw",
               maxHeight: "72vh",
               overflow: "hidden",

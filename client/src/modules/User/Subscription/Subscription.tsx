@@ -122,7 +122,7 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
     ];
   }
 
-  if (name.includes("mug")) return [{ key: "mug_wrap_11oz", title: "228mm × 88.9mm wrap (11oz mug)" }];
+  if (name.includes("mugs")) return [{ key: "mug_wrap_11oz", title: "228mm × 88.9mm wrap (11oz mug)" }];
   if (name.includes("coaster")) return [{ key: "coaster_95", title: "95mm × 95mm (×2 coasters)" }];
 
   return [
@@ -232,8 +232,11 @@ const Subscription = () => {
   }, [state?.slides]);
 
   const firstSlideUrl = slidesObj?.slide1 || "";
-  const mugPreview = useMemo(() => sessionStorage.getItem("mugImage") || "", []);
-  const mugImageSrc = useMemo(() => sessionStorage.getItem("mugImage"), []);
+
+  const mugPreview = useMemo(() => {
+    const slides = JSON.parse(sessionStorage.getItem("slides") || "{}");
+    return slides.slide1 || "";
+  }, []);
 
   // ✅ read local selections
   useEffect(() => {
@@ -246,7 +249,7 @@ const Subscription = () => {
           setSelectedPlan(parsed.key);
         }
       }
-    } catch {}
+    } catch { }
 
     try {
       const rawP = localStorage.getItem("selectedPrices");
@@ -254,7 +257,7 @@ const Subscription = () => {
         const parsed = JSON.parse(rawP) as PriceTables;
         if (parsed?.actual) setPriceTables(parsed);
       }
-    } catch {}
+    } catch { }
 
     try {
       const rawProd = localStorage.getItem("selectedProduct");
@@ -262,7 +265,7 @@ const Subscription = () => {
         const parsed = JSON.parse(rawProd) as SelectedProduct;
         setProduct(parsed);
       }
-    } catch {}
+    } catch { }
   }, []);
 
   // ✅ load bundle_items once
@@ -322,10 +325,11 @@ const Subscription = () => {
     setSelectedPlan((firstAvail ?? fallback ?? "a4") as any);
   }, [plans, selectedPlan]);
 
-  const isMugsCate = useMemo(
-    () => categoryName === "Mugs" || categoryName.toLowerCase() === "mugs",
-    [categoryName]
-  );
+  // const isMugsCate = useMemo(
+  //   () => categoryName === "Mugs" || categoryName.toLowerCase() === "mugs",
+  //   [categoryName]
+  // );
+  
   const mock = useMemo(() => getMockupConfig(categoryName), [categoryName]);
 
   // ✅ load user plan
@@ -409,7 +413,7 @@ const Subscription = () => {
       localStorage.setItem("selectedVariant", JSON.stringify(newVariant));
       localStorage.setItem("selectedSize", String(p.id));
       localStorage.setItem("selectedCategory", String(categoryName));
-    } catch {}
+    } catch { }
   };
 
   const startOneTimeStripeCheckout = async (p: { title: string; price: number }) => {
@@ -599,7 +603,7 @@ const Subscription = () => {
           justifyContent: "center",
           mt: { md: 4, sm: 3, xs: 2 },
           mb: { md: 4, sm: 3, xs: 2 },
-          
+
         }}
       >
         <Container maxWidth="xl">
@@ -614,7 +618,7 @@ const Subscription = () => {
               flexWrap: "wrap",
             }}
           >
-             Please select your {product?.category} print size!
+            Please select your {product?.category} print size!
             {showTrophyIcon ? (
               <Chip icon={<EmojiEvents />} label="Pro" color="warning" size="small" sx={{ fontWeight: 900 }} />
             ) : null}
@@ -649,6 +653,12 @@ const Subscription = () => {
                 🆓 <b>Free user</b>: payment required to generate PDF.
               </Box>
             )}
+
+            {mugPreview && (
+              <Box sx={{ p: 1.5, bgcolor: COLORS.black, borderRadius: 2,color:COLORS.white }}>
+                📒 <b>MUGS</b>: For mugs preview is flipped in the pdf
+              </Box>
+            )}
           </Box>
 
           <Grid container spacing={3} sx={{ height: { md: 600, sm: 600, xs: "auto" } }}>
@@ -656,19 +666,19 @@ const Subscription = () => {
             <Grid
               size={{ md: 7, sm: 7, xs: 12 }}
               sx={{
-                backgroundImage: isMugsCate ? "" : mock?.mockupSrc ? `url(${mock.mockupSrc})` : `url(${TableBgImg})`,
+                backgroundImage: mock?.mockupSrc ? `url(${mock.mockupSrc})` : `url(${TableBgImg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
                 backgroundSize: "cover",
                 borderRadius: 7,
                 border: "1px solid gray",
                 position: "relative",
-                height: { md: 600, sm: 600, xs: 320 },
+                height: { md: mugPreview ? 350 : 600, sm: mugPreview ? 350 : 600, xs: 320 },
                 overflow: "hidden",
               }}
             >
               {mugPreview ? (
-                <Box component="img" src={mugPreview} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <Box component="img" src={mugPreview} sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
               ) : firstSlideUrl ? (
                 <Box
                   sx={{
@@ -687,7 +697,7 @@ const Subscription = () => {
                 >
                   <Box
                     component="img"
-                    src={firstSlideUrl || mugImageSrc || ""}
+                    src={firstSlideUrl || mugPreview || ""}
                     alt="first slide"
                     sx={{
                       width: "100%",
@@ -729,14 +739,14 @@ const Subscription = () => {
                   {planLoading || bundleKeyLoading
                     ? "Checking your plan..."
                     : proOnlyLocked
-                    ? "This card is Pro-only. Please upgrade to Pro to generate PDF."
-                    : isBundleAndMatched
-                    ? "Bundle matched by ID. You can generate your PDF without payment."
-                    : planCode === "pro"
-                    ? "Pro user: PDF generation included."
-                    : planCode === "bundle"
-                    ? "Bundle user: payment required for this item."
-                    : "Free users need to complete payment to receive PDF."}
+                      ? "This card is Pro-only. Please upgrade to Pro to generate PDF."
+                      : isBundleAndMatched
+                        ? "Bundle matched by ID. You can generate your PDF without payment."
+                        : planCode === "pro"
+                          ? "Pro user: PDF generation included."
+                          : planCode === "bundle"
+                            ? "Bundle user: payment required for this item."
+                            : "Free users need to complete payment to receive PDF."}
                 </Typography>
               </Box>
 
@@ -838,10 +848,10 @@ const Subscription = () => {
                 {planLoading || bundleKeyLoading || loading
                   ? "Loading..."
                   : proOnlyLocked
-                  ? "Go to Premium Plans"
-                  : requiresPayment
-                  ? "Pay & Get PDF"
-                  : "Generate PDF"}
+                    ? "Go to Premium Plans"
+                    : requiresPayment
+                      ? "Pay & Get PDF"
+                      : "Generate PDF"}
               </Button>
 
               {planCode === "pro" ? null : (
