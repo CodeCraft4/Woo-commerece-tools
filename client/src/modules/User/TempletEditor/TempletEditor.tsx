@@ -18,7 +18,6 @@ import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { fetchTempletDesignById } from "../../../source/source";
 import { COLORS } from "../../../constant/color";
-import { fitCanvas } from "../../../lib/lib";
 import { CATEGORY_CONFIG, type CategoryKey } from "../../../constant/data";
 import toast from "react-hot-toast";
 
@@ -197,20 +196,6 @@ export default function TempletEditor() {
 
   const didRestoreRef = useRef(false);
 
-  // ====== Viewport-aware sizing (admin-like) ======
-  const [viewport, setViewport] = useState({ w: 500, h: 600 });
-  useEffect(() => {
-    const onResize = () => {
-      const headerFooterReserve = 240;
-      setViewport({
-        w: window.innerWidth,
-        h: Math.max(320, window.innerHeight - headerFooterReserve),
-      });
-    };
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   function buildSlidesFromRawStores(raw: any): { design: AdminPreview; slides: Slide[] } {
     const src = raw?.raw_stores ?? raw;
@@ -220,6 +205,7 @@ export default function TempletEditor() {
 
     const dbMmWidth = asNum(src?.config?.mmWidth, asNum(src?.canvas?.mm?.w, 210));
     const dbMmHeight = asNum(src?.config?.mmHeight, asNum(src?.canvas?.mm?.h, 297));
+    // const multiplier = asNum(src?.canvas?.multiplier, 2);
 
     const storedW =
       asNum(src?.config?.fitCanvas?.width, 0) ||
@@ -241,7 +227,7 @@ export default function TempletEditor() {
     const stkEls = A<any>(src?.stickerElements);
 
     const coerceText = (e: any): TextEl => {
-      const r = normalize01(e, storedW, storedH);
+      const r = normalize01(e, storedW, storedH); // coordinates پہلے سے multiplied ہیں
       return {
         type: "text",
         id: asStr(e?.id) || uuid(),
@@ -251,7 +237,7 @@ export default function TempletEditor() {
         bold: asBool(e?.bold, false),
         italic: asBool(e?.italic, false),
         color: asStr(e?.color ?? "#000"),
-        fontSize: asNum(e?.fontSize ?? e?.font_size, 16),
+        fontSize: asNum(e?.fontSize ?? e?.font_size, 16), // ← یہ لائن شامل کرو
         fontFamily: asStr(e?.fontFamily ?? e?.font_family ?? "inherit"),
         align: (asStr(e?.align, "center") as any) ?? "center",
         zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
@@ -397,19 +383,25 @@ export default function TempletEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, state?.templetDesign]);
 
+
+  const mmW = adminDesign?.config.mmWidth ?? 210;
+  const mmH = adminDesign?.config.mmHeight ?? 297;
+
   // ====== Render sizing ======
-  const catKey = useMemo(() => resolveCategoryKey(adminDesign?.category), [adminDesign?.category]);
-  const cfg = useMemo(() => (catKey ? CATEGORY_CONFIG[catKey] : null), [catKey]);
-
-  const mmW = cfg?.mmWidth ?? adminDesign?.config.mmWidth ?? 210;
-  const mmH = cfg?.mmHeight ?? adminDesign?.config.mmHeight ?? 297;
-
   const canvasSize = useMemo(() => {
-    return fitCanvas(mmW, mmH, viewport.w, viewport.h);
-  }, [mmW, mmH, viewport.w, viewport.h, isTablet]);
+    // ⭐ DB سے exact width/height لے لو (ایڈیٹر میں جو store ہوا تھا)
+    const exactW = state?.templetDesign.canvas.mm.w;  // fallback
+    const exactH = state?.templetDesign.canvas.mm.h;
 
-  const artboardWidth = canvasSize?.width ?? 520;
-  const artboardHeight = canvasSize?.height ?? 520;
+    // اب کوئی viewport یا resize نہیں — سیدھا DB والا سائز استعمال کرو
+    return {
+      width: exactW,
+      height: exactH,
+    };
+  }, [adminDesign?.canvasPx?.w, adminDesign?.canvasPx?.h]);
+
+  const artboardWidth = canvasSize.width;
+  const artboardHeight = canvasSize.height;
 
   // Auto-center active slide in scroller
   useEffect(() => {
@@ -472,7 +464,7 @@ export default function TempletEditor() {
     opts?: { width?: number; height?: number; background?: string }
   ): Promise<string | null> => {
     try {
-      await waitForAssets(node); // images aur fonts load hone do
+      await waitForAssets(node)
 
       const rect = node.getBoundingClientRect();
       const w = Math.max(1, Math.round(opts?.width ?? rect.width));
@@ -487,10 +479,9 @@ export default function TempletEditor() {
           // sirf capture-exclude class wale exclude karo
           return !(n instanceof Element && n.classList?.contains("capture-exclude"));
         },
-        cacheBust: true,                 // fresh images
-        skipFonts: false,                // ← fonts skip NAHI karo
-        // fontEmbedCSS: "",                // auto embed fonts
-        // imagePlaceholder: "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==", // transparent placeholder
+        cacheBust: true,
+        skipFonts: false,
+        // fontEmbedCSS: "",             
         width: w,
         height: h,
         style: { transform: "none" },
@@ -524,7 +515,6 @@ export default function TempletEditor() {
     return captured;
   };
 
-  // 3. handleNavigatePrview ko update karo — har slide capture + PNG
   const handleNavigatePrview = async () => {
     if (!adminDesign?.category) return;
 
@@ -611,7 +601,6 @@ export default function TempletEditor() {
       {/* MAIN */}
       <Box
         sx={{
-          height: "95vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -623,6 +612,7 @@ export default function TempletEditor() {
           ref={scrollRef}
           sx={{
             display: "flex",
+            height: "85vh",
             flexDirection: "row",
             alignItems: "center",
             overflowX: "auto",
@@ -666,7 +656,7 @@ export default function TempletEditor() {
                   sx={{
                     width: artboardWidth,
                     height: artboardHeight,
-                    borderRadius: 3,
+                    borderRadius: 0,
                     position: "relative",
                     overflow: "hidden",
                     bgcolor: "transparent",
@@ -801,7 +791,7 @@ export default function TempletEditor() {
                                   fontSize: t.fontSize,
                                   fontFamily: t.fontFamily,
                                   color: t.color,
-                                  lineHeight: 1.2,
+                                  lineHeight: 1,
                                 },
                               }}
                               sx={{ height: "100%", width: "100%" }}
@@ -823,7 +813,7 @@ export default function TempletEditor() {
                                 color: t.color,
                                 textAlign: align as any,
                                 whiteSpace: "pre-wrap",
-                                overflow: "hidden",
+                                overflow: "visible",
                                 userSelect: "none",
                               }}
                             >
@@ -860,34 +850,33 @@ export default function TempletEditor() {
             );
           })}
         </Box>
+      </Box>
+      {/* Thumbnails */}
+      <Box sx={{ display: "flex", gap: 1, mt: 2, alignItems: "center", justifyContent: "center" }}>
+        <IconButton onClick={() => scrollToSlide(Math.max(0, activeSlide - 1))}>
+          <ArrowBackIos />
+        </IconButton>
 
-        {/* Thumbnails */}
-        <Box sx={{ display: "flex", gap: 1, mt: 2, alignItems: "center" }}>
-          <IconButton onClick={() => scrollToSlide(Math.max(0, activeSlide - 1))}>
-            <ArrowBackIos />
-          </IconButton>
+        {userSlides.map((slide, i) => (
+          <Box
+            key={slide.id}
+            onClick={() => scrollToSlide(i)}
+            sx={{
+              px: 1.5,
+              py: 1,
+              borderRadius: 2,
+              cursor: "pointer",
+              bgcolor: activeSlide === i ? "#1976d2" : "#eceff1",
+              color: activeSlide === i ? "white" : "#000",
+            }}
+          >
+            {slide.label}
+          </Box>
+        ))}
 
-          {userSlides.map((slide, i) => (
-            <Box
-              key={slide.id}
-              onClick={() => scrollToSlide(i)}
-              sx={{
-                px: 1.5,
-                py: 1,
-                borderRadius: 2,
-                cursor: "pointer",
-                bgcolor: activeSlide === i ? "#1976d2" : "#eceff1",
-                color: activeSlide === i ? "white" : "#000",
-              }}
-            >
-              {slide.label}
-            </Box>
-          ))}
-
-          <IconButton onClick={() => scrollToSlide(Math.min(activeSlide + 1, userSlides.length - 1))}>
-            <ArrowForwardIos />
-          </IconButton>
-        </Box>
+        <IconButton onClick={() => scrollToSlide(Math.min(activeSlide + 1, userSlides.length - 1))}>
+          <ArrowForwardIos />
+        </IconButton>
       </Box>
     </>
   );

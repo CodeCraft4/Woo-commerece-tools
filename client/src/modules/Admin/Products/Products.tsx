@@ -1,4 +1,3 @@
-// src/pages/Products/Products.tsx
 import {
   Box,
   CircularProgress,
@@ -12,7 +11,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
-import { supabaseAdmin } from "../../../supabase/supabase";
+import { supabase, supabaseAdmin } from "../../../supabase/supabase";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { Delete, Style as CardsIcon, Category as TemplatesIcon, FilterList } from "@mui/icons-material";
@@ -241,17 +240,25 @@ const Products = () => {
     queryFn: fetchAllCardsFromDB,
     staleTime: 1000 * 60 * 5,
   });
-  const { data: templates = [], isLoading: isLoadingTemplates, isError: isErrorTemplates } =
-    useQuery<TemplateDesign[]>({
-      queryKey: ["templates"],
-      queryFn: fetchAllTempletDesigns,
-      staleTime: 1000 * 60 * 5,
-    });
+  const { data: templates = [], isLoading: isLoadingTemplates, isError: isErrorTemplates } = useQuery<TemplateDesign[]>({
+    queryKey: ["templates-list"], // الگ key رکھو
+    queryFn: fetchAllTempletDesigns,
+    staleTime: 1000 * 60 * 10, // 10 منٹ تک cache رکھو
+    gcTime: 1000 * 60 * 30,    // garbage collect 30 منٹ بعد
+  });
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: fetchAllCategoriesFromDB,
     staleTime: 1000 * 60 * 30,
   });
+
+  // const PAGE_SIZE = 20;
+
+  // const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+  //   queryKey: ["templates"],
+  //   queryFn: ({ pageParam = 0 }) => fetchTemplatesPaginated(pageParam),
+  //   getNextPageParam: (lastPage) => lastPage.nextCursor,
+  // });
 
   const norm = (s?: string | null) => (s ?? "").trim();
   const ciEq = (a: string, b: string) =>
@@ -472,9 +479,21 @@ const Products = () => {
     return null;
   };
 
-  const onEditTemplate = (tpl: TemplateDesign & any) => {
+  const onEditTemplate = async (tpl: TemplateDesign & any) => {
+
+    const { data: fullTpl, error } = await supabase
+      .from("templetDesign")
+      .select("*") // ← اب صرف ایک row، raw_stores وغیرہ لے لو
+      .eq("id", tpl.id)
+      .single();
+
+    if (error || !fullTpl) {
+      toast.error("Failed to load template details");
+      return;
+    }
+
     const rawStores = safeParse(
-      tpl.raw_stores ?? tpl.rawStores ?? tpl.rawstores ?? null
+      fullTpl.raw_stores ?? fullTpl.rawStores ?? null
     );
 
     navigate(ADMINS_DASHBOARD.ADD_NEW_TEMPLETS_CARDS, {

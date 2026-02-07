@@ -2,6 +2,7 @@
 import toast from 'react-hot-toast';
 import { supabase } from '../supabase/supabase';
 import { createSyncStoragePersister } from './../../node_modules/@tanstack/query-sync-storage-persister/src/index';
+import type { CategoryKey } from '../constant/data';
 export const storagePersister = createSyncStoragePersister({
   storage: window.localStorage,
 });
@@ -199,3 +200,13 @@ export const preservePdfItems = (prev: any[], next: any[]) => {
 
   return [...nextNoPdf, ...keepPdf];
 };
+
+// canvasMultiplier.ts
+export const FOUR_X_CATEGORIES: Record<any, number> = {
+  "Business Cards": 5.5,
+  "Coasters": 4.5,
+  "Mugs": 4,
+};
+
+export const getCanvasMultiplier = (category: CategoryKey) =>
+  FOUR_X_CATEGORIES[category] ?? 2;

@@ -168,7 +168,7 @@ const TempletForm = () => {
         (location.state as any)?.product
     );
     const [previewImage, setPreviewImage] = useState<string | undefined>(prevImg);
-    const [previewImageRatio, setPreviewImageRatio] = useState<number | null>(null);
+    // const [previewImageRatio, setPreviewImageRatio] = useState<number | null>(null);
 
     useEffect(() => {
         const rs = navState?.rawStores;
@@ -261,19 +261,19 @@ const TempletForm = () => {
         return () => { mounted = false; };
     }, [isEditMode, templateId]);
 
-    useEffect(() => {
-        if (!previewImage) {
-            setPreviewImageRatio(null);
-            return;
-        }
-        const img = new Image();
-        img.onload = () => {
-            const ratio = img.width && img.height ? img.width / img.height : null;
-            setPreviewImageRatio(ratio && Number.isFinite(ratio) ? ratio : null);
-        };
-        img.onerror = () => setPreviewImageRatio(null);
-        img.src = previewImage;
-    }, [previewImage]);
+    // useEffect(() => {
+    //     if (!previewImage) {
+    //         setPreviewImageRatio(null);
+    //         return;
+    //     }
+    //     const img = new Image();
+    //     img.onload = () => {
+    //         const ratio = img.width && img.height ? img.width / img.height : null;
+    //         setPreviewImageRatio(ratio && Number.isFinite(ratio) ? ratio : null);
+    //     };
+    //     img.onerror = () => setPreviewImageRatio(null);
+    //     img.src = previewImage;
+    // }, [previewImage]);
 
     const rawStores = rawStoresState;
 
@@ -522,7 +522,7 @@ const TempletForm = () => {
                     pixelRatio: 2,
                     backgroundColor: "#ffffff",
                     style: { transform: "none" },
-                    skipFonts: true,
+                    skipFonts: false,
                     fontEmbedCSS: "",
                 });
             } catch (e) {
@@ -579,50 +579,39 @@ const TempletForm = () => {
 
     const mmToPx = (mm: number) => (mm / 25.4) * 96;
 
-    function coverScale(cardPxW: number, cardPxH: number, boxW: number, boxH: number) {
-        const scale = Math.min(boxW / cardPxW, boxH / cardPxH);
-        const w = cardPxW * scale;
-        const h = cardPxH * scale;
-        const offsetX = (boxW - w) / 2;
-        const offsetY = (boxH - h) / 2;
-        return { scale, w, h, offsetX, offsetY };
-    }
-
-    const categoryRatio = useMemo(() => {
-        const name = String(selectedCategoryName ?? "").toLowerCase();
-        if (name.includes("mug")) return 228 / 88.9;
-        if (name.includes("business card")) return 85 / 55;
-        return null;
-    }, [selectedCategoryName]);
-
-    const previewRatio = useMemo(() => {
-        const baseW =
-            rawStores?.config?.fitCanvas?.width ??
-            mmToPx(rawStores?.config?.mmWidth ?? 0);
-        const baseH =
-            rawStores?.config?.fitCanvas?.height ??
-            mmToPx(rawStores?.config?.mmHeight ?? 0);
-
-        if (baseW && baseH) return baseW / baseH;
-        if (previewImageRatio) return previewImageRatio;
-        if (categoryRatio) return categoryRatio;
-        return 5 / 7;
-    }, [rawStores?.config?.fitCanvas?.width, rawStores?.config?.fitCanvas?.height, rawStores?.config?.mmWidth, rawStores?.config?.mmHeight, previewImageRatio, categoryRatio]);
-
-    const previewBounds = useMemo(() => {
-        if (isMdUp) return { maxW: 500, maxH: 700 };
-        if (isSmUp) return { maxW: 500, maxH: 700 };
-        return { maxW: 500, maxH: 700 };
-    }, [isMdUp, isSmUp]);
+    // preview کی max boundaries (responsive)
+    // const previewBounds = useMemo(() => {
+    //     if (isMdUp) return { maxW: 600, maxH: 900 };
+    //     if (isSmUp) return { maxW: 500, maxH: 750 };
+    //     return { maxW: 360, maxH: 540 };
+    // }, [isMdUp, isSmUp]);
 
     const previewSize = useMemo(() => {
-        const ratio = previewRatio > 0 ? previewRatio : 5 / 7;
-        const { maxW, maxH } = previewBounds;
-        const byWidth = maxW / ratio <= maxH;
-        const width = byWidth ? maxW : maxH * ratio;
-        const height = byWidth ? maxW / ratio : maxH;
+        const canvasW = rawStores?.config?.fitCanvas?.width ?? mmToPx(rawStores?.config?.mmWidth ?? 210);
+        const canvasH = rawStores?.config?.fitCanvas?.height ?? mmToPx(rawStores?.config?.mmHeight ?? 297);
+        console.log(canvasH, 'h', canvasW, 'w')
+
+        if (!canvasW || !canvasH) {
+            // fallback اگر canvas سائز موجود نہ ہو
+            return { width: 400, height: 565 };
+        }
+
+        // const { maxW, maxH } = previewBounds;
+
+        // canvas کو viewport کے اندر فٹ کرو، aspect ratio برقرار رکھتے ہوئے
+        // const scale = Math.min(maxW / canvasW, maxH / canvasH, 1);
+        const width = canvasW;
+        const height = canvasH;
+
         return { width, height };
-    }, [previewRatio, previewBounds]);
+    }, [
+        rawStores?.config?.fitCanvas?.width,
+        rawStores?.config?.fitCanvas?.height,
+        rawStores?.config?.mmWidth,
+        rawStores?.config?.mmHeight,
+        isMdUp,
+        isSmUp,
+    ]);
 
 
     const MUGS = navState.rawStores?.category === 'Mugs'
@@ -645,125 +634,176 @@ const TempletForm = () => {
                 // overflow: "hidden",
             }}
         >
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4,m:'auto',justifyContent:'center',alignItems:'center' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, m: 'auto', justifyContent: 'center', alignItems: 'center' }}>
 
                 {/* Left Preview */}
                 <Box
                     sx={{
-                        width: MUGS || BCARD ? previewSize.width * 2 : previewSize.width,
-                        height: previewSize.height * (MUGS || BCARD ? 2 : 1),
+                        width: previewSize.width,
+                        height: previewSize.height,
                         maxWidth: "100%",
-                        borderRadius: "10px",
-                        boxShadow: "3px 5px 8px gray",
+                        borderRadius: "12px",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
                         position: "relative",
                         overflow: "hidden",
-                        backgroundColor: "transparent",
+                        backgroundColor: "#ffffff",
+                        mx: "auto",
                     }}
                 >
                     <Box
                         ref={previewRef}
                         sx={{
-                            width: MUGS || BCARD ? previewSize.width * 2 : previewSize.width,
-                            height: previewSize.height * (MUGS || BCARD ? 2 : 1),
-                            maxWidth: "100%",
+                            width: "100%",
+                            height: "100%",
                             position: "relative",
-                            borderRadius: "10px",
                             backgroundColor: "transparent",
                         }}
                     >
                         {previewImage ? (
-                            <Box component={"img"} src={`${previewImage}`} sx={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                        ) : (
-                            <>
-                                {rawStores ? (
-                                    (() => {
-                                        const firstSlide = rawStores.slides?.[0];
-                                        if (!firstSlide) return <Box sx={{ color: "#999", p: 2 }}>No slide data</Box>;
+                            <Box
+                                component="img"
+                                src={previewImage}
+                                sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "contain",
+                                    display: "block",
+                                }}
+                            />
+                        ) : rawStores ? (
+                            (() => {
+                                const firstSlide = rawStores.slides?.[0];
+                                if (!firstSlide) {
+                                    return (
+                                        <Box
+                                            sx={{
+                                                height: "100%",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                color: "#999",
+                                                p: 4,
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            <Typography variant="body1">No slide data available</Typography>
+                                        </Box>
+                                    );
+                                }
 
-                                        const slideTextElements =
-                                            rawStores.textElements?.filter((te: any) => te.slideId === firstSlide.id) || [];
-                                        const slideImageElements =
-                                            rawStores.imageElements?.filter((ie: any) => ie.slideId === firstSlide.id) || [];
-                                        const slideBg = rawStores.slideBg?.[firstSlide.id] || null;
+                                const slideTextElements = rawStores.textElements?.filter((te: any) => te.slideId === firstSlide.id) || [];
+                                const slideImageElements = rawStores.imageElements?.filter((ie: any) => ie.slideId === firstSlide.id) || [];
+                                const slideBg = rawStores.slideBg?.[firstSlide.id] || null;
 
-                                        const baseW = rawStores.config?.fitCanvas?.width ?? mmToPx(rawStores.config?.mmWidth ?? 210);
-                                        const baseH = rawStores.config?.fitCanvas?.height ?? mmToPx(rawStores.config?.mmHeight ?? 297);
+                                // canvas کا سائز جو ایڈیٹر سے آیا ہے
+                                const canvasW = rawStores.config?.fitCanvas?.width ?? mmToPx(rawStores.config?.mmWidth ?? 210);
+                                const canvasH = rawStores.config?.fitCanvas?.height ?? mmToPx(rawStores.config?.mmHeight ?? 297);
 
-                                        const boxW = MUGS || BCARD ? previewSize.width * 2 : previewSize.width;
-                                        const boxH = MUGS || BCARD ? previewSize.height * 2 : previewSize.height;
-                                        const { scale, w, h, offsetX, offsetY } = coverScale(baseW, baseH, boxW, boxH);
+                                // preview کنٹینر کا سائز
+                                const containerW = previewSize.width;
+                                const containerH = previewSize.height;
 
-                                        return (
-                                            <Box sx={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
+                                // scale = container / canvas
+                                const scale = Math.min(containerW / canvasW, containerH / canvasH);
+
+                                return (
+                                    <Box
+                                        sx={{
+                                            width: "100%",
+                                            height: "100%",
+                                            position: "relative",
+                                            overflow: "hidden",
+                                            bgcolor: "#fff",
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                width: "100%",
+                                                height: "100%",
+                                                position: "relative",
+                                                bgcolor: slideBg?.color || "#ffffff",
+                                                overflow: "hidden",
+                                            }}
+                                        >
+                                            {/* Background Image */}
+                                            {slideBg?.image && (
                                                 <Box
+                                                    component="img"
+                                                    src={slideBg.image}
+                                                    sx={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                        objectFit: "cover",
+                                                        position: "absolute",
+                                                        inset: 0,
+                                                    }}
+                                                />
+                                            )}
+
+                                            {/* Images */}
+                                            {slideImageElements.map((img: any) => (
+                                                <Box
+                                                    key={img.id}
+                                                    component="img"
+                                                    src={img.src}
                                                     sx={{
                                                         position: "absolute",
-                                                        left: offsetX,
-                                                        top: offsetY,
-                                                        width: `${w}`,
-                                                        height: `${h}`,
-                                                        backgroundColor: slideBg?.color || "#cc2727ff",
+                                                        left: `${img.x * scale}px`,
+                                                        top: `${img.y * scale}px`,
+                                                        width: `${img.width * scale}px`,
+                                                        height: `${img.height * scale}px`,
+                                                        objectFit: "fill",
+                                                    }}
+                                                />
+                                            ))}
+
+                                            {/* Text */}
+                                            {slideTextElements.map((txt: any) => (
+                                                <Typography
+                                                    sx={{
+                                                        position: "absolute",
+                                                        left: `${txt.x * scale}px`,
+                                                        top: `${txt.y * scale}px`,
+                                                        width: `${txt.width * scale}px`,
+                                                        height: `${txt.height * scale}px`,
+                                                        fontWeight: txt.bold ? 700 : 400,
+                                                        fontStyle: txt.italic ? "italic" : "normal",
+                                                        fontSize: txt.fontSize ?? 20,
+                                                        fontFamily: txt.fontFamily ?? "Arial",
+                                                        color: txt.color ?? "#111111",
+                                                        textAlign: txt.align ?? "center",
+                                                        // width: "100%", height: "100%",
+                                                        whiteSpace: "pre-wrap",
+                                                        overflowWrap: "break-word",
+                                                        wordBreak: "break-word",
+                                                        alignItems: "center", display: "flex",
+                                                        userSelect: "none", pointerEvents: "none",
+                                                        justifyContent: txt.justify,
+                                                        // transform: txt.mirrorOn ? "scaleX(-1)" : "none",
                                                     }}
                                                 >
-                                                    {slideBg?.image && (
-                                                        <Box
-                                                            component="img"
-                                                            src={slideBg.image}
-                                                            sx={{
-                                                                width: "100%",
-                                                                height: "100%",
-                                                                objectFit: "cover",
-                                                                position: "absolute",
-                                                                top: 0,
-                                                                left: 0,
-                                                            }}
-                                                        />
-                                                    )}
+                                                    {txt.text}
 
-                                                    {slideImageElements.map((img: any) => (
-                                                        <Box
-                                                            key={img.id}
-                                                            component="img"
-                                                            src={img.src}
-                                                            sx={{
-                                                                position: "absolute",
-                                                                top: img.y * scale,
-                                                                left: img.x * scale,
-                                                                width: img.width * scale,
-                                                                height: img.height * scale,
-                                                                objectFit: "cover",
-                                                            }}
-                                                        />
-                                                    ))}
-
-                                                    {slideTextElements.map((txt: any) => (
-                                                        <Typography
-                                                            key={txt.id}
-                                                            sx={{
-                                                                position: "absolute",
-                                                                top: txt.y * scale,
-                                                                left: txt.x * scale,
-                                                                width: txt.width * scale,
-                                                                fontSize: (txt.fontSize ?? 16) * scale,
-                                                                fontFamily: txt.fontFamily,
-                                                                color: txt.color,
-                                                                fontWeight: txt.bold ? 700 : 400,
-                                                                fontStyle: txt.italic ? "italic" : "normal",
-                                                                textAlign: txt.align as any,
-                                                                whiteSpace: "pre-wrap",
-                                                            }}
-                                                        >
-                                                            {txt.text}
-                                                        </Typography>
-                                                    ))}
-                                                </Box>
-                                            </Box>
-                                        );
-                                    })()
-                                ) : (
-                                    <Box sx={{ color: "#999", p: 2 }}>No preview available</Box>
-                                )}
-                            </>
+                                                </Typography>
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                );
+                            })()
+                        ) : (
+                            <Box
+                                sx={{
+                                    height: "100%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#999",
+                                    p: 4,
+                                    textAlign: "center",
+                                }}
+                            >
+                                <Typography>No preview available</Typography>
+                            </Box>
                         )}
                     </Box>
                 </Box>

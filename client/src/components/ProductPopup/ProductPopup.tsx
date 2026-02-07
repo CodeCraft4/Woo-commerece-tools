@@ -33,10 +33,10 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     try {
       localStorage.clear();
       sessionStorage.clear();
-    } catch {}
+    } catch { }
     return;
   }
-  
+
   try {
     const KEYS = ["selectedSize", "selectedVariant", "categorieTemplet", "3dModel", "selectedPrices", "selectedProduct"];
     KEYS.forEach((k) => localStorage.removeItem(k));
@@ -47,7 +47,7 @@ function clearEditorStorage(opts?: { all?: boolean }) {
       const key = localStorage.key(i);
       if (key && key.startsWith("templetEditor:draft:")) localStorage.removeItem(key);
     }
-  } catch {}
+  } catch { }
 }
 
 export type CategoryType = {
@@ -216,8 +216,8 @@ const ProductPopup = (props: ProductsPopTypes) => {
   const getPriceForKey = (key: any) =>
     toNum(
       (actualPrices as any)?.[key] ??
-        (actualPrices as any)?.[String(key).toUpperCase?.()] ??
-        (actualPrices as any)?.[String(key).toLowerCase?.()],
+      (actualPrices as any)?.[String(key).toUpperCase?.()] ??
+      (actualPrices as any)?.[String(key).toLowerCase?.()],
       0
     );
 
@@ -293,7 +293,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
       localStorage.setItem("selectedPrices", JSON.stringify({ actual: actualPrices, sale: {} }));
       localStorage.setItem("selectedProduct", JSON.stringify(selectedProduct));
       localStorage.setItem("selectedCategory", String(categoryName));
-    } catch {}
+    } catch { }
 
     resetSlide1State();
     resetSlide2State();
@@ -328,10 +328,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
       const draftId = isContinueDraft
         ? ensureDraftCardId(String(cate?.id ?? ""))
         : (() => {
-            const id = newUuid();
-            setDraftCardId(id);
-            return id;
-          })();
+          const id = newUuid();
+          setDraftCardId(id);
+          return id;
+        })();
 
       setTimeout(() => {
         navigate(`${USER_ROUTES.HOME}/${draftId}`, {
@@ -505,32 +505,41 @@ const ProductPopup = (props: ProductsPopTypes) => {
                         opacity: disabled ? 0.5 : 1,
                         cursor: disabled ? "not-allowed" : "pointer",
                         border: `3px solid ${selectedPlan === opt.key ? "#8D6DA1" : "transparent"}`,
+                        p: 2,
+                        borderRadius: 2,
                       }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <input
-                          type="radio"
-                          name="plan"
-                          disabled={disabled}
-                          checked={selectedPlan === opt.key}
-                          onChange={() => !disabled && setSelectedPlan(opt.key)}
-                          style={{ width: "30px", height: "30px" }}
-                        />
-                        <Box>
-                          <Typography sx={{ fontWeight: 700 }}>{opt.title}</Typography>
-
-                          {/* helper/sub text if you want */}
-                          {"helper" in opt && (opt as any).helper ? (
-                            <Typography sx={{ fontSize: 12, opacity: 0.9 }}>
-                              {(opt as any).helper}
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                          <input
+                            type="radio"
+                            name="plan"
+                            disabled={disabled}
+                            checked={selectedPlan === opt.key}
+                            onChange={() => !disabled && setSelectedPlan(opt.key)}
+                            style={{ width: "24px", height: "24px" }}
+                          />
+                          <Box>
+                            <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                              {opt.title}
                             </Typography>
-                          ) : null}
-
-                          {disabled ? <Typography sx={{ fontSize: 12 }}>Not available</Typography> : null}
+                            {/* {opt.sub && (
+                              <Typography sx={{ fontSize: "0.85rem", opacity: 0.8, mt: 0.5 }}>
+                                {opt.sub}
+                              </Typography>
+                            )} */}
+                            {disabled && (
+                              <Typography sx={{ fontSize: "0.8rem", color: "#d32f2f", mt: 0.5 }}>
+                                Not available
+                              </Typography>
+                            )}
+                          </Box>
                         </Box>
-                      </Box>
 
-                      <Typography variant="h5">{disabled ? "—" : `£${price.toFixed(2)}`}</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 700, minWidth: 80, textAlign: "right" }}>
+                          {disabled ? "—" : `£${price.toFixed(2)}`}
+                        </Typography>
+                      </Box>
                     </Box>
                   );
                 })}
@@ -570,7 +579,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
                 personal
                 loading={loading}
                 onClick={handlePersonalize}
-                // ✅ optional: disable button UI too
+              // ✅ optional: disable button UI too
               />
             </Box>
 
