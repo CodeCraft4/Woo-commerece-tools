@@ -8,6 +8,7 @@ import { Box, Typography } from "@mui/material";
 import { ArrowBackIos } from "@mui/icons-material";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
+import toast from "react-hot-toast";
 
 const MUG_URL = "/assets/modals/tea_cup.glb";
 
@@ -254,33 +255,24 @@ const init = () => {
   );
 };
 
-async function flipImageHorizontallyToDataUrl(src: string): Promise<string> {
-  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const im = new Image();
-    im.crossOrigin = "anonymous"; // important if src is remote
-    im.onload = () => resolve(im);
-    im.onerror = reject;
-    im.src = src;
-  });
+function flipCanvasDataUrl(dataUrl: string): string {
+  const img = new Image();
+  img.src = dataUrl;
 
   const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not supported");
 
-  // optional white background
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  canvas.width = img.width;
+  canvas.height = img.height;
 
-  // flip
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
   ctx.drawImage(img, 0, 0);
 
-  return canvas.toDataURL("image/png", 1);
+  return canvas.toDataURL("image/jpeg", 0.9);
 }
+
 
 
 // captured image 
@@ -291,7 +283,7 @@ function captureMugPreviewJpg(): string | null {
   renderer.render(scene, camera);
 
   const canvas = renderer.domElement as HTMLCanvasElement;
-  return canvas.toDataURL("image/jpeg", 0.9);
+  return canvas.toDataURL("image/jpeg", 0.95);
 }
 
 
@@ -300,7 +292,6 @@ const TempletEditorPreview: React.FC = () => {
     state?: { slides?: any[]; mugImage?: string };
   };
   const mugImageSrc: any = state?.mugImage ?? null;
-  console.log(mugImageSrc, '---imgUrl')
 
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -358,38 +349,23 @@ const TempletEditorPreview: React.FC = () => {
             onClick={async () => {
               setLoading(true);
               try {
-                // ✅ 1) capture 3D preview as JPG for Subscription display
-                const mugPreviewJpg = captureMugPreviewJpg();
-                if (mugPreviewJpg) {
-                  sessionStorage.setItem("mugImage", mugPreviewJpg);
-                }
+                if (!renderer) throw new Error("Renderer not ready");
 
-                // ✅ 2) keep flipped design only for PDF/print flow
-                const flipped = await flipImageHorizontallyToDataUrl(mugImageSrc);
+                // Capture current 3D preview as JPEG
+                const mugPreview = captureMugPreviewJpg();
+                if (!mugPreview) throw new Error("Failed to capture mug preview");
+                const flipped = flipCanvasDataUrl(mugImageSrc);
+                console.log(flipped)
                 sessionStorage.setItem("slides", JSON.stringify({ slide1: flipped }));
-
+                toast.success("Preview saved successfully!");
                 navigate(USER_ROUTES.SUBSCRIPTION);
-              } catch (e) {
-                console.error(e);
+              } catch (err) {
+                console.error("Download failed:", err);
+                toast.error("Failed to prepare download. Try again.");
               } finally {
                 setLoading(false);
               }
             }}
-
-          // onClick={async () => {
-          //   setLoading(true);
-          //   try {
-          //     const flipped = await flipImageHorizontallyToDataUrl(mugImageSrc);
-          //     // ✅ store in "cache"
-          //     const slidesObj = { slide1: flipped };
-          //     sessionStorage.setItem("slides", JSON.stringify(slidesObj));
-          //     navigate(USER_ROUTES.SUBSCRIPTION);
-          //   } catch (e) {
-          //     console.error(e);
-          //   } finally {
-          //     setLoading(false);
-          //   }
-          // }}
           />
         </Box>
       </Box>

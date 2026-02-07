@@ -384,9 +384,6 @@ export default function TempletEditor() {
   }, [productId, state?.templetDesign]);
 
 
-  const mmW = adminDesign?.config.mmWidth ?? 210;
-  const mmH = adminDesign?.config.mmHeight ?? 297;
-
   // ====== Render sizing ======
   const canvasSize = useMemo(() => {
     // ⭐ DB سے exact width/height لے لو (ایڈیٹر میں جو store ہوا تھا)
@@ -455,8 +452,8 @@ export default function TempletEditor() {
 
   const isMugCategory = (cat?: string) => /mug/i.test(String(cat ?? ""));
   // const isBusinessCardCategory = (cat?: string) => /business\s*card/i.test(String(cat ?? ""));
-  const is3DCategory = (cat?: string) =>
-    /mug/i.test(String(cat ?? ""));
+  // const is3DCategory = (cat?: string) =>
+    // /mug/i.test(String(cat ?? ""));
 
   // 1. Capture function ko PNG banao + fonts include karo + blob handle karo
   const capturePngFromNode = async (
@@ -471,26 +468,27 @@ export default function TempletEditor() {
       const h = Math.max(1, Math.round(opts?.height ?? rect.height));
 
       // PNG capture — quality full, fonts skip nahi karo
-      return await htmlToImage.toPng(node, {
-        quality: 1.0,                    // full quality PNG
-        pixelRatio: 2,                   // sharp output
-        backgroundColor: opts?.background ?? "transparent",
+      return await htmlToImage.toJpeg(node, {
+        quality: 0.85,                 // 0.8–0.9 best balance
+        pixelRatio: 2,
+        backgroundColor:"#ffffff", // JPG needs background
         filter: (n: Node) => {
-          // sirf capture-exclude class wale exclude karo
           return !(n instanceof Element && n.classList?.contains("capture-exclude"));
         },
         cacheBust: true,
         skipFonts: false,
-        // fontEmbedCSS: "",             
         width: w,
         height: h,
         style: { transform: "none" },
       });
 
+
     } catch (e) {
       console.error("capturePngFromNode failed:", e);
+      alert(e);   // temporary
       return null;
     }
+
   };
 
   // 2. Har slide capture karo function
@@ -524,7 +522,7 @@ export default function TempletEditor() {
 
     const navStateBase: any = {
       slides: userSlides,
-      config: { mmWidth: mmW, mmHeight: mmH, slideLabels: adminDesign.config.slideLabels },
+      config: { mmWidth: artboardWidth, mmHeight: artboardHeight, slideLabels: adminDesign.config.slideLabels },
       canvasPx: adminDesign.canvasPx,
       slideIndex: activeSlide,
       category: adminDesign.category,
@@ -549,12 +547,6 @@ export default function TempletEditor() {
           state: { ...navStateBase, mugImage: allPngs[0] || null }, // first slide as main
         });
         return;
-      }
-
-      if (is3DCategory(adminDesign.category)) {
-        navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
-          state: navStateBase,
-        });
       } else {
         navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, {
           state: navStateBase,
@@ -612,13 +604,13 @@ export default function TempletEditor() {
           ref={scrollRef}
           sx={{
             display: "flex",
-            height: "85vh",
+            height: "83vh",
             flexDirection: "row",
             alignItems: "center",
             overflowX: "auto",
             overflowY: "hidden",
             width: "100%",
-            p: 2,
+            p: 0,
             gap: isTablet ? 4 : 7,
             justifyContent: "flex-start",
             minWidth: "100%",

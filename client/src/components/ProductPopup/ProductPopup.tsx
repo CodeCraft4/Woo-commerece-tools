@@ -43,6 +43,10 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     sessionStorage.removeItem("slides");
     sessionStorage.removeItem("slides_backup");
     sessionStorage.removeItem("mugImage");
+    sessionStorage.removeItem("cart-store-v2");
+    sessionStorage.removeItem("draft:card_id");
+
+
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const key = localStorage.key(i);
       if (key && key.startsWith("templetEditor:draft:")) localStorage.removeItem(key);
