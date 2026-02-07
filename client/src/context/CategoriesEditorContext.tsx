@@ -4,6 +4,7 @@ import * as htmlToImage from "html-to-image";
 import { CATEGORY_CONFIG, type CategoryKey } from "../constant/data";
 import { supabaseAdmin } from "../supabase/supabase";
 import toast from "react-hot-toast";
+import { getCanvasMultiplier } from "../lib/lib";
 
 /* ---------- Types ---------- */
 export type Slide = { id: number };
@@ -397,19 +398,40 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
       const dbCategory = meta?.cardcategory?.trim() || null;
 
       // ✅ store "canvas size" safely INSIDE raw_stores (json) to avoid DB schema changes
-      const canvasMm = { w: rawStores.config.mmWidth, h: rawStores.config.mmHeight };
+      const multiplier = getCanvasMultiplier(rawStores.category);
+
+      // REAL product size (never change)
+      const productMm = {
+        w: rawStores.config.mmWidth,
+        h: rawStores.config.mmHeight,
+      };
+
+      // EDITOR / RENDER size (multiplied)
+      const canvasMm = {
+        w: productMm.w * multiplier,
+        h: productMm.h * multiplier,
+      };
+
       const canvasPx = {
         w: Math.round(mmToPx(canvasMm.w, 96)),
         h: Math.round(mmToPx(canvasMm.h, 96)),
         dpi: 96,
       };
 
+
+      const configWithMultiplier = {
+        ...rawStores.config,
+        multiplier, // 👈 future reference ke liye
+      };
+
+
+
       const payload: any = {
         // DB COLUMN: category (must be the form cardcategory)
         category: dbCategory,
 
         // keep config & slides
-        config: rawStores.config,
+        config: configWithMultiplier,
         slides: normSlides,
 
         img_url: imgUrl ?? null,
@@ -426,7 +448,12 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
           editorCategory: rawStores.category, // CategoryKey: Invites/Stickers etc
 
           // ✅ size used by your renderers
-          canvas: { mm: canvasMm, px: canvasPx },
+          canvas: {
+            productMm,   // real size (printing)
+            mm: canvasMm, // editor size
+            px: canvasPx, // customer render
+            multiplier,
+          },
         },
 
         title: meta?.cardname ?? rawStores?.config?.label ?? null,

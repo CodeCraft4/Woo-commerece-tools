@@ -1,6 +1,6 @@
 import {
   Box, IconButton, Typography, TextField, Select, MenuItem, Tooltip,
-  FormControl, InputLabel, Divider, Chip, Stack, useTheme, useMediaQuery, Switch,
+  FormControl, InputLabel, Divider, Chip, Stack, Switch,
   Paper
 } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
@@ -27,7 +27,7 @@ import {
 } from "../../../context/CategoriesEditorContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
-import { fitCanvas, uuid } from "../../../lib/lib";
+import { getCanvasMultiplier, uuid } from "../../../lib/lib";
 
 /* ----------------- Utils ----------------- */
 const readFileAsDataUrl = (file: File): Promise<string> =>
@@ -64,8 +64,8 @@ const toModelX = (mirrorOn: boolean, canvasW: number, viewX: number, elW: number
 
 /* --------------- Component --------------- */
 const CategoriesEditor = () => {
-  const theme = useTheme();
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  // const theme = useTheme();
+  // const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const {
     category, setCategory, config,
     slides, setSlides,
@@ -112,31 +112,42 @@ const CategoriesEditor = () => {
   const thumbRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // ====== Viewport-aware canvas sizing ======
-  const [viewport, setViewport] = useState({ w: 1200, h: 800 });
-  useEffect(() => {
-    const onResize = () => {
-      const headerFooterReserve = 240;
-      setViewport({ w: window.innerWidth, h: Math.max(320, window.innerHeight - headerFooterReserve) });
-    };
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
-  const canvasSize = useMemo(
-    () => fitCanvas(
-      config.mmWidth,
-      config.mmHeight,
-      viewport.w * (isTablet ? 0.95 : 0.72),
-      viewport.h
-    ),
-    [config.mmWidth, config.mmHeight, viewport, isTablet]
-  );
+
+  const multiplier = getCanvasMultiplier(category);
+
+  const canvasPx = {
+    width: config.mmWidth * multiplier,
+    height: config.mmHeight * multiplier,
+  };
+
+
+  // ====== Viewport-aware canvas sizing ======
+  // const [viewport, setViewport] = useState({ w: 1200, h: 800 });
+  // useEffect(() => {
+  //   const onResize = () => {
+  //     const headerFooterReserve = 240;
+  //     setViewport({ w: window.innerWidth, h: Math.max(320, window.innerHeight - headerFooterReserve) });
+  //   };
+  //   onResize();
+  //   window.addEventListener("resize", onResize);
+  //   return () => window.removeEventListener("resize", onResize);
+  // }, []);
+
+  // const canvasSize = useMemo(
+  //   () => fitCanvas(
+  //     config.mmWidth,
+  //     config.mmHeight,
+  //     viewport.w * (isTablet ? 0.95 : 0.72),
+  //     viewport.h
+  //   ),
+  //   [config.mmWidth, config.mmHeight, viewport, isTablet]
+  // );
 
   // current slide id
-  const artboardWidth = canvasSize.width;
-  const artboardHeight = canvasSize.height;
+  const artboardWidth = canvasPx.width;
+  const artboardHeight = canvasPx.height;
+
   const currentSlideId = slides[selectedSlide]?.id ?? null;
   const colorInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -490,7 +501,9 @@ const CategoriesEditor = () => {
         boxShadow: 3,
         borderRadius: 2,
         zIndex: 5,
-        height: { md: canvasSize.height, xs: "auto" },
+        // width: canvasPx.width,
+        height: canvasPx.height,
+        // height: { md: canvasSize.height, xs: "auto" },
         overflowX: { xs: "hidden", md: "hidden" },
         overflowY: { xs: "hidden", md: "auto" },
         maxWidth: { xs: "100%", md: "none" },
@@ -666,8 +679,8 @@ const CategoriesEditor = () => {
     const configWithFit = {
       ...config,
       fitCanvas: {
-        width: Math.round(canvasSize.width),
-        height: Math.round(canvasSize.height),
+        width: Math.round(canvasPx.width),
+        height: Math.round(canvasPx.height),
       },
     };
 
@@ -791,7 +804,8 @@ const CategoriesEditor = () => {
               ref={index === 0 ? registerFirstSlideNode : undefined}
               sx={{
                 flex: "0 0 auto",
-                width: canvasSize.width, height: canvasSize.height,
+                width: canvasPx.width,
+                height: canvasPx.height,
                 borderRadius: 2,
                 boxShadow: index === selectedSlide ? 8 : 4,
                 position: "relative",
@@ -836,7 +850,7 @@ const CategoriesEditor = () => {
 
               {/* Toolbar */}
               {index === selectedSlide && (
-                <Box sx={{ position: { xs: "static", md: "absolute" }, left: { md: -90 }, top: 0, mb: { xs: 1, md: 0 } }}>
+                <Box sx={{ position: { xs: "static", md: "absolute" }, left: { md: -100 }, top: 0, mb: { xs: 1, md: 0 } }}>
                   {Toolbar}
                 </Box>
               )}
@@ -891,7 +905,7 @@ const CategoriesEditor = () => {
                     size: { width: el.width, height: el.height },
                     bounds: "parent" as const,
                     dragCancel: ".no-drag",
-                    disableDragging: isInactive || !isEditable,
+                    // disableDragging: isInactive || !isEditable,
                     enableResizing: isInactive || !isEditable
                       ? false
                       : { bottomRight: true },
@@ -956,7 +970,7 @@ const CategoriesEditor = () => {
                             <Box sx={{ position: "absolute", top: -15, left: -2, display: "flex", gap: 0.5, zIndex: 9999 }}>
                               <Tooltip title="Backward">
                                 <IconButton
-                                  sx={{ bgcolor: 'black', color: 'white', width: 20, height: 20,'&:hover': { bgcolor: '#424242' } }}
+                                  sx={{ bgcolor: 'black', color: 'white', width: 20, height: 20, '&:hover': { bgcolor: '#424242' } }}
                                   className="no-drag"
                                   size="small"
                                   onClick={(e) => { e.stopPropagation(); sendBackward({ type: "image", id: el.id }); }}
@@ -967,7 +981,7 @@ const CategoriesEditor = () => {
 
                               <Tooltip title="Forward">
                                 <IconButton
-                                  sx={{ bgcolor: 'black', color: 'white', width: 20, height: 20,'&:hover': { bgcolor: '#424242' } }}
+                                  sx={{ bgcolor: 'black', color: 'white', width: 20, height: 20, '&:hover': { bgcolor: '#424242' } }}
                                   className="no-drag"
                                   size="small"
                                   onClick={(e) => { e.stopPropagation(); bringForward({ type: "image", id: el.id }); }}
@@ -979,7 +993,7 @@ const CategoriesEditor = () => {
                               {/* ✅ NEW: Copy/Duplicate */}
                               <Tooltip title="Duplicate">
                                 <IconButton
-                                  sx={{ bgcolor: 'black', color: 'white', width: 24, height: 26,'&:hover': { bgcolor: '#424242' } }}
+                                  sx={{ bgcolor: 'black', color: 'white', width: 24, height: 26, '&:hover': { bgcolor: '#424242' } }}
                                   className="no-drag"
                                   size="small"
                                   onClick={(e) => { e.stopPropagation(); duplicateElement({ type: "image", id: el.id }); }}
@@ -1024,7 +1038,7 @@ const CategoriesEditor = () => {
                           <Box sx={{ position: "absolute", top: -15, left: -2, display: "flex", gap: 0.5, zIndex: 9999 }}>
                             <Tooltip title="Backward">
                               <IconButton
-                                sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18,'&:hover': { bgcolor: '#424242' } }}
+                                sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18, '&:hover': { bgcolor: '#424242' } }}
                                 className="no-drag"
                                 size="small"
                                 onClick={(e) => { e.stopPropagation(); sendBackward({ type: "text", id: el.id }); }}
@@ -1035,7 +1049,7 @@ const CategoriesEditor = () => {
 
                             <Tooltip title="Forward">
                               <IconButton
-                                sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18,'&:hover': { bgcolor: '#424242' } }}
+                                sx={{ bgcolor: 'black', color: 'white', width: 18, height: 18, '&:hover': { bgcolor: '#424242' } }}
                                 className="no-drag"
                                 size="small"
                                 onClick={(e) => { e.stopPropagation(); bringForward({ type: "text", id: el.id }); }}
@@ -1047,7 +1061,7 @@ const CategoriesEditor = () => {
                             {/* ✅ NEW: Copy/Duplicate */}
                             <Tooltip title="Duplicate">
                               <IconButton
-                                sx={{ bgcolor: 'black', color: 'white', width: 24, height: 24,'&:hover': { bgcolor: '#424242' } }}
+                                sx={{ bgcolor: 'black', color: 'white', width: 24, height: 24, '&:hover': { bgcolor: '#424242' } }}
                                 className="no-drag"
                                 size="small"
                                 onClick={(e) => { e.stopPropagation(); duplicateElement({ type: "text", id: el.id }); }}
@@ -1106,6 +1120,9 @@ const CategoriesEditor = () => {
                               userSelect: "none", pointerEvents: "none",
                               justifyContent: justify,
                               transform: mirrorOn ? "scaleX(-1)" : "none",
+                              whiteSpace: "pre-wrap",
+                              overflowWrap: "break-word",
+                              wordBreak: "break-word",
                             }}
                           >
                             {el.text}
@@ -1205,7 +1222,9 @@ const CategoriesEditor = () => {
         <Box
           onClick={addSlide}
           sx={{
-            flex: "0 0 auto", width: canvasSize.width, height: canvasSize.height,
+            flex: "0 0 auto",
+            width: canvasPx.width,
+            height: canvasPx.height,
             display: 'flex', justifyContent: 'center', alignItems: 'center', m: 'auto',
             borderRadius: 2,
             boxShadow: 8,

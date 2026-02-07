@@ -196,68 +196,60 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
   return null;
 }
 
-export const fetchAllTempletDesigns = async () => {
-  const { data, error } = await supabaseAdmin
+// export const fetchAllTempletDesigns = async () => {
+//   const { data, error } = await supabaseAdmin
+//     .from("templetDesign")
+//     .select("*")
+
+//   if (error) {
+//     console.error("Supabase error:", {
+//       message: error.message,
+//       details: (error as any).details,
+//       hint: (error as any).hint,
+//       code: (error as any).code,
+//     });
+//     throw error;
+//   }
+
+//   return data ?? [];
+// };
+
+export const fetchAllTempletDesigns = async (): Promise<any[]> => {
+  const { data, error } = await supabase
     .from("templetDesign")
-    .select("*")
+    .select(`
+      id,
+      title,
+      category,
+      img_url,
+      created_at,
+      description,
+      sku,
+      "subCategory",
+      "subSubCategory",
+      actualprice,
+      a4price,
+      a5price,
+      usletter,
+      a3price,
+      halfusletter,
+      ustabloid,
+      saleprice,
+      salea4price,
+      salea5price,
+      saleusletter,
+      salea3price,
+      salehalfusletter,
+      saleustabloid
+    `) // ← raw_stores اور slides کو بالکل مت لاؤ
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Supabase error:", {
-      message: error.message,
-      details: (error as any).details,
-      hint: (error as any).hint,
-      code: (error as any).code,
-    });
+    console.error("Templates fetch error:", error);
     throw error;
   }
 
-  return data ?? [];
-};
-
-export const fetchAllTempletDesignsLight = async () => {
-  const PAGE_SIZE = 20; // light rows pe 20/30 theek
-  let from = 0;
-  const out: any[] = [];
-
-  while (true) {
-    const to = from + PAGE_SIZE - 1;
-
-    const { data, error } = await supabaseAdmin
-      .from("templetDesign")
-      .select(`
-        id,
-        img_url,
-        category,
-        title,
-        description,
-        actualprice,
-        saleprice,
-        a4price,
-        a5price,
-        a3price,
-        usletter,
-        halfusletter,
-        ustabloid,
-        salea4price,
-        salea5price,
-        salea3price,
-        saleusletter,
-        salehalfusletter,
-        saleustabloid,
-        subCategory,
-        subSubCategory
-      `)
-      .range(from, to);
-
-    if (error) throw error;
-
-    const rows = data ?? [];
-    out.push(...rows);
-    if (rows.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
-  }
-
-  return out;
+  return data || [];
 };
 
 

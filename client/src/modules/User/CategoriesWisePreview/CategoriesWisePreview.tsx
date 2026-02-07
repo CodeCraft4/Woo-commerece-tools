@@ -198,8 +198,8 @@ const CategoriesWisePreview: React.FC = () => {
         const nw = img.naturalWidth || 1;
         const nh = img.naturalHeight || 1;
 
-        const maxW = Math.floor(window.innerWidth * (isMobile ? 0.92 : 0.70));
-        const maxH = Math.floor(window.innerHeight * 0.72);
+        const maxW = Math.floor(window.innerWidth * (isMobile ? 0.5 : 0.5));
+        const maxH = Math.floor(window.innerHeight * 0.5);
 
         const scale = Math.min(1, maxW / nw, maxH / nh);
 
@@ -256,111 +256,124 @@ const CategoriesWisePreview: React.FC = () => {
       </Box>
 
       {/* Body */}
-      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-        {/* Preview box */}
+      <Box
+        sx={{
+          width: "100%",
+          height: "91vh",                 // پورا viewport height
+          display: "flex",
+          alignItems: "center",            // عمودی مرکز
+          justifyContent: "center",        // افقی مرکز
+          bgcolor: "transparent",          // red ہٹا دیا (اگر چاہیے تو رکھ لو)
+          p: 2,                            // تھوڑا padding اگر چاہیے
+        }}>
+
         <Box
-          sx={{
-            width: box?.w ?? "auto",
-            height: box?.h ?? "auto",
-            maxWidth: "92vw",
-            maxHeight: "72vh",
-            overflow: "hidden",
-            borderRadius: 3,
-            boxShadow: 3,
-            perspective: "1400px",
-            position: "relative",
-            bgcolor: "transparent",
-          }}
-        >
-          {/* BOOK */}
-          <Box sx={{ position: "absolute", inset: 0, transformStyle: "preserve-3d" }}>
-            {/* CURRENT */}
-            <Box
-              sx={{
-                position: "absolute",
-                inset: 0,
-                backfaceVisibility: "hidden",
-                transformOrigin: flipDir === "next" ? "left center" : "right center",
-                transform:
-                  flipping && flipDir === "next"
-                    ? "rotateY(-180deg)"
-                    : flipping && flipDir === "prev"
-                      ? "rotateY(180deg)"
-                      : "rotateY(0deg)",
-                transition: "transform 360ms cubic-bezier(0.22, 1, 0.36, 1)",
-              }}
-            >
-              <Box
-                component="img"
-                src={currentImg}
-                alt="preview"
-                sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
-              />
-            </Box>
-
-            {/* NEXT (behind) */}
-            <Box
-              sx={{
-                position: "absolute",
-                inset: 0,
-                backfaceVisibility: "hidden",
-                transformOrigin: flipDir === "next" ? "left center" : "right center",
-                transform: flipDir === "next" ? "rotateY(180deg)" : "rotateY(-180deg)",
-              }}
-            >
-              <Box
-                component="img"
-                src={nextImg}
-                alt="next"
-                sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
-              />
-            </Box>
-
-            {/* shadow */}
-            {flipping && (
+          sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
+          {/* Preview box */}
+          <Box
+            sx={{
+              width: box?.w ?? "auto",
+              height: box?.h ?? "auto",
+              maxWidth: "92vw",
+              maxHeight: "72vh",
+              overflow: "hidden",
+              borderRadius: 3,
+              boxShadow: 3,
+              perspective: "1400px",
+              position: "relative",
+            }}
+          >
+            {/* BOOK */}
+            <Box sx={{ position: "absolute", inset: 0, transformStyle: "preserve-3d" }}>
+              {/* CURRENT */}
               <Box
                 sx={{
                   position: "absolute",
                   inset: 0,
-                  pointerEvents: "none",
-                  background:
-                    flipDir === "next"
-                      ? "linear-gradient(90deg, rgba(0,0,0,0.15), transparent 60%)"
-                      : "linear-gradient(270deg, rgba(0,0,0,0.15), transparent 60%)",
-                  opacity: 0.9,
-                  transition: "opacity 360ms ease",
+                  backfaceVisibility: "hidden",
+                  transformOrigin: flipDir === "next" ? "left center" : "right center",
+                  transform:
+                    flipping && flipDir === "next"
+                      ? "rotateY(-180deg)"
+                      : flipping && flipDir === "prev"
+                        ? "rotateY(180deg)"
+                        : "rotateY(0deg)",
+                  transition: "transform 360ms cubic-bezier(0.22, 1, 0.36, 1)",
                 }}
-              />
-            )}
+              >
+                <Box
+                  component="img"
+                  src={currentImg}
+                  alt="preview"
+                  sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
+                />
+              </Box>
+
+              {/* NEXT (behind) */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  backfaceVisibility: "hidden",
+                  transformOrigin: flipDir === "next" ? "left center" : "right center",
+                  transform: flipDir === "next" ? "rotateY(180deg)" : "rotateY(-180deg)",
+                }}
+              >
+                <Box
+                  component="img"
+                  src={nextImg}
+                  alt="next"
+                  sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
+                />
+              </Box>
+
+              {/* shadow */}
+              {flipping && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    pointerEvents: "none",
+                    background:
+                      flipDir === "next"
+                        ? "linear-gradient(90deg, rgba(0,0,0,0.15), transparent 60%)"
+                        : "linear-gradient(270deg, rgba(0,0,0,0.15), transparent 60%)",
+                    opacity: 0.9,
+                    transition: "opacity 360ms ease",
+                  }}
+                />
+              )}
+            </Box>
           </Box>
+
+          {/* Pager */}
+          {slideCount >= 2 && (
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+              <IconButton
+                onClick={goPrev}
+                disabled={active === 0 || flipping}
+                sx={{ border: `1px solid ${active === 0 ? "gray" : "#8D6DA1"}`, p: 1 }}
+                aria-label="Previous"
+              >
+                <KeyboardArrowLeft fontSize="large" />
+              </IconButton>
+
+              <Typography sx={{ fontSize: 13, opacity: 0.8 }}>
+                {active + 1} / {slideCount}
+              </Typography>
+
+              <IconButton
+                onClick={goNext}
+                disabled={active === slideCount - 1 || flipping}
+                sx={{ border: `1px solid ${active === slideCount - 1 ? "gray" : "#8D6DA1"}`, p: 1 }}
+                aria-label="Next"
+              >
+                <KeyboardArrowRight fontSize="large" />
+              </IconButton>
+            </Box>
+          )}
+
         </Box>
-
-        {/* Pager */}
-        {slideCount >= 2 && (
-          <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-            <IconButton
-              onClick={goPrev}
-              disabled={active === 0 || flipping}
-              sx={{ border: `1px solid ${active === 0 ? "gray" : "#8D6DA1"}`, p: 1 }}
-              aria-label="Previous"
-            >
-              <KeyboardArrowLeft fontSize="large" />
-            </IconButton>
-
-            <Typography sx={{ fontSize: 13, opacity: 0.8 }}>
-              {active + 1} / {slideCount}
-            </Typography>
-
-            <IconButton
-              onClick={goNext}
-              disabled={active === slideCount - 1 || flipping}
-              sx={{ border: `1px solid ${active === slideCount - 1 ? "gray" : "#8D6DA1"}`, p: 1 }}
-              aria-label="Next"
-            >
-              <KeyboardArrowRight fontSize="large" />
-            </IconButton>
-          </Box>
-        )}
       </Box>
     </>
   );
