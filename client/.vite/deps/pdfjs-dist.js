@@ -3348,7 +3348,7 @@ var AnnotationEditorUIManager = class _AnnotationEditorUIManager {
   removeLayer(layer) {
     this.#allLayers.delete(layer.pageIndex);
   }
-  async updateMode(mode, editId = null, isFromUser = false, isFromKeyboard = false, mustEnterInEditMode = false, editComment = false) {
+  async updateMode(mode, editId = null, isFromKeyboard = false, mustEnterInEditMode = false, editComment = false) {
     if (this.#mode === mode) {
       return;
     }
@@ -3381,9 +3381,6 @@ var AnnotationEditorUIManager = class _AnnotationEditorUIManager {
     }
     if (mode === AnnotationEditorType.SIGNATURE) {
       await this.#signatureManager?.loadSignatures();
-    }
-    if (isFromUser) {
-      CurrentPointers.clearPointerType();
     }
     this.setEditingState(true);
     await this.#enableAll();
@@ -6995,7 +6992,7 @@ var FontFaceObject = class {
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = makePathFromDrawOPS(cmds?.path);
+    const path = makePathFromDrawOPS(cmds);
     if (!this.fontExtraProperties) {
       objs.delete(objId);
     }
@@ -7716,31 +7713,6 @@ var PatternInfo = class _PatternInfo {
       return ["Mesh", shadingType, coords, colors, figures, bounds, bbox, background];
     }
     throw new Error(`Unsupported pattern kind: ${kind}`);
-  }
-};
-var FontPathInfo = class {
-  static write(path) {
-    let data;
-    let buffer;
-    if (util_FeatureTest.isFloat16ArraySupported) {
-      buffer = new ArrayBuffer(path.length * 2);
-      data = new Float16Array(buffer);
-    } else {
-      buffer = new ArrayBuffer(path.length * 4);
-      data = new Float32Array(buffer);
-    }
-    data.set(path);
-    return buffer;
-  }
-  #buffer;
-  constructor(buffer) {
-    this.#buffer = buffer;
-  }
-  get path() {
-    if (util_FeatureTest.isFloat16ArraySupported) {
-      return new Float16Array(this.#buffer);
-    }
-    return new Float32Array(this.#buffer);
   }
 };
 function getUrlProp(val) {
@@ -9334,34 +9306,12 @@ var RadialAxialShadingPattern = class extends BaseShadingPattern {
     this._r1 = IR[7];
     this.matrix = null;
   }
-  isOriginBased() {
-    return this._p0[0] === 0 && this._p0[1] === 0 && (!this.isRadial() || this._p1[0] === 0 && this._p1[1] === 0);
-  }
-  isRadial() {
-    return this._type === "radial";
-  }
-  _createGradient(ctx, transform = null) {
+  _createGradient(ctx) {
     let grad;
-    let firstPoint = this._p0;
-    let secondPoint = this._p1;
-    if (transform) {
-      firstPoint = firstPoint.slice();
-      secondPoint = secondPoint.slice();
-      Util.applyTransform(firstPoint, transform);
-      Util.applyTransform(secondPoint, transform);
-    }
     if (this._type === "axial") {
-      grad = ctx.createLinearGradient(firstPoint[0], firstPoint[1], secondPoint[0], secondPoint[1]);
+      grad = ctx.createLinearGradient(this._p0[0], this._p0[1], this._p1[0], this._p1[1]);
     } else if (this._type === "radial") {
-      let r0 = this._r0;
-      let r1 = this._r1;
-      if (transform) {
-        const scale = new Float32Array(2);
-        Util.singularValueDecompose2dScale(transform, scale);
-        r0 *= scale[0];
-        r1 *= scale[0];
-      }
-      grad = ctx.createRadialGradient(firstPoint[0], firstPoint[1], r0, secondPoint[0], secondPoint[1], r1);
+      grad = ctx.createRadialGradient(this._p0[0], this._p0[1], this._r0, this._p1[0], this._p1[1], this._r1);
     }
     for (const colorStop of this._colorStops) {
       grad.addColorStop(colorStop[0], colorStop[1]);
@@ -9371,25 +9321,6 @@ var RadialAxialShadingPattern = class extends BaseShadingPattern {
   getPattern(ctx, owner, inverse, pathType) {
     let pattern;
     if (pathType === PathType.STROKE || pathType === PathType.FILL) {
-      if (this.isOriginBased()) {
-        let transf = Util.transform(inverse, owner.baseTransform);
-        if (this.matrix) {
-          transf = Util.transform(transf, this.matrix);
-        }
-        const precision = 1e-3;
-        const n1 = Math.hypot(transf[0], transf[1]);
-        const n2 = Math.hypot(transf[2], transf[3]);
-        const ps = (transf[0] * transf[2] + transf[1] * transf[3]) / (n1 * n2);
-        if (Math.abs(ps) < precision) {
-          if (this.isRadial()) {
-            if (Math.abs(n1 - n2) < precision) {
-              return this._createGradient(ctx, transf);
-            }
-          } else {
-            return this._createGradient(ctx, transf);
-          }
-        }
-      }
       const ownerBBox = owner.current.getClippedPathBoundingBox(pathType, getCurrentTransform(ctx)) || [0, 0, 0, 0];
       const width = Math.ceil(ownerBBox[2] - ownerBBox[0]) || 1;
       const height = Math.ceil(ownerBBox[3] - ownerBBox[1]) || 1;
@@ -11143,17 +11074,14 @@ var CanvasGraphics = class _CanvasGraphics {
       ctx.scale(textHScale, 1);
     }
     let patternFillTransform, patternStrokeTransform;
-    const fillStrokeMode = current.textRenderingMode & TextRenderingMode.FILL_STROKE_MASK;
-    const needsFill = fillStrokeMode === TextRenderingMode.FILL || fillStrokeMode === TextRenderingMode.FILL_STROKE;
-    const needsStroke = fillStrokeMode === TextRenderingMode.STROKE || fillStrokeMode === TextRenderingMode.FILL_STROKE;
-    if (needsFill && current.patternFill) {
+    if (current.patternFill) {
       ctx.save();
       const pattern = current.fillColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.FILL, opIdx);
       patternFillTransform = getCurrentTransform(ctx);
       ctx.restore();
       ctx.fillStyle = pattern;
     }
-    if (needsStroke && current.patternStroke) {
+    if (current.patternStroke) {
       ctx.save();
       const pattern = current.strokeColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.STROKE, opIdx);
       patternStrokeTransform = getCurrentTransform(ctx);
@@ -11163,7 +11091,8 @@ var CanvasGraphics = class _CanvasGraphics {
     let lineWidth = current.lineWidth;
     const scale = current.textMatrixScale;
     if (scale === 0 || lineWidth === 0) {
-      if (needsStroke) {
+      const fillStrokeMode = current.textRenderingMode & TextRenderingMode.FILL_STROKE_MASK;
+      if (fillStrokeMode === TextRenderingMode.STROKE || fillStrokeMode === TextRenderingMode.FILL_STROKE) {
         lineWidth = this.getSinglePixelWidth();
       }
     } else {
@@ -12010,7 +11939,7 @@ var Metadata = class {
     return this.#map.entries();
   }
 };
-var INTERNAL = /* @__PURE__ */ Symbol("INTERNAL");
+var INTERNAL = Symbol("INTERNAL");
 var OptionalContentGroup = class {
   #isDisplay = false;
   #isPrint = false;
@@ -13553,7 +13482,7 @@ var PDFNodeStreamFsRangeReader = class {
     }
   }
 };
-var INITIAL_DATA = /* @__PURE__ */ Symbol("INITIAL_DATA");
+var INITIAL_DATA = Symbol("INITIAL_DATA");
 var PDFObjects = class {
   #objs = /* @__PURE__ */ Object.create(null);
   #ensureObj(objId) {
@@ -13673,7 +13602,6 @@ var TextLayer = class _TextLayer {
     this.#pageWidth = pageWidth;
     this.#pageHeight = pageHeight;
     _TextLayer.#ensureMinFontSizeComputed();
-    container.style.setProperty("--min-font-size", _TextLayer.#minFontSize);
     setLayerDimensions(container, viewport);
     this.#capability.promise.finally(() => {
       _TextLayer.#pendingTextLayers.delete(this);
@@ -13809,10 +13737,16 @@ var TextLayer = class _TextLayer {
       left = tx[4] + fontAscent * Math.sin(angle);
       top = tx[5] - fontAscent * Math.cos(angle);
     }
+    const scaleFactorStr = "calc(var(--total-scale-factor) *";
     const divStyle = textDiv.style;
-    divStyle.left = `${(100 * left / this.#pageWidth).toFixed(2)}%`;
-    divStyle.top = `${(100 * top / this.#pageHeight).toFixed(2)}%`;
-    divStyle.setProperty("--font-height", `${fontHeight.toFixed(2)}px`);
+    if (this.#container === this.#rootContainer) {
+      divStyle.left = `${(100 * left / this.#pageWidth).toFixed(2)}%`;
+      divStyle.top = `${(100 * top / this.#pageHeight).toFixed(2)}%`;
+    } else {
+      divStyle.left = `${scaleFactorStr}${left.toFixed(2)}px)`;
+      divStyle.top = `${scaleFactorStr}${top.toFixed(2)}px)`;
+    }
+    divStyle.fontSize = `${scaleFactorStr}${(_TextLayer.#minFontSize * fontHeight).toFixed(2)}px)`;
     divStyle.fontFamily = fontFamily;
     textDivProperties.fontSize = fontHeight;
     textDiv.setAttribute("role", "presentation");
@@ -13858,6 +13792,10 @@ var TextLayer = class _TextLayer {
     const {
       style
     } = div;
+    let transform = "";
+    if (_TextLayer.#minFontSize > 1) {
+      transform = `scale(${1 / _TextLayer.#minFontSize})`;
+    }
     if (properties.canvasWidth !== 0 && properties.hasText) {
       const {
         fontFamily
@@ -13871,11 +13809,14 @@ var TextLayer = class _TextLayer {
         width
       } = ctx.measureText(div.textContent);
       if (width > 0) {
-        style.setProperty("--scale-x", canvasWidth * this.#scale / width);
+        transform = `scaleX(${canvasWidth * this.#scale / width}) ${transform}`;
       }
     }
     if (properties.angle !== 0) {
-      style.setProperty("--rotate", `${properties.angle}deg`);
+      transform = `rotate(${properties.angle}deg) ${transform}`;
+    }
+    if (transform.length > 0) {
+      style.transform = transform;
     }
   }
   static cleanup() {
@@ -14046,7 +13987,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.4.530",
+    apiVersion: "5.4.449",
     data,
     password,
     disableAutoFetch,
@@ -15319,8 +15260,6 @@ var WorkerTransport = class {
           }
           break;
         case "FontPath":
-          this.commonObjs.resolve(id, new FontPathInfo(exportedData));
-          break;
         case "Image":
           this.commonObjs.resolve(id, exportedData);
           break;
@@ -15729,8 +15668,8 @@ var InternalRenderTask = class _InternalRenderTask {
     }
   }
 };
-var version = "5.4.530";
-var build = "50cc4adac";
+var version = "5.4.449";
+var build = "f44e5f0e6";
 var ColorPicker = class _ColorPicker {
   #button = null;
   #buttonSwatch = null;
@@ -22184,6 +22123,7 @@ var DrawingEditor = class _DrawingEditor extends AnnotationEditor {
       this._currentParent = null;
       _DrawingEditor.#currentDraw = null;
       _DrawingEditor.#currentDrawingOptions = null;
+      CurrentPointers.clearPointerType();
       CurrentPointers.clearTimeStamp();
     }
     if (_DrawingEditor.#currentDrawingAC) {

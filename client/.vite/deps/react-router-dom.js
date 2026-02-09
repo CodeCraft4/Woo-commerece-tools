@@ -1,9 +1,9 @@
 import {
   require_react_dom
-} from "./chunk-WCPVODAH.js";
+} from "./chunk-PC5J32NM.js";
 import {
   require_react
-} from "./chunk-6VIQC2ON.js";
+} from "./chunk-5GCMZSAB.js";
 import {
   __commonJS,
   __toESM
@@ -1452,7 +1452,7 @@ function parseToInfo(_to, basename) {
     to
   };
 }
-var UninstrumentedSymbol = /* @__PURE__ */ Symbol("Uninstrumented");
+var UninstrumentedSymbol = Symbol("Uninstrumented");
 function getRouteInstrumentationUpdates(fns, route) {
   let aggregated = {
     lazy: [],
@@ -1767,7 +1767,7 @@ var defaultMapRouteProperties = (route) => ({
   hasErrorBoundary: Boolean(route.hasErrorBoundary)
 });
 var TRANSITIONS_STORAGE_KEY = "remix-router-transitions";
-var ResetLoaderDataSymbol = /* @__PURE__ */ Symbol("ResetLoaderData");
+var ResetLoaderDataSymbol = Symbol("ResetLoaderData");
 function createRouter(init) {
   const routerWindow = init.window ? init.window : typeof window !== "undefined" ? window : void 0;
   const isBrowser3 = typeof routerWindow !== "undefined" && typeof routerWindow.document !== "undefined" && typeof routerWindow.document.createElement !== "undefined";
@@ -8168,7 +8168,7 @@ function invariant2(value, message) {
     throw new Error(message);
   }
 }
-var SingleFetchRedirectSymbol = /* @__PURE__ */ Symbol("SingleFetchRedirect");
+var SingleFetchRedirectSymbol = Symbol("SingleFetchRedirect");
 var SingleFetchNoResultError = class extends Error {
 };
 var SINGLE_FETCH_REDIRECT_STATUS = 202;

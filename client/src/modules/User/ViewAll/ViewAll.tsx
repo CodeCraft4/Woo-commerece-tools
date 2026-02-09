@@ -340,8 +340,8 @@ const ViewAllCard = () => {
                 const plan = getAccessPlan(e);
                 const src = e.__type === "templet" ? getTempletImage(e) : getCardImage(e);
 
-                // const MUGS = e.category === "Mugs";
-                // const B_CARD = e.category == 'Business Cards'
+                const MUGS = e.category === "Mugs";
+                const B_CARD = e.category == 'Business Cards'
 
                 return (
                   <Box
@@ -349,10 +349,10 @@ const ViewAllCard = () => {
                     onClick={() => openCategoryModalPopup(e)}
                     sx={{
                       position: "relative",
-                      // width: MUGS || B_CARD ? 380 : 248,
-                      // height: MUGS || B_CARD ? 230 : 350,
-                      width: 248,
-                      height: 350,
+                      width: MUGS || B_CARD ? 380 : 248,
+                      height: MUGS || B_CARD ? 230 : 350,
+                      // width: 248,
+                      // height: 350,
                       borderRadius: 2,
                       boxShadow: 3,
                       cursor: "pointer",
