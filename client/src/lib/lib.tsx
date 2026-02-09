@@ -210,3 +210,33 @@ export const FOUR_X_CATEGORIES: Record<any, number> = {
 
 export const getCanvasMultiplier = (category: CategoryKey) =>
   FOUR_X_CATEGORIES[category] ?? 2;
+
+
+
+export async function removeWhiteBg(imgUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = imgUrl;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+
+      // Replace pure white pixels with transparent
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] === 255 && data[i + 1] === 255 && data[i + 2] === 255) {
+          data[i + 3] = 0; // alpha 0 = transparent
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      resolve(canvas.toDataURL("image/png"));
+    };
+  });
+}

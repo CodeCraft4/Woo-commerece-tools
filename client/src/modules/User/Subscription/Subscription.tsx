@@ -1,10 +1,3 @@
-// Subscription.tsx (FULL UPDATED COMPONENT)
-// ✅ Shows EXACT sizes for category (no hiding)
-// ✅ Uses ONLY actual prices (no sale)
-// ✅ Still keeps your bundle/pro/free rules the same
-// ✅ Handles BOTH legacy lowercase keys (a4/us_letter/...) + uppercase keys (A4/US_LETTER/...)
-// ✅ Selected plan auto-picks first available (else first item)
-
 import { Box, Container, Grid, Typography, Chip, Button } from "@mui/material";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import TableBgImg from "/assets/images/table.png";
@@ -20,6 +13,7 @@ import { supabase } from "../../../supabase/supabase";
 import { USER_ROUTES } from "../../../constant/route";
 import MainLayout from "../../../layout/MainLayout";
 import { COLORS } from "../../../constant/color";
+import { removeWhiteBg } from "../../../lib/lib";
 
 // ------------------ ENV ------------------
 const API_BASE = "https://diypersonalisation.com/api";
@@ -578,6 +572,14 @@ const Subscription = () => {
   const showGiftIcon =
     !showTrophyIcon && selectedItemAccessPlan === "bundle" && planCode === "bundle" && isInBundleItems;
 
+
+    const [firstSlideProcessed, setFirstSlideProcessed] = useState(firstSlideUrl);
+
+useEffect(() => {
+  if (!firstSlideUrl) return;
+  removeWhiteBg(firstSlideUrl).then((res) => setFirstSlideProcessed(res));
+}, [firstSlideUrl]);
+
   // const productName =
   //   product?.title ||
   //   product?.category ||
@@ -697,12 +699,12 @@ const Subscription = () => {
                 >
                   <Box
                     component="img"
-                    src={firstSlideUrl || mugPreview || ""}
+                    src={firstSlideProcessed || mugPreview || ""}
                     alt="first slide"
                     sx={{
                       width: "100%",
                       height: "100%",
-                      objectFit: (mock?.overlay.objectFit as any) ?? "cover",
+                      objectFit: (mock?.overlay.objectFit as any) ?? "contain",
                       display: "block",
                       userSelect: "none",
                       pointerEvents: "none",

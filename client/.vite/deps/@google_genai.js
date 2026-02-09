@@ -14827,7 +14827,7 @@ var APIPromise = class _APIPromise extends Promise {
     return this.parse().finally(onfinally);
   }
 };
-var brand_privateNullableHeaders = /* @__PURE__ */ Symbol("brand.privateNullableHeaders");
+var brand_privateNullableHeaders = Symbol("brand.privateNullableHeaders");
 function* iterateHeaders(headers) {
   if (!headers)
     return;

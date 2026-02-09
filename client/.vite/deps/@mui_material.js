@@ -2,26 +2,26 @@ import {
   ListItemText_default,
   getListItemTextUtilityClass,
   listItemTextClasses_default
-} from "./chunk-KXSYJAFZ.js";
+} from "./chunk-7YK64KIB.js";
 import {
   Toolbar_default,
   getToolbarUtilityClass,
   toolbarClasses_default
-} from "./chunk-UDHJ7E4L.js";
+} from "./chunk-TO44MFYE.js";
 import {
   Typography_default,
   getTypographyUtilityClass,
   typographyClasses_default
-} from "./chunk-I5DHCGK3.js";
+} from "./chunk-BUA3DIWW.js";
 import {
   AppBar_default,
   appBarClasses_default,
   getAppBarUtilityClass
-} from "./chunk-UNEKM2NO.js";
+} from "./chunk-CMPOGWCY.js";
 import {
   Box_default,
   boxClasses_default
-} from "./chunk-EH5LKX6N.js";
+} from "./chunk-SNGK2CB2.js";
 import {
   CssVarsProvider,
   Experimental_CssVarsProvider,
@@ -41,12 +41,12 @@ import {
   useThemeProps,
   withStyles,
   withTheme
-} from "./chunk-6OVF5GFO.js";
+} from "./chunk-Y5Z3JH5O.js";
 import {
   Divider_default,
   dividerClasses_default,
   getDividerUtilityClass
-} from "./chunk-X4RLFWZE.js";
+} from "./chunk-AKQUEUDZ.js";
 import {
   Drawer_default,
   Slide_default,
@@ -54,7 +54,7 @@ import {
   getAnchor,
   getDrawerUtilityClass,
   isHorizontal
-} from "./chunk-6RYGZ5BI.js";
+} from "./chunk-Q4DJJIEF.js";
 import {
   Backdrop_default,
   Fade_default,
@@ -73,13 +73,13 @@ import {
   getTransitionProps,
   modalClasses_default,
   reflow
-} from "./chunk-LODMILH3.js";
+} from "./chunk-7LXVYAMB.js";
 import {
   Paper_default,
   getPaperUtilityClass,
   integerPropType_default,
   paperClasses_default
-} from "./chunk-BKOVUZUP.js";
+} from "./chunk-HDXQ4XUG.js";
 import {
   CircularProgress_default,
   IconButton_default,
@@ -87,7 +87,7 @@ import {
   getCircularProgressUtilityClass,
   getIconButtonUtilityClass,
   iconButtonClasses_default
-} from "./chunk-CTDPCIFI.js";
+} from "./chunk-AQNEN44V.js";
 import {
   createSimplePaletteValueFilter
 } from "./chunk-G4FQZWC4.js";
@@ -95,7 +95,7 @@ import {
   List_default,
   getListUtilityClass,
   listClasses_default
-} from "./chunk-CGZUR2CG.js";
+} from "./chunk-PVBRABKJ.js";
 import {
   ListItemSecondaryAction_default,
   ListItem_default,
@@ -103,12 +103,12 @@ import {
   getListItemUtilityClass,
   listItemClasses_default,
   listItemSecondaryActionClasses_default
-} from "./chunk-U34WHI3H.js";
+} from "./chunk-5LNXNC52.js";
 import {
   ListItemButton_default,
   getListItemButtonUtilityClass,
   listItemButtonClasses_default
-} from "./chunk-P5FJJX6B.js";
+} from "./chunk-ZEJN2QH3.js";
 import {
   appendOwnerState_default,
   extractEventHandlers_default,
@@ -116,7 +116,7 @@ import {
   mergeSlotProps_default,
   resolveComponentProps_default,
   useSlot
-} from "./chunk-5Y6GYDOB.js";
+} from "./chunk-FUDIRPZW.js";
 import {
   ButtonBase_default,
   Timeout,
@@ -128,19 +128,19 @@ import {
   refType_default,
   touchRippleClasses_default,
   useTimeout
-} from "./chunk-2BBFH3A3.js";
+} from "./chunk-Z4XW7VCV.js";
 import {
   Transition_default
-} from "./chunk-RXXXWJ43.js";
+} from "./chunk-QSI5LTSI.js";
 import {
   chainPropTypes
 } from "./chunk-JX37XSKT.js";
 import {
   ListContext_default
-} from "./chunk-MTCIUMY2.js";
+} from "./chunk-GVGFWMOT.js";
 import {
   require_react_dom
-} from "./chunk-WCPVODAH.js";
+} from "./chunk-PC5J32NM.js";
 import {
   SvgIcon_default,
   createChainedFunction_default,
@@ -160,7 +160,7 @@ import {
   useControlled,
   useControlled_default,
   useId_default
-} from "./chunk-AQQN7S6F.js";
+} from "./chunk-2VJIZ3JF.js";
 import {
   ownerDocument,
   ownerWindow,
@@ -168,29 +168,29 @@ import {
 } from "./chunk-JFX25D7L.js";
 import {
   capitalize_default
-} from "./chunk-NKEIIA4J.js";
+} from "./chunk-PPEQJZAX.js";
 import {
   isMuiElement_default
-} from "./chunk-3M2647TY.js";
+} from "./chunk-AXRUWO55.js";
 import {
   useEnhancedEffect_default as useEnhancedEffect_default2,
   useEventCallback_default as useEventCallback_default2
-} from "./chunk-H2FJTNK3.js";
+} from "./chunk-QJCDA6II.js";
 import {
   useEventCallback_default,
   useForkRef_default
-} from "./chunk-M5WJVJSE.js";
+} from "./chunk-A6RZ5U2R.js";
 import {
   useForkRef
-} from "./chunk-YTI4PRXL.js";
+} from "./chunk-AECLX356.js";
 import {
   memoTheme_default
-} from "./chunk-QTKHT3CG.js";
+} from "./chunk-LTPU35JV.js";
 import {
   GlobalStyles_default,
   globalCss,
   useDefaultProps
-} from "./chunk-SV3CTAPR.js";
+} from "./chunk-MVZE7LAB.js";
 import {
   StyledEngineProvider,
   alpha,
@@ -247,25 +247,25 @@ import {
   useId,
   useRtl,
   useTheme
-} from "./chunk-4VSWXUFW.js";
+} from "./chunk-OOXTG5NO.js";
 import {
   require_prop_types
-} from "./chunk-3SET6WWK.js";
+} from "./chunk-4CYFWBPF.js";
 import {
   clsx_default
 } from "./chunk-LNJWJNFR.js";
 import "./chunk-DLPUH77Q.js";
 import {
   require_jsx_runtime
-} from "./chunk-XP4JWPZJ.js";
+} from "./chunk-S3GOUJ4W.js";
 import {
   css,
   keyframes
-} from "./chunk-6BGGTDXO.js";
+} from "./chunk-WN74IL6K.js";
 import "./chunk-N5SUCCGT.js";
 import {
   require_react
-} from "./chunk-6VIQC2ON.js";
+} from "./chunk-5GCMZSAB.js";
 import {
   __commonJS,
   __export,
@@ -308,7 +308,7 @@ var require_react_is_development = __commonJS({
           }
         }
       }
-      var REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference");
+      var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE = Symbol.for("react.lazy"), REACT_VIEW_TRANSITION_TYPE = Symbol.for("react.view_transition"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference");
       exports.ContextConsumer = REACT_CONSUMER_TYPE;
       exports.ContextProvider = REACT_CONTEXT_TYPE;
       exports.Element = REACT_ELEMENT_TYPE;
@@ -1213,6 +1213,7 @@ var Accordion = React3.forwardRef(function Accordion2(inProps, ref) {
     disableGutters = false,
     expanded: expandedProp,
     onChange,
+    square = false,
     slots = {},
     slotProps = {},
     TransitionComponent: TransitionComponentProp,
@@ -1240,6 +1241,7 @@ var Accordion = React3.forwardRef(function Accordion2(inProps, ref) {
   }), [expanded, disabled, disableGutters, handleChange]);
   const ownerState = {
     ...props,
+    square,
     disabled,
     disableGutters,
     expanded
@@ -1266,7 +1268,10 @@ var Accordion = React3.forwardRef(function Accordion2(inProps, ref) {
     className: clsx_default(classes.root, className),
     shouldForwardComponentProp: true,
     ownerState,
-    ref
+    ref,
+    additionalProps: {
+      square
+    }
   });
   const [AccordionHeadingSlot, accordionProps] = useSlot("heading", {
     elementType: AccordionHeading,
@@ -1346,12 +1351,12 @@ true ? Accordion.propTypes = {
    */
   disabled: import_prop_types2.default.bool,
   /**
-   * If `true`, it removes the margin between two expanded accordion items and prevents the increased height when expanded.
+   * If `true`, it removes the margin between two expanded accordion items and the increase of height.
    * @default false
    */
   disableGutters: import_prop_types2.default.bool,
   /**
-   * If `true`, expands the accordion, otherwise collapses it.
+   * If `true`, expands the accordion, otherwise collapse it.
    * Setting this prop enables control over the accordion.
    */
   expanded: import_prop_types2.default.bool,
@@ -1382,6 +1387,11 @@ true ? Accordion.propTypes = {
     root: import_prop_types2.default.elementType,
     transition: import_prop_types2.default.elementType
   }),
+  /**
+   * If `true`, rounded corners are disabled.
+   * @default false
+   */
+  square: import_prop_types2.default.bool,
   /**
    * The system prop that allows defining system overrides as well as additional CSS styles.
    */
@@ -2071,7 +2081,7 @@ var Alert = React7.forwardRef(function Alert2(inProps, ref) {
     ...rootSlotProps,
     children: [icon !== false ? (0, import_jsx_runtime11.jsx)(IconSlot, {
       ...iconSlotProps,
-      children: icon || iconMapping[severity]
+      children: icon || iconMapping[severity] || defaultIconMapping[severity]
     }) : null, (0, import_jsx_runtime11.jsx)(MessageSlot, {
       ...messageSlotProps,
       children
@@ -2845,13 +2855,9 @@ function useAutocomplete(props) {
       handleClose(event, "toggleInput");
     }
     let nextItem3 = focusedItem;
-    if (focusedItem === -1 && direction === "previous") {
-      nextItem3 = value.length - 1;
-      if (freeSolo && inputValue !== "") {
-        setInputValueState("");
-        if (onInputChange) {
-          onInputChange(event, "", "reset");
-        }
+    if (focusedItem === -1) {
+      if (inputValue === "" && direction === "previous") {
+        nextItem3 = value.length - 1;
       }
     } else {
       nextItem3 += direction === "next" ? 1 : -1;
@@ -2949,26 +2955,14 @@ function useAutocomplete(props) {
           });
           handleOpen(event);
           break;
-        case "ArrowLeft": {
-          const input = inputRef.current;
-          const caretAtStart = input && input.selectionStart === 0 && input.selectionEnd === 0;
-          if (!caretAtStart) {
-            return;
-          }
+        case "ArrowLeft":
           if (!multiple && renderValue && value != null) {
-            if (freeSolo && inputValue !== "") {
-              setInputValueState("");
-              if (onInputChange) {
-                onInputChange(event, "", "reset");
-              }
-            }
             setFocusedItem(0);
             focusItem(0);
           } else {
             handleFocusItem(event, "previous");
           }
           break;
-        }
         case "ArrowRight":
           if (!multiple && renderValue) {
             setFocusedItem(-1);
@@ -3016,10 +3010,10 @@ function useAutocomplete(props) {
               option: value[index]
             });
           }
-          if (!multiple && renderValue && !readOnly && inputValue === "") {
-            handleValue(event, null, "removeOption", {
-              option: value
-            });
+          if (!multiple && renderValue && !readOnly) {
+            setValueState(null);
+            setFocusedItem(-1);
+            focusItem(-1);
           }
           break;
         case "Delete":
@@ -3031,10 +3025,10 @@ function useAutocomplete(props) {
               option: value[index]
             });
           }
-          if (!multiple && renderValue && !readOnly && inputValue === "") {
-            handleValue(event, null, "removeOption", {
-              option: value
-            });
+          if (!multiple && renderValue && !readOnly) {
+            setValueState(null);
+            setFocusedItem(-1);
+            focusItem(-1);
           }
           break;
         default:
@@ -3078,7 +3072,7 @@ function useAutocomplete(props) {
       }
     }
     if (newValue === "") {
-      if (!disableClearable && !multiple && !renderValue) {
+      if (!disableClearable && !multiple) {
         handleValue(event, null, "clear");
       }
     } else {
@@ -10808,13 +10802,7 @@ var ButtonGroupRoot = styled_default("div", {
       variant: "contained"
     },
     style: {
-      boxShadow: (theme.vars || theme).shadows[2],
-      [`& .${buttonGroupClasses_default.grouped}`]: {
-        boxShadow: "none",
-        "&:hover": {
-          boxShadow: "none"
-        }
-      }
+      boxShadow: (theme.vars || theme).shadows[2]
     }
   }, {
     props: {
@@ -10965,7 +10953,16 @@ var ButtonGroupRoot = styled_default("div", {
     }
   }))],
   [`& .${buttonGroupClasses_default.grouped}`]: {
-    minWidth: 40
+    minWidth: 40,
+    boxShadow: "none",
+    props: {
+      variant: "contained"
+    },
+    style: {
+      "&:hover": {
+        boxShadow: "none"
+      }
+    }
   }
 })));
 var ButtonGroup = React30.forwardRef(function ButtonGroup2(inProps, ref) {
@@ -11310,6 +11307,7 @@ var CardActionArea = React32.forwardRef(function CardActionArea2(inProps, ref) {
     elementType: CardActionAreaFocusHighlight,
     externalForwardedProps,
     ownerState,
+    ref,
     className: classes.focusHighlight
   });
   return (0, import_jsx_runtime34.jsxs)(RootSlot, {
@@ -12092,7 +12090,7 @@ var SwitchBase = React37.forwardRef(function SwitchBase2(props, ref) {
     }
   };
   const handleInputChange = (event) => {
-    if (event.nativeEvent.defaultPrevented || readOnly) {
+    if (event.nativeEvent.defaultPrevented) {
       return;
     }
     const newChecked = event.target.checked;
@@ -12991,7 +12989,7 @@ var import_prop_types35 = __toESM(require_prop_types(), 1);
 function getDialogUtilityClass(slot) {
   return generateUtilityClass("MuiDialog", slot);
 }
-var dialogClasses = generateUtilityClasses("MuiDialog", ["root", "backdrop", "scrollPaper", "scrollBody", "container", "paper", "paperScrollPaper", "paperScrollBody", "paperWidthFalse", "paperWidthXs", "paperWidthSm", "paperWidthMd", "paperWidthLg", "paperWidthXl", "paperFullWidth", "paperFullScreen"]);
+var dialogClasses = generateUtilityClasses("MuiDialog", ["root", "scrollPaper", "scrollBody", "container", "paper", "paperScrollPaper", "paperScrollBody", "paperWidthFalse", "paperWidthXs", "paperWidthSm", "paperWidthMd", "paperWidthLg", "paperWidthXl", "paperFullWidth", "paperFullScreen"]);
 var dialogClasses_default = dialogClasses;
 
 // node_modules/@mui/material/esm/Dialog/DialogContext.js
@@ -13006,7 +13004,8 @@ var DialogContext_default = DialogContext;
 var import_jsx_runtime45 = __toESM(require_jsx_runtime(), 1);
 var DialogBackdrop = styled_default(Backdrop_default, {
   name: "MuiDialog",
-  slot: "Backdrop"
+  slot: "Backdrop",
+  overrides: (props, styles6) => styles6.backdrop
 })({
   // Improve scrollable dialog support.
   zIndex: -1
@@ -13021,7 +13020,6 @@ var useUtilityClasses29 = (ownerState) => {
   } = ownerState;
   const slots = {
     root: ["root"],
-    backdrop: ["backdrop"],
     container: ["container", `scroll${capitalize_default(scroll)}`],
     paper: ["paper", `paperScroll${capitalize_default(scroll)}`, `paperWidth${capitalize_default(String(maxWidth))}`, fullWidth && "paperFullWidth", fullScreen && "paperFullScreen"]
   };
@@ -13264,8 +13262,7 @@ var Dialog = React42.forwardRef(function Dialog2(inProps, ref) {
     elementType: DialogBackdrop,
     shouldForwardComponentProp: true,
     externalForwardedProps,
-    ownerState,
-    className: classes.backdrop
+    ownerState
   });
   const [PaperSlot, paperSlotProps] = useSlot("paper", {
     elementType: DialogPaper,
@@ -24299,22 +24296,6 @@ var SelectInput = React86.forwardRef(function SelectInput2(props, ref) {
     node: inputRef.current,
     value
   }), [value]);
-  const open = displayNode !== null && openState;
-  React86.useEffect(() => {
-    if (!open || !anchorElement || autoWidth) {
-      return void 0;
-    }
-    if (typeof ResizeObserver === "undefined") {
-      return void 0;
-    }
-    const observer = new ResizeObserver(() => {
-      setMenuMinWidthState(anchorElement.clientWidth);
-    });
-    observer.observe(anchorElement);
-    return () => {
-      observer.disconnect();
-    };
-  }, [open, anchorElement, autoWidth]);
   React86.useEffect(() => {
     if (defaultOpen && openState && displayNode && !isOpenControlled) {
       setMenuMinWidthState(autoWidth ? null : anchorElement.clientWidth);
@@ -24344,8 +24325,8 @@ var SelectInput = React86.forwardRef(function SelectInput2(props, ref) {
     }
     return void 0;
   }, [labelId]);
-  const update = (openParam, event) => {
-    if (openParam) {
+  const update = (open2, event) => {
+    if (open2) {
       if (onOpen) {
         onOpen(event);
       }
@@ -24354,7 +24335,7 @@ var SelectInput = React86.forwardRef(function SelectInput2(props, ref) {
     }
     if (!isOpenControlled) {
       setMenuMinWidthState(autoWidth ? null : anchorElement.clientWidth);
-      setOpenState(openParam);
+      setOpenState(open2);
     }
   };
   const handleMouseDown = (event) => {
@@ -24435,6 +24416,7 @@ var SelectInput = React86.forwardRef(function SelectInput2(props, ref) {
       onKeyDown?.(event);
     }
   };
+  const open = displayNode !== null && openState;
   const handleBlur = (event) => {
     if (!open && onBlur) {
       Object.defineProperty(event, "target", {
@@ -35060,7 +35042,7 @@ var Tabs = React127.forwardRef(function Tabs2(inProps, ref) {
     slots,
     slotProps: {
       indicator: TabIndicatorProps,
-      scrollButtons: TabScrollButtonProps,
+      scrollButton: TabScrollButtonProps,
       ...slotProps
     }
   };
@@ -36681,10 +36663,10 @@ function useScrollTrigger(options = {}) {
 }
 
 // node_modules/@mui/material/esm/version/index.js
-var version = "7.3.7";
+var version = "7.3.6";
 var major = Number("7");
 var minor = Number("3");
-var patch = Number("7");
+var patch = Number("6");
 var prerelease = void 0;
 export {
   Accordion_default as Accordion,
