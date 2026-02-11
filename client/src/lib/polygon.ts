@@ -856,8 +856,18 @@ export const isMeaningfulPolygonLayout = (layout: any): boolean => {
   return Object.keys(layout).length > 0;
 };
 
+const normalizeLayoutCandidate = (layout: any) => {
+  if (typeof layout !== "string") return layout;
+  try {
+    const parsed = JSON.parse(layout);
+    return parsed ?? layout;
+  } catch {
+    return layout;
+  }
+};
+
 export const pickPolygonLayout = (...candidates: any[]) =>
-  candidates.find(isMeaningfulPolygonLayout) ?? null;
+  candidates.map(normalizeLayoutCandidate).find(isMeaningfulPolygonLayout) ?? null;
 
 const suffixFor = (n: 1 | 2 | 3 | 4) => (n === 2 ? "" : String(n));
 const fnName = (base: string, n: 1 | 2 | 3 | 4) => `${base}${suffixFor(n)}`;

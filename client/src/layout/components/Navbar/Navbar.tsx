@@ -18,6 +18,7 @@ import { useSlide1 } from "../../../context/Slide1Context";
 import { useSlide2 } from "../../../context/Slide2Context";
 import { useSlide3 } from "../../../context/Slide3Context";
 import { useSlide4 } from "../../../context/Slide4Context";
+import { getDraftCardId, setDraftCardId } from "../../../lib/draftCardId";
 
 type SelectedVariant = { key?: string; title?: string; price?: number; basePrice?: number };
 
@@ -104,6 +105,7 @@ const Navbar = () => {
   const [loadingDrafts, setLoadingDrafts] = useState(false);
 
   const isCardEditorRoute = location.pathname.startsWith(`${USER_ROUTES.HOME}/`);
+  const isPreviewRoute = location.pathname === USER_ROUTES.PREVIEW;
 
   const { open: isDraftModal, openModal: openDraftModal, closeModal: closeDraftModal } = useModal();
 
@@ -204,6 +206,11 @@ const Navbar = () => {
     return "";
   }, [routeId]);
 
+  const draftLayoutKey = useMemo(() => {
+    const id = draftId || getDraftCardId() || "";
+    return id ? `draft:layout:${id}` : "";
+  }, [draftId]);
+
   useEffect(() => {
     if (!isCardEditorRoute) return;
 
@@ -214,6 +221,13 @@ const Navbar = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftId, isCardEditorRoute]);
+
+  useEffect(() => {
+    if (!adminLayout || !draftLayoutKey) return;
+    try {
+      localStorage.setItem(draftLayoutKey, JSON.stringify(adminLayout));
+    } catch {}
+  }, [adminLayout, draftLayoutKey]);
 
   // ✅ Screenshot: uses your SlideCover id
   const captureSlideCover = async (): Promise<string | null> => {
@@ -468,22 +482,29 @@ const Navbar = () => {
   };
 
   // ✅ Draft Save (upsert)
-  const saveDraftToDb = async () => {
+  const saveDraftToDb = async (opts?: { afterSave?: "home" | "back" | "none"; silent?: boolean }) => {
     if (!user) {
-      toast.error("Please login first");
-      return;
+      if (!opts?.silent) toast.error("Please login first");
+      return false;
     }
-    if (!isCardEditorRoute) {
+    if (!isCardEditorRoute && !isPreviewRoute) {
       closeDraftModal();
-      navigate("/");
-      return;
+      if (!opts?.silent) navigate("/");
+      return false;
     }
 
     // use current url id (after useEffect auto-fix)
     const idInUrl = (window.location.pathname.split("/").pop() || "").trim();
-    if (!isUuid(idInUrl)) {
-      toast.error("Draft id is invalid. Please try again.");
-      return;
+    const fallbackId = getDraftCardId();
+    const resolvedId = isUuid(idInUrl) ? idInUrl : fallbackId || makeUuid();
+    if (!isUuid(resolvedId)) {
+      if (!opts?.silent) toast.error("Draft id is invalid. Please try again.");
+      return false;
+    }
+    if (!fallbackId || fallbackId !== resolvedId) {
+      try {
+        setDraftCardId(resolvedId);
+      } catch {}
     }
 
     setLoadingDrafts(true);
@@ -506,15 +527,27 @@ const Navbar = () => {
 
       const isOnSale = false;
 
+      const savedLayout = adminLayout
+        ? adminLayout
+        : (() => {
+            try {
+              if (!draftLayoutKey) return null;
+              const raw = localStorage.getItem(draftLayoutKey);
+              return raw ? JSON.parse(raw) : null;
+            } catch {
+              return null;
+            }
+          })();
+
       const { error } = await supabase
         .from("draft")
         .upsert(
           {
             user_id: user.id,
-            card_id: idInUrl,
+            card_id: resolvedId,
 
             // ✅ admin base polygonlayout reference
-            layout: adminLayout,
+            layout: savedLayout,
 
             // ✅ user edits
             cover_screenshot: coverScreenshot,
@@ -537,12 +570,18 @@ const Navbar = () => {
 
       if (error) throw error;
 
-      toast.success("Draft saved ✅");
+      if (!opts?.silent) toast.success("Draft saved ✅");
       closeDraftModal();
-      navigate("/");
+      if (opts?.afterSave === "back") {
+        navigate(-1);
+      } else if (opts?.afterSave !== "none") {
+        navigate("/");
+      }
+      return true;
     } catch (e: any) {
       console.error("save draft failed:", e);
-      toast.error(e?.message ?? "Save failed");
+      if (!opts?.silent) toast.error(e?.message ?? "Save failed");
+      return false;
     } finally {
       setLoadingDrafts(false);
     }
@@ -572,7 +611,19 @@ const Navbar = () => {
               display: "flex",
               alignItems: "center",
             }}
-            onClick={() => location.pathname === USER_ROUTES.PREVIEW ? navigate(-1) : openDraftModal()}
+            onClick={async () => {
+              if (isPreviewRoute) {
+                try {
+                  const downloaded = sessionStorage.getItem("card_preview_downloaded") === "1";
+                  if (!downloaded) {
+                    await saveDraftToDb({ afterSave: "none", silent: true });
+                  }
+                } catch {}
+                navigate(-1);
+                return;
+              }
+              openDraftModal();
+            }}
           >
             <KeyboardArrowLeft /> Exit
           </Typography>

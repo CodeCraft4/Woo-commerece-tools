@@ -14,6 +14,7 @@ import { USER_ROUTES } from "../../../constant/route";
 import MainLayout from "../../../layout/MainLayout";
 import { COLORS } from "../../../constant/color";
 import { removeWhiteBg } from "../../../lib/lib";
+import { loadSlidesFromIdb } from "../../../lib/idbSlides";
 
 // ------------------ ENV ------------------
 const API_BASE = "https://diypersonalisation.com/api";
@@ -124,7 +125,7 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
     { key: "a4", title: "A4" },
     // { key: "half_us_letter", title: "Half US Letter" },
     { key: "us_letter", title: "US Letter" },
-    // { key: "us_tabloid", title: "US Tabloid (Folded half: 11 × 8.5 in)" },
+    { key: "us_tabloid", title: "US Tabloid (11 × 17 in)" },
   ];
 };
 
@@ -216,21 +217,40 @@ const Subscription = () => {
   const { user, plan } = useAuth();
   const navigate = useNavigate();
 
-  const slidesObj = useMemo(() => {
-    if (state?.slides) return state.slides;
-    try {
-      return JSON.parse(localStorage.getItem("slides_backup") || "{}");
-    } catch {
-      return {};
-    }
+  const [slidesObj, setSlidesObj] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSlides = async () => {
+      if (state?.slides) {
+        if (mounted) setSlidesObj(state.slides);
+        return;
+      }
+
+      try {
+        const fromIdb = await loadSlidesFromIdb();
+        if (mounted && fromIdb) {
+          setSlidesObj(fromIdb);
+          return;
+        }
+      } catch { }
+
+      try {
+        const fromLocal = JSON.parse(localStorage.getItem("slides_backup") || "{}");
+        if (mounted) setSlidesObj(fromLocal || {});
+      } catch {
+        if (mounted) setSlidesObj({});
+      }
+    };
+
+    loadSlides();
+    return () => {
+      mounted = false;
+    };
   }, [state?.slides]);
 
   const firstSlideUrl = slidesObj?.slide1 || "";
-
-  const mugPreview = useMemo(() => {
-    const slides = JSON.parse(sessionStorage.getItem("slides") || "{}");
-    return slides.slide1 || "";
-  }, []);
 
   // ✅ read local selections
   useEffect(() => {
@@ -290,6 +310,19 @@ const Subscription = () => {
     return variant?.category || product?.category || lsCat || "default";
   }, [variant?.category, product?.category]);
 
+  const isMugsCategory = useMemo(() => lc(categoryName).includes("mug"), [categoryName]);
+
+  const mugPreview = useMemo(() => {
+    if (!isMugsCategory) return "";
+    if (slidesObj?.slide1) return slidesObj.slide1;
+    try {
+      const slides = JSON.parse(sessionStorage.getItem("slides") || "{}");
+      return slides.slide1 || "";
+    } catch {
+      return "";
+    }
+  }, [isMugsCategory, slidesObj]);
+
   // ✅ EXACT sizes (no filter)
   const sizeDefs = useMemo(() => getSizeDefsForCategory(categoryName), [categoryName]);
 
@@ -325,6 +358,8 @@ const Subscription = () => {
   // );
   
   const mock = useMemo(() => getMockupConfig(categoryName), [categoryName]);
+  const useMockupBackground = Boolean(mock?.mockupSrc) && !mugPreview;
+  const mockupAspectRatio = useMockupBackground ? "818 / 600" : undefined;
 
   // ✅ load user plan
   useEffect(() => {
@@ -337,7 +372,7 @@ const Subscription = () => {
           return;
         }
 
-        const res = await fetch(`${API_BASE}e/plan`, {
+        const res = await fetch(`${API_BASE}/me/plan`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -384,13 +419,17 @@ const Subscription = () => {
     return true;
   }, [planCode, planLoading, bundleKeyLoading, isInBundleItems]);
 
-  const getSlidesPayload = () => {
+  const getSlidesPayload = async () => {
     if (slidesObj && Object.keys(slidesObj).length) return slidesObj;
+    try {
+      const fromIdb = await loadSlidesFromIdb();
+      if (fromIdb && Object.keys(fromIdb).length) return fromIdb;
+    } catch { }
     try {
       const raw = sessionStorage.getItem("slides") || localStorage.getItem("slides_backup") || "{}";
       return JSON.parse(raw);
     } catch {
-      return slidesObj;
+      return slidesObj ?? {};
     }
   };
 
@@ -461,7 +500,7 @@ const Subscription = () => {
         const token = await getAccessToken();
         if (!token) throw new Error("Login session not found");
 
-        const slides = getSlidesPayload();
+        const slides = await getSlidesPayload();
         const res = await fetch(`${API_BASE}/pdf/send-subscription`, {
           method: "POST",
           headers: {
@@ -496,7 +535,7 @@ const Subscription = () => {
         setLoading(false);
       }
     },
-    [categoryName, selectedItemAccessPlan, isInBundleItems, productKey, getSlidesPayload, selectedPlan, planCode]
+    [categoryName, selectedItemAccessPlan, isInBundleItems, productKey, selectedPlan, planCode, slidesObj]
   );
 
   // ✅ Stripe return handler (same)
@@ -594,6 +633,8 @@ useEffect(() => {
   //     }
   //   })();
 
+  // console.log(firstSlideProcessed,'-')
+
   return (
     <MainLayout>
       <Box
@@ -605,6 +646,7 @@ useEffect(() => {
           justifyContent: "center",
           mt: { md: 4, sm: 3, xs: 2 },
           mb: { md: 4, sm: 3, xs: 2 },
+          pb: { md: 8, sm: 6, xs: 6 },
 
         }}
       >
@@ -663,19 +705,20 @@ useEffect(() => {
             )}
           </Box>
 
-          <Grid container spacing={3} sx={{ height: { md: 600, sm: 600, xs: "auto" } }}>
+          <Grid container spacing={3} sx={{ alignItems: "flex-start" }}>
             {/* Left Preview */}
             <Grid
               size={{ md: 7, sm: 7, xs: 12 }}
               sx={{
-                backgroundImage: mock?.mockupSrc ? `url(${mock.mockupSrc})` : `url(${TableBgImg})`,
+                backgroundImage: useMockupBackground ? `url(${mock?.mockupSrc})` : `url(${TableBgImg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
                 backgroundSize: "cover",
                 borderRadius: 7,
                 border: "1px solid gray",
                 position: "relative",
-                height: { md: mugPreview ? 350 : 600, sm: mugPreview ? 350 : 600, xs: 320 },
+                height: useMockupBackground ? "auto" : { md: mugPreview ? 350 : 600, sm: mugPreview ? 350 : 600, xs: 320 },
+                aspectRatio: mockupAspectRatio,
                 overflow: "hidden",
               }}
             >

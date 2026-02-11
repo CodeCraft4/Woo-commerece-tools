@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import { useSlide4 } from "../../context/Slide4Context";
 import { useLocation } from "react-router-dom";
 import mergePreservePdf from "../../utils/mergePreservePdf";
+import { safeGetStorage } from "../../lib/storage";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -312,6 +313,7 @@ const UserSlide4Preview = () => {
 
   const location = useLocation();
   const slide4 = location.state?.layout?.slides?.slide4 ?? null;
+  const draftSlide4 = location.state?.draftFull?.slide4 ?? null;
 
 
 
@@ -385,12 +387,36 @@ const UserSlide4Preview = () => {
 
   /* ------------------ normalize slide1 -> user view state ------------------ */
   useEffect(() => {
+    if (draftSlide4) {
+      setLayout4?.(draftSlide4.layout ?? draftSlide4);
+      if (draftSlide4.bgColor4 !== undefined || draftSlide4.bgColor !== undefined) {
+        setBgColor4?.(draftSlide4.bgColor4 ?? draftSlide4.bgColor ?? null);
+      }
+      if (draftSlide4.bgImage4 !== undefined || draftSlide4.bgImage !== undefined) {
+        setBgImage4?.(draftSlide4.bgImage4 ?? draftSlide4.bgImage ?? null);
+      }
+      return;
+    }
+
+    const saved = safeGetStorage("slide4_state");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.layout4) {
+          if (parsed.bgColor4 !== undefined) setBgColor4?.(parsed.bgColor4);
+          if (parsed.bgImage4 !== undefined) setBgImage4?.(parsed.bgImage4);
+          setLayout4?.(parsed.layout4);
+          return;
+        }
+      } catch { }
+    }
+
     if (!slide4) return;
     const norm = normalizeSlide(slide4);
     setBgColor4?.(norm.bgColor);
     setBgImage4?.(norm.bgImage);
     setLayout4?.(norm.layout);
-  }, [slide4, setBgColor4, setBgImage4, setLayout4]);
+  }, [draftSlide4, slide4, setBgColor4, setBgImage4, setLayout4]);
 
   return (
     <Box
