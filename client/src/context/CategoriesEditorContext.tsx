@@ -471,6 +471,13 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
         salea4price: meta?.salea4price != null ? String(meta.salea4price) : null,
         salea5price: meta?.salea5price != null ? String(meta.salea5price) : null,
         saleusletter: meta?.saleusletter != null ? String(meta.saleusletter) : null,
+        a3price: meta?.a3price != null ? String(meta.a3price) : null,
+        halfusletter: meta?.halfusletter != null ? String(meta.halfusletter) : null,
+        ustabloid: meta?.ustabloid != null ? String(meta.ustabloid) : null,
+
+        salea3price: meta?.salea3price != null ? String(meta.salea3price) : null,
+        salehalfusletter: meta?.salehalfusletter != null ? String(meta.salehalfusletter) : null,
+        saleustabloid: meta?.saleustabloid != null ? String(meta.saleustabloid) : null,
 
         description: meta?.description ?? null,
         sku: meta?.sku ?? null,
