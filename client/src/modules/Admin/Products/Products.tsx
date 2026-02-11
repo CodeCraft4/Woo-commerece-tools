@@ -462,6 +462,7 @@ const Products = () => {
           imageUrl: imageForEdit(row),
           polygon_shape: row.polygon_shape ?? "",
           lastpageImageUrl: row.lastpageImageUrl ?? row.lastpageimageurl ?? "",
+          polygonlayout: row.polygonlayout ?? row.polyganLayout ?? null,
           polyganLayout: row.polygonlayout ?? row.polyganLayout ?? null,
         },
       },

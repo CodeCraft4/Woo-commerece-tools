@@ -17,6 +17,7 @@ import {
 } from "../../../../../context/CategoriesEditorContext";
 import * as htmlToImage from "html-to-image";
 import { ADMINS_DASHBOARD } from "../../../../../constant/route";
+import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../../../constant/googleFonts";
 
 type SizeKey =
   | "A5"
@@ -87,11 +88,74 @@ type Option = { label: string; value: string };
 const normalizeNumberInput = (v: unknown) =>
   typeof v === "string" ? v.replace(/,/g, "").trim() : String(v ?? "").trim();
 
+const isBlank = (v: unknown) => v == null || String(v).trim() === "";
+
 const toTextNumberOrEmpty = (v?: string) => {
   const raw = normalizeNumberInput(v);
   if (!raw) return "";
   const n = Number(raw);
   return Number.isFinite(n) ? String(n) : "";
+};
+
+const normalizePricingKey = (key: string): SizeKey | null => {
+  const raw = String(key ?? "").trim();
+  if (!raw) return null;
+  const u = raw.toUpperCase().replace(/[\s-]+/g, "_");
+  switch (u) {
+    case "A5":
+    case "A4":
+    case "A3":
+      return u as SizeKey;
+    case "US_LETTER":
+    case "USLETTER":
+      return "US_LETTER";
+    case "HALF_US_LETTER":
+    case "HALFUSLETTER":
+      return "HALF_US_LETTER";
+    case "US_TABLOID":
+    case "USTABLOID":
+    case "US_TABLOID_11_X_17_IN":
+      return "US_TABLOID";
+    case "MUG_WRAP_11OZ":
+    case "MUG_WRAP_11_OZ":
+      return "MUG_WRAP_11OZ";
+    case "COASTER_95":
+      return "COASTER_95";
+    default:
+      return null;
+  }
+};
+
+const readPricingMap = (source: unknown): PricingMap => {
+  if (!source || typeof source !== "object") return {};
+  const out: PricingMap = {};
+  for (const [k, v] of Object.entries(source as Record<string, unknown>)) {
+    const nk = normalizePricingKey(k);
+    if (!nk) continue;
+    out[nk] = v != null ? String(v) : "";
+  }
+  return out;
+};
+
+const normalizeFontFamily = (value?: string | null) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const first = raw.split(",")[0]?.trim() ?? "";
+  return first.replace(/^['"]|['"]$/g, "");
+};
+
+const collectFontsFromRawStores = (rawStores: any): string[] => {
+  const fonts = new Set<string>();
+  const list = rawStores?.textElements;
+  if (!Array.isArray(list)) return [];
+  for (const t of list) {
+    const fam = normalizeFontFamily(t?.fontFamily);
+    if (!fam) continue;
+    const lower = fam.toLowerCase();
+    if (["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"].includes(lower)) continue;
+    fonts.add(fam);
+  }
+  return Array.from(fonts);
 };
 
 // const chunk = <T,>(arr: T[], size: number) => {
@@ -228,6 +292,7 @@ const TempletForm = () => {
     setRawStoresState(normalized);
   }, [navState?.rawStores]);
 
+
   useEffect(() => {
     if (!isEditMode || !templateId) return;
     let mounted = true;
@@ -302,6 +367,13 @@ const TempletForm = () => {
       mounted = false;
     };
   }, [isEditMode, templateId]);
+
+  useEffect(() => {
+    if (!rawStoresState) return;
+    const fonts = collectFontsFromRawStores(rawStoresState);
+    if (!fonts.length) return;
+    loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
+  }, [rawStoresState]);
 
   // useEffect(() => {
   //     if (!previewImage) {
@@ -430,19 +502,18 @@ const TempletForm = () => {
     const incomingPricing: PricingMap = {};
     const incomingSalePricing: PricingMap = {};
 
-    if (
-      (product as any).pricing &&
-      typeof (product as any).pricing === "object"
-    ) {
-      for (const [k, v] of Object.entries((product as any).pricing))
-        incomingPricing[k as SizeKey] = v != null ? String(v) : "";
+    Object.assign(incomingPricing, readPricingMap((product as any).pricing));
+    Object.assign(incomingSalePricing, readPricingMap((product as any).salePricing));
+
+    // raw_stores fallback (if present)
+    const rawPricing = readPricingMap((rawStoresState as any)?.pricing);
+    for (const [k, v] of Object.entries(rawPricing) as [SizeKey, string][]) {
+      if (isBlank(incomingPricing[k]) && !isBlank(v)) incomingPricing[k] = v;
     }
-    if (
-      (product as any).salePricing &&
-      typeof (product as any).salePricing === "object"
-    ) {
-      for (const [k, v] of Object.entries((product as any).salePricing))
-        incomingSalePricing[k as SizeKey] = v != null ? String(v) : "";
+
+    const rawSalePricing = readPricingMap((rawStoresState as any)?.salePricing);
+    for (const [k, v] of Object.entries(rawSalePricing) as [SizeKey, string][]) {
+      if (isBlank(incomingSalePricing[k]) && !isBlank(v)) incomingSalePricing[k] = v;
     }
 
     if (firstKey && !incomingPricing[firstKey] && product.actualprice != null) {
@@ -457,43 +528,43 @@ const TempletForm = () => {
     }
 
     // DB fallback
-    if (!incomingPricing.A4 && product.a4price != null)
+    if (isBlank(incomingPricing.A4) && product.a4price != null)
       incomingPricing.A4 = String(product.a4price);
-    if (!incomingPricing.US_LETTER && product.usletter != null)
+    if (isBlank(incomingPricing.US_LETTER) && product.usletter != null)
       incomingPricing.US_LETTER = String(product.usletter);
-    if (!incomingPricing.A3 && product.a3price != null)
+    if (isBlank(incomingPricing.A3) && product.a3price != null)
       incomingPricing.A3 = String(product.a3price);
-    if (!incomingPricing.HALF_US_LETTER && product.halfusletter != null)
+    if (isBlank(incomingPricing.HALF_US_LETTER) && product.halfusletter != null)
       incomingPricing.HALF_US_LETTER = String(product.halfusletter);
-    if (!incomingPricing.US_TABLOID && product.ustabloid != null)
+    if (isBlank(incomingPricing.US_TABLOID) && product.ustabloid != null)
       incomingPricing.US_TABLOID = String(product.ustabloid);
 
     // legacy a5price ambiguity
-    if (!incomingPricing.A5 && hasA5 && product.a5price != null)
+    if (isBlank(incomingPricing.A5) && hasA5 && product.a5price != null)
       incomingPricing.A5 = String(product.a5price);
     if (
-      !incomingPricing.A3 &&
+      isBlank(incomingPricing.A3) &&
       hasA3 &&
       product.a3price == null &&
       product.a5price != null
     )
       incomingPricing.A3 = String(product.a5price);
 
-    if (!incomingSalePricing.A4 && product.salea4price != null)
+    if (isBlank(incomingSalePricing.A4) && product.salea4price != null)
       incomingSalePricing.A4 = String(product.salea4price);
-    if (!incomingSalePricing.US_LETTER && product.saleusletter != null)
+    if (isBlank(incomingSalePricing.US_LETTER) && product.saleusletter != null)
       incomingSalePricing.US_LETTER = String(product.saleusletter);
-    if (!incomingSalePricing.A3 && product.salea3price != null)
+    if (isBlank(incomingSalePricing.A3) && product.salea3price != null)
       incomingSalePricing.A3 = String(product.salea3price);
-    if (!incomingSalePricing.HALF_US_LETTER && product.salehalfusletter != null)
+    if (isBlank(incomingSalePricing.HALF_US_LETTER) && product.salehalfusletter != null)
       incomingSalePricing.HALF_US_LETTER = String(product.salehalfusletter);
-    if (!incomingSalePricing.US_TABLOID && product.saleustabloid != null)
+    if (isBlank(incomingSalePricing.US_TABLOID) && product.saleustabloid != null)
       incomingSalePricing.US_TABLOID = String(product.saleustabloid);
 
-    if (!incomingSalePricing.A5 && hasA5 && product.salea5price != null)
+    if (isBlank(incomingSalePricing.A5) && hasA5 && product.salea5price != null)
       incomingSalePricing.A5 = String(product.salea5price);
     if (
-      !incomingSalePricing.A3 &&
+      isBlank(incomingSalePricing.A3) &&
       hasA3 &&
       product.salea3price == null &&
       product.salea5price != null
@@ -521,7 +592,7 @@ const TempletForm = () => {
       pricing: incomingPricing,
       salePricing: incomingSalePricing,
     });
-  }, [product, reset]);
+  }, [product, rawStoresState, reset]);
 
   const selectedCategory = useMemo(
     () => categories.find((c) => c.name === selectedCategoryName),
@@ -636,31 +707,99 @@ const TempletForm = () => {
     let captured: string | null = null;
     if (previewRef.current) {
       try {
+        await (document as any).fonts?.ready?.catch(() => { });
         captured = await htmlToImage.toPng(previewRef.current, {
           pixelRatio: 2,
           backgroundColor: "#ffffff",
           style: { transform: "none" },
           skipFonts: false,
-          fontEmbedCSS: "",
+          // fontEmbedCSS: "",
         });
       } catch (e) {
         console.error("LeftBox capture failed:", e);
       }
     }
 
+    const pricingValues = getValues("pricing") ?? {};
+    const salePricingValues = getValues("salePricing") ?? {};
+
     const hasA5 = sizes.some((s) => s.key === "A5");
     const hasA3 = sizes.some((s) => s.key === "A3");
     const firstKey = sizes[0]?.key;
 
+    const existingPricing: PricingMap = isEditMode
+      ? {
+          ...readPricingMap((product as any)?.pricing),
+          ...readPricingMap((rawStoresState as any)?.pricing),
+        }
+      : {};
+    const existingSalePricing: PricingMap = isEditMode
+      ? {
+          ...readPricingMap((product as any)?.salePricing),
+          ...readPricingMap((rawStoresState as any)?.salePricing),
+        }
+      : {};
+
+    if (isEditMode) {
+      if (isBlank(existingPricing.A4) && product?.a4price != null)
+        existingPricing.A4 = String(product.a4price);
+      if (isBlank(existingPricing.US_LETTER) && product?.usletter != null)
+        existingPricing.US_LETTER = String(product.usletter);
+      if (isBlank(existingPricing.A3) && product?.a3price != null)
+        existingPricing.A3 = String(product.a3price);
+      if (isBlank(existingPricing.HALF_US_LETTER) && product?.halfusletter != null)
+        existingPricing.HALF_US_LETTER = String(product.halfusletter);
+      if (isBlank(existingPricing.US_TABLOID) && product?.ustabloid != null)
+        existingPricing.US_TABLOID = String(product.ustabloid);
+      if (isBlank(existingPricing.A5) && hasA5 && product?.a5price != null)
+        existingPricing.A5 = String(product.a5price);
+      if (
+        isBlank(existingPricing.A3) &&
+        hasA3 &&
+        product?.a3price == null &&
+        product?.a5price != null
+      )
+        existingPricing.A3 = String(product.a5price);
+
+      if (isBlank(existingSalePricing.A4) && product?.salea4price != null)
+        existingSalePricing.A4 = String(product.salea4price);
+      if (isBlank(existingSalePricing.US_LETTER) && product?.saleusletter != null)
+        existingSalePricing.US_LETTER = String(product.saleusletter);
+      if (isBlank(existingSalePricing.A3) && product?.salea3price != null)
+        existingSalePricing.A3 = String(product.salea3price);
+      if (isBlank(existingSalePricing.HALF_US_LETTER) && product?.salehalfusletter != null)
+        existingSalePricing.HALF_US_LETTER = String(product.salehalfusletter);
+      if (isBlank(existingSalePricing.US_TABLOID) && product?.saleustabloid != null)
+        existingSalePricing.US_TABLOID = String(product.saleustabloid);
+      if (isBlank(existingSalePricing.A5) && hasA5 && product?.salea5price != null)
+        existingSalePricing.A5 = String(product.salea5price);
+      if (
+        isBlank(existingSalePricing.A3) &&
+        hasA3 &&
+        product?.salea3price == null &&
+        product?.salea5price != null
+      )
+        existingSalePricing.A3 = String(product.salea5price);
+    }
+
+    const resolvedPricing: PricingMap = { ...(pricingValues as PricingMap) };
+    const resolvedSalePricing: PricingMap = { ...(salePricingValues as PricingMap) };
+    for (const [k, v] of Object.entries(existingPricing) as [SizeKey, string][]) {
+      if (isBlank(resolvedPricing[k]) && !isBlank(v)) resolvedPricing[k] = v;
+    }
+    for (const [k, v] of Object.entries(existingSalePricing) as [SizeKey, string][]) {
+      if (isBlank(resolvedSalePricing[k]) && !isBlank(v)) resolvedSalePricing[k] = v;
+    }
+
     const legacyA5Slot = hasA5
-      ? data.pricing?.A5
+      ? (resolvedPricing as any)?.A5
       : hasA3
-        ? data.pricing?.A3
+        ? (resolvedPricing as any)?.A3
         : "";
     const legacySaleA5Slot = hasA5
-      ? data.salePricing?.A5
+      ? (resolvedSalePricing as any)?.A5
       : hasA3
-        ? data.salePricing?.A3
+        ? (resolvedSalePricing as any)?.A3
         : "";
 
     const meta: PublishMeta = {
@@ -674,27 +813,30 @@ const TempletForm = () => {
 
       // legacy DB columns
       actualprice: toTextNumberOrEmpty(
-        firstKey ? data.pricing?.[firstKey] : "",
+        firstKey ? (resolvedPricing as any)?.[firstKey] : "",
       ),
-      a4price: toTextNumberOrEmpty(data.pricing?.A4),
+      a4price: toTextNumberOrEmpty((resolvedPricing as any)?.A4),
       a5price: toTextNumberOrEmpty(legacyA5Slot),
-      usletter: toTextNumberOrEmpty(data.pricing?.US_LETTER),
+      usletter: toTextNumberOrEmpty((resolvedPricing as any)?.US_LETTER),
 
       saleprice: toTextNumberOrEmpty(
-        firstKey ? data.salePricing?.[firstKey] : "",
+        firstKey ? (resolvedSalePricing as any)?.[firstKey] : "",
       ),
-      salea4price: toTextNumberOrEmpty(data.salePricing?.A4),
+      salea4price: toTextNumberOrEmpty((resolvedSalePricing as any)?.A4),
       salea5price: toTextNumberOrEmpty(legacySaleA5Slot),
-      saleusletter: toTextNumberOrEmpty(data.salePricing?.US_LETTER),
+      saleusletter: toTextNumberOrEmpty((resolvedSalePricing as any)?.US_LETTER),
 
       // NEW DB columns
-      a3price: toTextNumberOrEmpty(data.pricing?.A3),
-      halfusletter: toTextNumberOrEmpty(data.pricing?.HALF_US_LETTER),
-      ustabloid: toTextNumberOrEmpty(data.pricing?.US_TABLOID),
+      a3price: toTextNumberOrEmpty((resolvedPricing as any)?.A3),
+      halfusletter: toTextNumberOrEmpty((resolvedPricing as any)?.HALF_US_LETTER),
+      ustabloid: toTextNumberOrEmpty((resolvedPricing as any)?.US_TABLOID),
 
-      salea3price: toTextNumberOrEmpty(data.salePricing?.A3),
-      salehalfusletter: toTextNumberOrEmpty(data.salePricing?.HALF_US_LETTER),
-      saleustabloid: toTextNumberOrEmpty(data.salePricing?.US_TABLOID),
+      salea3price: toTextNumberOrEmpty((resolvedSalePricing as any)?.A3),
+      salehalfusletter: toTextNumberOrEmpty((resolvedSalePricing as any)?.HALF_US_LETTER),
+      saleustabloid: toTextNumberOrEmpty((resolvedSalePricing as any)?.US_TABLOID),
+
+      pricing: resolvedPricing as any,
+      salePricing: resolvedSalePricing as any,
 
       description: data.description,
       sku: data.sku,
@@ -799,18 +941,7 @@ const TempletForm = () => {
               backgroundColor: "transparent",
             }}
           >
-            {previewImage ? (
-              <Box
-                component="img"
-                src={previewImage}
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  display: "block",
-                }}
-              />
-            ) : rawStores ? (
+            {rawStores ? (
               (() => {
                 const firstSlide = rawStores.slides?.[0];
                 if (!firstSlide) {
@@ -944,6 +1075,17 @@ const TempletForm = () => {
                   </Box>
                 );
               })()
+            ) : previewImage ? (
+              <Box
+                component="img"
+                src={previewImage}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
             ) : (
               <Box
                 sx={{

@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import mergePreservePdf from "../../utils/mergePreservePdf";
 import { normalizeSlide } from "../SlideCover/SlideCover";
+import { safeGetStorage } from "../../lib/storage";
 
 
 // Helper function to create a new text element
@@ -190,6 +191,20 @@ const SlideSpread = ({
       }
 
       return; // ✅ IMPORTANT: stop here, don't normalize template
+    }
+
+    // ✅ 1.5) If saved slide2_state exists, prefer it (preview exit restore)
+    const saved = safeGetStorage("slide2_state");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.layout2) {
+          if (parsed.bgColor2 !== undefined) setBgColor2?.(parsed.bgColor2);
+          if (parsed.bgImage2 !== undefined) setBgImage2?.(parsed.bgImage2);
+          setLayout2?.(parsed.layout2);
+          return;
+        }
+      } catch { }
     }
 
     // ✅ 2) If no draft => use template normalize

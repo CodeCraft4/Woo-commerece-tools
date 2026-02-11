@@ -29,6 +29,7 @@ import { motion } from "framer-motion";
 import QrGenerator from "../QR-code/Qrcode";
 import { COLORS } from "../../constant/color";
 import mergePreservePdf from "../../utils/mergePreservePdf";
+import { safeGetStorage } from "../../lib/storage";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -385,6 +386,18 @@ const SlideCover = ({
       // but elements/stickers/textElements draft se load karo
       setLayout1?.(draftFull.slide1);
       return;
+    }
+    const saved = safeGetStorage("slide1_state");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.layout1) {
+          if (parsed.bgColor1 !== undefined) setBgColor1?.(parsed.bgColor1);
+          if (parsed.bgImage1 !== undefined) setBgImage1?.(parsed.bgImage1);
+          setLayout1?.(parsed.layout1);
+          return;
+        }
+      } catch {}
     }
     if (!slide1) return;
     const norm = normalizeSlide(slide1);

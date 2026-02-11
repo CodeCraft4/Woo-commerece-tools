@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, IconButton, useMediaQuery } from "@mui/material";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import "./card.css";
@@ -9,8 +9,11 @@ import Slide3 from "../Slide3/Slide3";
 import Slide4 from "../Slide4/Slide4";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../../../constant/route";
-import { toPng } from "html-to-image";
+import { toJpeg } from "html-to-image";
 import LandingButton from "../../../../../components/LandingButton/LandingButton";
+import toast from "react-hot-toast";
+import { safeSetLocalStorage, safeSetSessionStorage } from "../../../../../lib/storage";
+import { saveSlidesToIdb } from "../../../../../lib/idbSlides";
 
 const PreviewBookCard = () => {
   // currentLocation is 1..(numOfPapers+1) for the flip-book
@@ -68,6 +71,12 @@ const PreviewBookCard = () => {
     slide4: "",
   });
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("card_preview_downloaded", "0");
+    } catch {}
+  }, []);
+
 
   console.log(slideImages, "slideImages")
 
@@ -86,9 +95,10 @@ const PreviewBookCard = () => {
       const node = slideRefs[key].current;
       if (!node) continue;
 
-      const dataUrl = await toPng(node, {
+      const dataUrl = await toJpeg(node, {
         cacheBust: true,
-        pixelRatio: 2,
+        pixelRatio: 1.5,
+        quality: 0.8,
         skipFonts: true,
         fontEmbedCSS: "",
       });
@@ -107,6 +117,21 @@ const PreviewBookCard = () => {
     return results;
   };
 
+  const persistSlides = async (slidesCaptured: Record<string, string>) => {
+    const payload = JSON.stringify(slidesCaptured);
+
+    safeSetSessionStorage("slides", payload);
+
+    // Keep localStorage minimal to avoid quota issues.
+    const minimal = slidesCaptured?.slide1 ? JSON.stringify({ slide1: slidesCaptured.slide1 }) : "{}";
+    safeSetLocalStorage("slides_backup", minimal, { clearOnFail: ["slides_backup"] });
+
+    try {
+      await saveSlidesToIdb(slidesCaptured);
+    } catch {
+      // ignore; session/local already cover fallback
+    }
+  };
 
 
   return (
@@ -116,10 +141,16 @@ const PreviewBookCard = () => {
           title="Download"
           loading={loading}
           onClick={async () => {
-            const slidesCaptured = await captureSlides();
-            sessionStorage.setItem("slides", JSON.stringify(slidesCaptured));
-            localStorage.setItem("slides_backup", JSON.stringify(slidesCaptured));
-            navigate(USER_ROUTES.SUBSCRIPTION);
+            try {
+              const slidesCaptured = await captureSlides();
+              await persistSlides(slidesCaptured);
+              try {
+                sessionStorage.setItem("card_preview_downloaded", "1");
+              } catch {}
+              navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesCaptured } });
+            } catch (err: any) {
+              toast.error(err?.message || "Failed to prepare download preview");
+            }
           }}
         />
       </Box>

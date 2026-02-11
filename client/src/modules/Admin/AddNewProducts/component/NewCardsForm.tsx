@@ -39,10 +39,12 @@ type FormValue = {
   a4price?: string;
   a5price?: string;
   usletter?: string;
+  ustabloid?: string;
   saleprice?: string;
   salea4price?: string;
   salea5price?: string;
   saleusletter?: string;
+  saleustabloid?: string;
   description: string;
   cardImage: FileList;
   polygon_shape: string;
@@ -63,10 +65,12 @@ type EditFormValue = {
   a4price?: string;
   a5price?: string;
   usletter?: string;
+  ustabloid?: string;
   salePrice?: string;
   salea4price?: string;
   salea5price?: string;
   saleusletter?: string;
+  saleustabloid?: string;
   description?: string;
   imageUrl?: string;
   polygon_shape?: string;
@@ -80,6 +84,8 @@ type EditFormValue = {
   cardcategory?: string;
   actualprice?: string;
   saleprice?: string;
+  ustabloid?: string;
+  saleustabloid?: string;
   imageurl?: string;
   lastpageimageurl?: string;
   lastmessage?: string;
@@ -92,6 +98,27 @@ type EditFormValue = {
 };
 
 type Props = { editProduct?: EditFormValue };
+
+const parseLayoutPricing = (layout: any) => {
+  if (!layout) return { pricing: {}, salePricing: {} };
+  const obj =
+    typeof layout === "string"
+      ? (() => {
+          try {
+            return JSON.parse(layout);
+          } catch {
+            return null;
+          }
+        })()
+      : layout;
+  const pricing = obj?.pricing && typeof obj.pricing === "object" ? obj.pricing : {};
+  const salePricing =
+    obj?.salePricing && typeof obj.salePricing === "object" ? obj.salePricing : {};
+  return { pricing, salePricing };
+};
+
+const pickLayoutCandidate = (...candidates: any[]) =>
+  candidates.find((c) => c !== undefined && c !== null && c !== "") ?? null;
 
 const NewCardsForm = ({ editProduct }: Props) => {
   const slide1 = useSlide1();
@@ -172,10 +199,12 @@ const NewCardsForm = ({ editProduct }: Props) => {
       a4price: "",
       a5price: "",
       usletter: "",
+      ustabloid: "",
       saleprice: "",
       salea4price: "",
       salea5price: "",
       saleusletter: "",
+      saleustabloid: "",
       description: "",
       polygon_shape: "",
     },
@@ -184,6 +213,16 @@ const NewCardsForm = ({ editProduct }: Props) => {
   const normalizedEdit = useMemo(() => {
     const src = editProduct ?? {};
     const fd = formData ?? product ?? {};
+    const pricingSource = pickLayoutCandidate(
+      (src as any).polygonlayout,
+      (src as any).polyganLayout,
+      (fd as any).polygonlayout,
+      (fd as any).polyganLayout,
+      editLayout
+    );
+    const { pricing: layoutPricing, salePricing: layoutSalePricing } = parseLayoutPricing(
+      pricingSource
+    );
 
     const accessPlan =
       (src.accessPlan ??
@@ -204,16 +243,28 @@ const NewCardsForm = ({ editProduct }: Props) => {
       a4price: (src.a4price ?? fd.a4price ?? src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as any,
       a5price: (src.a5price ?? fd.a5price ?? src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as any,
       usletter: (src.usletter ?? fd.usletter ?? src.actualprice ?? src.actualPrice ?? fd.actualprice ?? fd.actualPrice ?? "") as any,
+      ustabloid: (src.ustabloid ??
+        fd.ustabloid ??
+        layoutPricing?.US_TABLOID ??
+        layoutPricing?.us_tabloid ??
+        layoutPricing?.ustabloid ??
+        "") as any,
       saleprice: (src.saleprice ?? src.salePrice ?? fd.saleprice ?? fd.salePrice ?? "") as any,
       salea4price: (src.salea4price ?? fd.salea4price ?? "") as any,
       salea5price: (src.salea5price ?? fd.salea5price ?? "") as any,
       saleusletter: (src.saleusletter ?? fd.saleusletter ?? "") as any,
+      saleustabloid: (src.saleustabloid ??
+        fd.saleustabloid ??
+        layoutSalePricing?.US_TABLOID ??
+        layoutSalePricing?.us_tabloid ??
+        layoutSalePricing?.ustabloid ??
+        "") as any,
       description: (src.description ?? fd.description ?? "") as string,
       polygon_shape: (src.polygon_shape ?? (fd as any).polygon_shape ?? "") as string,
       subCategory: (src.subCategory ?? (src as any).subcategory ?? fd.subCategory ?? (fd as any).subcategory ?? "") as string,
       subSubCategory: (src.subSubCategory ?? (src as any).sub_subcategory ?? fd.subSubCategory ?? (fd as any).sub_subcategory ?? "") as string,
     } as any;
-  }, [editProduct, formData, product]);
+  }, [editProduct, formData, product, editLayout]);
 
   useEffect(() => {
     reset(normalizedEdit);
@@ -298,7 +349,38 @@ const NewCardsForm = ({ editProduct }: Props) => {
       setLoading(true);
 
       const layoutNow = buildPolygonLayout(slide1, slide2, slide3, slide4, { onlySelectedImages: true });
-      const polygonlayout = pickPolygonLayout(layoutNow, editLayout) ?? {};
+      const baseLayout = pickPolygonLayout(layoutNow, editLayout) ?? {};
+      const layoutObj = typeof baseLayout === "object" && baseLayout !== null ? baseLayout : {};
+      const { pricing: existingPricing, salePricing: existingSalePricing } = parseLayoutPricing(
+        layoutObj
+      );
+      const existingTabloid =
+        (existingPricing as any)?.US_TABLOID ??
+        (existingPricing as any)?.us_tabloid ??
+        (existingPricing as any)?.ustabloid ??
+        "";
+      const existingSaleTabloid =
+        (existingSalePricing as any)?.US_TABLOID ??
+        (existingSalePricing as any)?.us_tabloid ??
+        (existingSalePricing as any)?.ustabloid ??
+        "";
+      const resolvedTabloid =
+        data.ustabloid === "" || data.ustabloid == null ? existingTabloid : data.ustabloid;
+      const resolvedSaleTabloid =
+        data.saleustabloid === "" || data.saleustabloid == null
+          ? existingSaleTabloid
+          : data.saleustabloid;
+      const polygonlayout = {
+        ...(layoutObj as any),
+        pricing: {
+          ...(existingPricing ?? {}),
+          US_TABLOID: resolvedTabloid ?? "",
+        },
+        salePricing: {
+          ...(existingSalePricing ?? {}),
+          US_TABLOID: resolvedSaleTabloid ?? "",
+        },
+      };
 
       let imageurl: string | null = null;
       if (previewRef.current) {
@@ -337,21 +419,43 @@ const NewCardsForm = ({ editProduct }: Props) => {
 
       if (payload.actualprice == null) throw new Error("Actual Price is required");
 
+      const payloadWithTabloid = {
+        ...payload,
+        ustabloid: data.ustabloid ?? null,
+        saleustabloid: data.saleustabloid ?? null,
+      };
+
+      const isMissingColumnError = (err: any) => {
+        const msg = String(err?.message ?? "");
+        return (
+          msg.toLowerCase().includes("column") &&
+          (msg.toLowerCase().includes("ustabloid") || msg.toLowerCase().includes("saleustabloid"))
+        );
+      };
+
       if (id) {
-        const { error } = await supabase.from("cards").update(payload).eq("id", id);
+        let { error } = await supabase.from("cards").update(payloadWithTabloid).eq("id", id);
+        if (error && isMissingColumnError(error)) {
+          ({ error } = await supabase.from("cards").update(payload).eq("id", id));
+        }
         if (error) throw error;
         toast.success("Card updated successfully!");
       } else {
-        const { error } = await supabase.from("cards").insert([payload]);
+        let { error } = await supabase.from("cards").insert([payloadWithTabloid]);
+        if (error && isMissingColumnError(error)) {
+          ({ error } = await supabase.from("cards").insert([payload]));
+        }
         if (error) throw error;
         toast.success("Card saved successfully!");
       }
 
-      reset();
-      slide1.resetSlide1State?.();
-      slide2.resetSlide2State?.();
-      slide3.resetSlide3State?.();
-      slide4.resetSlide4State?.();
+      if (!id) {
+        reset();
+        slide1.resetSlide1State?.();
+        slide2.resetSlide2State?.();
+        slide3.resetSlide3State?.();
+        slide4.resetSlide4State?.();
+      }
     } catch (err: any) {
       toast.error("Failed to save card: " + (err?.message || "Unknown error"));
     } finally {
@@ -363,10 +467,10 @@ const NewCardsForm = ({ editProduct }: Props) => {
     <Box>
       <Box
         sx={{
-          display: { md: "flex", sm: "flex", xs: "block" },
+          display: { md: "flex", sm: "block", xs: "block" },
           gap: "20px",
           justifyContent: "center",
-          alignItems: "center",
+          alignItems: { md: "center", sm: "stretch", xs: "stretch" },
           width: "100%",
           height: "auto",
           overflow: "hidden",
@@ -395,7 +499,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
         <Box
           component="form"
           sx={{
-            width: { md: "500px", sm: "500px", xs: "100%" },
+            width: { md: "500px", sm: "100%", xs: "100%" },
+            maxWidth: "100%",
             mt: { md: 0, sm: 0, xs: 3 },
           }}
           onSubmit={handleSubmit(onSubmit)}
@@ -471,7 +576,19 @@ const NewCardsForm = ({ editProduct }: Props) => {
             error={errors.sku?.message}
           />
 
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(3, minmax(0, 1fr))",
+                lg: "repeat(5, minmax(0, 1fr))",
+              },
+              gap: 1,
+              alignItems: "start",
+            }}
+          >
             <CustomInput
               label="Actual Price"
               placeholder="Actual price"
@@ -504,9 +621,29 @@ const NewCardsForm = ({ editProduct }: Props) => {
               register={register("usletter", { required: "US Letter Price is required", setValueAs: toFloat })}
               error={errors.usletter?.message}
             />
+            <CustomInput
+              label="US Tabloid"
+              placeholder="US Tabloid"
+              defaultValue=""
+              type="number"
+              register={register("ustabloid", { setValueAs: toFloat })}
+              error={errors.ustabloid?.message}
+            />
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(3, minmax(0, 1fr))",
+                lg: "repeat(5, minmax(0, 1fr))",
+              },
+              gap: 1,
+              alignItems: "start",
+            }}
+          >
             <CustomInput
               label="Sale Price"
               placeholder="Sale price"
@@ -539,6 +676,14 @@ const NewCardsForm = ({ editProduct }: Props) => {
               register={register("saleusletter", { setValueAs: toFloat })}
               error={errors.saleusletter?.message}
             />
+            <CustomInput
+              label="Sale US Tabloid"
+              placeholder="US Tabloid"
+              type="number"
+              defaultValue=""
+              register={register("saleustabloid", { setValueAs: toFloat })}
+              error={errors.saleustabloid?.message}
+            />
           </Box>
 
           <CustomInput
@@ -550,7 +695,16 @@ const NewCardsForm = ({ editProduct }: Props) => {
             multiline
           />
 
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: { xs: "stretch", sm: "space-between" },
+              alignItems: { xs: "stretch", sm: "center" },
+              gap: 2,
+              mt: 2,
+            }}
+          >
             <LandingButton
               title={isEditMode ? "Update Layout" : "Edit Layout"}
               personal

@@ -17,6 +17,7 @@ import { COLORS } from "../../constant/color";
 import { useCartStore } from "../../stores/cartStore";
 import { ensureDraftCardId, newUuid, setDraftCardId } from "../../lib/draftCardId";
 import { getPricingConfig, type SizeKeyConfig } from "../../lib/pricing";
+import { clearSlidesFromIdb } from "../../lib/idbSlides";
 
 const style = {
   position: "absolute" as const,
@@ -42,9 +43,11 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     KEYS.forEach((k) => localStorage.removeItem(k));
     sessionStorage.removeItem("slides");
     sessionStorage.removeItem("slides_backup");
+    localStorage.removeItem("slides_backup");
     sessionStorage.removeItem("mugImage");
     sessionStorage.removeItem("cart-store-v2");
     sessionStorage.removeItem("draft:card_id");
+    clearSlidesFromIdb().catch(() => {});
 
 
     for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -124,6 +127,24 @@ const toNum = (v: unknown, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+const parseLayoutPricing = (layout: any) => {
+  if (!layout) return { pricing: {}, salePricing: {} };
+  const obj =
+    typeof layout === "string"
+      ? (() => {
+          try {
+            return JSON.parse(layout);
+          } catch {
+            return null;
+          }
+        })()
+      : layout;
+  const pricing = obj?.pricing && typeof obj.pricing === "object" ? obj.pricing : {};
+  const salePricing =
+    obj?.salePricing && typeof obj.salePricing === "object" ? obj.salePricing : {};
+  return { pricing, salePricing };
+};
+
 const getCategoryName = (cate?: CategoryType) => {
   return cate?.category ?? cate?.cardcategory ?? cate?.cardCategory ?? "default";
 };
@@ -133,6 +154,12 @@ type ActualMap = Partial<Record<SizeKeyConfig, number>>;
 // ✅ builds actual prices (same rules you had)
 const buildActualPrices = (cate?: any, categoryName?: string, isTempletDesign?: boolean): ActualMap => {
   const actual: any = {};
+  const { pricing: layoutPricing } = parseLayoutPricing(cate?.polygonlayout);
+  const layoutTabloid =
+    layoutPricing?.US_TABLOID ??
+    layoutPricing?.us_tabloid ??
+    layoutPricing?.ustabloid ??
+    null;
 
   // common/legacy
   actual.A4 = toNum(cate?.a4price, 0);
@@ -140,7 +167,7 @@ const buildActualPrices = (cate?: any, categoryName?: string, isTempletDesign?: 
 
   // template new columns
   actual.HALF_US_LETTER = toNum(cate?.halfusletter, 0);
-  actual.US_TABLOID = toNum(cate?.ustabloid, 0);
+  actual.US_TABLOID = toNum(cate?.ustabloid ?? layoutTabloid, 0);
 
   // A5 normal
   actual.A5 = toNum(cate?.a5price, 0);
