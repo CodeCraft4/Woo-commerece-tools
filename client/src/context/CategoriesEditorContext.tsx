@@ -1,4 +1,4 @@
-// /src/context/CategoriesEditorContext.tsx
+﻿// /src/context/CategoriesEditorContext.tsx
 import React, { createContext, useContext, useMemo, useRef, useState, useCallback } from "react";
 import * as htmlToImage from "html-to-image";
 import { CATEGORY_CONFIG, type CategoryKey } from "../constant/data";
@@ -88,7 +88,7 @@ export type PublishMeta = {
   salea5price?: PriceText;
   saleusletter?: PriceText;
 
-  // ✅ New DB columns (you added)
+  // âœ… New DB columns (you added)
   a3price?: PriceText;
   halfusletter?: PriceText;
   ustabloid?: PriceText;
@@ -96,6 +96,10 @@ export type PublishMeta = {
   salea3price?: PriceText;
   salehalfusletter?: PriceText;
   saleustabloid?: PriceText;
+
+  // Optional map storage (kept inside raw_stores)
+  pricing?: Record<string, PriceText>;
+  salePricing?: Record<string, PriceText>;
 
   description?: string;
   sku?: string;
@@ -394,10 +398,10 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
       const imgUrl = meta?.imgUrl ?? null;
 
-      // ✅ Store product cardCategory into DB column "category"
+      // âœ… Store product cardCategory into DB column "category"
       const dbCategory = meta?.cardcategory?.trim() || null;
 
-      // ✅ store "canvas size" safely INSIDE raw_stores (json) to avoid DB schema changes
+      // âœ… store "canvas size" safely INSIDE raw_stores (json) to avoid DB schema changes
       const multiplier = getCanvasMultiplier(rawStores.category);
 
       // REAL product size (never change)
@@ -421,7 +425,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
       const configWithMultiplier = {
         ...rawStores.config,
-        multiplier, // 👈 future reference ke liye
+        multiplier, // ðŸ‘ˆ future reference ke liye
       };
 
 
@@ -443,11 +447,14 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
           imageElements: normImageElements,
           stickerElements: normStickerElements,
           slideBg: rawStores.slideBg,
+          // preserve pricing maps in JSON (safe even without DB columns)
+          pricing: meta?.pricing ?? (rawStores as any)?.pricing ?? null,
+          salePricing: meta?.salePricing ?? (rawStores as any)?.salePricing ?? null,
 
-          // ✅ do NOT lose editor template type
+          // âœ… do NOT lose editor template type
           editorCategory: rawStores.category, // CategoryKey: Invites/Stickers etc
 
-          // ✅ size used by your renderers
+          // âœ… size used by your renderers
           canvas: {
             productMm,   // real size (printing)
             mm: canvasMm, // editor size
@@ -508,7 +515,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
           toast.error(error.message || "Save failed");
         }
       } else {
-        toast.success(isEdit ? "✅ Updated template Design" : "✅ Saved template Design");
+        toast.success(isEdit ? "âœ… Updated template Design" : "âœ… Saved template Design");
         resetState();
       }
     } catch (e) {
@@ -593,3 +600,4 @@ export const useCategoriesEditorState = () => {
   if (!ctx) throw new Error("useCategoriesEditorState must be used within CategoriesEditorProvider");
   return ctx;
 };
+

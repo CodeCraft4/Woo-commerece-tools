@@ -168,6 +168,7 @@ export const getPricingConfig = (
       { key: "A4", title: "A4" },
       // { key: "HALF_US_LETTER", title: "Half US Letter" },
       { key: "US_LETTER", title: "US Letter" },
+      { key: "US_TABLOID", title: "US Tabloid", sub: "Folded half: 11 × 8.5 in" },
       // { key: "US_TABLOID", title: "US Tabloid", sub: "Folded half: 11 × 8.5 in" },
     ],
   };

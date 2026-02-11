@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Box, IconButton, Typography, useMediaQuery } from "@mui/material";
 import { ArrowBackIos, KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
+import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage";
+import { saveSlidesToIdb } from "../../../lib/idbSlides";
+import { toJpeg } from "html-to-image";
 
 /* ---------- Types ---------- */
 type Slide = { id: number; label: string; elements: any[] };
@@ -82,6 +85,14 @@ const CategoriesWisePreview: React.FC = () => {
   const config = state?.config;
   const category = state?.category ?? "";
   const start = state?.slideIndex ?? 0;
+  const slides = useMemo<Slide[]>(() => {
+    if (state?.slides?.length) return state.slides;
+    try {
+      const stored = sessionStorage.getItem("templ_preview_slides");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return [];
+  }, [state]);
 
   // Change to (sessionStorage se fallback bhi add kar sakte ho)
   const captured = useMemo(() => {
@@ -114,13 +125,93 @@ const CategoriesWisePreview: React.FC = () => {
     );
   }
 
-  // ✅ slides count
-  const slideCount = Math.max(1, captured?.length || 0);
+  const hasCaptured = (captured?.length || 0) > 0;
+  const slideCount = Math.max(1, hasCaptured ? captured.length : slides.length);
 
   // ✅ current/next imgs
-  const currentImg = captured?.[active] || "";
+  const currentImg = hasCaptured ? captured?.[active] || "" : "";
   const nextIndex = flipDir === "next" ? Math.min(active + 1, slideCount - 1) : Math.max(active - 1, 0);
-  const nextImg = captured?.[nextIndex] || currentImg;
+  const nextImg = hasCaptured ? captured?.[nextIndex] || currentImg : "";
+  const currentSlide = !hasCaptured ? slides?.[active] : null;
+  const nextSlide = !hasCaptured ? slides?.[nextIndex] : null;
+
+  const renderSlide = useCallback((slide?: Slide) => {
+    if (!slide) return null;
+    const ordered = [...(slide.elements || [])].sort(
+      (a, b) => (Number(a?.zIndex ?? 1) - Number(b?.zIndex ?? 1))
+    );
+    return (
+      <Box sx={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+        {ordered.map((el: any) => {
+          const baseStyle: any = {
+            position: "absolute",
+            left: el.x,
+            top: el.y,
+            width: el.width,
+            height: el.height,
+            zIndex: el.zIndex ?? 1,
+          };
+
+          if (el.type === "image") {
+            return (
+              <Box
+                key={el.id}
+                component="img"
+                src={el.src}
+                alt=""
+                sx={{ ...baseStyle, objectFit: "cover", display: "block" }}
+              />
+            );
+          }
+
+          if (el.type === "sticker") {
+            return (
+              <Box
+                key={el.id}
+                component="img"
+                src={el.src}
+                alt=""
+                sx={{ ...baseStyle, objectFit: "contain", display: "block" }}
+              />
+            );
+          }
+
+          if (el.type === "text") {
+            const align = el.align ?? "center";
+            const justify =
+              align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+            return (
+              <Box
+                key={el.id}
+                sx={{
+                  ...baseStyle,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: justify,
+                  textAlign: align,
+                  fontWeight: el.bold ? 700 : 400,
+                  fontStyle: el.italic ? "italic" : "normal",
+                  fontSize: el.fontSize,
+                  fontFamily: el.fontFamily,
+                  color: el.color,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {el.text}
+              </Box>
+            );
+          }
+
+          return null;
+        })}
+      </Box>
+    );
+  }, []);
+
+  const slideNodeRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const setSlideNodeRef = (i: number) => (el: HTMLDivElement | null) => {
+    slideNodeRefs.current[i] = el;
+  };
 
   const goNext = () => {
     if (active >= slideCount - 1 || flipping) return;
@@ -145,11 +236,32 @@ const CategoriesWisePreview: React.FC = () => {
   // ✅ Download loading
   const [downloading, setDownloading] = useState(false);
 
+  const captureSlidesFromDom = async () => {
+    const out: string[] = [];
+    for (let i = 0; i < slides.length; i++) {
+      const node = slideNodeRefs.current[i];
+      if (!node) continue;
+      const jpg = await toJpeg(node, {
+        quality: 0.78,
+        pixelRatio: 1.5,
+        backgroundColor: "#ffffff",
+        cacheBust: false,
+        skipFonts: false,
+      });
+      out.push(jpg);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    return out;
+  };
+
   const handleDownload = async () => {
     try {
       setDownloading(true);
 
-      const list = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+      let list = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+      if (!list.length && slides.length) {
+        list = await captureSlidesFromDom();
+      }
 
       // ✅ Convert ALL to JPEG (sequential)
       const out: string[] = [];
@@ -162,9 +274,18 @@ const CategoriesWisePreview: React.FC = () => {
       // ✅ store one-by-one (slide1, slide2, slide3...)
       const slidesObj = Object.fromEntries(out.map((u, idx) => [`slide${idx + 1}`, u]));
 
-      // ✅ Full slides for PDF after payment
-      localStorage.setItem("slides_backup", JSON.stringify(slidesObj));
-      sessionStorage.removeItem("slides");
+      const payload = JSON.stringify(slidesObj);
+
+      safeSetSessionStorage("slides", payload);
+
+      // ✅ Keep localStorage minimal to avoid quota issues
+      const minimal = slidesObj?.slide1 ? JSON.stringify({ slide1: slidesObj.slide1 }) : "{}";
+      safeSetLocalStorage("slides_backup", minimal, { clearOnFail: ["slides_backup"] });
+
+      // ✅ Store full slides in IndexedDB
+      try {
+        await saveSlidesToIdb(slidesObj);
+      } catch { }
 
       // ✅ pass slides to subscription via route-state
       navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesObj } });
@@ -299,12 +420,16 @@ const CategoriesWisePreview: React.FC = () => {
                   transition: "transform 360ms cubic-bezier(0.22, 1, 0.36, 1)",
                 }}
               >
-                <Box
-                  component="img"
-                  src={currentImg}
-                  alt="preview"
-                  sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
-                />
+                {hasCaptured ? (
+                  <Box
+                    component="img"
+                    src={currentImg}
+                    alt="preview"
+                    sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
+                  />
+                ) : (
+                  renderSlide(currentSlide ?? undefined)
+                )}
               </Box>
 
               {/* NEXT (behind) */}
@@ -317,12 +442,16 @@ const CategoriesWisePreview: React.FC = () => {
                   transform: flipDir === "next" ? "rotateY(180deg)" : "rotateY(-180deg)",
                 }}
               >
-                <Box
-                  component="img"
-                  src={nextImg}
-                  alt="next"
-                  sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
-                />
+                {hasCaptured ? (
+                  <Box
+                    component="img"
+                    src={nextImg}
+                    alt="next"
+                    sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
+                  />
+                ) : (
+                  renderSlide(nextSlide ?? undefined)
+                )}
               </Box>
 
               {/* shadow */}
@@ -373,6 +502,21 @@ const CategoriesWisePreview: React.FC = () => {
 
         </Box>
       </Box>
+
+      {/* Offscreen slides for download capture (when no pre-captured images) */}
+      {!hasCaptured && slides.length > 0 && (
+        <Box sx={{ position: "fixed", left: -10000, top: 0, opacity: 0, pointerEvents: "none" }}>
+          {slides.map((sl, i) => (
+            <Box
+              key={sl.id ?? i}
+              ref={setSlideNodeRef(i)}
+              sx={{ width: config?.mmWidth ?? "auto", height: config?.mmHeight ?? "auto", position: "relative" }}
+            >
+              {renderSlide(sl)}
+            </Box>
+          ))}
+        </Box>
+      )}
     </>
   );
 };

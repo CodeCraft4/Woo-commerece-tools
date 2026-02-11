@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
 
 const fontColors = [
   "#000000",
@@ -606,7 +607,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("slide3_state");
+      const saved = safeGetStorage("slide3_state");
       if (saved) {
         const parsed = JSON.parse(saved);
 
@@ -686,10 +687,13 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       layout3
     };
 
-    try {
-      localStorage.setItem("slide3_state", JSON.stringify(stateToSave));
-    } catch (error) {
-      console.error("❌ Error saving slide3_state:", error);
+    const payload = JSON.stringify(stateToSave);
+    const ok = safeSetLocalStorage("slide3_state", payload, {
+      clearOnFail: ["slides_backup"],
+      fallbackToSession: true,
+    });
+    if (!ok) {
+      console.error("❌ Error saving slide3_state: storage full");
     }
   }, [
     textElements3,
@@ -728,6 +732,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   const clearSlide3LocalData = () => {
     try {
       localStorage.removeItem("slide3_state");
+      sessionStorage.removeItem("slide3_state");
     } catch (error) {
       console.error("Error clearing slide3_state:", error);
     }

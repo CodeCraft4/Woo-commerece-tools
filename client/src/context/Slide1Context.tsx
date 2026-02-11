@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
 const fontColors = [
   "#000000",
   "#FF0000",
@@ -639,7 +640,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("slide1_state");
+      const saved = safeGetStorage("slide1_state");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.textElements3) setTextElements1(parsed.textElements1);
@@ -719,12 +720,16 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       bgColor1,
       bgImage1,
       selectedShapePath1,
+      layout1,
     };
 
-    try {
-      localStorage.setItem("slide1_state", JSON.stringify(stateToSave));
-    } catch (error) {
-      console.error("❌ Error saving slide1_state:", error);
+    const payload = JSON.stringify(stateToSave);
+    const ok = safeSetLocalStorage("slide1_state", payload, {
+      clearOnFail: ["slides_backup"],
+      fallbackToSession: true,
+    });
+    if (!ok) {
+      console.error("❌ Error saving slide1_state: storage full");
     }
   }, [
     textElements1,
@@ -763,6 +768,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
   const clearSlide1LocalData = () => {
     try {
       localStorage.removeItem("slide1_state");
+      sessionStorage.removeItem("slide1_state");
       console.log("🧹 Cleared Slide1 saved state");
     } catch (error) {
       console.error("Error clearing slide1_state:", error);

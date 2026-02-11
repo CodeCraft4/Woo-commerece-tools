@@ -8,6 +8,7 @@ import {
   useMediaQuery,
   useTheme,
   Chip,
+  Modal,
 } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Collections, ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
@@ -20,6 +21,7 @@ import { fetchTempletDesignById } from "../../../source/source";
 import { COLORS } from "../../../constant/color";
 import { CATEGORY_CONFIG, type CategoryKey } from "../../../constant/data";
 import toast from "react-hot-toast";
+import { safeGetStorage, safeSetLocalStorage } from "../../../lib/storage";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -182,6 +184,8 @@ export default function TempletEditor() {
   const [userSlides, setUserSlides] = useState<Slide[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedElId, setSelectedElId] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -297,20 +301,55 @@ export default function TempletEditor() {
     };
   }
 
-  const clearEditorState = () => {
-    sessionStorage.removeItem(storageKey(productId))
-    navigate(-1)
+  const discardEditorState = () => {
+    try {
+      localStorage.removeItem(storageKey(productId));
+      sessionStorage.removeItem(storageKey(productId));
+    } catch { }
+    navigate(-1);
+  };
+
+  const persistEditorState = () => {
+    if (!adminDesign) return;
+    const payload = {
+      adminDesign,
+      userSlides,
+      activeSlide,
+      selectedElId,
+      savedAt: Date.now(),
+    };
+    const ok = safeSetLocalStorage(storageKey(productId), JSON.stringify(payload), {
+      clearOnFail: ["slides_backup"],
+      fallbackToSession: true,
+    });
+    if (!ok) {
+      console.warn("Failed to persist editor state");
+    }
+  };
+
+  const handleExit = () => {
+    if (isDirty) {
+      setShowExitModal(true);
+      return;
+    }
+    discardEditorState();
+  };
+
+  const handleSaveDraftAndExit = () => {
+    persistEditorState();
+    setShowExitModal(false);
+    navigate(-1);
   };
 
 
   // ✅ Restore
   useEffect(() => {
-    const restored = safeJsonParse<{
+  const restored = safeJsonParse<{
       adminDesign: AdminPreview;
       userSlides: Slide[];
       activeSlide: number;
       selectedElId: string | null;
-    }>(sessionStorage.getItem(storageKey(productId)));
+    }>(safeGetStorage(storageKey(productId)));
 
     if (restored?.adminDesign && restored?.userSlides?.length) {
       didRestoreRef.current = true;
@@ -324,20 +363,7 @@ export default function TempletEditor() {
 
   useEffect(() => {
     if (!adminDesign) return;
-
-    const payload = {
-      adminDesign,
-      userSlides,
-      activeSlide,
-      selectedElId,
-      savedAt: Date.now(),
-    };
-
-    try {
-      sessionStorage.setItem(storageKey(productId), JSON.stringify(payload));
-    } catch (e) {
-      console.warn("Failed to persist editor state:", e);
-    }
+    persistEditorState();
   }, [adminDesign, userSlides, activeSlide, selectedElId, productId]);
 
 
@@ -423,6 +449,7 @@ export default function TempletEditor() {
   };
 
   const onTextChange = (slideIndex: number, elId: string, text: string) => {
+    setIsDirty(true);
     setUserSlides((prev) => {
       const copy = cloneSlides(prev);
       const el = copy[slideIndex]?.elements.find((e) => e.id === elId);
@@ -439,6 +466,7 @@ export default function TempletEditor() {
   const onImagePicked = async (slideIndex: number, elId: string, file: File | null) => {
     if (!file) return;
     const dataUrl = await fileToDataUrl(file);
+    setIsDirty(true);
 
     setUserSlides((prev) => {
       const copy = cloneSlides(prev);
@@ -451,6 +479,15 @@ export default function TempletEditor() {
   };
 
   const isMugCategory = (cat?: string) => /mug/i.test(String(cat ?? ""));
+  const previewCapture = useMemo(
+    () => ({
+      quality: isTablet ? 0.6 : 0.72,
+      pixelRatio: isTablet
+        ? 1
+        : Math.min(1.5, (typeof window !== "undefined" ? window.devicePixelRatio : 1.25) || 1.25),
+    }),
+    [isTablet]
+  );
   // const isBusinessCardCategory = (cat?: string) => /business\s*card/i.test(String(cat ?? ""));
   // const is3DCategory = (cat?: string) =>
     // /mug/i.test(String(cat ?? ""));
@@ -458,7 +495,7 @@ export default function TempletEditor() {
   // 1. Capture function ko PNG banao + fonts include karo + blob handle karo
   const capturePngFromNode = async (
     node: HTMLElement,
-    opts?: { width?: number; height?: number; background?: string }
+    opts?: { width?: number; height?: number; background?: string; quality?: number; pixelRatio?: number }
   ): Promise<string | null> => {
     try {
       await waitForAssets(node)
@@ -469,13 +506,13 @@ export default function TempletEditor() {
 
       // PNG capture — quality full, fonts skip nahi karo
       return await htmlToImage.toJpeg(node, {
-        quality: 0.85,                 // 0.8–0.9 best balance
-        pixelRatio: 2,
-        backgroundColor:"#ffffff", // JPG needs background
+        quality: opts?.quality ?? previewCapture.quality,
+        pixelRatio: opts?.pixelRatio ?? previewCapture.pixelRatio,
+        backgroundColor: "#ffffff", // JPG needs background
         filter: (n: Node) => {
           return !(n instanceof Element && n.classList?.contains("capture-exclude"));
         },
-        cacheBust: true,
+        cacheBust: false,
         skipFonts: false,
         width: w,
         height: h,
@@ -503,6 +540,8 @@ export default function TempletEditor() {
         width: artboardWidth,
         height: artboardHeight,
         background: isMugCategory(adminDesign?.category) ? "#ffffff" : "transparent",
+        quality: previewCapture.quality,
+        pixelRatio: previewCapture.pixelRatio,
       });
 
       if (pngData) {
@@ -516,6 +555,8 @@ export default function TempletEditor() {
   const handleNavigatePrview = async () => {
     if (!adminDesign?.category) return;
 
+    // ensure latest edits are persisted before navigating
+    persistEditorState();
     setPreviewLoading(true);
 
     const category = encodeURIComponent(adminDesign.category);
@@ -529,29 +570,33 @@ export default function TempletEditor() {
     };
 
     try {
-      // Har slide ka PNG capture karo
-      const allPngs = await captureAllSlidesPng();
-
-      // Session mein store karo (preview ke liye)
-      if (allPngs.length > 0) {
-        sessionStorage.setItem("slides", JSON.stringify({
-          capturedSlides: allPngs
-        }));
-      }
-
-      navStateBase.capturedSlides = allPngs;
-
-      // Mugs ke liye special handling (first slide ya all)
+      // ✅ For mugs: capture only ONE slide (fast) to build texture
       if (isMugCategory(adminDesign.category)) {
+        const node = slideRefs.current[0] ?? slideRefs.current[activeSlide];
+        const one = node
+          ? await capturePngFromNode(node, {
+              width: artboardWidth,
+              height: artboardHeight,
+              background: "#ffffff",
+              quality: previewCapture.quality,
+              pixelRatio: previewCapture.pixelRatio,
+            })
+          : null;
+
         navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
-          state: { ...navStateBase, mugImage: allPngs[0] || null }, // first slide as main
+          state: { ...navStateBase, mugImage: one || null },
         });
         return;
-      } else {
-        navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, {
-          state: navStateBase,
-        });
       }
+
+      // ✅ For other templates: no pre-capture. Navigate immediately with raw slides.
+      try {
+        sessionStorage.setItem("templ_preview_slides", JSON.stringify(userSlides));
+      } catch {}
+
+      navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, {
+        state: navStateBase,
+      });
     } catch (err) {
       console.error("Capture failed:", err);
       toast.error("Preview capture failed. Try again.");
@@ -579,7 +624,7 @@ export default function TempletEditor() {
       {/* HEADER */}
       <Box px={isTablet ? 2 : 8} pt={1}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-          <IconButton onClick={clearEditorState} sx={{ fontSize: 16, color: 'blue' }}>
+          <IconButton onClick={handleExit} sx={{ fontSize: 16, color: 'blue' }}>
             <ArrowBackIos fontSize="small" /> exit
           </IconButton>{" "}
           <Chip label={`Slides: ${userSlides.length}`} size="small" />
@@ -870,6 +915,47 @@ export default function TempletEditor() {
           <ArrowForwardIos />
         </IconButton>
       </Box>
+
+      {/* Exit Draft Modal */}
+      <Modal open={showExitModal} onClose={() => setShowExitModal(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { md: 480, sm: 420, xs: "92%" },
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            p: 3,
+            boxShadow: 24,
+          }}
+        >
+          <Typography sx={{ fontWeight: 600, mb: 1 }}>Save your changes as draft?</Typography>
+          <Typography sx={{ fontSize: 14, opacity: 0.8, mb: 3 }}>
+            If you leave now, you can resume this template later.
+          </Typography>
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <LandingButton
+              title="Discard & Exit"
+              personal
+              variant="outlined"
+              width="160px"
+              onClick={() => {
+                setShowExitModal(false);
+                discardEditorState();
+              }}
+            />
+            <LandingButton
+              title="Save Draft"
+              personal
+              width="160px"
+              onClick={handleSaveDraftAndExit}
+            />
+          </Stack>
+        </Box>
+      </Modal>
     </>
   );
 }
+

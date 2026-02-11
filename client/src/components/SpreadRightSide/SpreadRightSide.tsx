@@ -19,6 +19,7 @@ import { useSlide3 } from "../../context/Slide3Context";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import mergePreservePdf from "../../utils/mergePreservePdf";
+import { safeGetStorage } from "../../lib/storage";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -434,6 +435,20 @@ const SpreadRightSide = ({
       setAIImage3?.(draftSlide3.aimage3 ?? draftSlide3.aiImage ?? { x: 0, y: 0, width: 200, height: 200 });
 
       return; // ✅ IMPORTANT: draft restore ke baad template normalize mat chalao
+    }
+
+    // ✅ 1.5) If saved slide3_state exists, prefer it (preview exit restore)
+    const saved = safeGetStorage("slide3_state");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.layout3) {
+          if (parsed.bgColor3 !== undefined) setBgColor3?.(parsed.bgColor3);
+          if (parsed.bgImage3 !== undefined) setBgImage3?.(parsed.bgImage3);
+          setLayout3?.(parsed.layout3);
+          return;
+        }
+      } catch { }
     }
 
     // ✅ 2) Not a draft => template mode (new card)

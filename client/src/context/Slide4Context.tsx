@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
 
 const fontColors = [
   "#000000",
@@ -631,7 +632,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   // Passed value to storing and state recognizing.
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("slide4_state");
+      const saved = safeGetStorage("slide4_state");
       if (saved) {
         const parsed = JSON.parse(saved);
 
@@ -710,10 +711,13 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       selectedShapePath4
     };
 
-    try {
-      localStorage.setItem("slide4_state", JSON.stringify(stateToSave));
-    } catch (error) {
-      console.error("❌ Error saving slide4_state:", error);
+    const payload = JSON.stringify(stateToSave);
+    const ok = safeSetLocalStorage("slide4_state", payload, {
+      clearOnFail: ["slides_backup"],
+      fallbackToSession: true,
+    });
+    if (!ok) {
+      console.error("❌ Error saving slide4_state: storage full");
     }
   }, [
     textElements4,
@@ -753,6 +757,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const clearSlide4LocalData = () => {
     try {
       localStorage.removeItem("slide4_state");
+      sessionStorage.removeItem("slide4_state");
       console.log("🧹 Cleared Slide4 saved state");
     } catch (error) {
       console.error("Error clearing slide4_state:", error);

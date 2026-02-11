@@ -3,6 +3,7 @@ import { Box } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabase/supabase";
+import { loadSlidesFromIdb } from "../../../lib/idbSlides";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { Check, ErrorOutline, HourglassEmptyOutlined } from "@mui/icons-material";
@@ -18,7 +19,12 @@ async function getTokenSafely() {
   return retry.data?.session?.access_token || null;
 }
 
-function getSlidesPayload() {
+async function getSlidesPayload() {
+  try {
+    const fromIdb = await loadSlidesFromIdb();
+    if (fromIdb && Object.keys(fromIdb).length) return fromIdb;
+  } catch {}
+
   try {
     const raw =
       sessionStorage.getItem("slides") ||
@@ -57,7 +63,7 @@ export default function PremiumSuccess() {
       const token = await getTokenSafely();
       if (!token) throw new Error("Login required");
 
-      const slides = getSlidesPayload();
+      const slides = await getSlidesPayload();
       const cardSize = getSelectedPlan();
 
       if (!Object.keys(slides).length) {
