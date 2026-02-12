@@ -15,6 +15,7 @@ import { useSlide3 } from "../../context/Slide3Context";
 import { useSlide4 } from "../../context/Slide4Context";
 
 import { setDraftCardId } from "../../lib/draftCardId";
+import { pickPolygonLayout } from "../../lib/polygon";
 
 const style = {
     position: "absolute" as const,
@@ -117,10 +118,11 @@ const DraftPopup = ({ open, onClose, draft }: Props) => {
 
     // ✅ 5) 3 seconds loading then navigate
     setTimeout(() => {
+      const baseLayout = pickPolygonLayout(draft.layout);
       navigate(`${USER_ROUTES.HOME}/${draft.card_id}`, {
         state: {
           draftFull: draft,
-          layout: draft.layout,
+          layout: baseLayout,
           title: draft.title,
           category: draft.category,
           description: draft.description,

@@ -141,7 +141,15 @@ const CategoriesWisePreview: React.FC = () => {
       (a, b) => (Number(a?.zIndex ?? 1) - Number(b?.zIndex ?? 1))
     );
     return (
-      <Box sx={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+          bgcolor: (slide as any)?.bgColor ?? "transparent",
+        }}
+      >
         {ordered.map((el: any) => {
           const baseStyle: any = {
             position: "absolute",

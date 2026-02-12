@@ -139,8 +139,9 @@ function normalizeSlide(slide: any): {
   const bg = slide.bg ?? {};
   const flags = slide.flags ?? {};
   const rect = bg?.rect ?? { x: 0, y: 0, width: 0, height: 0 };
-  const bgEditable = bool(bg?.editable, false);       // default locked
-  const bgLocked = bool(bg?.locked, !bgEditable);
+  const bgLocked = bool(bg?.locked, false);
+  const bgEditable =
+    typeof bg?.editable === "boolean" ? !!bg.editable : !bgLocked;
 
   const out: LayoutNorm = { elements: [], stickers: [], textElements: [] };
 
@@ -201,8 +202,22 @@ function normalizeSlide(slide: any): {
   }
 
   // texts
-  out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
-  out.textElements.push(...(slide.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, !!o?.isEditable, "mte")));
+  const canEdit = (o: any, fallback = true) =>
+    typeof o?.editable === "boolean"
+      ? !!o.editable
+      : typeof o?.isEditable === "boolean"
+        ? !!o.isEditable
+        : typeof o?.locked === "boolean"
+          ? !o.locked
+          : fallback;
+  out.textElements.push(
+    ...((layout?.staticText ?? (layout as any)?.textElements ?? [])).map((o: any, i: number) =>
+      toText(o, i, canEdit(o, !o?.locked), "te")
+    )
+  );
+  out.textElements.push(
+    ...(slide.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, canEdit(o, true), "mte"))
+  );
   if (slide.oneText && str(slide.oneText.value, "").trim().length > 0) {
     out.textElements.push(
       toText(
@@ -295,6 +310,7 @@ const UserSlide4Preview = () => {
     isSlideActive4,
     bgColor4,
     bgImage4,
+    bgRect4,
     // selectedVideoUrl4,
     // selectedAudioUrl4,
     // qrPosition4,
@@ -308,6 +324,8 @@ const UserSlide4Preview = () => {
     setFontWeight4,
     setFontFamily4,
   } = useSlide4();
+
+  const hasLayoutBgImage = !!layout4?.elements?.some((el: any) => el?.id === "bg-image");
 
   /* ------------------ pull slide1 from route ------------------ */
 
@@ -445,6 +463,32 @@ const UserSlide4Preview = () => {
           : {},
       }}
     >
+      {bgImage4 && !hasLayoutBgImage && (
+        <Box
+          sx={{
+            position: "absolute",
+            left: bgRect4?.x ?? 0,
+            top: bgRect4?.y ?? 0,
+            width: bgRect4?.width ?? "100%",
+            height: bgRect4?.height ?? "100%",
+            zIndex: 0,
+            overflow: "hidden",
+            borderRadius: 1,
+            pointerEvents: "none",
+          }}
+        >
+          <Box
+            component="img"
+            src={bgImage4}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        </Box>
+      )}
 
       {/* Hidden file input (user uploads for editable items) */}
       <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />

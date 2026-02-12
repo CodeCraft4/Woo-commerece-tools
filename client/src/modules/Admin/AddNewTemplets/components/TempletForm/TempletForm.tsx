@@ -177,6 +177,7 @@ const SIZES: Record<SizeKey, SizeDef> = {
 
 const getPricingConfig = (categoryName?: string): CategoryPricingConfig => {
   const name = (categoryName ?? "").trim().toLowerCase();
+  const compact = name.replace(/\s+/g, "");
 
   if (name.includes("invite")) {
     return {
@@ -210,12 +211,12 @@ const getPricingConfig = (categoryName?: string): CategoryPricingConfig => {
       title: "Prices by Size",
       sizes: [SIZES.A5, SIZES.A4, SIZES.HALF_US_LETTER, SIZES.US_LETTER],
     };
-  if (name.includes("wall art"))
+  if (name.includes("wall art") || compact.includes("wallart"))
     return {
       title: "Prices by Size",
       sizes: [SIZES.A4, SIZES.A3, SIZES.US_LETTER, SIZES.US_TABLOID],
     };
-  if (name.includes("photo art"))
+  if (name.includes("photo art") || compact.includes("photoart"))
     return {
       title: "Prices by Size",
       sizes: [SIZES.A4, SIZES.A3, SIZES.US_LETTER, SIZES.US_TABLOID],
@@ -849,8 +850,6 @@ const TempletForm = () => {
     reset();
   };
 
-  const mmToPx = (mm: number) => (mm / 25.4) * 96;
-
   // preview کی max boundaries (responsive)
   // const previewBounds = useMemo(() => {
   //     if (isMdUp) return { maxW: 600, maxH: 900 };
@@ -859,12 +858,16 @@ const TempletForm = () => {
   // }, [isMdUp, isSmUp]);
 
   const previewSize = useMemo(() => {
+    const cfg = rawStores?.config ?? {};
+    const multiplier = cfg?.multiplier ?? 1;
     const canvasW =
-      rawStores?.config?.fitCanvas?.width ??
-      mmToPx(rawStores?.config?.mmWidth ?? 210);
+      cfg?.fitCanvas?.width ??
+      rawStores?.canvas?.mm?.w ??
+      (cfg?.mmWidth ?? rawStores?.canvas?.mm?.w ?? rawStores?.size_mm?.w ?? 210) * multiplier;
     const canvasH =
-      rawStores?.config?.fitCanvas?.height ??
-      mmToPx(rawStores?.config?.mmHeight ?? 297);
+      cfg?.fitCanvas?.height ??
+      rawStores?.canvas?.mm?.h ??
+      (cfg?.mmHeight ?? rawStores?.canvas?.mm?.h ?? rawStores?.size_mm?.h ?? 297) * multiplier;
     console.log(canvasH, "h", canvasW, "w");
 
     if (!canvasW || !canvasH) {
@@ -964,23 +967,59 @@ const TempletForm = () => {
                   );
                 }
 
-                const slideTextElements =
+                const sameSlide = (a: any, b: any) => String(a ?? "") === String(b ?? "");
+                const flatTexts =
                   rawStores.textElements?.filter(
-                    (te: any) => te.slideId === firstSlide.id,
+                    (te: any) => sameSlide(te.slideId ?? te.slide_id, firstSlide.id),
                   ) || [];
-                const slideImageElements =
+                const flatImages =
                   rawStores.imageElements?.filter(
-                    (ie: any) => ie.slideId === firstSlide.id,
+                    (ie: any) => sameSlide(ie.slideId ?? ie.slide_id, firstSlide.id),
                   ) || [];
-                const slideBg = rawStores.slideBg?.[firstSlide.id] || null;
+                const flatStickers =
+                  rawStores.stickerElements?.filter(
+                    (se: any) => sameSlide(se.slideId ?? se.slide_id, firstSlide.id),
+                  ) || [];
+
+                const inline = Array.isArray(firstSlide?.elements) ? firstSlide.elements : [];
+                const inferInlineType = (el: any): "text" | "image" | "sticker" | "unknown" => {
+                  if (el?.type) return el.type;
+                  if (el?.sticker) return "sticker";
+                  if (el?.text != null || el?.value != null) return "text";
+                  if (el?.src || el?.url || el?.imageUrl || el?.image) return "image";
+                  return "unknown";
+                };
+                const useInline = inline.length > 0 && flatTexts.length === 0 && flatImages.length === 0 && flatStickers.length === 0;
+
+                const slideTextElements = useInline
+                  ? inline.filter((e: any) => inferInlineType(e) === "text")
+                  : flatTexts;
+                const slideImageElements = useInline
+                  ? inline.filter((e: any) => inferInlineType(e) === "image")
+                  : flatImages;
+                const slideStickerElements = useInline
+                  ? inline.filter((e: any) => inferInlineType(e) === "sticker")
+                  : flatStickers;
+
+                const slideBg =
+                  rawStores.slideBg?.[firstSlide.id] ??
+                  rawStores.slideBg?.[String(firstSlide.id)] ??
+                  (Array.isArray(rawStores.slideBg) ? rawStores.slideBg?.[0] : null) ??
+                  firstSlide?.bg ??
+                  firstSlide?.background ??
+                  null;
 
                 // canvas کا سائز جو ایڈیٹر سے آیا ہے
+                const cfg = rawStores.config ?? {};
+                const multiplier = cfg?.multiplier ?? 1;
                 const canvasW =
-                  rawStores.config?.fitCanvas?.width ??
-                  mmToPx(rawStores.config?.mmWidth ?? 210);
+                  cfg?.fitCanvas?.width ??
+                  rawStores?.canvas?.mm?.w ??
+                  (cfg?.mmWidth ?? rawStores?.canvas?.mm?.w ?? rawStores?.size_mm?.w ?? 210) * multiplier;
                 const canvasH =
-                  rawStores.config?.fitCanvas?.height ??
-                  mmToPx(rawStores.config?.mmHeight ?? 297);
+                  cfg?.fitCanvas?.height ??
+                  rawStores?.canvas?.mm?.h ??
+                  (cfg?.mmHeight ?? rawStores?.canvas?.mm?.h ?? rawStores?.size_mm?.h ?? 297) * multiplier;
 
                 // preview کنٹینر کا سائز
                 const containerW = previewSize.width;
@@ -1007,15 +1046,15 @@ const TempletForm = () => {
                         width: "100%",
                         height: "100%",
                         position: "relative",
-                        bgcolor: slideBg?.color || "#ffffff",
+                        bgcolor: slideBg?.color ?? slideBg?.bgColor ?? "#ffffff",
                         overflow: "hidden",
                       }}
                     >
                       {/* Background Image */}
-                      {slideBg?.image && (
+                      {(slideBg?.image ?? slideBg?.bgImage ?? slideBg?.src) && (
                         <Box
                           component="img"
-                          src={slideBg.image}
+                          src={slideBg?.image ?? slideBg?.bgImage ?? slideBg?.src}
                           sx={{
                             width: "100%",
                             height: "100%",
@@ -1044,6 +1083,22 @@ const TempletForm = () => {
                       ))}
 
                       {/* Text */}
+                      {slideStickerElements.map((st: any) => (
+                        <Box
+                          key={st.id}
+                          component="img"
+                          src={st.sticker ?? st.src}
+                          sx={{
+                            position: "absolute",
+                            left: `${st.x * scale}px`,
+                            top: `${st.y * scale}px`,
+                            width: `${st.width * scale}px`,
+                            height: `${st.height * scale}px`,
+                            objectFit: "contain",
+                          }}
+                        />
+                      ))}
+
                       {slideTextElements.map((txt: any) => (
                         <Typography
                           sx={{
@@ -1056,7 +1111,7 @@ const TempletForm = () => {
                             fontStyle: txt.italic ? "italic" : "normal",
                             fontSize: txt.fontSize ?? 20,
                             fontFamily: txt.fontFamily ?? "Arial",
-                            color: txt.color ?? "#111111",
+                            color: txt.color ?? txt.fontColor ?? "#111111",
                             textAlign: "center", // always center horizontally
                             display: "flex",
                             alignItems: "center", // center vertically
@@ -1068,7 +1123,7 @@ const TempletForm = () => {
                             pointerEvents: "none",
                           }}
                         >
-                          {txt.text}
+                          {txt.text ?? txt.value ?? ""}
                         </Typography>
                       ))}
                     </Box>

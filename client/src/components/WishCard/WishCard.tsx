@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type Dispatch, type SetStateAction, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, type Dispatch, type SetStateAction, type ChangeEvent, useMemo } from "react";
 import { Box, IconButton } from "@mui/material";
 import {
   ArrowBackIos,
@@ -88,6 +88,9 @@ import ShapeFrames3 from "../Slide3/ShapeFrames3/ShapeFrames3";
 import BgChanger4 from "../Slide4/BgChanger4/BgChanger4";
 import ShapeFrames4 from "../Slide4/ShapeFrames4/ShapeFrames4";
 import { pdfFileToPngDataUrls } from "../../lib/pdfToPng";
+import { useLocation, useParams } from "react-router-dom";
+import { applyPolygonLayoutToContexts, pickPolygonLayout } from "../../lib/polygon";
+import { safeGetStorage } from "../../lib/storage";
 
 const slides = [
   { id: 1, label: "Slide1" },
@@ -116,6 +119,9 @@ type wishCardType = {
 const WishCard = (props: wishCardType) => {
 
   const { adminEditor } = props
+
+  const location = useLocation();
+  const { id: draftId } = useParams<{ id: string }>();
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [activePopup, setActivePopup] = useState(null);
@@ -146,34 +152,68 @@ const WishCard = (props: wishCardType) => {
     "size" | "color" | "family" | "textAlign" | "lineHeight" | null
   >(null);
 
+  const slide1 = useSlide1();
+  const slide2 = useSlide2();
+  const slide3 = useSlide3();
+  const slide4 = useSlide4();
+
   const {
     setIsSlideActive1,
     setTips1,
     setDraggableImages1,
     draggableImages1,
     setSelectedImage1,
-  } = useSlide1();
+  } = slide1;
   const {
     setTips,
     setIsSlideActive,
     setDraggableImages: setDraggableImages2,
     draggableImages: draggableImages2,
     setSelectedImage: setSelectedImage2,
-  } = useSlide2();
+  } = slide2;
   const {
     setTips3,
     setIsSlideActive3,
     setDraggableImages3,
     draggableImages3,
     setSelectedImage3,
-  } = useSlide3();
+  } = slide3;
   const {
     setIsSlideActive4,
     setTips4,
     setDraggableImages4,
     draggableImages4,
     setSelectedImage4,
-  } = useSlide4();
+  } = slide4;
+
+  const layoutFromDraftKey = useMemo(() => {
+    if (!draftId) return null;
+    const raw = safeGetStorage(`draft:layout:${draftId}`);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }, [draftId]);
+
+  const baseLayout = useMemo(
+    () =>
+      pickPolygonLayout(
+        (location.state as any)?.layout,
+        (location.state as any)?.draftFull?.layout,
+        layoutFromDraftKey
+      ),
+    [location.state, layoutFromDraftKey]
+  );
+
+  useEffect(() => {
+    if (adminEditor) return;
+    if (!baseLayout) return;
+    applyPolygonLayoutToContexts(baseLayout, slide1, slide2, slide3, slide4, {
+      normalizeLayout: true,
+    });
+  }, [adminEditor, baseLayout, slide1, slide2, slide3, slide4]);
 
   const pdfInputRef = useRef<HTMLInputElement | null>(null);
   const [isPdfProcessing, setIsPdfProcessing] = useState(false);

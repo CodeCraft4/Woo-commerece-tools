@@ -50,7 +50,7 @@ type ImageEl = BaseEl & { type: "image"; src: string };
 type StickerEl = BaseEl & { type: "sticker"; src: string };
 type AnyEl = TextEl | ImageEl | StickerEl;
 
-type Slide = { id: number; label: string; elements: AnyEl[] };
+type Slide = { id: number; label: string; elements: AnyEl[]; bgColor?: string | null };
 
 type CanvasPx = { w: number; h: number; dpi?: number };
 type AdminPreview = {
@@ -229,6 +229,15 @@ export default function TempletEditor() {
     const imgEls = A<any>(src?.imageElements);
     const txtEls = A<any>(src?.textElements);
     const stkEls = A<any>(src?.stickerElements);
+    const slideBg = src?.slideBg ?? src?.slide_bg ?? {};
+
+    const sameSlide = (a: any, b: any) => {
+      if (a == null || b == null) return false;
+      return String(a) === String(b);
+    };
+
+    const hasInlineElements = slidesDef.some((s) => Array.isArray(s?.elements));
+    const shouldUseInline = hasInlineElements && imgEls.length === 0 && txtEls.length === 0 && stkEls.length === 0;
 
     const coerceText = (e: any): TextEl => {
       const r = normalize01(e, storedW, storedH); // coordinates پہلے سے multiplied ہیں
@@ -269,25 +278,73 @@ export default function TempletEditor() {
         id: asStr(e?.id) || uuid(),
         slideId: asNum(e?.slideId ?? e?.slide_id, 0),
         ...r,
-        src: sanitizeSrc(asStr(e?.src ?? e?.url)),
+        src: sanitizeSrc(asStr(e?.sticker ?? e?.src ?? e?.url)),
         zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
         editable: e?.editable !== false,
       };
+    };
+
+    const inferInlineType = (el: any): "text" | "image" | "sticker" | "unknown" => {
+      if (el?.type) return el.type;
+      if (el?.sticker) return "sticker";
+      if (el?.text != null || el?.value != null) return "text";
+      if (el?.src || el?.url || el?.imageUrl || el?.image) return "image";
+      return "unknown";
     };
 
     const slides: Slide[] = slidesDef.map((sl, i) => {
       const sid = asNum(sl?.id ?? i, i);
       const label = labels[i] ?? asStr(sl?.label, `Slide ${i + 1}`);
 
-      const images = imgEls.filter((e) => (e?.slideId ?? e?.slide_id) === sid).map(coerceImage);
-      const texts = txtEls.filter((e) => (e?.slideId ?? e?.slide_id) === sid).map(coerceText);
-      const stickers = stkEls.filter((e) => (e?.slideId ?? e?.slide_id) === sid).map(coerceSticker);
+      const inlineElements = shouldUseInline ? A<any>(sl?.elements) : [];
 
-      const elements: AnyEl[] = [...images, ...texts, ...stickers].sort(
-        (a, b) => asNum(a.zIndex, 1) - asNum(b.zIndex, 1)
+      const images = shouldUseInline
+        ? inlineElements.filter((e) => inferInlineType(e) === "image").map(coerceImage)
+        : imgEls.filter((e) => sameSlide(e?.slideId ?? e?.slide_id, sid)).map(coerceImage);
+      const texts = shouldUseInline
+        ? inlineElements.filter((e) => inferInlineType(e) === "text").map(coerceText)
+        : txtEls.filter((e) => sameSlide(e?.slideId ?? e?.slide_id, sid)).map(coerceText);
+      const stickers = shouldUseInline
+        ? inlineElements.filter((e) => inferInlineType(e) === "sticker").map(coerceSticker)
+        : stkEls.filter((e) => sameSlide(e?.slideId ?? e?.slide_id, sid)).map(coerceSticker);
+
+      const bgEntry =
+        (Array.isArray(slideBg) ? slideBg?.[i] : null) ??
+        slideBg?.[String(sid)] ??
+        slideBg?.[sid] ??
+        null;
+      const bgFromSlide = sl?.bg ?? sl?.background ?? {};
+      const bgImageSrc = sanitizeSrc(
+        asStr(bgEntry?.image ?? bgEntry?.src ?? bgFromSlide?.image ?? sl?.bgImage ?? sl?.backgroundImage)
+      );
+      const bgColor = asStr(
+        bgEntry?.color ?? bgEntry?.bgColor ?? bgFromSlide?.color ?? sl?.bgColor ?? sl?.backgroundColor,
+        ""
       );
 
-      return { id: sid, label, elements };
+      const elements: AnyEl[] = [
+        ...(bgImageSrc
+          ? [
+              {
+                type: "image",
+                id: `bg-${sid}`,
+                slideId: sid,
+                x: 0,
+                y: 0,
+                width: storedW,
+                height: storedH,
+                src: bgImageSrc,
+                zIndex: 0,
+                editable: false,
+              } as ImageEl,
+            ]
+          : []),
+        ...images,
+        ...texts,
+        ...stickers,
+      ].sort((a, b) => asNum(a.zIndex, 1) - asNum(b.zIndex, 1));
+
+      return { id: sid, label, elements, bgColor: bgColor || null };
     });
 
     return {
@@ -528,29 +585,7 @@ export default function TempletEditor() {
 
   };
 
-  // 2. Har slide capture karo function
-  const captureAllSlidesPng = async (): Promise<string[]> => {
-    const captured: string[] = [];
-
-    for (let i = 0; i < userSlides.length; i++) {
-      const node = slideRefs.current[i];
-      if (!node) continue;
-
-      const pngData = await capturePngFromNode(node, {
-        width: artboardWidth,
-        height: artboardHeight,
-        background: isMugCategory(adminDesign?.category) ? "#ffffff" : "transparent",
-        quality: previewCapture.quality,
-        pixelRatio: previewCapture.pixelRatio,
-      });
-
-      if (pngData) {
-        captured.push(pngData);
-      }
-    }
-
-    return captured;
-  };
+  // 2. (removed) full pre-capture to speed up preview
 
   const handleNavigatePrview = async () => {
     if (!adminDesign?.category) return;
@@ -696,7 +731,7 @@ export default function TempletEditor() {
                     borderRadius: 0,
                     position: "relative",
                     overflow: "hidden",
-                    bgcolor: "transparent",
+                    bgcolor: slide.bgColor ?? "transparent",
                     boxShadow: isActive ? 10 : 4,
                     outline: "none",
                   }}

@@ -14,7 +14,8 @@ import { USER_ROUTES } from "../../../constant/route";
 import MainLayout from "../../../layout/MainLayout";
 import { COLORS } from "../../../constant/color";
 import { removeWhiteBg } from "../../../lib/lib";
-import { loadSlidesFromIdb } from "../../../lib/idbSlides";
+import { loadSlidesFromIdb, saveSlidesToIdb } from "../../../lib/idbSlides";
+import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage";
 
 // ------------------ ENV ------------------
 const API_BASE = "https://diypersonalisation.com/api";
@@ -433,6 +434,26 @@ const Subscription = () => {
     }
   };
 
+  const persistSlidesForCheckout = async () => {
+    const slides = await getSlidesPayload();
+    if (!slides || !Object.keys(slides).length) return null;
+
+    try {
+      safeSetSessionStorage("slides", JSON.stringify(slides));
+    } catch {}
+
+    try {
+      const minimal = slides?.slide1 ? JSON.stringify({ slide1: slides.slide1 }) : "{}";
+      safeSetLocalStorage("slides_backup", minimal, { clearOnFail: ["slides_backup"] });
+    } catch {}
+
+    try {
+      await saveSlidesToIdb(slides);
+    } catch {}
+
+    return slides;
+  };
+
   const syncLocalSelection = (p: { id: any; title: string; price: number }) => {
     try {
       const newVariant: SelectedVariant = {
@@ -452,6 +473,11 @@ const Subscription = () => {
   const startOneTimeStripeCheckout = async (p: { title: string; price: number }) => {
     setLoading(true);
     try {
+      const slides = await persistSlidesForCheckout();
+      if (!slides || !Object.keys(slides).length) {
+        throw new Error("Preview data missing. Please go back and click Download/Preview again.");
+      }
+
       if (!STRIPE_PK) throw new Error("Stripe key missing in env");
       const stripe = await stripePromise;
       if (!stripe) throw new Error("Stripe not available");

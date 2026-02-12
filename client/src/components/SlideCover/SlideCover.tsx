@@ -147,8 +147,9 @@ export function normalizeSlide(slide: any): {
   const bg = slide.bg ?? {};
   const flags = slide.flags ?? {};
   const rect = bg?.rect ?? { x: 0, y: 0, width: 0, height: 0 };
-  const bgEditable = bool(bg?.editable, false);       // default locked
-  const bgLocked = bool(bg?.locked, !bgEditable);
+  const bgLocked = bool(bg?.locked, false);
+  const bgEditable =
+    typeof bg?.editable === "boolean" ? !!bg.editable : !bgLocked;
 
   const out: LayoutNorm = { elements: [], stickers: [], textElements: [] };
 
@@ -184,8 +185,8 @@ export function normalizeSlide(slide: any): {
   out.elements.push(...(user?.images?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "uimg-edit")));
 
   // stickers (layout + user + qrVideo)
-  // out.stickers.push(...(layout?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "st-locked")));
-  // out.stickers.push(...(layout?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "st-edit")));
+  out.stickers.push(...(layout?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "st-locked")));
+  out.stickers.push(...(layout?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "st-edit")));
   out.stickers.push(...(user?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "ust-locked")));
   out.stickers.push(...(user?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "ust-edit")));
 
@@ -209,8 +210,22 @@ export function normalizeSlide(slide: any): {
   }
 
   // texts
-  // out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
-  out.textElements.push(...(slide.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, !!o?.isEditable, "mte")));
+  const canEdit = (o: any, fallback = true) =>
+    typeof o?.editable === "boolean"
+      ? !!o.editable
+      : typeof o?.isEditable === "boolean"
+        ? !!o.isEditable
+        : typeof o?.locked === "boolean"
+          ? !o.locked
+          : fallback;
+  out.textElements.push(
+    ...((layout?.staticText ?? layout?.textElements ?? [])).map((o: any, i: number) =>
+      toText(o, i, canEdit(o, !o?.locked), "te")
+    )
+  );
+  out.textElements.push(
+    ...(slide.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, canEdit(o, true), "mte"))
+  );
   if (slide.oneText && str(slide.oneText.value, "").trim().length > 0) {
     out.textElements.push(
       toText(
@@ -370,6 +385,8 @@ const SlideCover = ({
     selectedShapeImageId1,
     setSelectedShapeImageId1,
   } = useSlide1();
+
+  const hasLayoutBgImage = !!layout1?.elements?.some((el: any) => el?.id === "bg-image");
 
   /* ------------------ pull slide1 from route ------------------ */
 
@@ -875,6 +892,32 @@ const SlideCover = ({
               : {},
           }}
         >
+          {!isAdminEditor && bgImage1 && !hasLayoutBgImage && (
+            <Box
+              sx={{
+                position: "absolute",
+                left: bgRect1?.x ?? 0,
+                top: bgRect1?.y ?? 0,
+                width: bgRect1?.width ?? "100%",
+                height: bgRect1?.height ?? "100%",
+                zIndex: 0,
+                overflow: "hidden",
+                borderRadius: 1,
+                pointerEvents: "none",
+              }}
+            >
+              <Box
+                component="img"
+                src={bgImage1}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+            </Box>
+          )}
           {isAdminEditor && bgImage1 && (
             <Rnd
               size={{ width: bgRect1.width, height: bgRect1.height }}
@@ -1048,7 +1091,7 @@ const SlideCover = ({
                           sx={{
                             width: "100%",
                             height: "100%",
-                            objectFit: "fill",
+                            objectFit: el.id === "bg-image" ? "cover" : "fill",
                             borderRadius: 1,
                             display: "block",
                             pointerEvents: "none",

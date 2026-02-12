@@ -59,6 +59,7 @@ export const getPricingConfig = (
   categoryName?: string,
 ): { sizes: SizeDef[] } => {
   const name = (categoryName ?? "").trim().toLowerCase();
+  const compact = name.replace(/\s+/g, "");
 
   if (name.includes("invite")) {
     return {
@@ -133,7 +134,7 @@ export const getPricingConfig = (
       ],
     };
 
-  if (name.includes("wall art"))
+  if (name.includes("wall art") || compact.includes("wallart"))
     return {
       sizes: [
         { key: "A4", title: "A4" },
@@ -142,7 +143,7 @@ export const getPricingConfig = (
         { key: "US_TABLOID", title: "US Tabloid" },
       ],
     };
-  if (name.includes("photo art"))
+  if (name.includes("photo art") || compact.includes("photoart"))
     return {
       sizes: [
         { key: "A4", title: "A4" },

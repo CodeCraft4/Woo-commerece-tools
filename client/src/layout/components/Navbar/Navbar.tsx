@@ -1,6 +1,6 @@
 import { AppBar, Backdrop, Box, CircularProgress, Toolbar, Typography } from "@mui/material";
 import { Drafts, KeyboardArrowLeft } from "@mui/icons-material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as htmlToImage from "html-to-image";
 import toast from "react-hot-toast";
@@ -103,6 +103,13 @@ const Navbar = () => {
   const { id: routeId } = useParams<{ id: string }>();
 
   const [loadingDrafts, setLoadingDrafts] = useState(false);
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const isCardEditorRoute = location.pathname.startsWith(`${USER_ROUTES.HOME}/`);
   const isPreviewRoute = location.pathname === USER_ROUTES.PREVIEW;
@@ -630,7 +637,23 @@ const Navbar = () => {
 
           {isCardEditorRoute ? (
             <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              <LandingButton title="Preview" onClick={() => navigate(USER_ROUTES.PREVIEW)} />
+              <LandingButton
+                title="Preview"
+                onClick={() => {
+                  const target = USER_ROUTES.PREVIEW;
+
+                  // normal SPA navigation
+                  navigate(target);
+
+                  // fallback: if URL changes but router doesn't update, force reload
+                  setTimeout(() => {
+                    if (!mountedRef.current) return;
+                    if (window.location.pathname === target && location.pathname !== target) {
+                      window.location.reload();
+                    }
+                  }, 0);
+                }}
+              />
             </Box>
           ) : (
             null

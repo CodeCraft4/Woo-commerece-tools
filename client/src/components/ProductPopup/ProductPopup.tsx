@@ -18,6 +18,7 @@ import { useCartStore } from "../../stores/cartStore";
 import { ensureDraftCardId, newUuid, setDraftCardId } from "../../lib/draftCardId";
 import { getPricingConfig, type SizeKeyConfig } from "../../lib/pricing";
 import { clearSlidesFromIdb } from "../../lib/idbSlides";
+import { pickPolygonLayout } from "../../lib/polygon";
 
 const style = {
   position: "absolute" as const,
@@ -364,12 +365,17 @@ const ProductPopup = (props: ProductsPopTypes) => {
             return id;
           })();
 
+      const baseLayout = pickPolygonLayout(
+        (cate as any)?.polygonlayout,
+        (cate as any)?.polyganLayout
+      );
+
       setTimeout(() => {
         navigate(`${USER_ROUTES.HOME}/${draftId}`, {
           state: {
             poster: cate?.imageurl || cate?.lastpageimageurl,
             plan: selectedPlan,
-            layout: cate?.polygonlayout,
+            layout: baseLayout,
           },
         });
         setLoading(false);

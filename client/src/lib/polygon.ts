@@ -180,6 +180,258 @@ type BuildOptions = {
 export const mergeBuckets = <T>(b?: Bucket<T>) =>
   b ? [...(b.editable || []), ...(b.locked || [])] : [];
 
+type LayoutNormEl = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  src?: string | null;
+  zIndex?: number;
+  rotation?: number;
+  isEditable?: boolean;
+  locked?: boolean;
+  clipPath?: any;
+};
+
+type LayoutNormSticker = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zIndex?: number;
+  rotation?: number;
+  sticker?: string | null;
+  isEditable?: boolean;
+  locked?: boolean;
+};
+
+type LayoutNormText = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  text: string;
+  textAlign?: "left" | "center" | "right";
+  verticalAlign?: "top" | "center" | "bottom";
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  fontWeight?: number | string;
+  italic?: boolean;
+  rotation?: number;
+  lineHeight?: number;
+  letterSpacing?: number | string;
+  zIndex?: number;
+  isEditable?: boolean;
+  locked?: boolean;
+};
+
+type LayoutNorm = {
+  elements: LayoutNormEl[];
+  stickers: LayoutNormSticker[];
+  textElements: LayoutNormText[];
+};
+
+const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
+const str = (v: any, d = "") => (typeof v === "string" ? v : d);
+const bool = (v: any, d = false) => (typeof v === "boolean" ? v : d);
+const idOrIdx = (obj: any, idx: number, prefix: string) => str(obj?.id, `${prefix}-${idx}`);
+
+const toElement = (obj: any, i: number, editable: boolean, prefix = "bg"): LayoutNormEl => ({
+  id: idOrIdx(obj, i, prefix),
+  x: num(obj?.x, 0),
+  y: num(obj?.y, 0),
+  width: num(obj?.width, num(obj?.w, 200)),
+  height: num(obj?.height, num(obj?.h, 200)),
+  src: obj?.src ?? obj?.image ?? obj?.url ?? null,
+  zIndex: num(obj?.zIndex, 1),
+  rotation: num(obj?.rotation, 0),
+  isEditable: editable,
+  locked: bool(obj?.locked, !editable),
+  clipPath: obj?.clipPath ?? obj?.shapePath ?? null,
+});
+
+const toSticker = (obj: any, i: number, editable: boolean, prefix = "st"): LayoutNormSticker => ({
+  id: idOrIdx(obj, i, prefix),
+  x: num(obj?.x, 0),
+  y: num(obj?.y, 0),
+  width: num(obj?.width, 80),
+  height: num(obj?.height, 80),
+  zIndex: num(obj?.zIndex, 1),
+  rotation: num(obj?.rotation, 0),
+  sticker: obj?.sticker ?? obj?.src ?? obj?.image ?? obj?.url ?? null,
+  isEditable: editable,
+  locked: bool(obj?.locked, !editable),
+});
+
+const toText = (obj: any, i: number, editable: boolean, prefix = "te"): LayoutNormText => {
+  const tAlign = str(obj?.textAlign, "center");
+  const vAlign = str(obj?.verticalAlign, "center");
+  return {
+    id: idOrIdx(obj, i, prefix),
+    x: num(obj?.x, num(obj?.position?.x, 0)),
+    y: num(obj?.y, num(obj?.position?.y, 0)),
+    width: num(obj?.width, num(obj?.w, num(obj?.size?.width, 240))),
+    height: num(obj?.height, num(obj?.h, num(obj?.size?.height, 60))),
+    text: str(obj?.text ?? obj?.value, ""),
+    textAlign: (tAlign === "start" ? "left" : tAlign === "end" ? "right" : tAlign) as LayoutNormText["textAlign"],
+    verticalAlign: (["top", "bottom"].includes(vAlign) ? (vAlign as any) : "center") as LayoutNormText["verticalAlign"],
+    fontSize: obj?.fontSize,
+    fontFamily: obj?.fontFamily,
+    color: obj?.fontColor ?? obj?.color,
+    fontWeight: obj?.fontWeight ?? obj?.bold,
+    italic: obj?.italic ?? false,
+    rotation: obj?.rotation,
+    lineHeight: obj?.lineHeight,
+    letterSpacing: obj?.letterSpacing,
+    zIndex: obj?.zIndex ?? 1,
+    isEditable: editable,
+    locked: bool(obj?.locked, !editable),
+  };
+};
+
+const normalizeSlideToLayout = (slide: SlidePayloadV2): LayoutNorm => {
+  const layout = slide?.layout ?? ({} as any);
+  const user = slide?.user ?? ({} as any);
+  const bg = slide?.bg ?? ({} as any);
+  const rect = bg?.rect ?? { x: 0, y: 0, width: 0, height: 0 };
+  const bgLocked = bool(bg?.locked, false);
+  const bgEditable =
+    typeof (bg as any)?.editable === "boolean"
+      ? !!(bg as any)?.editable
+      : !bgLocked;
+
+  const out: LayoutNorm = { elements: [], stickers: [], textElements: [] };
+
+  out.elements.push(...(layout?.bgFrames?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "bg-locked")));
+  out.elements.push(...(layout?.bgFrames?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "bg-edit")));
+
+  if (bg?.image) {
+    out.elements.push(
+      toElement(
+        {
+          id: "bg-image",
+          x: num(rect.x, 0),
+          y: num(rect.y, 0),
+          width: num(rect.width, 0),
+          height: num(rect.height, 0),
+          src: bg.image,
+          zIndex: 0,
+          rotation: 0,
+          locked: bgLocked,
+        },
+        9990,
+        bgEditable && !bgLocked,
+        "bg",
+      ),
+    );
+  }
+
+  out.elements.push(...(user?.images?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "uimg-locked")));
+  out.elements.push(...(user?.images?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "uimg-edit")));
+
+  out.stickers.push(...(layout?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "st-locked")));
+  out.stickers.push(...(layout?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "st-edit")));
+  out.stickers.push(...(user?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "ust-locked")));
+  out.stickers.push(...(user?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "ust-edit")));
+
+  if (slide?.qrVideo?.url) {
+    out.stickers.push(
+      toSticker(
+        {
+          id: "qr-video",
+          x: num(slide.qrVideo.x, 56),
+          y: num(slide.qrVideo.y, 404),
+          width: num(slide.qrVideo.width, 70),
+          height: num(slide.qrVideo.height, 105),
+          zIndex: num(slide.qrVideo.zIndex, 1000),
+          url: slide.qrVideo.url,
+        },
+        9991,
+        false,
+        "qr",
+      ),
+    );
+  }
+
+  if (slide?.qrAudio?.url) {
+    out.stickers.push(
+      toSticker(
+        {
+          id: "qr-audio",
+          x: num(slide.qrAudio.x, 56),
+          y: num(slide.qrAudio.y, 404),
+          width: num(slide.qrAudio.width, 70),
+          height: num(slide.qrAudio.height, 105),
+          zIndex: num(slide.qrAudio.zIndex, 1000),
+          url: slide.qrAudio.url,
+        },
+        9992,
+        false,
+        "qr",
+      ),
+    );
+  }
+
+  const staticText = layout?.staticText ?? (layout as any)?.textElements ?? [];
+  const canEdit = (o: any, fallback = true) =>
+    typeof o?.editable === "boolean"
+      ? !!o.editable
+      : typeof o?.isEditable === "boolean"
+        ? !!o.isEditable
+        : typeof o?.locked === "boolean"
+          ? !o.locked
+          : fallback;
+  out.textElements.push(
+    ...(staticText ?? []).map((o: any, i: number) => toText(o, i, canEdit(o, !o?.locked), "te"))
+  );
+  out.textElements.push(
+    ...(user?.freeTexts ?? []).map((o: any, i: number) => toText(o, i, !o?.locked, "ut"))
+  );
+  out.textElements.push(
+    ...(slide?.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, canEdit(o, true), "mte"))
+  );
+
+  if (slide?.oneText && str(slide.oneText.value, "").trim().length > 0) {
+    out.textElements.push(
+      toText(
+        {
+          id: "single-text",
+          x: num(slide.oneText.x, 24),
+          y: num(slide.oneText.y, 24),
+          width: num(slide.oneText.width, 360),
+          height: num(slide.oneText.height, 120),
+          text: slide.oneText.value,
+          fontSize: slide.oneText.fontSize,
+          fontFamily: slide.oneText.fontFamily,
+          fontColor: slide.oneText.fontColor,
+          fontWeight: slide.oneText.fontWeight,
+          textAlign: slide.oneText.textAlign,
+          verticalAlign: slide.oneText.verticalAlign,
+          rotation: slide.oneText.rotation,
+          lineHeight: slide.oneText.lineHeight,
+          letterSpacing: slide.oneText.letterSpacing,
+          zIndex: 1,
+        },
+        9993,
+        true,
+        "ote",
+      ),
+    );
+  }
+
+  if (slide?.flags?.isAIImage === true) {
+    out.elements = out.elements.map((e) => ({ ...e, isEditable: false }));
+    out.stickers = out.stickers.map((s) => ({ ...s, isEditable: false }));
+    out.textElements = out.textElements.map((t) => ({ ...t, isEditable: false }));
+  }
+
+  return out;
+};
+
 /* ------------------------------ Normalizer ------------------------------ */
 
 const normalizeSlideV2 = (ctx: any, opts?: BuildOptions): SlidePayloadV2 => {
@@ -747,15 +999,16 @@ export function applyPolygonLayoutToContexts(
   slide1: any,
   slide2: any,
   slide3: any,
-  slide4: any
+  slide4: any,
+  opts?: { normalizeLayout?: boolean }
 ) {
   if (!polygonlayout) return;
 
   if (isV2Layout(polygonlayout)) {
-    applySlideV2ToContext(polygonlayout.slides.slide1, slide1, 1);
-    applySlideV2ToContext(polygonlayout.slides.slide2, slide2, 2);
-    applySlideV2ToContext(polygonlayout.slides.slide3, slide3, 3);
-    applySlideV2ToContext(polygonlayout.slides.slide4, slide4, 4);
+    applySlideV2ToContext(polygonlayout.slides.slide1, slide1, 1, opts);
+    applySlideV2ToContext(polygonlayout.slides.slide2, slide2, 2, opts);
+    applySlideV2ToContext(polygonlayout.slides.slide3, slide3, 3, opts);
+    applySlideV2ToContext(polygonlayout.slides.slide4, slide4, 4, opts);
     return;
   }
 
@@ -873,15 +1126,29 @@ const suffixFor = (n: 1 | 2 | 3 | 4) => (n === 2 ? "" : String(n));
 const fnName = (base: string, n: 1 | 2 | 3 | 4) => `${base}${suffixFor(n)}`;
 
 const getCtxProp = (ctx: any, base: string, n: 1 | 2 | 3 | 4) =>
-  ctx?.[`${base}${suffixFor(n)}`] ?? ctx?.[base];
+  ctx?.[`${base}${suffixFor(n)}`] ??
+  ctx?.[base] ??
+  (n === 2 ? ctx?.[`${base}2`] : undefined);
 
 function applySlideV2ToContext(
   payload: SlidePayloadV2,
   slideCtx: any,
-  n: 1 | 2 | 3 | 4
+  n: 1 | 2 | 3 | 4,
+  opts?: { normalizeLayout?: boolean }
 ) {
-  const callFn = (base: string, ...args: any[]) =>
-    call(slideCtx, fnName(base, n), ...args);
+  const callFn = (base: string, ...args: any[]) => {
+    const name = fnName(base, n);
+    if (typeof slideCtx?.[name] === "function") {
+      slideCtx[name](...args);
+      return;
+    }
+    if (n === 2) {
+      const alt = `${base}2`;
+      if (typeof slideCtx?.[alt] === "function") {
+        slideCtx[alt](...args);
+      }
+    }
+  };
   const callFnAlt = (bases: string[], ...args: any[]) => {
     for (const b of bases) {
       const name = n === 2 ? b : `${b}${n}`;
@@ -947,15 +1214,15 @@ function applySlideV2ToContext(
   const stickers = mergeBuckets(payload.user?.stickers);
   callFn("setSelectedStickers", Array.isArray(stickers) ? stickers : []);
 
-  // Layout frames + layout stickers + static text
-  const bgFrames = mergeBuckets(payload.layout?.bgFrames);
-  const layoutStickers = mergeBuckets(payload.layout?.stickers);
-  const staticText = payload.layout?.staticText ?? [];
-  callFn("setLayout", {
-    elements: bgFrames,
-    stickers: layoutStickers,
-    textElements: staticText,
-  });
+  // Layout frames + layout stickers + static text (or full merged layout for user view)
+  const layout = opts?.normalizeLayout
+    ? normalizeSlideToLayout(payload)
+    : {
+        elements: mergeBuckets(payload.layout?.bgFrames),
+        stickers: mergeBuckets(payload.layout?.stickers),
+        textElements: payload.layout?.staticText ?? [],
+      };
+  callFn("setLayout", layout);
 
   // QR Video
   callFnAlt(["setSelectedVideoUrl"], payload.qrVideo?.url ?? null);

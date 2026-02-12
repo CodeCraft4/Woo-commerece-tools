@@ -430,6 +430,19 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
 
 
+      const pricingFromMeta = meta?.pricing ?? (rawStores as any)?.pricing ?? null;
+      const salePricingFromMeta = meta?.salePricing ?? (rawStores as any)?.salePricing ?? null;
+      const pricingTabloid =
+        (pricingFromMeta as any)?.US_TABLOID ??
+        (pricingFromMeta as any)?.us_tabloid ??
+        (pricingFromMeta as any)?.ustabloid ??
+        null;
+      const salePricingTabloid =
+        (salePricingFromMeta as any)?.US_TABLOID ??
+        (salePricingFromMeta as any)?.us_tabloid ??
+        (salePricingFromMeta as any)?.ustabloid ??
+        null;
+
       const payload: any = {
         // DB COLUMN: category (must be the form cardcategory)
         category: dbCategory,
@@ -448,8 +461,8 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
           stickerElements: normStickerElements,
           slideBg: rawStores.slideBg,
           // preserve pricing maps in JSON (safe even without DB columns)
-          pricing: meta?.pricing ?? (rawStores as any)?.pricing ?? null,
-          salePricing: meta?.salePricing ?? (rawStores as any)?.salePricing ?? null,
+          pricing: pricingFromMeta,
+          salePricing: salePricingFromMeta,
 
           // âœ… do NOT lose editor template type
           editorCategory: rawStores.category, // CategoryKey: Invites/Stickers etc
@@ -480,11 +493,21 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
         saleusletter: meta?.saleusletter != null ? String(meta.saleusletter) : null,
         a3price: meta?.a3price != null ? String(meta.a3price) : null,
         halfusletter: meta?.halfusletter != null ? String(meta.halfusletter) : null,
-        ustabloid: meta?.ustabloid != null ? String(meta.ustabloid) : null,
+        ustabloid:
+          meta?.ustabloid != null && String(meta.ustabloid).trim() !== ""
+            ? String(meta.ustabloid)
+            : pricingTabloid != null && String(pricingTabloid).trim() !== ""
+              ? String(pricingTabloid)
+              : null,
 
         salea3price: meta?.salea3price != null ? String(meta.salea3price) : null,
         salehalfusletter: meta?.salehalfusletter != null ? String(meta.salehalfusletter) : null,
-        saleustabloid: meta?.saleustabloid != null ? String(meta.saleustabloid) : null,
+        saleustabloid:
+          meta?.saleustabloid != null && String(meta.saleustabloid).trim() !== ""
+            ? String(meta.saleustabloid)
+            : salePricingTabloid != null && String(salePricingTabloid).trim() !== ""
+              ? String(salePricingTabloid)
+              : null,
 
         description: meta?.description ?? null,
         sku: meta?.sku ?? null,

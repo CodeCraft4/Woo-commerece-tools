@@ -33,9 +33,9 @@ const CATEGORY_MOCKUPS: Array<{
         mockupSrc: "/assets/mockup/bag-mockup.jpg",
         cardAspectRatio: "1 / 1.2",
         overlay: {
-          top: "38%",
-          left: "20%",
-          width: "60%",
+          top: "42%",
+          left: "34%",
+          width: "30%",
           height: "45%",
           rotate: "0deg",
           objectFit: "contain",

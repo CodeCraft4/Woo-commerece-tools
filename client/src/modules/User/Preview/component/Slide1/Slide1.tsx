@@ -13,7 +13,10 @@ type Slide1Props = {
 }
 
 const Slide1 = (props: Slide1Props) => {
-  const { layout1, bgColor1 } = useSlide1();
+  const { layout1, bgColor1, bgImage1, bgRect1 } = useSlide1();
+  const hasLayoutBgImage = Array.isArray(layout1?.elements)
+    ? layout1.elements.some((el: AnyEl) => el?.id === "bg-image")
+    : false;
 
   const { ref } = props
 
@@ -33,6 +36,33 @@ const Slide1 = (props: Slide1Props) => {
         borderRadius: 2,
       }}
     >
+      {bgImage1 && !hasLayoutBgImage && (
+        <Box
+          sx={{
+            position: "absolute",
+            left: bgRect1?.x ?? 0,
+            top: bgRect1?.y ?? 0,
+            width: bgRect1?.width ?? "100%",
+            height: bgRect1?.height ?? "100%",
+            zIndex: 0,
+            overflow: "hidden",
+            borderRadius: 1,
+            pointerEvents: "none",
+          }}
+        >
+          <Box
+            component="img"
+            src={bgImage1}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        </Box>
+      )}
+
       {layout1 && (
         <Box sx={{ width: "100%", height: "100%", position: "relative", p: 1 }}>
           {/* IMAGES / BG ELEMENTS */}
