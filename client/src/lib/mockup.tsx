@@ -151,7 +151,7 @@ const CATEGORY_MOCKUPS: Array<{
           opacity: 0.98,
           // filter: "contrast(1.05) saturate(1.02)",
         },
-      },
+      },  
     },
     // Mug (cup of tea)
     {

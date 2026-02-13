@@ -17,9 +17,11 @@ import { Rnd } from "react-rnd";
 import { COLORS } from "../../constant/color";
 import { useSlide3 } from "../../context/Slide3Context";
 import { motion } from "framer-motion";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import mergePreservePdf from "../../utils/mergePreservePdf";
 import { safeGetStorage } from "../../lib/storage";
+import { getDraftCardId, isUuid } from "../../lib/draftCardId";
+import { readDraftFull } from "../../lib/draftLocal";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -201,7 +203,18 @@ function normalizeSlide(slide: any): {
 
   // texts
   out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
-  out.textElements.push(...(slide.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, !!o?.isEditable, "mte")));
+  out.textElements.push(
+    ...(slide.multipleTexts ?? []).map((o: any, i: number) => {
+      const explicit =
+        typeof o?.isEditable === "boolean"
+          ? o.isEditable
+          : typeof o?.editable === "boolean"
+            ? o.editable
+            : undefined;
+      const editable = explicit ?? !o?.locked;
+      return toText(o, i, editable, "mte");
+    })
+  );
   if (slide.oneText && str(slide.oneText.value, "").trim().length > 0) {
     out.textElements.push(
       toText(
@@ -356,8 +369,14 @@ const SpreadRightSide = ({
 
 
   const location = useLocation();
+  const { id: routeId } = useParams<{ id?: string }>();
+  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : getDraftCardId() ?? ""), [routeId]);
+  const localDraftFull = useMemo(
+    () => (!isAdminEditor && draftId ? readDraftFull(draftId) : null),
+    [draftId, isAdminEditor]
+  );
   const slide3Template = location.state?.layout?.slides?.slide3 ?? null;
-  const draftSlide3 = location.state?.draftFull?.slide3 ?? null;
+  const draftSlide3 = location.state?.draftFull?.slide3 ?? localDraftFull?.slide3 ?? null;
 
   console.log(draftSlide3, 'slide3')
 

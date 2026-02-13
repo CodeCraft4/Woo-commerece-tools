@@ -13,8 +13,7 @@ import { useAuth } from "../../../context/AuthContext";
 import ZIPModal from "./components/ZIPModal";
 import { USER_ROUTES } from "../../../constant/route";
 
-const API_BASE = 'https://diypersonalisation.com/api';
-// const API_BASE = 'http://localhost:5000';
+const API_BASE = "/api";
 
 const toNumberSafe = (v: any, fallback = 0) => {
   if (v == null) return fallback;

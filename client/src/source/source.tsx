@@ -265,7 +265,7 @@ export const fetchTempletCardCount = async () => {
 export const fetchTempletDesignById = async (id: string) => {
   const { data, error } = await supabaseAdmin
     .from("templetDesign")
-    .select("id, category, raw_stores, created_at")
+    .select("id, category, raw_stores, slides, created_at")
     .eq("id", id)
     .single();
 
@@ -294,6 +294,18 @@ export const fetchTempletRawStoresById = async (id: string | number) => {
 
   if (error) throw error;
   return data;
+};
+
+// Fetch a user draft by card_id (uuid) to restore editor on reload
+export const fetchDraftByCardId = async (cardId: string) => {
+  const { data, error } = await supabase
+    .from("draft")
+    .select("*")
+    .eq("card_id", cardId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ?? null;
 };
 
 export async function fetchAllBundlesFromDB(): Promise<any> {

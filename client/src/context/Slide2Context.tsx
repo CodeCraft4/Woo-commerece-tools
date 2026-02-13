@@ -663,8 +663,10 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.fontColor) setFontColor(parsed.fontColor);
         if (parsed.textAlign) setTextAlign(parsed.textAlign);
         if (parsed.verticalAlign) setVerticalAlign(parsed.verticalAlign);
-        if (parsed.letterSpacing !== undefined) setLetterSpacing2(parsed.letterSpacing);
-        if (parsed.lineHeight !== undefined) setLineHeight2(parsed.lineHeight);
+        const restoredLetterSpacing = parsed.letterSpacing2 ?? parsed.letterSpacing;
+        const restoredLineHeight = parsed.lineHeight2 ?? parsed.lineHeight;
+        if (restoredLetterSpacing !== undefined) setLetterSpacing2(restoredLetterSpacing);
+        if (restoredLineHeight !== undefined) setLineHeight2(restoredLineHeight);
         if (parsed.rotation !== undefined) setRotation(parsed.rotation);
 
       }

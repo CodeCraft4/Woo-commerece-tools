@@ -18,6 +18,8 @@ import { useCartStore } from "../../stores/cartStore";
 import { ensureDraftCardId, newUuid, setDraftCardId } from "../../lib/draftCardId";
 import { getPricingConfig, type SizeKeyConfig } from "../../lib/pricing";
 import { clearSlidesFromIdb } from "../../lib/idbSlides";
+import { pickPolygonLayout } from "../../lib/polygon";
+import { fetchCardById } from "../../source/source";
 
 const style = {
   position: "absolute" as const,
@@ -285,7 +287,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
     toast.error("Please select a valid size/price to continue.");
   };
 
-  const handlePersonalize = () => {
+  const handlePersonalize = async () => {
     if (!cate) return;
 
     if (!sizeOptions.length) {
@@ -364,16 +366,43 @@ const ProductPopup = (props: ProductsPopTypes) => {
             return id;
           })();
 
-      setTimeout(() => {
-        navigate(`${USER_ROUTES.HOME}/${draftId}`, {
-          state: {
-            poster: cate?.imageurl || cate?.lastpageimageurl,
-            plan: selectedPlan,
-            layout: cate?.polygonlayout,
-          },
-        });
+      let baseLayout = pickPolygonLayout(
+        (cate as any)?.polygonlayout,
+        (cate as any)?.polyganLayout
+      );
+
+      if (!baseLayout && cate?.id) {
+        try {
+          const full = await fetchCardById(String(cate.id));
+          const raw =
+            (full as any)?.raw_stores ??
+            (full as any)?.rawStores ??
+            (full as any)?.raw_store ??
+            null;
+
+          baseLayout = pickPolygonLayout(
+            (full as any)?.polygonlayout,
+            (full as any)?.polyganLayout,
+            raw?.polygonlayout,
+            raw?.polyganLayout
+          );
+        } catch {}
+      }
+
+      if (!baseLayout) {
+        toast.error("Design data missing. Please refresh and try again.");
         setLoading(false);
-      }, 300);
+        return;
+      }
+
+      navigate(`${USER_ROUTES.HOME}/${draftId}`, {
+        state: {
+          poster: cate?.imageurl || cate?.lastpageimageurl,
+          plan: selectedPlan,
+          layout: baseLayout,
+        },
+      });
+      setLoading(false);
 
       return;
     }

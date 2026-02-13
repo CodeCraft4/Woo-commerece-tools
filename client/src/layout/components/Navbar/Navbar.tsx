@@ -1,6 +1,6 @@
 import { AppBar, Backdrop, Box, CircularProgress, Toolbar, Typography } from "@mui/material";
 import { Drafts, KeyboardArrowLeft } from "@mui/icons-material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as htmlToImage from "html-to-image";
 import toast from "react-hot-toast";
@@ -19,6 +19,8 @@ import { useSlide2 } from "../../../context/Slide2Context";
 import { useSlide3 } from "../../../context/Slide3Context";
 import { useSlide4 } from "../../../context/Slide4Context";
 import { getDraftCardId, setDraftCardId } from "../../../lib/draftCardId";
+import { safeGetStorage, safeSetLocalStorage } from "../../../lib/storage";
+import { clearDraftFull, readDraftFull, writeDraftFull } from "../../../lib/draftLocal";
 
 type SelectedVariant = { key?: string; title?: string; price?: number; basePrice?: number };
 
@@ -103,35 +105,46 @@ const Navbar = () => {
   const { id: routeId } = useParams<{ id: string }>();
 
   const [loadingDrafts, setLoadingDrafts] = useState(false);
+  const skipAutoSaveRef = useRef<string | null>(null);
 
   const isCardEditorRoute = location.pathname.startsWith(`${USER_ROUTES.HOME}/`);
   const isPreviewRoute = location.pathname === USER_ROUTES.PREVIEW;
 
   const { open: isDraftModal, openModal: openDraftModal, closeModal: closeDraftModal } = useModal();
 
+  // ✅ Ensure the URL always has a valid UUID draft id
+  const draftId = useMemo(() => {
+    if (routeId && isUuid(routeId)) return routeId;
+    return "";
+  }, [routeId]);
+
+  const localDraftFull = useMemo(() => (draftId ? readDraftFull(draftId) : null), [draftId]);
+
   // ✅ Admin base polygonlayout can come from:
   // - location.state.layout  (normal flow)
   // - location.state.draftFull.layout (resume draft flow)
+  // - local draft (reload restore)
   const adminLayout = useMemo(() => {
     const st: any = location.state;
-    return st?.layout ?? st?.draftFull?.layout ?? null;
-  }, [location.state]);
+    return st?.layout ?? st?.draftFull?.layout ?? localDraftFull?.layout ?? null;
+  }, [location.state, localDraftFull]);
 
   // ✅ meta can come from:
   // - location.state (normal flow)
   // - location.state.draftFull (resume draft flow)
+  // - local draft (reload restore)
   const meta = useMemo(() => {
     const st: any = location.state;
     return {
-      title: st?.title ?? st?.draftFull?.title ?? st?.cardname ?? "",
-      category: st?.category ?? st?.draftFull?.category ?? st?.cardcategory ?? "",
-      description: st?.description ?? st?.draftFull?.description ?? "",
+      title: st?.title ?? st?.draftFull?.title ?? localDraftFull?.title ?? st?.cardname ?? "",
+      category: st?.category ?? st?.draftFull?.category ?? localDraftFull?.category ?? st?.cardcategory ?? "",
+      description: st?.description ?? st?.draftFull?.description ?? localDraftFull?.description ?? "",
     };
-  }, [location.state]);
+  }, [location.state, localDraftFull]);
 
   // ✅ slide contexts
-  const { layout1 } = useSlide1();
-  const { layout4 } = useSlide4();
+  const { layout1, resetSlide1State, bgColor1, bgImage1, bgRect1 } = useSlide1();
+  const { layout4, resetSlide4State, bgColor4, bgImage4 } = useSlide4();
 
   const {
     oneTextValue,
@@ -162,6 +175,7 @@ const Navbar = () => {
     layout2,
     bgColor2,
     bgImage2,
+    resetSlide2State,
   } = useSlide2();
 
   const {
@@ -198,13 +212,8 @@ const Navbar = () => {
     layout3,
     bgColor3,
     bgImage3,
+    resetSlide3State,
   } = useSlide3();
-
-  // ✅ Ensure the URL always has a valid UUID draft id
-  const draftId = useMemo(() => {
-    if (routeId && isUuid(routeId)) return routeId;
-    return "";
-  }, [routeId]);
 
   const draftLayoutKey = useMemo(() => {
     const id = draftId || getDraftCardId() || "";
@@ -218,14 +227,33 @@ const Navbar = () => {
     if (!draftId) {
       const newId = makeUuid();
       navigate(`${USER_ROUTES.HOME}/${newId}`, { replace: true, state: location.state });
+      return;
+    }
+
+    // ✅ keep local draft id in sync with URL (fixes reload restore)
+    const current = getDraftCardId();
+    if (current !== draftId) {
+      try {
+        setDraftCardId(draftId);
+      } catch {}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftId, isCardEditorRoute]);
 
   useEffect(() => {
+    if (!isCardEditorRoute) {
+      skipAutoSaveRef.current = null;
+    }
+  }, [isCardEditorRoute]);
+
+  useEffect(() => {
     if (!adminLayout || !draftLayoutKey) return;
     try {
-      localStorage.setItem(draftLayoutKey, JSON.stringify(adminLayout));
+      const payload = JSON.stringify(adminLayout);
+      safeSetLocalStorage(draftLayoutKey, payload, {
+        clearOnFail: ["slides_backup"],
+        fallbackToSession: true,
+      });
     } catch {}
   }, [adminLayout, draftLayoutKey]);
 
@@ -299,6 +327,9 @@ const Navbar = () => {
         locked: t.locked,
         isEditable: t.isEditable,
       })),
+      bgColor1: bgColor1 ?? null,
+      bgImage1: bgImage1 ?? null,
+      bgRect1: bgRect1 ?? null,
     };
   };
 
@@ -478,8 +509,130 @@ const Navbar = () => {
         locked: t.locked,
         isEditable: t.isEditable,
       })),
+      bgColor4: bgColor4 ?? null,
+      bgImage4: bgImage4 ?? null,
     };
   };
+
+  const slide1Draft = useMemo(() => buildSlide1Draft(), [layout1, bgColor1, bgImage1, bgRect1]);
+  const slide2Draft = useMemo(
+    () => buildSlide2Draft(),
+    [
+      layout2,
+      bgColor2,
+      bgImage2,
+      oneTextValue,
+      multipleTextValue,
+      texts,
+      textElements,
+      draggableImages,
+      qrPosition,
+      qrAudioPosition,
+      aimage2,
+      selectedAIimageUrl2,
+      isAIimage2,
+      selectedStickers2,
+      fontSize,
+      fontWeight,
+      fontFamily,
+      fontColor,
+      textAlign,
+      verticalAlign,
+      rotation,
+      lineHeight2,
+      letterSpacing2,
+      showOneTextRightSideBox,
+      selectedVideoUrl,
+      selectedAudioUrl,
+    ]
+  );
+  const slide3Draft = useMemo(
+    () => buildSlide3Draft(),
+    [
+      layout3,
+      bgColor3,
+      bgImage3,
+      oneTextValue3,
+      multipleTextValue3,
+      texts3,
+      textElements3,
+      draggableImages3,
+      images3,
+      selectedImg3,
+      qrPosition3,
+      qrAudioPosition3,
+      aimage3,
+      selectedAIimageUrl3,
+      isAIimage3,
+      selectedStickers3,
+      fontSize3,
+      fontWeight3,
+      fontFamily3,
+      fontColor3,
+      textAlign3,
+      verticalAlign3,
+      rotation3,
+      lineHeight3,
+      letterSpacing3,
+      showOneTextRightSideBox3,
+      selectedVideoUrl3,
+      selectedAudioUrl3,
+      selectedLayout3,
+    ]
+  );
+  const slide4Draft = useMemo(() => buildSlide4Draft(), [layout4, bgColor4, bgImage4]);
+
+  const hasAnyLayout = Boolean(layout1 || layout2 || layout3 || layout4);
+
+  useEffect(() => {
+    if (!isCardEditorRoute || !draftId) return;
+    if (skipAutoSaveRef.current === draftId) return;
+    if (!hasAnyLayout && localDraftFull) return;
+
+    const fallbackLayout = (() => {
+      if (!draftLayoutKey) return null;
+      try {
+        const raw = safeGetStorage(draftLayoutKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    const baseLayout = adminLayout ?? localDraftFull?.layout ?? fallbackLayout ?? null;
+
+    const payload = {
+      layout: baseLayout,
+      slide1: slide1Draft,
+      slide2: slide2Draft,
+      slide3: slide3Draft,
+      slide4: slide4Draft,
+      title: meta.title,
+      category: meta.category,
+      description: meta.description,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const timer = setTimeout(() => {
+      writeDraftFull(draftId, payload);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [
+    isCardEditorRoute,
+    draftId,
+    hasAnyLayout,
+    localDraftFull,
+    adminLayout,
+    draftLayoutKey,
+    slide1Draft,
+    slide2Draft,
+    slide3Draft,
+    slide4Draft,
+    meta.title,
+    meta.category,
+    meta.description,
+  ]);
 
   // ✅ Draft Save (upsert)
   const saveDraftToDb = async (opts?: { afterSave?: "home" | "back" | "none"; silent?: boolean }) => {
@@ -532,7 +685,7 @@ const Navbar = () => {
         : (() => {
             try {
               if (!draftLayoutKey) return null;
-              const raw = localStorage.getItem(draftLayoutKey);
+              const raw = safeGetStorage(draftLayoutKey);
               return raw ? JSON.parse(raw) : null;
             } catch {
               return null;
@@ -585,6 +738,16 @@ const Navbar = () => {
     } finally {
       setLoadingDrafts(false);
     }
+  };
+
+  const handleDiscardDraft = () => {
+    if (!draftId) return;
+    skipAutoSaveRef.current = draftId;
+    clearDraftFull(draftId);
+    resetSlide1State?.();
+    resetSlide2State?.();
+    resetSlide3State?.();
+    resetSlide4State?.();
   };
 
   return (
@@ -661,6 +824,7 @@ const Navbar = () => {
           onClick={saveDraftToDb}
           icon={<Drafts />}
           isDraftOpen
+          onCancel={handleDiscardDraft}
         />
       )}
     </Box>

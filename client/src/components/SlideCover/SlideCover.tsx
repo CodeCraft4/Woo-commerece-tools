@@ -23,13 +23,17 @@ import {
   ContentCopyOutlined,
 } from "@mui/icons-material";
 import { useSlide1 } from "../../context/Slide1Context";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { Rnd } from "react-rnd";
 import { motion } from "framer-motion";
 import QrGenerator from "../QR-code/Qrcode";
 import { COLORS } from "../../constant/color";
 import mergePreservePdf from "../../utils/mergePreservePdf";
 import { safeGetStorage } from "../../lib/storage";
+import { getDraftCardId, isUuid } from "../../lib/draftCardId";
+import { readDraftFull } from "../../lib/draftLocal";
+import { pickPolygonLayout } from "../../lib/polygon";
+import { fetchCardById, fetchDraftByCardId } from "../../source/source";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -210,7 +214,24 @@ export function normalizeSlide(slide: any): {
 
   // texts
   // out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
-  out.textElements.push(...(slide.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, !!o?.isEditable, "mte")));
+  const multiRaw = Array.isArray(slide?.multipleTexts) ? slide.multipleTexts : [];
+  const hasMultiContent = multiRaw.some(
+    (o: any) => str(o?.text ?? o?.value, "").trim().length > 0
+  );
+  const includeMulti = flags?.multipleText === true || hasMultiContent;
+  const multiToRender = includeMulti ? multiRaw : [];
+  out.textElements.push(
+    ...multiToRender.map((o: any, i: number) => {
+      const explicit =
+        typeof o?.isEditable === "boolean"
+          ? o.isEditable
+          : typeof o?.editable === "boolean"
+            ? o.editable
+            : undefined;
+      const editable = explicit ?? !o?.locked;
+      return toText(o, i, editable, "mte");
+    })
+  );
   if (slide.oneText && str(slide.oneText.value, "").trim().length > 0) {
     out.textElements.push(
       toText(
@@ -374,7 +395,13 @@ const SlideCover = ({
   /* ------------------ pull slide1 from route ------------------ */
 
   const location = useLocation();
-  const draftFull = location.state?.draftFull ?? null;
+  const { id: routeId } = useParams<{ id?: string }>();
+  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : getDraftCardId() ?? ""), [routeId]);
+  const localDraftFull = useMemo(
+    () => (!isAdminEditor && draftId ? readDraftFull(draftId) : null),
+    [draftId, isAdminEditor]
+  );
+  const draftFull = location.state?.draftFull ?? localDraftFull ?? null;
   const slide1 = location.state?.layout?.slides?.slide1 ?? null;
 
   // console.log(layout1, '---')
@@ -382,29 +409,195 @@ const SlideCover = ({
   /* ------------------ normalize slide1 -> user view state ------------------ */
   useEffect(() => {
     if (draftFull?.slide1) {
-      // bgColor/bgImage base se hi rakho (agar chaho)
-      // but elements/stickers/textElements draft se load karo
+      // ✅ prefer draft values, fallback to base layout bg if present
       setLayout1?.(draftFull.slide1);
+
+      const hasBgColor =
+        draftFull.slide1?.bgColor1 !== undefined || draftFull.slide1?.bgColor !== undefined;
+      const hasBgImage =
+        draftFull.slide1?.bgImage1 !== undefined || draftFull.slide1?.bgImage !== undefined;
+
+      if (hasBgColor) {
+        setBgColor1?.(draftFull.slide1?.bgColor1 ?? draftFull.slide1?.bgColor ?? null);
+      }
+      if (hasBgImage) {
+        setBgImage1?.(draftFull.slide1?.bgImage1 ?? draftFull.slide1?.bgImage ?? null);
+      }
+      const hasBgRect = draftFull.slide1?.bgRect1 !== undefined;
+      if (hasBgRect) {
+        setBgRect1?.(draftFull.slide1?.bgRect1);
+      }
+
+      const baseSlide1 = draftFull.layout?.slides?.slide1 ?? draftFull.layout?.slide1 ?? null;
+      if (baseSlide1) {
+        const normBase = normalizeSlide(baseSlide1);
+        if (!hasBgColor) setBgColor1?.(normBase.bgColor);
+        if (!hasBgImage) setBgImage1?.(normBase.bgImage);
+        if (!hasBgRect && baseSlide1?.bg?.rect) setBgRect1?.(baseSlide1.bg.rect);
+      }
       return;
-    }
-    const saved = safeGetStorage("slide1_state");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed?.layout1) {
-          if (parsed.bgColor1 !== undefined) setBgColor1?.(parsed.bgColor1);
-          if (parsed.bgImage1 !== undefined) setBgImage1?.(parsed.bgImage1);
-          setLayout1?.(parsed.layout1);
-          return;
-        }
-      } catch {}
     }
     if (!slide1) return;
     const norm = normalizeSlide(slide1);
     setBgColor1?.(norm.bgColor);
     setBgImage1?.(norm.bgImage);
     setLayout1?.(norm.layout);
-  }, [slide1, setBgColor1, setBgImage1, setLayout1]);
+    if (slide1?.bg?.rect) setBgRect1?.(slide1.bg.rect);
+    return;
+  }, [draftFull, slide1, setBgColor1, setBgImage1, setLayout1, setBgRect1]);
+
+  useEffect(() => {
+    if (draftFull?.slide1 || slide1) return;
+
+    const hasLayoutContent = (l: any) => {
+      if (!l || typeof l !== "object") return false;
+      const els = Array.isArray(l.elements) ? l.elements.length : 0;
+      const sts = Array.isArray(l.stickers) ? l.stickers.length : 0;
+      const txt = Array.isArray(l.textElements) ? l.textElements.length : 0;
+      return els + sts + txt > 0;
+    };
+
+    let restored = false;
+    let usedBase = false;
+    const saved = safeGetStorage("slide1_state");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const currentDraftId = getDraftCardId();
+        const savedDraftId = parsed?.draftId;
+        const applySaved = (p: any) => {
+          if (p.bgColor1 !== undefined) setBgColor1?.(p.bgColor1);
+          if (p.bgImage1 !== undefined) setBgImage1?.(p.bgImage1);
+          if (p.bgRect1 !== undefined) setBgRect1?.(p.bgRect1);
+          setLayout1?.(p.layout1);
+          restored = true;
+        };
+
+        const savedLayout = parsed?.layout1;
+        const savedHasContent =
+          hasLayoutContent(savedLayout) ||
+          parsed?.bgColor1 !== undefined ||
+          parsed?.bgImage1 !== undefined;
+
+        if (currentDraftId) {
+          if (savedDraftId && savedDraftId === currentDraftId && savedHasContent) {
+            applySaved(parsed);
+          }
+        } else if (savedHasContent) {
+          applySaved(parsed);
+        }
+      } catch {}
+    }
+
+    if (restored) return;
+
+    // Fallback: restore from base admin layout stored in localStorage
+    const draftIdValue = draftId || getDraftCardId();
+    try {
+      if (draftIdValue) {
+        const raw = safeGetStorage(`draft:layout:${draftIdValue}`);
+        if (raw) {
+          const parsedBase = JSON.parse(raw);
+          const baseLayout = pickPolygonLayout(
+            parsedBase,
+            parsedBase?.layout,
+            parsedBase?.polygonlayout,
+            parsedBase?.polygonLayout,
+            parsedBase?.polyganLayout
+          );
+          const baseSlide1 = baseLayout?.slides?.slide1 ?? baseLayout?.slide1;
+          if (baseSlide1) {
+            const norm = normalizeSlide(baseSlide1);
+            setBgColor1?.(norm.bgColor);
+            setBgImage1?.(norm.bgImage);
+            setLayout1?.(norm.layout);
+            if (baseSlide1?.bg?.rect) setBgRect1?.(baseSlide1.bg.rect);
+            usedBase = true;
+          }
+        }
+      }
+    } catch {}
+
+    if (usedBase) return;
+
+    // Last resort: fetch from Supabase (draft by card_id OR card by id)
+    let cancelled = false;
+    (async () => {
+      try {
+        const routeKey = String(routeId ?? "").trim();
+
+        // 1) If URL is a draft uuid, try draft table first
+        if (routeKey && isUuid(routeKey)) {
+          try {
+            const draft = await fetchDraftByCardId(routeKey);
+            if (cancelled) return;
+            if (draft?.slide1) {
+              setLayout1?.(draft.slide1);
+              // also restore base BG from layout if present
+              const baseSlide1 = draft?.layout?.slides?.slide1 ?? null;
+              if (baseSlide1) {
+                const normBase = normalizeSlide(baseSlide1);
+                setBgColor1?.(normBase.bgColor);
+                setBgImage1?.(normBase.bgImage);
+                if (baseSlide1?.bg?.rect) setBgRect1?.(baseSlide1.bg.rect);
+              }
+              return;
+            }
+            if (draft?.layout) {
+              const baseSlide1 = draft.layout?.slides?.slide1 ?? draft.layout?.slide1;
+              if (baseSlide1) {
+                const norm = normalizeSlide(baseSlide1);
+                setBgColor1?.(norm.bgColor);
+                setBgImage1?.(norm.bgImage);
+                setLayout1?.(norm.layout);
+                if (baseSlide1?.bg?.rect) setBgRect1?.(baseSlide1.bg.rect);
+                return;
+              }
+            }
+          } catch {}
+        }
+
+        // 2) Try card by id (route or selectedProduct)
+        const rawSelected = localStorage.getItem("selectedProduct");
+        const selected = rawSelected ? JSON.parse(rawSelected) : null;
+        const selectedId = selected?.id ? String(selected.id) : "";
+        const selectedType = String(selected?.type ?? "").toLowerCase();
+
+        const cardId = routeKey || selectedId;
+        if (!cardId) return;
+        if (selectedType && selectedType !== "card" && cardId === selectedId) return;
+
+        const full = await fetchCardById(String(cardId));
+        if (cancelled || !full) return;
+
+        const rawStores =
+          (full as any)?.raw_stores ??
+          (full as any)?.rawStores ??
+          (full as any)?.raw_store ??
+          null;
+
+        const fetchedLayout = pickPolygonLayout(
+          (full as any)?.polygonlayout,
+          (full as any)?.polyganLayout,
+          rawStores?.polygonlayout,
+          rawStores?.polyganLayout
+        );
+        const s1 = fetchedLayout?.slides?.slide1 ?? fetchedLayout?.slide1;
+        if (!s1) return;
+
+        const norm = normalizeSlide(s1);
+        if (cancelled) return;
+        setBgColor1?.(norm.bgColor);
+        setBgImage1?.(norm.bgImage);
+        setLayout1?.(norm.layout);
+        if (s1?.bg?.rect) setBgRect1?.(s1.bg.rect);
+      } catch {}
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftFull, slide1, routeId, draftId, setBgColor1, setBgImage1, setLayout1, setBgRect1]);
 
   /* ------------------ local UI state ------------------ */
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1048,7 +1241,7 @@ const SlideCover = ({
                           sx={{
                             width: "100%",
                             height: "100%",
-                            objectFit: "fill",
+                            objectFit: el.id === "bg-image" ? "cover" : "fill",
                             borderRadius: 1,
                             display: "block",
                             pointerEvents: "none",
@@ -1169,8 +1362,8 @@ const SlideCover = ({
                         borderRadius: "6px",
                         transition: "border .15s ease",
                       }}
-                      onClick={isEditable ? () => setEditingIndex(index) : undefined}
-                      onDoubleClick={isEditable ? () => setEditingIndex(index) : undefined}
+                      onClick={isEditable ? () => handleTextFocus(index, te) : undefined}
+                      onDoubleClick={isEditable ? () => handleTextFocus(index, te) : undefined}
                     >
                       <TextField
                         variant="standard"

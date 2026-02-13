@@ -43,7 +43,7 @@ type PricingPlan = {
 };
 type PricingConfig = { page: { title: string; subtitle: string }; plans: PricingPlan[] };
 
-const API_BASE_URL = "https://diypersonalisation.com/api/";
+const API_BASE_URL = "/api/";
 const STRIPE_PK =
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 

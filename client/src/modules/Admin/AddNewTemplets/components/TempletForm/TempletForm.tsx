@@ -344,7 +344,23 @@ const TempletForm = () => {
                   }
                 })()
               : rs;
-          setRawStoresState(normalized);
+
+          const snapshotSlides =
+            typeof row?.slides === "string"
+              ? (() => {
+                  try {
+                    return JSON.parse(row.slides);
+                  } catch {
+                    return null;
+                  }
+                })()
+              : row?.slides ?? null;
+
+          setRawStoresState(
+            normalized && snapshotSlides
+              ? { ...normalized, snapshotSlides }
+              : normalized
+          );
         }
 
         const img =
@@ -418,22 +434,9 @@ const TempletForm = () => {
   } = useQuery<CategoryRow[]>({
     queryKey: ["categories"],
     queryFn: fetchAllCategoriesFromDB,
-    staleTime: 1000 * 60 * 30,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
-
-  const categoryOptions: Option[] = useMemo(
-    () =>
-      categories
-        .map((c) => (c?.name ?? "").trim())
-        .filter(Boolean)
-        .map((name) => ({ label: name, value: name })),
-    [categories],
-  );
-
-  const categoryOptionsWithEmpty: Option[] = useMemo(
-    () => [{ label: "Select category", value: "" }, ...categoryOptions],
-    [categoryOptions],
-  );
 
   const {
     register,
@@ -473,6 +476,21 @@ const TempletForm = () => {
 
   const selectedCategoryName = watch("cardcategory");
   const selectedSubCategory = watch("subCategory");
+
+  const categoryOptions: Option[] = useMemo(() => {
+    const normalized = categories
+      .map((c) => (c?.name ?? "").trim())
+      .filter(Boolean)
+      .filter((name) => name.trim().toLowerCase() !== "cards");
+    const unique = Array.from(new Set(normalized));
+    unique.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    return unique.map((name) => ({ label: name, value: name }));
+  }, [categories]);
+
+  const categoryOptionsWithEmpty: Option[] = useMemo(
+    () => [{ label: "Select category", value: "" }, ...categoryOptions],
+    [categoryOptions],
+  );
 
   const pricingConfig = useMemo(
     () => getPricingConfig(selectedCategoryName),
@@ -943,7 +961,24 @@ const TempletForm = () => {
           >
             {rawStores ? (
               (() => {
-                const firstSlide = rawStores.slides?.[0];
+                const snapshotSlides =
+                  Array.isArray(rawStores.snapshotSlides)
+                    ? rawStores.snapshotSlides
+                    : typeof rawStores.snapshotSlides === "string"
+                      ? (() => {
+                        try {
+                          const parsed = JSON.parse(rawStores.snapshotSlides);
+                          return Array.isArray(parsed) ? parsed : [];
+                        } catch {
+                          return [];
+                        }
+                      })()
+                      : [];
+
+                const slidesSource =
+                  snapshotSlides.length > 0 ? snapshotSlides : rawStores.slides ?? [];
+
+                const firstSlide = slidesSource?.[0];
                 if (!firstSlide) {
                   return (
                     <Box
@@ -964,14 +999,29 @@ const TempletForm = () => {
                   );
                 }
 
-                const slideTextElements =
-                  rawStores.textElements?.filter(
-                    (te: any) => te.slideId === firstSlide.id,
-                  ) || [];
-                const slideImageElements =
-                  rawStores.imageElements?.filter(
-                    (ie: any) => ie.slideId === firstSlide.id,
-                  ) || [];
+                const hasSeparatedEls =
+                  (rawStores.textElements?.length ?? 0) > 0 ||
+                  (rawStores.imageElements?.length ?? 0) > 0 ||
+                  (rawStores.stickerElements?.length ?? 0) > 0;
+
+                const slideTextElements = hasSeparatedEls
+                  ? rawStores.textElements?.filter(
+                      (te: any) => te.slideId === firstSlide.id,
+                    ) || []
+                  : (firstSlide?.elements ?? []).filter(
+                      (el: any) =>
+                        String(el?.type ?? "").toLowerCase() === "text" ||
+                        (!el?.type && el?.text != null),
+                    );
+
+                const slideImageElements = hasSeparatedEls
+                  ? rawStores.imageElements?.filter(
+                      (ie: any) => ie.slideId === firstSlide.id,
+                    ) || []
+                  : (firstSlide?.elements ?? []).filter((el: any) => {
+                      const t = String(el?.type ?? "").toLowerCase();
+                      return t === "image" || t === "sticker" || (!t && (el?.src || el?.image || el?.url));
+                    });
                 const slideBg = rawStores.slideBg?.[firstSlide.id] || null;
 
                 // canvas کا سائز جو ایڈیٹر سے آیا ہے
@@ -1031,7 +1081,7 @@ const TempletForm = () => {
                         <Box
                           key={img.id}
                           component="img"
-                          src={img.src}
+                          src={img.src ?? img.sticker ?? img.image ?? img.url ?? img.imageUrl}
                           sx={{
                             position: "absolute",
                             left: `${img.x * scale}px`,
@@ -1068,7 +1118,7 @@ const TempletForm = () => {
                             pointerEvents: "none",
                           }}
                         >
-                          {txt.text}
+                          {txt.text ?? txt.value}
                         </Typography>
                       ))}
                     </Box>
@@ -1082,7 +1132,8 @@ const TempletForm = () => {
                 sx={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "contain",
+                  objectFit: "cover",
+                  objectPosition: "center",
                   display: "block",
                 }}
               />

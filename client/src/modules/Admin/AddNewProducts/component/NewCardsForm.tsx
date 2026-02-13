@@ -84,8 +84,6 @@ type EditFormValue = {
   cardcategory?: string;
   actualprice?: string;
   saleprice?: string;
-  ustabloid?: string;
-  saleustabloid?: string;
   imageurl?: string;
   lastpageimageurl?: string;
   lastmessage?: string;

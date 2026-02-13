@@ -17,9 +17,11 @@ import {
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { Rnd } from "react-rnd";
 import { COLORS } from "../../../constant/color";
-import { ADMINS_GOOGLE_FONTS, CATEGORY_CONFIG, CATEGORY_KEYS, SHAPES, STICKERS_DATA, type CategoryKey } from "../../../constant/data";
+import { ADMINS_GOOGLE_FONTS, CATEGORY_CONFIG, SHAPES, STICKERS_DATA, type CategoryKey } from "../../../constant/data";
 import PopupWrapper from "../../../components/PopupWrapper/PopupWrapper";
 import LandingButton from "../../../components/LandingButton/LandingButton";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAllCategoriesFromDB } from "../../../source/source";
 import {
   useCategoriesEditorState,
   type TextElement as CtxTextEl,
@@ -55,6 +57,84 @@ const fetchToDataUrl = async (src: string): Promise<string> => {
   }
 };
 
+const parseSnapshotSlides = (value: any): any[] => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const buildElementsFromSnapshot = (slides: any[]) => {
+  const texts: CtxTextEl[] = [];
+  const images: CtxImageEl[] = [];
+  const stickers: any[] = [];
+
+  const toNum = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : Number(v) || d);
+
+  slides.forEach((sl, idx) => {
+    const sid = toNum(sl?.id, idx + 1);
+    const elements = Array.isArray(sl?.elements) ? sl.elements : [];
+    elements.forEach((el: any) => {
+      const type = String(el?.type ?? "").toLowerCase();
+      if (type === "text" || (!type && el?.text != null)) {
+        texts.push({
+          id: String(el?.id ?? `text-${sid}-${idx}-${Math.random()}`),
+          slideId: toNum(el?.slideId ?? el?.slide_id, sid),
+          x: toNum(el?.x, 0),
+          y: toNum(el?.y, 0),
+          width: toNum(el?.width ?? el?.w, 0),
+          height: toNum(el?.height ?? el?.h, 0),
+          text: String(el?.text ?? el?.value ?? ""),
+          bold: !!el?.bold,
+          italic: !!el?.italic,
+          fontSize: toNum(el?.fontSize ?? el?.font_size, 20),
+          fontFamily: String(el?.fontFamily ?? el?.font_family ?? "Arial"),
+          color: String(el?.color ?? "#111111"),
+          zIndex: toNum(el?.zIndex ?? el?.z_index, 1),
+          editable: el?.editable !== false,
+          align: el?.align,
+        });
+        return;
+      }
+      if (type === "image" || (!type && (el?.src || el?.image || el?.url))) {
+        images.push({
+          id: String(el?.id ?? `img-${sid}-${idx}-${Math.random()}`),
+          slideId: toNum(el?.slideId ?? el?.slide_id, sid),
+          x: toNum(el?.x, 0),
+          y: toNum(el?.y, 0),
+          width: toNum(el?.width ?? el?.w, 0),
+          height: toNum(el?.height ?? el?.h, 0),
+          src: String(el?.src ?? el?.image ?? el?.url ?? el?.imageUrl ?? ""),
+          zIndex: toNum(el?.zIndex ?? el?.z_index, 1),
+          editable: el?.editable !== false,
+        });
+        return;
+      }
+      if (type === "sticker" || (!type && (el?.sticker || el?.src))) {
+        stickers.push({
+          id: String(el?.id ?? `stk-${sid}-${idx}-${Math.random()}`),
+          slideId: toNum(el?.slideId ?? el?.slide_id, sid),
+          x: toNum(el?.x, 0),
+          y: toNum(el?.y, 0),
+          width: toNum(el?.width ?? el?.w, 0),
+          height: toNum(el?.height ?? el?.h, 0),
+          sticker: String(el?.sticker ?? el?.src ?? ""),
+          zIndex: toNum(el?.zIndex ?? el?.z_index, 1),
+        });
+      }
+    });
+  });
+
+  return { texts, images, stickers };
+};
+
 /* ------------ Mirror helpers (coordinate-based) ------------ */
 const toViewX = (mirrorOn: boolean, canvasW: number, modelX: number, elW: number) =>
   mirrorOn ? (canvasW - elW - modelX) : modelX;
@@ -75,6 +155,7 @@ const CategoriesEditor = () => {
     textToolOn, setTextToolOn,
     textElements, setTextElements,
     imageElements, setImageElements,
+    setStickerElements,
     mainScrollerRef,
     registerFirstSlideNode,
     loading,
@@ -90,18 +171,41 @@ const CategoriesEditor = () => {
     if (!rs || hydratedRef.current) return;
     hydratedRef.current = true;
 
+    let snapshotSlides = parseSnapshotSlides(
+      (location.state as any)?.snapshotSlides ?? (rs as any)?.snapshotSlides
+    );
+    if (
+      snapshotSlides.length === 0 &&
+      Array.isArray(rs.slides) &&
+      rs.slides.some((s: any) => Array.isArray(s?.elements) && s.elements.length)
+    ) {
+      snapshotSlides = rs.slides;
+    }
+
     // ✅ Restore stores
     if (rs.category) setCategory(rs.category);
     if (Array.isArray(rs.slides) && rs.slides.length) setSlides(rs.slides);
     if (Array.isArray(rs.textElements)) setTextElements(rs.textElements);
     if (Array.isArray(rs.imageElements)) setImageElements(rs.imageElements);
+    if (Array.isArray(rs.stickerElements)) setStickerElements(rs.stickerElements);
     if (rs.slideBg) setSlideBg(rs.slideBg);
+
+    const hasText = Array.isArray(rs.textElements) && rs.textElements.length > 0;
+    const hasImg = Array.isArray(rs.imageElements) && rs.imageElements.length > 0;
+    const hasStk = Array.isArray(rs.stickerElements) && rs.stickerElements.length > 0;
+
+    if (!hasText && !hasImg && !hasStk && snapshotSlides.length) {
+      const { texts, images, stickers } = buildElementsFromSnapshot(snapshotSlides);
+      if (texts.length) setTextElements(texts);
+      if (images.length) setImageElements(images);
+      if (stickers.length) setStickerElements(stickers);
+    }
 
     // ✅ start from slide1
     setSelectedSlide(0);
     setSelectedTextId(null);
     setSelectedImageId(null);
-  }, [location.state, setCategory, setSlides, setTextElements, setImageElements, setSlideBg]);
+  }, [location.state, setCategory, setSlides, setTextElements, setImageElements, setStickerElements, setSlideBg]);
 
   // ====== Local UI-only state ======
   const [fontSizeInput, setFontSizeInput] = useState<string>("20");
@@ -113,6 +217,38 @@ const CategoriesEditor = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 
+
+  const {
+    data: dbCategories = [],
+  } = useQuery<{ id?: string; name?: string }[]>({
+    queryKey: ["categories"],
+    queryFn: fetchAllCategoriesFromDB,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+
+  const categoryKeys = useMemo(() => {
+    const configKeys = Object.keys(CATEGORY_CONFIG);
+    const seen = new Map<string, string>();
+    configKeys.forEach((k) => seen.set(k.toLowerCase(), k));
+
+    (dbCategories ?? []).forEach((c) => {
+      const name = (c?.name ?? "").trim();
+      if (!name) return;
+      const key = name.toLowerCase();
+      if (!seen.has(key)) seen.set(key, name);
+    });
+
+    const list = Array.from(seen.values()).filter(
+      (name) => name.trim().toLowerCase() !== "cards",
+    );
+    list.sort((a, b) => {
+      const labelA = CATEGORY_CONFIG[a as CategoryKey]?.label ?? a;
+      const labelB = CATEGORY_CONFIG[b as CategoryKey]?.label ?? b;
+      return labelA.localeCompare(labelB, undefined, { sensitivity: "base" });
+    });
+    return list;
+  }, [dbCategories]);
 
   const multiplier = getCanvasMultiplier(category);
 
@@ -740,10 +876,10 @@ const CategoriesEditor = () => {
               labelId="cat-label"
               value={category}
               label="Category"
-              onChange={(e) => setCategory(e.target.value as CategoryKey)}
+              onChange={(e) => setCategory(String(e.target.value))}
             >
-              {CATEGORY_KEYS.map((k) => (
-                <MenuItem key={k} value={k}>{CATEGORY_CONFIG[k].label}</MenuItem>
+              {categoryKeys.map((k) => (
+                <MenuItem key={k} value={k}>{CATEGORY_CONFIG[k as CategoryKey]?.label ?? k}</MenuItem>
               ))}
             </Select>
           </FormControl>

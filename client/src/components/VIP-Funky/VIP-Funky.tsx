@@ -18,7 +18,7 @@ const handleJoinWaitlist = async (e:any) => {
       return;
     }
 
-    const res = await fetch(`https://diypersonalisation.com/api/waitlist/join`, {
+    const res = await fetch(`/api/waitlist/join`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

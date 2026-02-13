@@ -208,8 +208,8 @@ export const FOUR_X_CATEGORIES: Record<any, number> = {
   "Mugs": 4,
 };
 
-export const getCanvasMultiplier = (category: CategoryKey) =>
-  FOUR_X_CATEGORIES[category] ?? 2;
+export const getCanvasMultiplier = (category: CategoryKey | string) =>
+  FOUR_X_CATEGORIES[category as any] ?? 2;
 
 
 

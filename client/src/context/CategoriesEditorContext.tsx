@@ -109,8 +109,8 @@ export type PublishMeta = {
 
 type CategoriesEditorContextType = {
   // editor "template type"
-  category: CategoryKey;
-  setCategory: (c: CategoryKey) => void;
+  category: string;
+  setCategory: (c: string) => void;
   config: (typeof CATEGORY_CONFIG)[CategoryKey];
 
   selectedSlide: number;
@@ -144,7 +144,7 @@ type CategoriesEditorContextType = {
   getSlidesWithElements: () => SnapshotSlide[];
 
   serialize: () => {
-    category: CategoryKey;
+    category: string;
     config: (typeof CATEGORY_CONFIG)[CategoryKey];
     slides: Slide[];
     textElements: TextElement[];
@@ -154,7 +154,7 @@ type CategoriesEditorContextType = {
   };
 
   serializeWithElements: () => {
-    editorCategory: CategoryKey;
+    editorCategory: string;
     size_mm: { w: number; h: number };
     slides: SnapshotSlide[];
   };
@@ -171,16 +171,29 @@ type CategoriesEditorContextType = {
 const CategoriesEditorContext = createContext<CategoriesEditorContextType | undefined>(undefined);
 
 /* ---------- Helpers ---------- */
+const DEFAULT_CATEGORY: CategoryKey = "Invites";
 const mmToPx = (mm: number, dpi = 96) => (mm / 25.4) * dpi;
 
+const resolveEditorCategory = (value: unknown, fallback: CategoryKey = DEFAULT_CATEGORY): string => {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!raw) return fallback;
+
+  const keys = Object.keys(CATEGORY_CONFIG) as CategoryKey[];
+  const exact = keys.find((k) => k.trim().toLowerCase() === raw);
+  if (exact) return exact;
+
+  if (raw.includes("clothing") || raw.includes("clothes") || raw.includes("cloth")) return "Apparel";
+
+  return String(value ?? "").trim() || fallback;
+};
+
 export const CategoriesEditorProvider = ({ children }: { children: React.ReactNode }) => {
-  const DEFAULT_CATEGORY: CategoryKey = "Invites";
   const initialConfig = CATEGORY_CONFIG[DEFAULT_CATEGORY];
   const initialSlides: Slide[] = initialConfig.slideLabels?.length
     ? initialConfig.slideLabels.map((_, i) => ({ id: i + 1 }))
     : [{ id: 1 }];
 
-  const [category, setCategory] = useState<CategoryKey>(DEFAULT_CATEGORY);
+  const [category, setCategory] = useState<string>(DEFAULT_CATEGORY);
   const [config, setConfig] = useState<(typeof CATEGORY_CONFIG)[CategoryKey]>(initialConfig);
   const [slides, setSlides] = useState<Slide[]>(initialSlides);
   const [selectedSlide, setSelectedSlide] = useState(0);
@@ -201,9 +214,21 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
     firstSlideRef.current = node;
   }, []);
 
-  const applyCategory = useCallback((c: CategoryKey) => {
-    setCategory(c);
-    const cfg = CATEGORY_CONFIG[c];
+  const getConfigForCategory = useCallback((name: string) => {
+    const key = resolveEditorCategory(name, DEFAULT_CATEGORY);
+    const known = CATEGORY_CONFIG[key as CategoryKey];
+    if (known) return known;
+    return {
+      ...CATEGORY_CONFIG[DEFAULT_CATEGORY],
+      key,
+      label: key,
+    } as (typeof CATEGORY_CONFIG)[CategoryKey];
+  }, []);
+
+  const applyCategory = useCallback((c: string) => {
+    const resolved = resolveEditorCategory(c, DEFAULT_CATEGORY);
+    setCategory(resolved);
+    const cfg = getConfigForCategory(resolved);
     setConfig(cfg);
 
     const newSlides = cfg.slideLabels?.length ? cfg.slideLabels.map((_, i) => ({ id: i + 1 })) : [{ id: 1 }];
@@ -216,7 +241,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
     setImageElements([]);
     setStickerElements([]);
     setSlideBg({});
-  }, []);
+  }, [getConfigForCategory]);
 
   const getTexts = (slideId: number) => textElements.filter((t) => t.slideId === slideId);
   const getImages = (slideId: number) => imageElements.filter((i) => i.slideId === slideId);
@@ -243,7 +268,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
   const getSlidesWithElements = useCallback(() => buildSlidesWithElements(), [buildSlidesWithElements]);
 
   const resetState = () => {
-    const cfg = CATEGORY_CONFIG[category];
+    const cfg = getConfigForCategory(category);
     const newSlides = cfg.slideLabels?.length ? cfg.slideLabels.map((_, i) => ({ id: i + 1 })) : [{ id: 1 }];
     setSlides(newSlides);
     setSelectedSlide(0);
@@ -452,7 +477,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
           salePricing: meta?.salePricing ?? (rawStores as any)?.salePricing ?? null,
 
           // âœ… do NOT lose editor template type
-          editorCategory: rawStores.category, // CategoryKey: Invites/Stickers etc
+          editorCategory: rawStores.category, // editor category label
 
           // âœ… size used by your renderers
           canvas: {

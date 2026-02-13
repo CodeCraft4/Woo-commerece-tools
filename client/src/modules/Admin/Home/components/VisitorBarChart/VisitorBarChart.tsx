@@ -22,7 +22,7 @@ export default function VisitorMiniChart() {
   useEffect(() => {
     async function loadVisitors() {
       try {
-        const res = await fetch(`https://diypersonalisation.com/api/visitors?range=${filter}`);
+        const res = await fetch(`/api/visitors?range=${filter}`);
         // const res = await fetch(`http://localhost:5000/visitors?range=${filter}`);
         const data = await res.json();
         setVisitorData(data);

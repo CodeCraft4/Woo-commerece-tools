@@ -18,9 +18,11 @@ import { Rnd } from "react-rnd";
 import { COLORS } from "../../constant/color";
 import { motion } from "framer-motion";
 import { useSlide4 } from "../../context/Slide4Context";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import mergePreservePdf from "../../utils/mergePreservePdf";
 import { safeGetStorage } from "../../lib/storage";
+import { getDraftCardId, isUuid } from "../../lib/draftCardId";
+import { readDraftFull } from "../../lib/draftLocal";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -202,7 +204,18 @@ function normalizeSlide(slide: any): {
 
   // texts
   out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
-  out.textElements.push(...(slide.multipleTexts ?? []).map((o: any, i: number) => toText(o, i, !!o?.isEditable, "mte")));
+  out.textElements.push(
+    ...(slide.multipleTexts ?? []).map((o: any, i: number) => {
+      const explicit =
+        typeof o?.isEditable === "boolean"
+          ? o.isEditable
+          : typeof o?.editable === "boolean"
+            ? o.editable
+            : undefined;
+      const editable = explicit ?? !o?.locked;
+      return toText(o, i, editable, "mte");
+    })
+  );
   if (slide.oneText && str(slide.oneText.value, "").trim().length > 0) {
     out.textElements.push(
       toText(
@@ -312,8 +325,11 @@ const UserSlide4Preview = () => {
   /* ------------------ pull slide1 from route ------------------ */
 
   const location = useLocation();
+  const { id: routeId } = useParams<{ id?: string }>();
+  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : getDraftCardId() ?? ""), [routeId]);
+  const localDraftFull = useMemo(() => (draftId ? readDraftFull(draftId) : null), [draftId]);
   const slide4 = location.state?.layout?.slides?.slide4 ?? null;
-  const draftSlide4 = location.state?.draftFull?.slide4 ?? null;
+  const draftSlide4 = location.state?.draftFull?.slide4 ?? localDraftFull?.slide4 ?? null;
 
 
 
@@ -389,11 +405,20 @@ const UserSlide4Preview = () => {
   useEffect(() => {
     if (draftSlide4) {
       setLayout4?.(draftSlide4.layout ?? draftSlide4);
-      if (draftSlide4.bgColor4 !== undefined || draftSlide4.bgColor !== undefined) {
+      const hasBgColor = draftSlide4.bgColor4 !== undefined || draftSlide4.bgColor !== undefined;
+      const hasBgImage = draftSlide4.bgImage4 !== undefined || draftSlide4.bgImage !== undefined;
+      if (hasBgColor) {
         setBgColor4?.(draftSlide4.bgColor4 ?? draftSlide4.bgColor ?? null);
       }
-      if (draftSlide4.bgImage4 !== undefined || draftSlide4.bgImage !== undefined) {
+      if (hasBgImage) {
         setBgImage4?.(draftSlide4.bgImage4 ?? draftSlide4.bgImage ?? null);
+      }
+
+      const baseSlide4 = localDraftFull?.layout?.slides?.slide4 ?? slide4 ?? null;
+      if (baseSlide4) {
+        const norm = normalizeSlide(baseSlide4);
+        if (!hasBgColor) setBgColor4?.(norm.bgColor);
+        if (!hasBgImage) setBgImage4?.(norm.bgImage);
       }
       return;
     }
@@ -416,7 +441,7 @@ const UserSlide4Preview = () => {
     setBgColor4?.(norm.bgColor);
     setBgImage4?.(norm.bgImage);
     setLayout4?.(norm.layout);
-  }, [draftSlide4, slide4, setBgColor4, setBgImage4, setLayout4]);
+  }, [draftSlide4, slide4, localDraftFull, setBgColor4, setBgImage4, setLayout4]);
 
   return (
     <Box

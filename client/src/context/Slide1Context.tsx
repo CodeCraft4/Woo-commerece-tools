@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
+import { getDraftCardId } from "../lib/draftCardId";
 const fontColors = [
   "#000000",
   "#FF0000",
@@ -643,7 +644,12 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       const saved = safeGetStorage("slide1_state");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.textElements3) setTextElements1(parsed.textElements1);
+        const currentDraftId = getDraftCardId();
+        const savedDraftId = parsed?.draftId;
+        if (currentDraftId) {
+          if (!savedDraftId || savedDraftId !== currentDraftId) return;
+        }
+        if (parsed.textElements1) setTextElements1(parsed.textElements1);
         if (parsed.draggableImages1) setDraggableImages1(parsed.draggableImages1);
         if (parsed.images1) setImages1(parsed.images1);
         if (parsed.selectedImg1) setSelectedImage1(parsed.selectedImg1);
@@ -658,7 +664,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
           setSelectedStickers1(parsed.selectedStickers1);
         if (parsed.qrPosition1) setQrPosition1(parsed.qrPosition1);
         if (parsed.qrAudioPosition1) setQrAudioPosition1(parsed.qrAudioPosition1);
-        if (parsed.aimage2) setAIImage1(parsed.aimage2);
+        if (parsed.aimage1) setAIImage1(parsed.aimage1);
         if (typeof parsed.isAIimage1 === "boolean") setIsAIimage1(parsed.isAIimage1);
         if (parsed.selectedAIimageUrl1)
           setSelectedAIimageUrl1(parsed.selectedAIimageUrl1);
@@ -668,6 +674,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
 
         if (parsed.bgColor1 !== undefined) setBgColor1(parsed.bgColor1);
         if (parsed.bgImage1 !== undefined) setBgImage1(parsed.bgImage1);
+        if (parsed.bgRect1 !== undefined) setBgRect1(parsed.bgRect1);
         if (Object.prototype.hasOwnProperty.call(parsed, "selectedShapePath1")) setSelectedShapePath1(parsed.selectedShapePath1);
 
         if (parsed.fontSize1) setFontSize1(parsed.fontSize1);
@@ -678,7 +685,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.verticalAlign1) setVerticalAlign1(parsed.verticalAlign1);
         if (parsed.letterSpacing1 !== undefined) setLetterSpacing1(parsed.letterSpacing1);
         if (parsed.lineHeight1 !== undefined) setLineHeight1(parsed.lineHeight1);
-        if (parsed.rotation1 !== undefined) setRotation1(parsed.rotation3);
+        if (parsed.rotation1 !== undefined) setRotation1(parsed.rotation1);
 
       }
     } catch (error) {
@@ -689,6 +696,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
   // --- 💾 Auto-save changes ---
   useEffect(() => {
     const stateToSave = {
+      draftId: getDraftCardId() ?? null,
       textElements1,
       draggableImages1,
       images1,
@@ -719,6 +727,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       // + new
       bgColor1,
       bgImage1,
+      bgRect1,
       selectedShapePath1,
       layout1,
     };

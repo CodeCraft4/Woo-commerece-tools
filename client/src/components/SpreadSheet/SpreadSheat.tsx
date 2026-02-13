@@ -17,10 +17,12 @@ import { Rnd } from "react-rnd";
 import { COLORS } from "../../constant/color";
 import { useSlide2 } from "../../context/Slide2Context";
 import { motion } from "framer-motion";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import mergePreservePdf from "../../utils/mergePreservePdf";
 import { normalizeSlide } from "../SlideCover/SlideCover";
 import { safeGetStorage } from "../../lib/storage";
+import { getDraftCardId, isUuid } from "../../lib/draftCardId";
+import { readDraftFull } from "../../lib/draftLocal";
 
 
 // Helper function to create a new text element
@@ -142,8 +144,14 @@ const SlideSpread = ({
   const [selectedBgIndex2, setSelectedBgIndex2] = useState<number | null>(null);
 
   const location = useLocation();
+  const { id: routeId } = useParams<{ id?: string }>();
+  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : getDraftCardId() ?? ""), [routeId]);
+  const localDraftFull = useMemo(
+    () => (!isAdminEditor && draftId ? readDraftFull(draftId) : null),
+    [draftId, isAdminEditor]
+  );
   const slide2Template = location.state?.layout?.slides?.slide2 ?? null;
-  const draftSlide2 = location.state?.draftFull?.slide2 ?? null;
+  const draftSlide2 = location.state?.draftFull?.slide2 ?? localDraftFull?.slide2 ?? null;
 
   useEffect(() => {
     // ✅ 1) If draft exists => restore FULL user draft (and STOP)
@@ -2005,8 +2013,8 @@ const SlideSpread = ({
                           borderRadius: "6px",
                           transition: "border .15s ease",
                         }}
-                        onClick={isEditable ? () => setEditingIndex(index) : undefined}
-                        onDoubleClick={isEditable ? () => setEditingIndex(index) : undefined}
+                        onClick={isEditable ? () => handleTextFocus(index, te) : undefined}
+                        onDoubleClick={isEditable ? () => handleTextFocus(index, te) : undefined}
                       >
                         <TextField
                           variant="standard"

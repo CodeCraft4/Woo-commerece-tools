@@ -50,7 +50,7 @@ type ImageEl = BaseEl & { type: "image"; src: string };
 type StickerEl = BaseEl & { type: "sticker"; src: string };
 type AnyEl = TextEl | ImageEl | StickerEl;
 
-type Slide = { id: number; label: string; elements: AnyEl[] };
+type Slide = { id: number; label: string; elements: AnyEl[]; bgColor?: string };
 
 type CanvasPx = { w: number; h: number; dpi?: number };
 type AdminPreview = {
@@ -87,6 +87,7 @@ const resolveCategoryKey = (category?: string): CategoryKey | null => {
   if (c.includes("sticker")) return "Stickers";
   if (c.includes("coaster")) return "Coasters";
   if (c.includes("invite")) return "Invites";
+  if (c.includes("clothing") || c.includes("clothes") || c.includes("cloth")) return "Apparel";
   if (c.includes("apparel")) return "Apparel";
 
   return null;
@@ -225,10 +226,80 @@ export default function TempletEditor() {
     const mmWidth = k ? CATEGORY_CONFIG[k].mmWidth : dbMmWidth;
     const mmHeight = k ? CATEGORY_CONFIG[k].mmHeight : dbMmHeight;
 
-    const slidesDef: any[] = A(src?.slides);
-    const imgEls = A<any>(src?.imageElements);
-    const txtEls = A<any>(src?.textElements);
-    const stkEls = A<any>(src?.stickerElements);
+    const slidesDefRaw: any[] = A(src?.slides);
+    const fallbackSlides: any[] =
+      typeof (raw as any)?.slides === "string"
+        ? (() => {
+          try {
+            const parsed = JSON.parse((raw as any).slides);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })()
+        : A((raw as any)?.slides);
+
+    const slidesDef: any[] =
+      slidesDefRaw.length > 0
+        ? slidesDefRaw
+        : fallbackSlides.length > 0
+          ? fallbackSlides
+          : labels.length
+            ? labels.map((_, idx) => ({ id: idx + 1 }))
+            : [{ id: 1 }];
+
+    let imgEls = A<any>(src?.imageElements);
+    let txtEls = A<any>(src?.textElements);
+    let stkEls = A<any>(src?.stickerElements);
+
+    const hasSeparatedEls = imgEls.length || txtEls.length || stkEls.length;
+    if (!hasSeparatedEls && slidesDef.length) {
+      const snapshotEls: any[] = [];
+      slidesDef.forEach((sl, idx) => {
+        const sid = asNum(sl?.id, idx + 1);
+        const elements = A<any>(sl?.elements);
+        elements.forEach((el) => {
+          snapshotEls.push({
+            ...el,
+            slideId: asNum(el?.slideId ?? el?.slide_id, sid),
+          });
+        });
+      });
+
+      if (snapshotEls.length) {
+        const nextImgs: any[] = [];
+        const nextTxts: any[] = [];
+        const nextStickers: any[] = [];
+
+        snapshotEls.forEach((el) => {
+          const t = String(el?.type ?? "").toLowerCase();
+          if (t === "image" || (!t && (el?.src || el?.image || el?.url))) {
+            nextImgs.push({
+              ...el,
+              src: el?.src ?? el?.image ?? el?.url ?? el?.imageUrl ?? "",
+            });
+            return;
+          }
+          if (t === "sticker" || (!t && (el?.sticker || el?.src))) {
+            nextStickers.push({
+              ...el,
+              src: el?.sticker ?? el?.src ?? "",
+            });
+            return;
+          }
+          if (t === "text" || (!t && el?.text != null)) {
+            nextTxts.push({
+              ...el,
+              text: el?.text ?? el?.value ?? "",
+            });
+          }
+        });
+
+        if (nextImgs.length) imgEls = nextImgs;
+        if (nextTxts.length) txtEls = nextTxts;
+        if (nextStickers.length) stkEls = nextStickers;
+      }
+    }
 
     const coerceText = (e: any): TextEl => {
       const r = normalize01(e, storedW, storedH); // coordinates پہلے سے multiplied ہیں
@@ -275,6 +346,8 @@ export default function TempletEditor() {
       };
     };
 
+    const slideBgMap = (src as any)?.slideBg ?? (raw as any)?.slideBg ?? null;
+
     const slides: Slide[] = slidesDef.map((sl, i) => {
       const sid = asNum(sl?.id ?? i, i);
       const label = labels[i] ?? asStr(sl?.label, `Slide ${i + 1}`);
@@ -287,7 +360,23 @@ export default function TempletEditor() {
         (a, b) => asNum(a.zIndex, 1) - asNum(b.zIndex, 1)
       );
 
-      return { id: sid, label, elements };
+      const bg = slideBgMap?.[sid] ?? slideBgMap?.[String(sid)] ?? null;
+      if (bg?.image) {
+        elements.unshift({
+          type: "image",
+          id: `bg-${sid}`,
+          slideId: sid,
+          x: 0,
+          y: 0,
+          width: storedW,
+          height: storedH,
+          src: sanitizeSrc(asStr(bg.image)),
+          zIndex: 0,
+          editable: bg?.editable !== false,
+        });
+      }
+
+      return { id: sid, label, elements, bgColor: bg?.color ?? undefined };
     });
 
     return {
@@ -376,17 +465,20 @@ export default function TempletEditor() {
       try {
         if (state?.templetDesign) {
           const { design, slides } = buildSlidesFromRawStores(state.templetDesign);
-          setAdminDesign(design);
-          setUserSlides(slides);
-          setActiveSlide(0);
-          setSelectedElId(null);
-          return;
+          const hasAny = slides.some((s) => (s.elements?.length ?? 0) > 0);
+          if (hasAny || !productId) {
+            setAdminDesign(design);
+            setUserSlides(slides);
+            setActiveSlide(0);
+            setSelectedElId(null);
+            return;
+          }
+          // fallback: fetch full row if elements are missing
         }
 
         if (productId) {
           const row: any = await fetchTempletDesignById(productId);
-          const raw = row?.raw_stores ?? row;
-          const { design, slides } = buildSlidesFromRawStores(raw);
+          const { design, slides } = buildSlidesFromRawStores(row);
           setAdminDesign(design);
           setUserSlides(slides);
           setActiveSlide(0);
@@ -526,30 +618,6 @@ export default function TempletEditor() {
       return null;
     }
 
-  };
-
-  // 2. Har slide capture karo function
-  const captureAllSlidesPng = async (): Promise<string[]> => {
-    const captured: string[] = [];
-
-    for (let i = 0; i < userSlides.length; i++) {
-      const node = slideRefs.current[i];
-      if (!node) continue;
-
-      const pngData = await capturePngFromNode(node, {
-        width: artboardWidth,
-        height: artboardHeight,
-        background: isMugCategory(adminDesign?.category) ? "#ffffff" : "transparent",
-        quality: previewCapture.quality,
-        pixelRatio: previewCapture.pixelRatio,
-      });
-
-      if (pngData) {
-        captured.push(pngData);
-      }
-    }
-
-    return captured;
   };
 
   const handleNavigatePrview = async () => {
@@ -696,7 +764,7 @@ export default function TempletEditor() {
                     borderRadius: 0,
                     position: "relative",
                     overflow: "hidden",
-                    bgcolor: "transparent",
+                    bgcolor: slide.bgColor ?? "transparent",
                     boxShadow: isActive ? 10 : 4,
                     outline: "none",
                   }}

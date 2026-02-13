@@ -8,6 +8,8 @@ import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { Check, ErrorOutline, HourglassEmptyOutlined } from "@mui/icons-material";
 
+const API_BASE = "/api";
+
 type Status = "loading" | "success" | "error";
 
 async function getTokenSafely() {
@@ -70,21 +72,18 @@ export default function PremiumSuccess() {
         throw new Error("Slides data missing");
       }
 
-      const res = await fetch(
-        "https://diypersonalisation.com/api/send-pdf-after-success",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            sessionId,
-            slides,
-            cardSize,
-          }),
-        }
-      );
+      const res = await fetch(`${API_BASE}/send-pdf-after-success`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          sessionId,
+          slides,
+          cardSize,
+        }),
+      });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

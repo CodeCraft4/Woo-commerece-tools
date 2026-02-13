@@ -17,8 +17,7 @@ import { removeWhiteBg } from "../../../lib/lib";
 import { loadSlidesFromIdb } from "../../../lib/idbSlides";
 
 // ------------------ ENV ------------------
-const API_BASE = "https://diypersonalisation.com/api";
-// const API_BASE = "http://localhost:5000";
+const API_BASE = "/api";
 const STRIPE_PK =
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : Promise.resolve(null);
@@ -747,7 +746,7 @@ useEffect(() => {
                     sx={{
                       width: "100%",
                       height: "100%",
-                      objectFit: (mock?.overlay.objectFit as any) ?? "contain",
+                      objectFit: (mock?.overlay.objectFit as any) ?? "cover",
                       display: "block",
                       userSelect: "none",
                       pointerEvents: "none",
