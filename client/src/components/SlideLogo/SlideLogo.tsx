@@ -23,6 +23,9 @@ import mergePreservePdf from "../../utils/mergePreservePdf";
 import { safeGetStorage } from "../../lib/storage";
 import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
+import RulerOverlay from "../RulerOverlay/RulerOverlay";
+import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
+import { useAlignGuides } from "../../hooks/useAlignGuides";
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -339,6 +342,8 @@ const UserSlide4Preview = () => {
   const [selectedBgIndex, setSelectedBgIndex] = useState<number | null>(null);
   console.log(selectedBgIndex)
   const [uploadTarget, setUploadTarget] = useState<{ type: "bg" | "sticker"; index: number } | null>(null);
+  const rightBoxRef = useRef<HTMLDivElement>(null);
+  const align = useAlignGuides(rightBoxRef);
 
   /* ------------------ user upload handlers (editable only) ------------------ */
   const handleImageUploadClick = (type: "bg" | "sticker", index: number) => {
@@ -445,6 +450,7 @@ const UserSlide4Preview = () => {
 
   return (
     <Box
+      ref={rightBoxRef}
       sx={{
         flex: 1,
         zIndex: 10,
@@ -470,6 +476,11 @@ const UserSlide4Preview = () => {
           : {},
       }}
     >
+      <RulerOverlay hide={!isSlideActive4} />
+      <AlignmentGuides
+        {...align.guides}
+        hide={!isSlideActive4 || !align.isActive}
+      />
 
       {/* Hidden file input (user uploads for editable items) */}
       <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
@@ -755,6 +766,41 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
 
   const [selectedStickerIndex2, setSelectedStickerIndex2] = useState<number | null>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
+  const align = useAlignGuides(rightBoxRef);
+  const alignItems = useMemo(() => {
+    const items: { id: string; x: number; y: number; w: number; h: number }[] = [];
+    const push = (id: string, x?: number, y?: number, w?: number, h?: number) => {
+      if (
+        typeof x !== "number" ||
+        typeof y !== "number" ||
+        typeof w !== "number" ||
+        typeof h !== "number" ||
+        Number.isNaN(x + y + w + h)
+      ) {
+        return;
+      }
+      items.push({ id, x, y, w, h });
+    };
+
+    const selectedIds = Array.isArray(selectedImg4) ? selectedImg4 : [];
+    (draggableImages4 ?? [])
+      .filter((img: any) => selectedIds.includes(img.id))
+      .forEach((img: any) => push(`img:${img.id}`, img.x, img.y, img.width, img.height));
+
+    (textElements4 ?? []).forEach((t: any) =>
+      push(`txt:${t.id}`, t.position?.x ?? t.x, t.position?.y ?? t.y, t.size?.width ?? t.width, t.size?.height ?? t.height)
+    );
+
+    (selectedStickers4 ?? []).forEach((s: any, idx: number) =>
+      push(`st:${s.id ?? idx}`, s.x, s.y, s.width, s.height)
+    );
+
+    if (isAIimage4 && aimage4) {
+      push("ai:4", aimage4.x, aimage4.y, aimage4.width, aimage4.height);
+    }
+
+    return items;
+  }, [draggableImages4, selectedImg4, textElements4, selectedStickers4, isAIimage4, aimage4]);
 
   /* init draggable images */
   useEffect(() => {
@@ -1052,6 +1098,11 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
           : {},
       }}
     >
+      <RulerOverlay hide={!isSlideActive4} />
+      <AlignmentGuides
+        {...align.guides}
+        hide={!isSlideActive4 || !align.isActive}
+      />
 
       {/* BG */}
       {bgImage4 && (
@@ -1222,6 +1273,22 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
                 transition: "border 0.2s ease",
                 cursor: textElement.isEditing ? "text" : "move",
               }}
+              onDragStart={() => align.onDragStart()}
+              onDrag={(_, d) => {
+                const snap = align.onDrag(
+                  d.x,
+                  d.y,
+                  textElement.size.width,
+                  textElement.size.height,
+                  alignItems,
+                  `txt:${textElement.id}`
+                );
+                if (snap.snappedX || snap.snappedY) {
+                  updateTextElement(textElement.id, {
+                    position: { x: snap.x, y: snap.y },
+                  });
+                }
+              }}
               onTouchStart={() => { touchStartTime = Date.now(); }}
               onTouchEnd={() => {
                 const now = Date.now();
@@ -1243,7 +1310,16 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
                 updateTextElement(textElement.id, { isEditing: true });
               }}
               onDragStop={(_, d) => {
-                updateTextElement(textElement.id, { position: { x: d.x, y: d.y } });
+                const snap = align.onDrag(
+                  d.x,
+                  d.y,
+                  textElement.size.width,
+                  textElement.size.height,
+                  alignItems,
+                  `txt:${textElement.id}`
+                );
+                updateTextElement(textElement.id, { position: { x: snap.x, y: snap.y } });
+                align.onDragStop();
               }}
               onResizeStop={(_, __, ref, ___, position) => {
                 updateTextElement(textElement.id, {
@@ -1491,9 +1567,23 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
               cancel=".non-draggable"
               disableDragging={isLocked}
               enableResizing={isLocked ? false : { bottomRight: true }}
+              onDragStart={() => align.onDragStart()}
+              onDrag={(_, d) => {
+                if (isLocked) return;
+                const snap = align.onDrag(d.x, d.y, width, height, alignItems, `img:${id}`);
+                if (snap.snappedX || snap.snappedY) {
+                  setDraggableImages4((prev) =>
+                    prev.map((img) => (img.id === id ? { ...img, x: snap.x, y: snap.y } : img))
+                  );
+                }
+              }}
               onDragStop={(_, d) => {
                 if (isLocked) return;
-                setDraggableImages4((prev) => prev.map((img) => (img.id === id ? { ...img, x: d.x, y: d.y } : img)));
+                const snap = align.onDrag(d.x, d.y, width, height, alignItems, `img:${id}`);
+                setDraggableImages4((prev) =>
+                  prev.map((img) => (img.id === id ? { ...img, x: snap.x, y: snap.y } : img))
+                );
+                align.onDragStop();
               }}
               onResizeStop={(_, __, ref, ___, position) => {
                 if (isLocked) return;
@@ -1939,7 +2029,32 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
         <Rnd
           size={{ width: aimage4.width, height: aimage4.height }}
           position={{ x: aimage4.x, y: aimage4.y }}
-          onDragStop={(_, d) => setAIImage4((prev) => ({ ...prev, x: d.x, y: d.y }))}
+          onDragStart={() => align.onDragStart()}
+          onDrag={(_, d) => {
+            const snap = align.onDrag(
+              d.x,
+              d.y,
+              aimage4.width,
+              aimage4.height,
+              alignItems,
+              "ai:4"
+            );
+            if (snap.snappedX || snap.snappedY) {
+              setAIImage4((prev) => ({ ...prev, x: snap.x, y: snap.y }));
+            }
+          }}
+          onDragStop={(_, d) => {
+            const snap = align.onDrag(
+              d.x,
+              d.y,
+              aimage4.width,
+              aimage4.height,
+              alignItems,
+              "ai:4"
+            );
+            setAIImage4((prev) => ({ ...prev, x: snap.x, y: snap.y }));
+            align.onDragStop();
+          }}
           onResizeStop={(_, __, ref, ___, position) =>
             setAIImage4({ width: parseInt(ref.style.width), height: parseInt(ref.style.height), x: position.x, y: position.y })
           }
@@ -1976,7 +2091,35 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
             disableDragging={isLocked}
             enableResizing={isLocked ? false : { bottomRight: true }}
             onMouseDown={() => setSelectedStickerIndex2(index)}
-            onDragStop={(_, d) => !isLocked && updateSticker4(index, { x: d.x, y: d.y, zIndex: sticker.zIndex })}
+            onDragStart={() => align.onDragStart()}
+            onDrag={(_, d) => {
+              if (isLocked) return;
+              const snap = align.onDrag(
+                d.x,
+                d.y,
+                sticker.width,
+                sticker.height,
+                alignItems,
+                `st:${sticker.id ?? index}`
+              );
+              if (snap.snappedX || snap.snappedY) {
+                updateSticker4(index, { x: snap.x, y: snap.y, zIndex: sticker.zIndex });
+              }
+            }}
+            onDragStop={(_, d) => {
+              if (!isLocked) {
+                const snap = align.onDrag(
+                  d.x,
+                  d.y,
+                  sticker.width,
+                  sticker.height,
+                  alignItems,
+                  `st:${sticker.id ?? index}`
+                );
+                updateSticker4(index, { x: snap.x, y: snap.y, zIndex: sticker.zIndex });
+              }
+              align.onDragStop();
+            }}
             onResizeStop={(_, __, ref, ___, position) =>
               !isLocked && updateSticker4(index, { width: parseInt(ref.style.width), height: parseInt(ref.style.height), x: position.x, y: position.y, zIndex: sticker.zIndex })
             }

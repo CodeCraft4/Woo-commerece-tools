@@ -45,7 +45,7 @@ export default function WhyChoose() {
             >
               Unlimited personalisation, one simple subscription.
             </Typography>
-             <Typography sx={{ fontSize: { md: 24, sm: 25, xs: 'auto'},textAlign:'start' }}>Create more, spend less with DIY Personalisation subscription.</Typography>
+             <Typography sx={{ fontSize: { md: 24, sm: 25, xs: 'auto'},textAlign:'start' }}>Create more, spend less with the DIY Personalisation Creator subscription.</Typography>
 
             {/* Purple panel */}
             <Box
@@ -114,7 +114,7 @@ export default function WhyChoose() {
                     ))}
 
                     <Box sx={{ bgcolor: COLORS.black, color: COLORS.white, p: 2, display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', borderRadius: 3 }}>
-                        <Typography sx={{ fontSize: { md: 22, sm: 25, xs: 'auto' } }}>DIY P Creator subscription <br /> $25 a month Cancel anytime</Typography>
+                        <Typography sx={{ fontSize: { md: 22, sm: 25, xs: 'auto' } }}>DIY P Creator subscription <br /> £25 a month Cancel anytime</Typography>
                         <LandingButton title="Start my subscription" active personal bgblack width="250px" onClick={() => navigate(USER_ROUTES.PREMIUM_PLANS)} />
                     </Box>
 

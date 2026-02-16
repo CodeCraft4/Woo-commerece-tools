@@ -24,6 +24,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { COLORS } from "../../../constant/color";
+import { API_BASE } from "../../../lib/apiBase";
 
 /**
  * TYPES
@@ -43,8 +44,8 @@ type PricingPlan = {
 };
 type PricingConfig = { page: { title: string; subtitle: string }; plans: PricingPlan[] };
 
-const API_BASE_URL = "/api/";
 const STRIPE_PK =
+  import.meta.env.VITE_STRIPE_PK ||
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 
 const stripePromise = loadStripe(STRIPE_PK);
@@ -348,7 +349,7 @@ export default function PremiumPlans() {
 
         toast.loading("Activating your plan...", { id: toastId });
 
-        const res = await fetch(`${API_BASE_URL}subscription/confirm`, {
+        const res = await fetch(`${API_BASE}/subscription/confirm`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -391,7 +392,7 @@ export default function PremiumPlans() {
 
       toast.loading("Navigating to checkout...", { id: toastId });
 
-      const res = await fetch(`${API_BASE_URL}subscription/create-checkout-session`, {
+      const res = await fetch(`${API_BASE}/subscription/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ planCode }),

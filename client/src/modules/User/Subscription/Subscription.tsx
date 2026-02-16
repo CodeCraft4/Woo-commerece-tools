@@ -9,16 +9,26 @@ import { CardGiftcard, EmojiEvents } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { type SizeKey } from "../../../stores/cartStore";
 import { getMockupConfig } from "../../../lib/mockup";
+import {
+  buildTenUpSlides,
+  buildTwoUpSlides,
+  isBusinessCardPrintSize,
+  isBusinessCardsCategory,
+  isCardsCategory,
+  isParallelCardSize,
+  getPageMmForSize,
+} from "../../../lib/pdfTwoUp";
 import { supabase } from "../../../supabase/supabase";
 import { USER_ROUTES } from "../../../constant/route";
 import MainLayout from "../../../layout/MainLayout";
 import { COLORS } from "../../../constant/color";
 import { removeWhiteBg } from "../../../lib/lib";
 import { loadSlidesFromIdb } from "../../../lib/idbSlides";
+import { API_BASE } from "../../../lib/apiBase";
 
 // ------------------ ENV ------------------
-const API_BASE = "/api";
 const STRIPE_PK =
+  import.meta.env.VITE_STRIPE_PK ||
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : Promise.resolve(null);
 
@@ -499,7 +509,36 @@ const Subscription = () => {
         const token = await getAccessToken();
         if (!token) throw new Error("Login session not found");
 
-        const slides = await getSlidesPayload();
+        const rawSlides = await getSlidesPayload();
+        const cardSize = localStorage.getItem("selectedSize") || selectedPlan;
+        const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
+        const isTenUpBusinessCards =
+          isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(cardSize);
+
+        const slides = isTenUpBusinessCards
+          ? await buildTenUpSlides(rawSlides, {
+              columns: 2,
+              rows: 5,
+              gapPx: 10,
+              marginPx: 0,
+              orientation: "portrait",
+              fit: "cover",
+              pageMm: getPageMmForSize(cardSize),
+            })
+          : isTwoUpLandscape
+          ? await buildTwoUpSlides(rawSlides, {
+              gapPx: 0,
+              orientation: "landscape",
+              fit: "cover",
+              pairStrategy: "outer-inner",
+              pageMm: getPageMmForSize(cardSize),
+              pageTitle: ({ pageIndex }) => {
+                if (pageIndex === 1) return "Page 1: slide1 (front) and slide4 (back)";
+                if (pageIndex === 2) return "Page 2: slide2 (inside 1) and slide3 (inside 2)";
+                return null;
+              },
+            })
+          : rawSlides;
         const res = await fetch(`${API_BASE}/pdf/send-subscription`, {
           method: "POST",
           headers: {
@@ -508,9 +547,10 @@ const Subscription = () => {
           },
           body: JSON.stringify({
             slides,
-            cardSize: localStorage.getItem("selectedSize") || selectedPlan,
+            cardSize,
             category: categoryName,
             accessplan: selectedItemAccessPlan,
+            ...(isTwoUpLandscape ? { pageOrientation: "landscape" } : {}),
 
             inBundleItems: isInBundleItems,
             productKey,

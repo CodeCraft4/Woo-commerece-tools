@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
 import { getDraftCardId } from "../lib/draftCardId";
+import { clearSlideStateFromIdb, getSlideStateKeys, loadSlideStateFromIdb, saveSlideStateToIdb } from "../lib/idbSlideState";
 const fontColors = [
   "#000000",
   "#FF0000",
@@ -435,6 +436,12 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
   const [duration1, setDuration1] = useState<number | null>(null);
   const [poster1, setPoster1] = useState<string | null>(null);
 
+  // --- 💾 Persist heavy image data to IndexedDB ---
+  useEffect(() => {
+    const [key] = getSlideStateKeys(1, getDraftCardId());
+    void saveSlideStateToIdb(key, { images1, draggableImages1 }).catch(() => {});
+  }, [images1, draggableImages1]);
+
   // New states for position and size
   const [textPositions1, setTextPositions1] = useState<Position[]>(
     texts1.map(() => ({ x: 0, y: 0 }))
@@ -687,19 +694,59 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.lineHeight1 !== undefined) setLineHeight1(parsed.lineHeight1);
         if (parsed.rotation1 !== undefined) setRotation1(parsed.rotation1);
 
+        const hasHeavyLocal =
+          (parsed.images1 && parsed.images1.length) ||
+          (parsed.draggableImages1 && parsed.draggableImages1.length);
+        if (hasHeavyLocal) {
+          const [key] = getSlideStateKeys(1, savedDraftId ?? currentDraftId);
+          void saveSlideStateToIdb(key, {
+            images1: parsed.images1 ?? [],
+            draggableImages1: parsed.draggableImages1 ?? [],
+          }).catch(() => {});
+          try {
+            localStorage.removeItem("slide1_state");
+            sessionStorage.removeItem("slide1_state");
+          } catch {}
+        }
+
       }
     } catch (error) {
       console.error("❌ Error restoring slide1_state:", error);
     }
   }, []);
 
+  // --- 🧠 Restore heavy image data from IndexedDB (if localStorage skipped it) ---
+  useEffect(() => {
+    if (images1.length || draggableImages1.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const keys = getSlideStateKeys(1, getDraftCardId());
+        for (const key of keys) {
+          const heavy = await loadSlideStateFromIdb<{
+            images1?: { id: number; src: string }[];
+            draggableImages1?: DraggableImage[];
+          }>(key);
+          if (!heavy) continue;
+          if (cancelled) return;
+          if (heavy.images1) setImages1(heavy.images1);
+          if (heavy.draggableImages1) setDraggableImages1(heavy.draggableImages1);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [images1.length, draggableImages1.length]);
+
   // --- 💾 Auto-save changes ---
   useEffect(() => {
     const stateToSave = {
       draftId: getDraftCardId() ?? null,
       textElements1,
-      draggableImages1,
-      images1,
       selectedImg1,
       selectedVideoUrl1,
       selectedAudioUrl1,
@@ -734,7 +781,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
 
     const payload = JSON.stringify(stateToSave);
     const ok = safeSetLocalStorage("slide1_state", payload, {
-      clearOnFail: ["slides_backup"],
+      clearOnFail: ["slides_backup", "slide1_state"],
       fallbackToSession: true,
     });
     if (!ok) {
@@ -742,8 +789,6 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [
     textElements1,
-    draggableImages1,
-    images1,
     selectedImg1,
     selectedVideoUrl1,
     selectedAudioUrl1,
@@ -778,6 +823,10 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     try {
       localStorage.removeItem("slide1_state");
       sessionStorage.removeItem("slide1_state");
+      const keys = getSlideStateKeys(1, getDraftCardId());
+      keys.forEach((key) => {
+        void clearSlideStateFromIdb(key).catch(() => {});
+      });
       console.log("🧹 Cleared Slide1 saved state");
     } catch (error) {
       console.error("Error clearing slide1_state:", error);

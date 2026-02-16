@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
+import { getDraftCardId } from "../lib/draftCardId";
+import { clearSlideStateFromIdb, getSlideStateKeys, loadSlideStateFromIdb, saveSlideStateToIdb } from "../lib/idbSlideState";
 
 const fontColors = [
   "#000000",
@@ -407,6 +409,12 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   const [duration3, setDuration3] = useState<number | null>(null);
   const [poster3, setPoster3] = useState<string | null>(null);
 
+  // --- 💾 Persist heavy image data to IndexedDB ---
+  useEffect(() => {
+    const [key] = getSlideStateKeys(3, getDraftCardId());
+    void saveSlideStateToIdb(key, { images3, draggableImages3 }).catch(() => {});
+  }, [images3, draggableImages3]);
+
   // New states for position and size
   const [textPositions3, setTextPositions3] = useState<Position[]>(
     texts3.map(() => ({ x: 0, y: 0 }))
@@ -645,18 +653,59 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.lineHeight3 !== undefined) setLineHeight3(parsed.lineHeight3);
         if (parsed.rotation3 !== undefined) setRotation3(parsed.rotation3);
 
+        const hasHeavyLocal =
+          (parsed.images3 && parsed.images3.length) ||
+          (parsed.draggableImages3 && parsed.draggableImages3.length);
+        if (hasHeavyLocal) {
+          const [key] = getSlideStateKeys(3, parsed?.draftId ?? getDraftCardId());
+          void saveSlideStateToIdb(key, {
+            images3: parsed.images3 ?? [],
+            draggableImages3: parsed.draggableImages3 ?? [],
+          }).catch(() => {});
+          try {
+            localStorage.removeItem("slide3_state");
+            sessionStorage.removeItem("slide3_state");
+          } catch {}
+        }
+
       }
     } catch (error) {
       console.error("❌ Error restoring slide3_state:", error);
     }
   }, []);
 
+  // --- 🧠 Restore heavy image data from IndexedDB (if localStorage skipped it) ---
+  useEffect(() => {
+    if (images3.length || draggableImages3.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const keys = getSlideStateKeys(3, getDraftCardId());
+        for (const key of keys) {
+          const heavy = await loadSlideStateFromIdb<{
+            images3?: { id: number; src: string }[];
+            draggableImages3?: DraggableImage[];
+          }>(key);
+          if (!heavy) continue;
+          if (cancelled) return;
+          if (heavy.images3) setImages3(heavy.images3);
+          if (heavy.draggableImages3) setDraggableImages3(heavy.draggableImages3);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [images3.length, draggableImages3.length]);
+
   // --- 💾 Auto-save changes ---
   useEffect(() => {
     const stateToSave = {
+      draftId: getDraftCardId() ?? null,
       textElements3,
-      draggableImages3,
-      images3,
       selectedImg3,
       selectedVideoUrl3,
       selectedAudioUrl3,
@@ -689,7 +738,7 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
 
     const payload = JSON.stringify(stateToSave);
     const ok = safeSetLocalStorage("slide3_state", payload, {
-      clearOnFail: ["slides_backup"],
+      clearOnFail: ["slides_backup", "slide3_state"],
       fallbackToSession: true,
     });
     if (!ok) {
@@ -697,8 +746,6 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [
     textElements3,
-    draggableImages3,
-    images3,
     selectedImg3,
     selectedVideoUrl3,
     selectedAudioUrl3,
@@ -733,6 +780,10 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     try {
       localStorage.removeItem("slide3_state");
       sessionStorage.removeItem("slide3_state");
+      const keys = getSlideStateKeys(3, getDraftCardId());
+      keys.forEach((key) => {
+        void clearSlideStateFromIdb(key).catch(() => {});
+      });
     } catch (error) {
       console.error("Error clearing slide3_state:", error);
     }

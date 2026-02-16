@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
 import { Box, Button, Typography } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CheckIcon from "@mui/icons-material/Check";
 import { useNavigate } from "react-router-dom";
-import { COLORS } from "../../../../../constant/color";
 import { USER_ROUTES } from "../../../../../constant/route";
 import { supabase } from "../../../../../supabase/supabase";
 import { useQuery } from "@tanstack/react-query";
@@ -29,14 +28,15 @@ async function fetchTemplatesLight() {
 const SubscriptionModelSection: React.FC = () => {
   const navigate = useNavigate();
 
-  const heroImage = "/assets/images/family.png";
+  const heroImage = "/assets/images/diyp-bundle-mockup.png";
   // const phoneMock = "/assets/images/phone-mock.png";
 
   const benefits = [
-    "Unlimited premium designs",
-    "Upload your own photos",
-    "Exclusive birthday & seasonal bundles",
-    "Instant downloads (print anytime)",
+    "Lifetime access to your selected bundle.",
+    "12 professionally designed, fully editable templates.",
+    "New seasonal and event bundles released regularly.",
+    "Instant download after purchase.",
+    "One simple GBP 15 payment. No subscription. No expiry.",
   ];
 
   const { data: cardData = [], isLoading: cardsLoading } = useQuery({
@@ -81,76 +81,59 @@ const SubscriptionModelSection: React.FC = () => {
   const isLoading = cardsLoading || templatesLoading;
 
   return (
-    <Box
-      sx={{
-        maxWidth: "100%",
-        mx: "auto",
-        bgcolor: COLORS.white,
-        borderRadius: 3,
-        boxShadow: 5,
-        overflow: "hidden",
-      }}
-    >
+    <Box sx={{ width: "100%", maxWidth: "100%", mx: "auto" }}>
+      <Typography
+        sx={{
+          textAlign: "center",
+          fontWeight: 700,
+          color: "#6F4C7A",
+          fontSize: { xs: 20, sm: 24, md: 26 },
+          mb: { xs: 1.5, md: 2 },
+        }}
+      >
+        Bundles Made for Life&apos;s Big Moments.
+      </Typography>
+
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1.05fr 1fr" },
-          gap: { xs: 3, md: 0 },
+          gridTemplateColumns: { xs: "1fr", md: "1.1fr 1fr" },
+          gap: { xs: 3, md: 2 },
           alignItems: "stretch",
+          bgcolor: "#8B6E96",
+          borderRadius: 3,
+          boxShadow: "0 10px 24px rgba(54, 34, 62, 0.25)",
+          border: "2px solid rgba(255,255,255,0.25)",
+          overflow: "hidden",
         }}
       >
         {/* LEFT */}
         <Box
           sx={{
-            p: { xs: 2.5, sm: 4, md: 5 },
+            p: { xs: 2.5, sm: 3.5, md: 4 },
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
           }}
         >
-          <Typography
-            sx={{
-              fontSize: { xs: 34, sm: 42, md: 35 },
-              fontWeight: 700,
-              color: "#3A2B3A",
-              lineHeight: 1.05,
-              mb: 1.5,
-            }}
-          >
-            Personalise your Premium Cards
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: { xs: 16, sm: 18, md: 20 },
-              color: "#2B2B2B",
-              lineHeight: 1.4,
-              mb: 3,
-              maxWidth: 520,
-            }}
-          >
-            Unlock premium cards & Bundles and exclusive design with one simple plan.
-          </Typography>
-
-          <Box sx={{ display: "grid", gap: 1.6, mb: 3.5 }}>
+          <Box sx={{ display: "grid", gap: 1.4, mb: 3 }}>
             {benefits.map((txt) => (
               <Box key={txt} sx={{ display: "flex", alignItems: "center", gap: 1.4 }}>
                 <Box
                   sx={{
-                    width: 34,
-                    height: 34,
+                    width: 28,
+                    height: 28,
                     borderRadius: "50%",
-                    bgcolor: COLORS.black,
+                    border: "2px solid #111",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
-                    boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
                   }}
                 >
-                  <CheckCircleIcon sx={{ color: "#fff", fontSize: 20 }} />
+                  <CheckIcon sx={{ color: "#111", fontSize: 18 }} />
                 </Box>
-                <Typography sx={{ fontSize: { xs: 18, md: 22 }, color: "#222" }}>
+                <Typography sx={{ fontSize: { xs: 15, sm: 16, md: 17 }, color: "#111" }}>
                   {txt}
                 </Typography>
               </Box>
@@ -162,19 +145,19 @@ const SubscriptionModelSection: React.FC = () => {
             onClick={() => navigate(USER_ROUTES.PREMIUM_PLANS)}
             sx={{
               alignSelf: "flex-start",
-              bgcolor: "#5B3C62",
+              bgcolor: "#51C1D2",
               color: "#fff",
-              px: 4,
-              py: 1.3,
-              borderRadius: 3,
+              px: 3,
+              py: 1.1,
+              borderRadius: 2,
               textTransform: "none",
-              fontSize: { xs: 18, md: 20 },
-              fontWeight: 700,
-              boxShadow: "0 10px 20px rgba(91,60,98,0.35)",
-              "&:hover": { bgcolor: "#4D3253" },
+              fontSize: { xs: 15, sm: 16 },
+              fontWeight: 600,
+              boxShadow: "0 8px 16px rgba(50,120,140,0.4)",
+              "&:hover": { bgcolor: "#42AEC1" },
             }}
           >
-            Choose your plan
+            Explore all bundles
           </Button>
         </Box>
 
@@ -182,24 +165,24 @@ const SubscriptionModelSection: React.FC = () => {
         <Box
           sx={{
             position: "relative",
-            p: { xs: 2, sm: 3, md: 3.5 },
+            p: { xs: 2, sm: 2.5, md: 3 },
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: "transparent",
+            bgcolor: "rgba(255,255,255,0.12)",
           }}
         >
           <Box
             component="img"
             src={heroImage}
-            alt="Subscription lifestyle"
+            alt="Bundle preview"
             sx={{
-              width: "100%",
-              height: { xs: 260, sm: 360, md: 420 },
+              width: { xs: "100%", sm: "92%", md: "88%" },
+              height: { xs: 350, sm: 380, md: 410 },
               objectFit: "cover",
-              borderRadius: 5,
-              borderTopLeftRadius: 70,
-              boxShadow: "0 10px 25px rgba(0,0,0,0.14)",
+              borderRadius: 3,
+              // boxShadow: "0 14px 24px rgba(0,0,0,0.25)",
+              backgroundColor: "#00000000",
             }}
           />
 
@@ -207,23 +190,22 @@ const SubscriptionModelSection: React.FC = () => {
           <Box
             sx={{
               position: "absolute",
-              bottom: { xs: 10, md: 4 },
-              left: { xs: 10, md: 10 },
-              right: { xs: 10, md: 16 },
+              bottom: { xs: 8, md: 12 },
+              right: { xs: 8, md: 14 },
               display: "flex",
               alignItems: "flex-end",
-              gap: { xs: 1, md: 1.6 },
+              gap: { xs: 0.8, md: 1.2 },
             }}
           >
             {/* ✅ REAL PRO items (cards + templates) */}
-            <Box sx={{ display: "flex", gap: { xs: 1, md: 1.6 }, flex: 1 }}>
-              {isLoading ? null : proItems.slice(0, 5).map((it) => (
+            <Box sx={{ display: "flex", gap: { xs: 0.8, md: 1.2 } }}>
+              {isLoading ? null : proItems.slice(0, 3).map((it) => (
                 <Box
                   key={it.key}
                   sx={{
-                    position: "relative", // ✅ correct
-                    width: { xs: 80, sm: 90, md: 110 },
-                    height: { xs: 120, sm: 140, md: 160 },
+                    position: "relative",
+                    width: { xs: 54, sm: 60, md: 70 },
+                    height: { xs: 72, sm: 82, md: 96 },
                     flexShrink: 0,
                   }}
                 >
@@ -246,14 +228,14 @@ const SubscriptionModelSection: React.FC = () => {
                     alt={it.key}
                     sx={{
                       position: "absolute",
-                      top: 18,
-                      left: 6,
-                      right: 10,
-                      bottom: 12,
-                      width: "calc(100% -10px)",
-                      height: "calc(100% - 22px)",
+                      top: 10,
+                      left: 4,
+                      right: 8,
+                      bottom: 8,
+                      width: "calc(100% - 10px)",
+                      height: "calc(100% - 18px)",
                       objectFit: "cover",
-                      boxShadow: "0 8px 18px rgba(0,0,0,0.18)",
+                      boxShadow: "0 6px 14px rgba(0,0,0,0.2)",
                       bgcolor: "#fff",
                     }}
                   />

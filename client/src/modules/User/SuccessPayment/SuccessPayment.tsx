@@ -4,11 +4,19 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabase/supabase";
 import { loadSlidesFromIdb } from "../../../lib/idbSlides";
+import { API_BASE } from "../../../lib/apiBase";
+import {
+  buildTenUpSlides,
+  buildTwoUpSlides,
+  isBusinessCardPrintSize,
+  isBusinessCardsCategory,
+  isCardsCategory,
+  isParallelCardSize,
+  getPageMmForSize,
+} from "../../../lib/pdfTwoUp";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { Check, ErrorOutline, HourglassEmptyOutlined } from "@mui/icons-material";
-
-const API_BASE = "/api";
 
 type Status = "loading" | "success" | "error";
 
@@ -46,6 +54,17 @@ function getSelectedPlan() {
   );
 }
 
+function getSelectedCategory() {
+  const direct = localStorage.getItem("selectedCategory");
+  if (direct) return direct;
+  try {
+    const raw = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
+    return raw?.category || "";
+  } catch {
+    return "";
+  }
+}
+
 export default function PremiumSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -65,8 +84,37 @@ export default function PremiumSuccess() {
       const token = await getTokenSafely();
       if (!token) throw new Error("Login required");
 
-      const slides = await getSlidesPayload();
+      const rawSlides = await getSlidesPayload();
       const cardSize = getSelectedPlan();
+      const categoryName = getSelectedCategory();
+      const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
+      const isTenUpBusinessCards =
+        isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(cardSize);
+
+      const slides = isTenUpBusinessCards
+        ? await buildTenUpSlides(rawSlides, {
+            columns: 2,
+            rows: 5,
+            gapPx: 10,
+            marginPx: 0,
+            orientation: "portrait",
+            fit: "cover",
+            pageMm: getPageMmForSize(cardSize),
+          })
+        : isTwoUpLandscape
+        ? await buildTwoUpSlides(rawSlides, {
+            gapPx: 0,
+            orientation: "landscape",
+            fit: "cover",
+            pairStrategy: "outer-inner",
+            pageMm: getPageMmForSize(cardSize),
+            pageTitle: ({ pageIndex }) => {
+              if (pageIndex === 1) return "Page 1: (front) and (back)";
+              if (pageIndex === 2) return "Page 2: (inside 1) and (inside 2)";
+              return null;
+            },
+          })
+        : rawSlides;
 
       if (!Object.keys(slides).length) {
         throw new Error("Slides data missing");
@@ -82,6 +130,7 @@ export default function PremiumSuccess() {
           sessionId,
           slides,
           cardSize,
+          ...(isTwoUpLandscape ? { pageOrientation: "landscape" } : {}),
         }),
       });
 

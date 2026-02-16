@@ -23,6 +23,9 @@ import { normalizeSlide } from "../SlideCover/SlideCover";
 import { safeGetStorage } from "../../lib/storage";
 import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
+import RulerOverlay from "../RulerOverlay/RulerOverlay";
+import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
+import { useAlignGuides } from "../../hooks/useAlignGuides";
 
 
 // Helper function to create a new text element
@@ -226,6 +229,41 @@ const SlideSpread = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
+  const align = useAlignGuides(rightBoxRef);
+  const alignItems = useMemo(() => {
+    const items: { id: string; x: number; y: number; w: number; h: number }[] = [];
+    const push = (id: string, x?: number, y?: number, w?: number, h?: number) => {
+      if (
+        typeof x !== "number" ||
+        typeof y !== "number" ||
+        typeof w !== "number" ||
+        typeof h !== "number" ||
+        Number.isNaN(x + y + w + h)
+      ) {
+        return;
+      }
+      items.push({ id, x, y, w, h });
+    };
+
+    const selectedIds = Array.isArray(selectedImg) ? selectedImg : [];
+    (draggableImages ?? [])
+      .filter((img: any) => selectedIds.includes(img.id))
+      .forEach((img: any) => push(`img:${img.id}`, img.x, img.y, img.width, img.height));
+
+    (textElements ?? []).forEach((t: any) =>
+      push(`txt:${t.id}`, t.position?.x ?? t.x, t.position?.y ?? t.y, t.size?.width ?? t.width, t.size?.height ?? t.height)
+    );
+
+    (selectedStickers2 ?? []).forEach((s: any, idx: number) =>
+      push(`st:${s.id ?? idx}`, s.x, s.y, s.width, s.height)
+    );
+
+    if (isAIimage2 && aimage2) {
+      push("ai:2", aimage2.x, aimage2.y, aimage2.width, aimage2.height);
+    }
+
+    return items;
+  }, [draggableImages, selectedImg, textElements, selectedStickers2, isAIimage2, aimage2]);
 
   const [selectedStickerIndex2, setSelectedStickerIndex2] = useState<number | null>(null);
 
@@ -702,6 +740,11 @@ const SlideSpread = ({
               : {},
           }}
         >
+          <RulerOverlay hide={!isSlideActive} />
+          <AlignmentGuides
+            {...align.guides}
+            hide={!isSlideActive || !align.isActive}
+          />
 
           {/* BG */}
           {isAdminEditor && bgImage2 && (
@@ -887,6 +930,20 @@ const SlideSpread = ({
                         transition: "border 0.2s ease",
                         cursor: textElement.isEditing ? "text" : "move",
                       }}
+                      onDragStart={() => align.onDragStart()}
+                      onDrag={(_, d) => {
+                        const snap = align.onDrag(
+                          d.x,
+                          d.y,
+                          textElement.size.width,
+                          textElement.size.height,
+                          alignItems,
+                          `txt:${textElement.id}`
+                        );
+                        if (snap.snappedX || snap.snappedY) {
+                          updateTextElement(textElement.id, { position: { x: snap.x, y: snap.y } });
+                        }
+                      }}
                       onTouchStart={() => { touchStartTime = Date.now(); }}
                       onTouchEnd={() => {
                         const now = Date.now();
@@ -908,7 +965,16 @@ const SlideSpread = ({
                         updateTextElement(textElement.id, { isEditing: true });
                       }}
                       onDragStop={(_, d) => {
-                        updateTextElement(textElement.id, { position: { x: d.x, y: d.y } });
+                        const snap = align.onDrag(
+                          d.x,
+                          d.y,
+                          textElement.size.width,
+                          textElement.size.height,
+                          alignItems,
+                          `txt:${textElement.id}`
+                        );
+                        updateTextElement(textElement.id, { position: { x: snap.x, y: snap.y } });
+                        align.onDragStop();
                       }}
                       onResizeStop={(_, __, ref, ___, position) => {
                         updateTextElement(textElement.id, {
@@ -1211,11 +1277,23 @@ const SlideSpread = ({
                       cancel=".non-draggable"
                       disableDragging={isLocked}
                       enableResizing={isLocked ? false : { bottomRight: true }}
+                      onDragStart={() => align.onDragStart()}
+                      onDrag={(_, d) => {
+                        if (isLocked) return;
+                        const snap = align.onDrag(d.x, d.y, width, height, alignItems, `img:${id}`);
+                        if (snap.snappedX || snap.snappedY) {
+                          setDraggableImages((prev) =>
+                            prev.map((img) => (img.id === id ? { ...img, x: snap.x, y: snap.y } : img))
+                          );
+                        }
+                      }}
                       onDragStop={(_, d) => {
                         if (isLocked) return;
+                        const snap = align.onDrag(d.x, d.y, width, height, alignItems, `img:${id}`);
                         setDraggableImages((prev) =>
-                          prev.map((img) => (img.id === id ? { ...img, x: d.x, y: d.y } : img))
+                          prev.map((img) => (img.id === id ? { ...img, x: snap.x, y: snap.y } : img))
                         );
+                        align.onDragStop();
                       }}
                       onResizeStop={(_, __, ref, ___, position) => {
                         if (isLocked) return;
@@ -1784,14 +1862,43 @@ const SlideSpread = ({
                     disableDragging={isLocked}
                     enableResizing={isLocked ? false : { bottomRight: true }}
                     onMouseDown={() => setSelectedStickerIndex2(index)}
-                    onDragStop={(_, d) =>
-                      !isLocked &&
-                      updateSticker2(index, {
-                        x: d.x,
-                        y: d.y,
-                        zIndex: sticker.zIndex,
-                      })
-                    }
+                    onDragStart={() => align.onDragStart()}
+                    onDrag={(_, d) => {
+                      if (isLocked) return;
+                      const snap = align.onDrag(
+                        d.x,
+                        d.y,
+                        sticker.width,
+                        sticker.height,
+                        alignItems,
+                        `st:${sticker.id ?? index}`
+                      );
+                      if (snap.snappedX || snap.snappedY) {
+                        updateSticker2(index, {
+                          x: snap.x,
+                          y: snap.y,
+                          zIndex: sticker.zIndex,
+                        });
+                      }
+                    }}
+                    onDragStop={(_, d) => {
+                      if (!isLocked) {
+                        const snap = align.onDrag(
+                          d.x,
+                          d.y,
+                          sticker.width,
+                          sticker.height,
+                          alignItems,
+                          `st:${sticker.id ?? index}`
+                        );
+                        updateSticker2(index, {
+                          x: snap.x,
+                          y: snap.y,
+                          zIndex: sticker.zIndex,
+                        });
+                      }
+                      align.onDragStop();
+                    }}
                     onResizeStop={(_, __, ref, ___, position) =>
                       !isLocked &&
                       updateSticker2(index, {
@@ -2124,6 +2231,23 @@ const SlideSpread = ({
                             touchAction: "none",
                             transition: "border 0.2s ease",
                           }}
+                          onDragStart={() => align.onDragStart()}
+                          onDrag={(_, d) => {
+                            const snap = align.onDrag(
+                              d.x,
+                              d.y,
+                              textElement.size.width,
+                              textElement.size.height,
+                              alignItems,
+                              `txt:${textElement.id}`
+                            );
+                            if (snap.snappedX || snap.snappedY) {
+                              updateTextElement(textElement.id, {
+                                position: { x: snap.x, y: snap.y },
+                                zIndex: 2001,
+                              });
+                            }
+                          }}
                           onTouchStart={() => {
                             touchStartTime = Date.now();
                           }}
@@ -2155,10 +2279,19 @@ const SlideSpread = ({
                             updateTextElement(textElement.id, { isEditing: true });
                           }}
                           onDragStop={(_, d) => {
+                            const snap = align.onDrag(
+                              d.x,
+                              d.y,
+                              textElement.size.width,
+                              textElement.size.height,
+                              alignItems,
+                              `txt:${textElement.id}`
+                            );
                             updateTextElement(textElement.id, {
-                              position: { x: d.x, y: d.y },
+                              position: { x: snap.x, y: snap.y },
                               zIndex: 2001,
                             });
+                            align.onDragStop();
                           }}
                           onResizeStop={(_, __, ref, ___, position) => {
                             updateTextElement(textElement.id, {
@@ -2569,12 +2702,25 @@ const SlideSpread = ({
                       bounds="parent"
                       enableUserSelectHack={false}
                       cancel=".non-draggable"
+                      onDragStart={() => align.onDragStart()}
+                      onDrag={(_, d) => {
+                        const snap = align.onDrag(d.x, d.y, width, height, alignItems, `img:${id}`);
+                        if (snap.snappedX || snap.snappedY) {
+                          setDraggableImages((prev) =>
+                            prev.map((img) =>
+                              img.id === id ? { ...img, x: snap.x, y: snap.y } : img
+                            )
+                          );
+                        }
+                      }}
                       onDragStop={(_, d) => {
+                        const snap = align.onDrag(d.x, d.y, width, height, alignItems, `img:${id}`);
                         setDraggableImages((prev) =>
                           prev.map((img) =>
-                            img.id === id ? { ...img, x: d.x, y: d.y } : img
+                            img.id === id ? { ...img, x: snap.x, y: snap.y } : img
                           )
                         );
+                        align.onDragStop();
                       }}
                       onResizeStop={(_, __, ref, ___, position) => {
                         const newWidth = parseInt(ref.style.width);
@@ -2976,13 +3122,36 @@ const SlideSpread = ({
                   cancel=".no-drag"
                   size={{ width: aimage2.width, height: aimage2.height }}
                   position={{ x: aimage2.x, y: aimage2.y }}
-                  onDragStop={(_, d) =>
+                  onDragStart={() => align.onDragStart()}
+                  onDrag={(_, d) => {
+                    const snap = align.onDrag(
+                      d.x,
+                      d.y,
+                      aimage2.width,
+                      aimage2.height,
+                      alignItems,
+                      "ai:2"
+                    );
+                    if (snap.snappedX || snap.snappedY) {
+                      setAIImage2((prev) => ({ ...prev, x: snap.x, y: snap.y }));
+                    }
+                  }}
+                  onDragStop={(_, d) => {
+                    const snap = align.onDrag(
+                      d.x,
+                      d.y,
+                      aimage2.width,
+                      aimage2.height,
+                      alignItems,
+                      "ai:2"
+                    );
                     setAIImage2((prev) => ({
                       ...prev,
-                      x: d.x,
-                      y: d.y,
-                    }))
-                  }
+                      x: snap.x,
+                      y: snap.y,
+                    }));
+                    align.onDragStop();
+                  }}
                   onResizeStop={(_, __, ref, ___, position) =>
                     setAIImage2({
                       width: parseInt(ref.style.width),
@@ -3080,13 +3249,40 @@ const SlideSpread = ({
                     bounds="parent"
                     enableUserSelectHack={false} // ✅ allows touch events
                     cancel=".non-draggable" // ✅ prevents RND drag hijack on buttons
-                    onDragStop={(_, d) =>
+                    onDragStart={() => align.onDragStart()}
+                    onDrag={(_, d) => {
+                      const snap = align.onDrag(
+                        d.x,
+                        d.y,
+                        sticker.width,
+                        sticker.height,
+                        alignItems,
+                        `st:${sticker.id ?? index}`
+                      );
+                      if (snap.snappedX || snap.snappedY) {
+                        updateSticker2(index, {
+                          x: snap.x,
+                          y: snap.y,
+                          zIndex: sticker.zIndex,
+                        });
+                      }
+                    }}
+                    onDragStop={(_, d) => {
+                      const snap = align.onDrag(
+                        d.x,
+                        d.y,
+                        sticker.width,
+                        sticker.height,
+                        alignItems,
+                        `st:${sticker.id ?? index}`
+                      );
                       updateSticker2(index, {
-                        x: d.x,
-                        y: d.y,
+                        x: snap.x,
+                        y: snap.y,
                         zIndex: sticker.zIndex,
-                      })
-                    }
+                      });
+                      align.onDragStop();
+                    }}
                     onResizeStop={(_, __, ref, ___, position) =>
                       updateSticker2(index, {
                         width: parseInt(ref.style.width),

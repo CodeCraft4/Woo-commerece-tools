@@ -270,6 +270,13 @@ const Navbar = () => {
         quality: 0.7,
         skipFonts: true,
         fontEmbedCSS: "",
+        filter: (node: Node) => {
+          if (node instanceof HTMLElement) {
+            if (node.dataset?.export === "false") return false;
+            if (node.classList?.contains("ruler-overlay")) return false;
+          }
+          return true;
+        },
       });
 
       return dataUrl;

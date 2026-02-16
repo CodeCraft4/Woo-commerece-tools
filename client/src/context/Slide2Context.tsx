@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
+import { getDraftCardId } from "../lib/draftCardId";
+import { clearSlideStateFromIdb, getSlideStateKeys, loadSlideStateFromIdb, saveSlideStateToIdb } from "../lib/idbSlideState";
 
 const fontColors = [
   "#000000",
@@ -430,6 +432,12 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
   const [duration, setDuration] = useState<number | null>(null);
   const [poster, setPoster] = useState<string | null>(null);
 
+  // --- 💾 Persist heavy image data to IndexedDB ---
+  useEffect(() => {
+    const [key] = getSlideStateKeys(2, getDraftCardId());
+    void saveSlideStateToIdb(key, { images, draggableImages }).catch(() => {});
+  }, [images, draggableImages]);
+
   // New states for position and size
   const [textPositions, setTextPositions] = useState<Position[]>(
     texts.map(() => ({ x: 0, y: 0 }))
@@ -669,18 +677,59 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         if (restoredLineHeight !== undefined) setLineHeight2(restoredLineHeight);
         if (parsed.rotation !== undefined) setRotation(parsed.rotation);
 
+        const hasHeavyLocal =
+          (parsed.images && parsed.images.length) ||
+          (parsed.draggableImages && parsed.draggableImages.length);
+        if (hasHeavyLocal) {
+          const [key] = getSlideStateKeys(2, parsed?.draftId ?? getDraftCardId());
+          void saveSlideStateToIdb(key, {
+            images: parsed.images ?? [],
+            draggableImages: parsed.draggableImages ?? [],
+          }).catch(() => {});
+          try {
+            localStorage.removeItem("slide2_state");
+            sessionStorage.removeItem("slide2_state");
+          } catch {}
+        }
+
       }
     } catch (error) {
       console.error("❌ Error restoring slide2_state:", error);
     }
   }, []);
 
+  // --- 🧠 Restore heavy image data from IndexedDB (if localStorage skipped it) ---
+  useEffect(() => {
+    if (images.length || draggableImages.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const keys = getSlideStateKeys(2, getDraftCardId());
+        for (const key of keys) {
+          const heavy = await loadSlideStateFromIdb<{
+            images?: { id: number; src: string }[];
+            draggableImages?: DraggableImage[];
+          }>(key);
+          if (!heavy) continue;
+          if (cancelled) return;
+          if (heavy.images) setImages(heavy.images);
+          if (heavy.draggableImages) setDraggableImages(heavy.draggableImages);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [images.length, draggableImages.length]);
+
   // --- 💾 Auto-save changes ---
   useEffect(() => {
     const stateToSave = {
+      draftId: getDraftCardId() ?? null,
       textElements,
-      draggableImages,
-      images,
       selectedImg,
       selectedVideoUrl,
       selectedAudioUrl,
@@ -714,7 +763,7 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
 
     const payload = JSON.stringify(stateToSave);
     const ok = safeSetLocalStorage("slide2_state", payload, {
-      clearOnFail: ["slides_backup"],
+      clearOnFail: ["slides_backup", "slide2_state"],
       fallbackToSession: true,
     });
     if (!ok) {
@@ -722,8 +771,6 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [
     textElements,
-    draggableImages,
-    images,
     selectedImg,
     selectedVideoUrl,
     selectedAudioUrl,
@@ -760,6 +807,10 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     try {
       localStorage.removeItem("slide2_state");
       sessionStorage.removeItem("slide2_state");
+      const keys = getSlideStateKeys(2, getDraftCardId());
+      keys.forEach((key) => {
+        void clearSlideStateFromIdb(key).catch(() => {});
+      });
       console.log("🧹 Cleared Slide2 saved state");
     } catch (error) {
       console.error("Error clearing slide2_state:", error);

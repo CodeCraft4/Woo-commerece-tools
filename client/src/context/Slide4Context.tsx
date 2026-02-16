@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
+import { getDraftCardId } from "../lib/draftCardId";
+import { clearSlideStateFromIdb, getSlideStateKeys, loadSlideStateFromIdb, saveSlideStateToIdb } from "../lib/idbSlideState";
 
 const fontColors = [
   "#000000",
@@ -427,6 +429,12 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [duration4, setDuration4] = useState<number | null>(null);
   const [poster4, setPoster4] = useState<string | null>(null);
 
+  // --- 💾 Persist heavy image data to IndexedDB ---
+  useEffect(() => {
+    const [key] = getSlideStateKeys(4, getDraftCardId());
+    void saveSlideStateToIdb(key, { images4, draggableImages4 }).catch(() => {});
+  }, [images4, draggableImages4]);
+
   // New states for position and size
   const [textPositions4, setTextPositions4] = useState<Position[]>(
     texts4.map(() => ({ x: 0, y: 0 }))
@@ -670,18 +678,59 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.lineHeight4 !== undefined) setLineHeight4(parsed.lineHeight4);
         if (parsed.rotation4 !== undefined) setRotation4(parsed.rotation4);
 
+        const hasHeavyLocal =
+          (parsed.images4 && parsed.images4.length) ||
+          (parsed.draggableImages4 && parsed.draggableImages4.length);
+        if (hasHeavyLocal) {
+          const [key] = getSlideStateKeys(4, parsed?.draftId ?? getDraftCardId());
+          void saveSlideStateToIdb(key, {
+            images4: parsed.images4 ?? [],
+            draggableImages4: parsed.draggableImages4 ?? [],
+          }).catch(() => {});
+          try {
+            localStorage.removeItem("slide4_state");
+            sessionStorage.removeItem("slide4_state");
+          } catch {}
+        }
+
       }
     } catch (error) {
       console.error("❌ Error restoring slide4_state:", error);
     }
   }, []);
 
+  // --- 🧠 Restore heavy image data from IndexedDB (if localStorage skipped it) ---
+  useEffect(() => {
+    if (images4.length || draggableImages4.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const keys = getSlideStateKeys(4, getDraftCardId());
+        for (const key of keys) {
+          const heavy = await loadSlideStateFromIdb<{
+            images4?: { id: number; src: string }[];
+            draggableImages4?: DraggableImage[];
+          }>(key);
+          if (!heavy) continue;
+          if (cancelled) return;
+          if (heavy.images4) setImages4(heavy.images4);
+          if (heavy.draggableImages4) setDraggableImages4(heavy.draggableImages4);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [images4.length, draggableImages4.length]);
+
   // --- 💾 Auto-save changes ---
   useEffect(() => {
     const stateToSave = {
+      draftId: getDraftCardId() ?? null,
       textElements4,
-      draggableImages4,
-      images4,
       selectedImg4,
       selectedVideoUrl4,
       selectedAudioUrl4,
@@ -713,7 +762,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
 
     const payload = JSON.stringify(stateToSave);
     const ok = safeSetLocalStorage("slide4_state", payload, {
-      clearOnFail: ["slides_backup"],
+      clearOnFail: ["slides_backup", "slide4_state"],
       fallbackToSession: true,
     });
     if (!ok) {
@@ -721,8 +770,6 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [
     textElements4,
-    draggableImages4,
-    images4,
     selectedImg4,
     selectedVideoUrl4,
     selectedAudioUrl4,
@@ -758,6 +805,10 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     try {
       localStorage.removeItem("slide4_state");
       sessionStorage.removeItem("slide4_state");
+      const keys = getSlideStateKeys(4, getDraftCardId());
+      keys.forEach((key) => {
+        void clearSlideStateFromIdb(key).catch(() => {});
+      });
       console.log("🧹 Cleared Slide4 saved state");
     } catch (error) {
       console.error("Error clearing slide4_state:", error);
