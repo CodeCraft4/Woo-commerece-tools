@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import SmartImage from "../SmartImage/SmartImage";
 // import { COLORS } from "../../constant/color";
 
 type ProductTypes = {
@@ -8,10 +9,11 @@ type ProductTypes = {
   data?: any;
   layoutCard?: any;
   borderColor?: string;
+  smartCrop?: boolean;
 };
 
 const ProductCard = (props: ProductTypes) => {
-  const { poster, tabsSlider, openModal, borderColor } = props;
+  const { poster, tabsSlider, openModal, borderColor, smartCrop } = props;
   return (
     <Box
       component={"div"}
@@ -32,16 +34,17 @@ const ProductCard = (props: ProductTypes) => {
         mx: "auto",
       }}
     >
-      <Box
-        component={"img"}
+      <SmartImage
         src={poster}
         alt="productImg"
+        enable={!!smartCrop}
         sx={{
           width: tabsSlider
             ? { md: "100%", sm: "100%", xs: "100%" }
             : { md: "175px", sm: "120px", xs: "150px" },
           height: "100%",
-          objectFit: { md: "cover", sm: "cover", xs: 'fill' },
+          objectFit: { md: "cover", sm: "cover", xs: "cover" },
+          objectPosition: "center",
           borderRadius: 2,
         }}
       />

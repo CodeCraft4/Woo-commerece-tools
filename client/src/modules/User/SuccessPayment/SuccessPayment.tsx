@@ -5,13 +5,24 @@ import toast from "react-hot-toast";
 import { supabase } from "../../../supabase/supabase";
 import { loadSlidesFromIdb } from "../../../lib/idbSlides";
 import { API_BASE } from "../../../lib/apiBase";
+import { removeWhiteBg } from "../../../lib/lib";
 import {
   buildTenUpSlides,
   buildTwoUpSlides,
+  buildFixedGridSlides,
   isBusinessCardPrintSize,
   isBusinessCardsCategory,
+  isBusinessLeafletsCategory,
+  isCandlesCategory,
+  isNotebooksCategory,
+  isMirrorPrintCategory,
+  mirrorSlides,
   isCardsCategory,
+  isLeafletTwoUpSize,
+  isNotebookTwoUpSize,
   isParallelCardSize,
+  getLeafletTwoUpPageMm,
+  getNotebookTwoUpPageMm,
   getPageMmForSize,
 } from "../../../lib/pdfTwoUp";
 import useModal from "../../../hooks/useModal";
@@ -87,12 +98,73 @@ export default function PremiumSuccess() {
       const rawSlides = await getSlidesPayload();
       const cardSize = getSelectedPlan();
       const categoryName = getSelectedCategory();
+      const mirrorPrint = isMirrorPrintCategory(categoryName);
+      const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
       const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
+      const isLeafletTwoUp =
+        isBusinessLeafletsCategory(categoryName) && isLeafletTwoUpSize(cardSize);
       const isTenUpBusinessCards =
         isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(cardSize);
+      const isCandlesGrid = isCandlesCategory(categoryName);
+      const isNotebookTwoUp =
+        isNotebooksCategory(categoryName) && isNotebookTwoUpSize(cardSize);
+
+      const notebookSlides = (() => {
+        if (!isNotebookTwoUp) return baseSlides;
+        const keys = Object.keys(baseSlides).filter((k) => baseSlides[k]);
+        if (keys.length >= 2) return baseSlides;
+        if (keys.length === 1) {
+          const k = keys[0];
+          return { [k]: baseSlides[k], [`${k}-copy`]: baseSlides[k] };
+        }
+        return baseSlides;
+      })();
+
+      const shouldRemoveBg =
+        /sticker|bag|tote|clothing|apparel/i.test(String(categoryName ?? "")) &&
+        !isCandlesGrid;
+
+      const processedCandleSlides = isCandlesGrid
+        ? await (async () => {
+            const entries = await Promise.all(
+              Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                const src = typeof v === "string" ? v : "";
+                if (!src) return [k, v] as const;
+                const cleaned = await removeWhiteBg(src, {
+                  threshold: 24,
+                  alphaThreshold: 8,
+                  minBrightness: 235,
+                  satThreshold: 16,
+                  mode: "all",
+                });
+                return [k, cleaned] as const;
+              })
+            );
+            return Object.fromEntries(entries);
+          })()
+        : baseSlides;
+
+      const processedBgSlides = shouldRemoveBg
+        ? await (async () => {
+            const entries = await Promise.all(
+              Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                const src = typeof v === "string" ? v : "";
+                if (!src) return [k, v] as const;
+                const cleaned = await removeWhiteBg(src, {
+                  threshold: 28,
+                  alphaThreshold: 8,
+                  minBrightness: 228,
+                  satThreshold: 18,
+                });
+                return [k, cleaned] as const;
+              })
+            );
+            return Object.fromEntries(entries);
+          })()
+        : baseSlides;
 
       const slides = isTenUpBusinessCards
-        ? await buildTenUpSlides(rawSlides, {
+        ? await buildTenUpSlides(baseSlides, {
             columns: 2,
             rows: 5,
             gapPx: 10,
@@ -101,12 +173,41 @@ export default function PremiumSuccess() {
             fit: "cover",
             pageMm: getPageMmForSize(cardSize),
           })
+        : isCandlesGrid
+        ? await buildFixedGridSlides(processedCandleSlides, {
+            columns: 2,
+            rows: 3,
+            labelMm: { w: 70, h: 70 },
+            gapMm: 0,
+            distribute: true,
+            fit: "contain",
+            pageMm: getPageMmForSize(cardSize),
+          })
+        : isNotebookTwoUp
+        ? await buildTwoUpSlides(notebookSlides, {
+            gapPx: 0,
+            orientation: "landscape",
+            fit: "contain",
+            pairStrategy: "sequential",
+            swapPairs: false,
+            pageMm: getNotebookTwoUpPageMm(cardSize),
+          })
+        : isLeafletTwoUp
+        ? await buildTwoUpSlides(baseSlides, {
+            gapPx: 0,
+            orientation: "landscape",
+            fit: "cover",
+            pairStrategy: "sequential",
+            swapPairs: false,
+            pageMm: getLeafletTwoUpPageMm(cardSize),
+          })
         : isTwoUpLandscape
-        ? await buildTwoUpSlides(rawSlides, {
+        ? await buildTwoUpSlides(baseSlides, {
             gapPx: 0,
             orientation: "landscape",
             fit: "cover",
             pairStrategy: "outer-inner",
+            swapPairs: true,
             pageMm: getPageMmForSize(cardSize),
             pageTitle: ({ pageIndex }) => {
               if (pageIndex === 1) return "Page 1: (front) and (back)";
@@ -114,7 +215,7 @@ export default function PremiumSuccess() {
               return null;
             },
           })
-        : rawSlides;
+        : processedBgSlides;
 
       if (!Object.keys(slides).length) {
         throw new Error("Slides data missing");
@@ -130,7 +231,9 @@ export default function PremiumSuccess() {
           sessionId,
           slides,
           cardSize,
-          ...(isTwoUpLandscape ? { pageOrientation: "landscape" } : {}),
+          ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp
+            ? { pageOrientation: "landscape" }
+            : {}),
         }),
       });
 

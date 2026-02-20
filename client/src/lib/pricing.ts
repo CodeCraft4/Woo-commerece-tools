@@ -119,16 +119,19 @@ export const getPricingConfig = (
         { key: "A4", title: "A4" },
         { key: "HALF_US_LETTER", title: "Half US Letter" },
         { key: "US_LETTER", title: "US Letter" },
-        { key: "US_TABLOID", title: "US Tabloid" },
       ],
     };
   if (name.includes("business cards"))
     return {
       sizes: [
-        { key: "A5", title: "A5" },
         { key: "A4", title: "A4" },
-        { key: "HALF_US_LETTER", title: "Half US Letter" },
         { key: "US_LETTER", title: "US Letter" },
+      ],
+    };
+  if (name.includes("candle"))
+    return {
+      sizes: [
+        { key: "A4", title: "A4" },
         { key: "US_TABLOID", title: "US Tabloid" },
       ],
     };

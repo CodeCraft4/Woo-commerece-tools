@@ -8,6 +8,7 @@ type TwoUpOptions = {
   orientation?: "portrait" | "landscape";
   fit?: "contain" | "cover";
   pairStrategy?: "sequential" | "outer-inner";
+  swapPairs?: boolean;
   pageMm?: { w: number; h: number };
   pageTitle?: (args: {
     pageIndex: number;
@@ -41,6 +42,23 @@ const HALF_US_LETTER_MM = { w: 139.7, h: 215.9 };
 const US_TABLOID_MM = { w: 279.4, h: 431.8 };
 const mmToPx = (mm: number, dpi: number) => Math.round((mm / 25.4) * dpi);
 
+const normalizeSizeKey = (size?: string) => {
+  const raw = String(size ?? "").trim().toLowerCase();
+  if (!raw) return "";
+  const s = raw
+    .replace(/[()]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/-/g, "_")
+    .replace(/×/g, "x");
+  if (s.includes("tabloid")) return "us_tabloid";
+  if (s.includes("half") && s.includes("letter")) return "half_us_letter";
+  if (s.includes("letter")) return "us_letter";
+  if (s.includes("a3")) return "a3";
+  if (s.includes("a5")) return "a5";
+  if (s.includes("a4")) return "a4";
+  return s;
+};
+
 const defaultOptions: Required<TwoUpOptions> = {
   gapPx: 10,
   dpi: 300,
@@ -49,6 +67,7 @@ const defaultOptions: Required<TwoUpOptions> = {
   orientation: "landscape",
   fit: "contain",
   pairStrategy: "sequential",
+  swapPairs: false,
   pageMm: A4_PORTRAIT_MM,
   pageTitle: () => undefined,
   titleStyle: {
@@ -107,6 +126,19 @@ const loadImage = (src: string) =>
     img.src = src;
   });
 
+const flipImageToDataUrl = async (src: string): Promise<string> => {
+  const img = await loadImage(src);
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return src;
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(img, 0, 0);
+  return canvas.toDataURL("image/png");
+};
+
 export const isCardsCategory = (name?: string) => {
   const n = String(name ?? "").trim().toLowerCase();
   return n === "cards" || n.includes("card");
@@ -115,11 +147,44 @@ export const isCardsCategory = (name?: string) => {
 export const isBusinessCardsCategory = (name?: string) =>
   /business\s*cards?/i.test(String(name ?? ""));
 
+export const isBusinessLeafletsCategory = (name?: string) =>
+  /business\s*leaflets?/i.test(String(name ?? ""));
+
+export const isCandlesCategory = (name?: string) =>
+  /candle/i.test(String(name ?? ""));
+
+export const isNotebooksCategory = (name?: string) =>
+  /notebook/i.test(String(name ?? ""));
+
+export const isMirrorPrintCategory = (name?: string) => {
+  const n = String(name ?? "").trim().toLowerCase();
+  return (
+    n.includes("notebook") ||
+    n.includes("apparel") ||
+    n.includes("clothing") ||
+    n.includes("tote bag") ||
+    n.includes("tote") ||
+    n.includes("bag")
+  );
+};
+
+export async function mirrorSlides(slides: SlidesPayload): Promise<SlidesPayload> {
+  const entries = await Promise.all(
+    Object.entries(slides as Record<string, string>).map(async ([k, v]) => {
+      const src = typeof v === "string" ? v : "";
+      if (!src) return [k, v] as const;
+      const flipped = await flipImageToDataUrl(src);
+      return [k, flipped] as const;
+    })
+  );
+  return Object.fromEntries(entries);
+}
+
 export const isA4Size = (size?: string) =>
-  String(size ?? "").trim().toLowerCase() === "a4";
+  normalizeSizeKey(size) === "a4";
 
 export const isBusinessCardPrintSize = (size?: string) => {
-  const s = String(size ?? "").trim().toLowerCase();
+  const s = normalizeSizeKey(size);
   return (
     s === "a5" ||
     s === "a4" ||
@@ -131,7 +196,7 @@ export const isBusinessCardPrintSize = (size?: string) => {
 };
 
 export const isParallelCardSize = (size?: string) => {
-  const s = String(size ?? "").trim().toLowerCase();
+  const s = normalizeSizeKey(size);
   return (
     s === "a5" ||
     s === "a4" ||
@@ -142,8 +207,13 @@ export const isParallelCardSize = (size?: string) => {
   );
 };
 
+export const isLeafletTwoUpSize = (size?: string) => {
+  const s = normalizeSizeKey(size);
+  return s === "a5" || s === "half_us_letter";
+};
+
 export const getPageMmForSize = (size?: string) => {
-  const s = String(size ?? "").trim().toLowerCase();
+  const s = normalizeSizeKey(size);
   if (s === "a3") return A3_PORTRAIT_MM;
   if (s === "a5") return A5_PORTRAIT_MM;
   if (s === "us_letter") return US_LETTER_MM;
@@ -151,6 +221,133 @@ export const getPageMmForSize = (size?: string) => {
   if (s === "us_tabloid") return US_TABLOID_MM;
   return A4_PORTRAIT_MM;
 };
+
+export const getLeafletTwoUpPageMm = (size?: string) => {
+  const s = normalizeSizeKey(size);
+  if (s === "half_us_letter") return US_LETTER_MM;
+  return A4_PORTRAIT_MM;
+};
+
+export const isNotebookTwoUpSize = (size?: string) => {
+  const s = normalizeSizeKey(size);
+  return s === "a5" || s === "half_us_letter";
+};
+
+export const getNotebookTwoUpPageMm = (size?: string) => {
+  const s = normalizeSizeKey(size);
+  if (s === "half_us_letter") return US_LETTER_MM;
+  return A4_PORTRAIT_MM;
+};
+
+type FixedGridOptions = {
+  columns?: number;
+  rows?: number;
+  labelMm?: { w: number; h: number };
+  pageMm?: { w: number; h: number };
+  gapMm?: number;
+  distribute?: boolean;
+  dpi?: number;
+  background?: string;
+  quality?: number;
+  fit?: "contain" | "cover";
+};
+
+export async function buildFixedGridSlides(
+  slides: SlidesPayload,
+  options?: FixedGridOptions,
+): Promise<SlidesPayload> {
+  const opts: Required<FixedGridOptions> = {
+    columns: 2,
+    rows: 3,
+    labelMm: { w: 70, h: 70 },
+    pageMm: A4_PORTRAIT_MM,
+    gapMm: 0,
+    distribute: false,
+    dpi: 300,
+    background: "#ffffff",
+    quality: 0.92,
+    fit: "contain",
+    ...(options ?? {}),
+  };
+
+  const keys = sortSlideKeys(Object.keys(slides).filter((k) => slides[k]));
+  if (keys.length === 0) return {};
+
+  const pageWidth = mmToPx(opts.pageMm.w, opts.dpi);
+  const pageHeight = mmToPx(opts.pageMm.h, opts.dpi);
+  const cols = Math.max(1, Math.floor(opts.columns));
+  const rows = Math.max(1, Math.floor(opts.rows));
+
+  let labelW = mmToPx(opts.labelMm.w, opts.dpi);
+  let labelH = mmToPx(opts.labelMm.h, opts.dpi);
+  let gapX = mmToPx(Math.max(0, opts.gapMm), opts.dpi);
+  let gapY = mmToPx(Math.max(0, opts.gapMm), opts.dpi);
+
+  // fit grid inside page if needed
+  const totalW = cols * labelW + gapX * (cols - 1);
+  const totalH = rows * labelH + gapY * (rows - 1);
+  const scaleDown = Math.min(1, pageWidth / totalW, pageHeight / totalH);
+  if (scaleDown < 1) {
+    labelW = Math.floor(labelW * scaleDown);
+    labelH = Math.floor(labelH * scaleDown);
+    gapX = Math.floor(gapX * scaleDown);
+    gapY = Math.floor(gapY * scaleDown);
+  }
+
+  let gridW = cols * labelW + gapX * (cols - 1);
+  let gridH = rows * labelH + gapY * (rows - 1);
+  let marginX = Math.max(0, Math.floor((pageWidth - gridW) / 2));
+  let marginY = Math.max(0, Math.floor((pageHeight - gridH) / 2));
+
+  if (opts.distribute && cols > 1 && rows > 1) {
+    // distribute gaps so the grid fills the page (no top/bottom/side margins)
+    gapX = Math.max(0, Math.floor((pageWidth - cols * labelW) / (cols - 1)));
+    gapY = Math.max(0, Math.floor((pageHeight - rows * labelH) / (rows - 1)));
+    gridW = cols * labelW + gapX * (cols - 1);
+    gridH = rows * labelH + gapY * (rows - 1);
+    marginX = 0;
+    marginY = 0;
+  }
+
+  const output: SlidesPayload = {};
+  let pageIndex = 1;
+
+  for (const key of keys) {
+    const src = slides[key];
+    if (!src) continue;
+
+    const img = await loadImage(src);
+    const canvas = document.createElement("canvas");
+    canvas.width = pageWidth;
+    canvas.height = pageHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+
+    ctx.fillStyle = opts.background;
+    ctx.fillRect(0, 0, pageWidth, pageHeight);
+
+    for (let r = 0; r < rows; r += 1) {
+      for (let c = 0; c < cols; c += 1) {
+        const slotX = marginX + c * (labelW + gapX);
+        const slotY = marginY + r * (labelH + gapY);
+        const scale =
+          opts.fit === "cover"
+            ? Math.max(labelW / img.width, labelH / img.height)
+            : Math.min(labelW / img.width, labelH / img.height);
+        const drawW = img.width * scale;
+        const drawH = img.height * scale;
+        const offsetX = slotX + (labelW - drawW) / 2;
+        const offsetY = slotY + (labelH - drawH) / 2;
+        ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+      }
+    }
+
+    output[`slide${pageIndex}`] = canvas.toDataURL("image/jpeg", opts.quality);
+    pageIndex += 1;
+  }
+
+  return output;
+}
 
 export async function buildTwoUpSlides(
   slides: SlidesPayload,
@@ -180,8 +377,11 @@ export async function buildTwoUpSlides(
   let pageIndex = 1;
 
   for (let i = 0; i < keys.length; i += 2) {
-    const leftKey = keys[i];
-    const rightKey = keys[i + 1];
+    let leftKey = keys[i];
+    let rightKey = keys[i + 1];
+    if (opts.swapPairs && rightKey) {
+      [leftKey, rightKey] = [rightKey, leftKey];
+    }
 
     const leftSrc = slides[leftKey];
     if (!leftSrc) continue;

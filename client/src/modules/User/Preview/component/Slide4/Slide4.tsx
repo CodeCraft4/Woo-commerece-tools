@@ -57,7 +57,7 @@ const Slide4 = (props: Slide4Props) => {
       }}
     >
       {layout4 && (
-        <Box sx={{ width: "100%", height: "100%", position: "relative", p: 1 }}>
+        <Box sx={{ width: "100%", height: "100%", position: "relative" }}>
           {/* IMAGES / BG ELEMENTS */}
           {layout4?.elements
             ?.slice()

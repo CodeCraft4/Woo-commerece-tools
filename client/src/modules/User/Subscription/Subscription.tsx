@@ -12,10 +12,20 @@ import { getMockupConfig } from "../../../lib/mockup";
 import {
   buildTenUpSlides,
   buildTwoUpSlides,
+  buildFixedGridSlides,
   isBusinessCardPrintSize,
   isBusinessCardsCategory,
+  isBusinessLeafletsCategory,
+  isCandlesCategory,
+  isNotebooksCategory,
+  isMirrorPrintCategory,
+  mirrorSlides,
   isCardsCategory,
+  isLeafletTwoUpSize,
+  isNotebookTwoUpSize,
   isParallelCardSize,
+  getLeafletTwoUpPageMm,
+  getNotebookTwoUpPageMm,
   getPageMmForSize,
 } from "../../../lib/pdfTwoUp";
 import { supabase } from "../../../supabase/supabase";
@@ -102,6 +112,29 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
     ];
   }
 
+  if (name.includes("business card")) {
+    return [
+      { key: "a4", title: "A4" },
+      { key: "us_letter", title: "US Letter" },
+    ];
+  }
+
+  if (name.includes("business leaflet")) {
+    return [
+      { key: "a5", title: "A5", sub: "Prints 2 per A4 sheet" },
+      { key: "a4", title: "A4", sub: "Prints 1 per A4 sheet" },
+      { key: "half_us_letter", title: "Half US Letter", sub: "Prints 2 per US Letter sheet" },
+      { key: "us_letter", title: "US Letter", sub: "Prints 1 per US Letter sheet" },
+    ];
+  }
+
+  if (name.includes("candle")) {
+    return [
+      { key: "a4", title: "A4", sub: "6 labels per A4 sheet (70mm × 70mm)" },
+      { key: "us_tabloid", title: "US Tabloid", sub: "6 labels per sheet (70mm × 70mm)" },
+    ];
+  }
+
   if (
     name.includes("clothing") ||
     name.includes("sticker") ||
@@ -119,10 +152,10 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
 
   if (name.includes("notebook")) {
     return [
-      { key: "a5", title: "A5" },
-      { key: "a4", title: "A4" },
-      { key: "half_us_letter", title: "Half US Letter" },
-      { key: "us_letter", title: "US Letter" },
+      { key: "a5", title: "A5", sub: "Prints 2 per A4 landscape sheet" },
+      { key: "a4", title: "A4", sub: "Prints 1 per A4 portrait sheet" },
+      { key: "half_us_letter", title: "Half US Letter", sub: "Prints 2 per US Letter landscape sheet" },
+      { key: "us_letter", title: "US Letter", sub: "Prints 1 per US Letter portrait sheet" },
     ];
   }
 
@@ -367,7 +400,31 @@ const Subscription = () => {
   // );
   
   const mock = useMemo(() => getMockupConfig(categoryName), [categoryName]);
-  const useMockupBackground = Boolean(mock?.mockupSrc) && !mugPreview;
+  const [mockupOk, setMockupOk] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+
+    if (!mock?.mockupSrc || mugPreview) {
+      setMockupOk(false);
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      if (alive) setMockupOk(true);
+    };
+    img.onerror = () => {
+      if (alive) setMockupOk(false);
+    };
+    img.src = mock.mockupSrc;
+
+    return () => {
+      alive = false;
+    };
+  }, [mock?.mockupSrc, mugPreview]);
+
+  const useMockupBackground = Boolean(mock?.mockupSrc) && !mugPreview && mockupOk;
   const mockupAspectRatio = useMockupBackground ? "818 / 600" : undefined;
 
   // ✅ load user plan
@@ -510,13 +567,74 @@ const Subscription = () => {
         if (!token) throw new Error("Login session not found");
 
         const rawSlides = await getSlidesPayload();
+        const mirrorPrint = isMirrorPrintCategory(categoryName);
+        const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
         const cardSize = localStorage.getItem("selectedSize") || selectedPlan;
         const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
+        const isLeafletTwoUp =
+          isBusinessLeafletsCategory(categoryName) && isLeafletTwoUpSize(cardSize);
         const isTenUpBusinessCards =
           isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(cardSize);
+        const isCandlesGrid = isCandlesCategory(categoryName);
+        const isNotebookTwoUp =
+          isNotebooksCategory(categoryName) && isNotebookTwoUpSize(cardSize);
+
+        const notebookSlides = (() => {
+          if (!isNotebookTwoUp) return baseSlides;
+          const keys = Object.keys(baseSlides).filter((k) => baseSlides[k]);
+          if (keys.length >= 2) return baseSlides;
+          if (keys.length === 1) {
+            const k = keys[0];
+            return { [k]: baseSlides[k], [`${k}-copy`]: baseSlides[k] };
+          }
+          return baseSlides;
+        })();
+
+        const shouldRemoveBg =
+          /sticker|bag|tote|clothing|apparel/i.test(String(categoryName ?? "")) &&
+          !isCandlesGrid;
+
+        const processedCandleSlides = isCandlesGrid
+          ? await (async () => {
+              const entries = await Promise.all(
+                Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                  const src = typeof v === "string" ? v : "";
+                  if (!src) return [k, v] as const;
+                  const cleaned = await removeWhiteBg(src, {
+                    threshold: 24,
+                    alphaThreshold: 8,
+                    minBrightness: 235,
+                    satThreshold: 16,
+                    mode: "all",
+                  });
+                  return [k, cleaned] as const;
+                })
+              );
+              return Object.fromEntries(entries);
+            })()
+          : baseSlides;
+
+        const processedBgSlides = shouldRemoveBg
+          ? await (async () => {
+              const entries = await Promise.all(
+                Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                  const src = typeof v === "string" ? v : "";
+                  if (!src) return [k, v] as const;
+                  const cleaned = await removeWhiteBg(src, {
+                    threshold: 28,
+                    alphaThreshold: 8,
+                    minBrightness: 228,
+                    satThreshold: 18,
+                  });
+                  return [k, cleaned] as const;
+                })
+              );
+              return Object.fromEntries(entries);
+            })()
+          : baseSlides;
 
         const slides = isTenUpBusinessCards
-          ? await buildTenUpSlides(rawSlides, {
+          ? await buildTenUpSlides(baseSlides, {
               columns: 2,
               rows: 5,
               gapPx: 10,
@@ -525,20 +643,49 @@ const Subscription = () => {
               fit: "cover",
               pageMm: getPageMmForSize(cardSize),
             })
-          : isTwoUpLandscape
-          ? await buildTwoUpSlides(rawSlides, {
+          : isCandlesGrid
+          ? await buildFixedGridSlides(processedCandleSlides, {
+              columns: 2,
+              rows: 3,
+              labelMm: { w: 70, h: 70 },
+              gapMm: 0,
+              distribute: true,
+              fit: "contain",
+              pageMm: getPageMmForSize(cardSize),
+            })
+          : isNotebookTwoUp
+          ? await buildTwoUpSlides(notebookSlides, {
               gapPx: 0,
               orientation: "landscape",
-              fit: "cover",
-              pairStrategy: "outer-inner",
-              pageMm: getPageMmForSize(cardSize),
+              fit: "contain",
+              pairStrategy: "sequential",
+              swapPairs: false,
+              pageMm: getNotebookTwoUpPageMm(cardSize),
+            })
+            : isLeafletTwoUp
+            ? await buildTwoUpSlides(baseSlides, {
+                gapPx: 0,
+                orientation: "landscape",
+                fit: "cover",
+                pairStrategy: "sequential",
+                swapPairs: false,
+                pageMm: getLeafletTwoUpPageMm(cardSize),
+              })
+            : isTwoUpLandscape
+            ? await buildTwoUpSlides(baseSlides, {
+                gapPx: 0,
+                orientation: "landscape",
+                fit: "cover",
+                pairStrategy: "outer-inner",
+                swapPairs: true,
+                pageMm: getPageMmForSize(cardSize),
               pageTitle: ({ pageIndex }) => {
-                if (pageIndex === 1) return "Page 1: slide1 (front) and slide4 (back)";
-                if (pageIndex === 2) return "Page 2: slide2 (inside 1) and slide3 (inside 2)";
+                if (pageIndex === 1) return "Page 1: slide4 (back) and slide1 (front)";
+                if (pageIndex === 2) return "Page 2: slide3 (inside 2) and slide2 (inside 1)";
                 return null;
               },
             })
-          : rawSlides;
+            : processedBgSlides;
         const res = await fetch(`${API_BASE}/pdf/send-subscription`, {
           method: "POST",
           headers: {
@@ -550,7 +697,9 @@ const Subscription = () => {
             cardSize,
             category: categoryName,
             accessplan: selectedItemAccessPlan,
-            ...(isTwoUpLandscape ? { pageOrientation: "landscape" } : {}),
+            ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp
+              ? { pageOrientation: "landscape" }
+              : {}),
 
             inBundleItems: isInBundleItems,
             productKey,
@@ -651,12 +800,50 @@ const Subscription = () => {
     !showTrophyIcon && selectedItemAccessPlan === "bundle" && planCode === "bundle" && isInBundleItems;
 
 
-    const [firstSlideProcessed, setFirstSlideProcessed] = useState(firstSlideUrl);
+  const isStickerCategory = useMemo(
+    () => lc(categoryName).includes("sticker"),
+    [categoryName]
+  );
+  const isCandleCategory = useMemo(
+    () => lc(categoryName).includes("candle"),
+    [categoryName]
+  );
+  const isBagCategory = useMemo(
+    () => /bag|tote/i.test(String(categoryName ?? "")),
+    [categoryName]
+  );
+  const isClothingCategory = useMemo(
+    () => /clothing|apparel/i.test(String(categoryName ?? "")),
+    [categoryName]
+  );
 
-useEffect(() => {
-  if (!firstSlideUrl) return;
-  removeWhiteBg(firstSlideUrl).then((res) => setFirstSlideProcessed(res));
-}, [firstSlideUrl]);
+  const [firstSlideProcessed, setFirstSlideProcessed] = useState(firstSlideUrl);
+
+  useEffect(() => {
+    let alive = true;
+
+    if (!firstSlideUrl) {
+      setFirstSlideProcessed("");
+      return;
+    }
+
+    if (!isStickerCategory && !isCandleCategory && !isBagCategory && !isClothingCategory) {
+      setFirstSlideProcessed(firstSlideUrl);
+      return;
+    }
+
+    const opts = isCandleCategory
+      ? { threshold: 24, alphaThreshold: 8, minBrightness: 235, satThreshold: 16, mode: "all" as const }
+      : { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 };
+
+    removeWhiteBg(firstSlideUrl, opts).then((res) => {
+      if (alive) setFirstSlideProcessed(res);
+    });
+
+    return () => {
+      alive = false;
+    };
+  }, [firstSlideUrl, isStickerCategory, isCandleCategory, isBagCategory, isClothingCategory]);
 
   // const productName =
   //   product?.title ||
@@ -817,7 +1004,7 @@ useEffect(() => {
               sx={{ display: "flex", flexDirection: "column", gap: "25px", textAlign: "start" }}
             >
               <Box sx={{ p: { md: 2, sm: 2, xs: "5px" }, bgcolor: COLORS.primary, borderRadius: 2 }}>
-                <Typography variant="h5">🎉 We’ve saved your {product?.category} design!</Typography>
+                <Typography variant="h5">🎉 Your {product?.category} design is ready for Checkout!</Typography>
 
                 <Typography sx={{ fontSize: 14, mt: 1, opacity: 0.8 }}>
                   {planLoading || bundleKeyLoading

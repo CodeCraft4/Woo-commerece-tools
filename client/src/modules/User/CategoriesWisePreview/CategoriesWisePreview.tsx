@@ -7,6 +7,7 @@ import { USER_ROUTES } from "../../../constant/route";
 import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage";
 import { saveSlidesToIdb } from "../../../lib/idbSlides";
 import { toJpeg } from "html-to-image";
+import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
 
 /* ---------- Types ---------- */
 type Slide = { id: number; label: string; elements: any[] };
@@ -76,6 +77,28 @@ async function toJpegDataUrl(
   });
 }
 
+const normalizeFontFamily = (value?: string | null) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const first = raw.split(",")[0]?.trim() ?? "";
+  return first.replace(/^['"]|['"]$/g, "");
+};
+
+const collectFontsFromSlides = (slides: Slide[]) => {
+  const fonts = new Set<string>();
+  slides.forEach((sl) => {
+    (sl.elements ?? []).forEach((el: any) => {
+      if (String(el?.type ?? "").toLowerCase() !== "text") return;
+      const fam = normalizeFontFamily(el?.fontFamily);
+      if (!fam) return;
+      const lower = fam.toLowerCase();
+      if (["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"].includes(lower)) return;
+      fonts.add(fam);
+    });
+  });
+  return Array.from(fonts);
+};
+
 
 const CategoriesWisePreview: React.FC = () => {
   const { state } = useLocation() as { state?: NavState };
@@ -112,6 +135,14 @@ const CategoriesWisePreview: React.FC = () => {
   }, [state]);
 
   const [active, setActive] = useState(start);
+
+  // Ensure template fonts are loaded so text positioning matches admin editor
+  useEffect(() => {
+    if (!slides?.length) return;
+    const fonts = collectFontsFromSlides(slides);
+    if (!fonts.length) return;
+    loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
+  }, [slides]);
 
   // book animation
   const [flipDir, setFlipDir] = useState<"next" | "prev">("next");
@@ -364,9 +395,6 @@ const CategoriesWisePreview: React.FC = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box sx={{ textAlign: "right" }}>
             <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{category || "Preview"}</Typography>
-            <Typography sx={{ fontSize: 12, opacity: 0.7 }}>
-              {config.mmWidth} × {config.mmHeight} mm
-            </Typography>
           </Box>
 
           {/* ✅ loading passed here */}

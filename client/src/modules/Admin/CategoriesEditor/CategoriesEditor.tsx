@@ -155,6 +155,7 @@ const CategoriesEditor = () => {
     textToolOn, setTextToolOn,
     textElements, setTextElements,
     imageElements, setImageElements,
+    stickerElements,
     setStickerElements,
     mainScrollerRef,
     registerFirstSlideNode,
@@ -826,6 +827,7 @@ const CategoriesEditor = () => {
       slides,
       textElements,
       imageElements,
+      stickerElements,
       slideBg,
     };
 

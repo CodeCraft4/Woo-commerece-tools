@@ -20,6 +20,8 @@ import { getPricingConfig, type SizeKeyConfig } from "../../lib/pricing";
 import { clearSlidesFromIdb } from "../../lib/idbSlides";
 import { pickPolygonLayout } from "../../lib/polygon";
 import { fetchCardById } from "../../source/source";
+import SmartImage from "../SmartImage/SmartImage";
+import { shouldSmartCropCategory } from "../../lib/thumbnail";
 
 const style = {
   position: "absolute" as const,
@@ -210,6 +212,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
   const { addToCart, updateCartItem } = useCartStore();
 
   const categoryName = useMemo(() => getCategoryName(cate), [cate]);
+  const enableSmartCrop = useMemo(
+    () => Boolean(isTempletDesign && shouldSmartCropCategory(categoryName)),
+    [categoryName, isTempletDesign]
+  );
   const isBusinessCard = useMemo(
     () => /business\s*card/i.test(String(categoryName ?? "")),
     [categoryName]
@@ -518,14 +524,15 @@ const ProductPopup = (props: ProductsPopTypes) => {
               position: "relative",
             }}
           >
-            <Box
-              component="img"
+            <SmartImage
               src={cate?.imageurl || cate?.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url}
               onClick={handleToggleZoom}
+              enable={enableSmartCrop}
               sx={{
                 width: "100%",
                 height: "100%",
-                objectFit: "fill",
+                objectFit: "cover",
+                objectPosition: "center",
                 transition: "transform 0.3s ease-in-out",
                 transform: isZoomed ? "scale(1.5)" : "scale(1)",
                 cursor: isZoomed ? "zoom-out" : "zoom-in",

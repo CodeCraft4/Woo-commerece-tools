@@ -33,10 +33,10 @@ const CATEGORY_MOCKUPS: Array<{
         mockupSrc: "/assets/mockup/bag-mockup.jpg",
         cardAspectRatio: "1 / 1.2",
         overlay: {
-          top: "38%",
+          top: "45%",
           left: "20%",
           width: "60%",
-          height: "45%",
+          height: "43%",
           rotate: "0deg",
           objectFit: "contain",
           opacity: 0.98,
@@ -45,12 +45,12 @@ const CATEGORY_MOCKUPS: Array<{
       },
     },
     // Coaster mockup
-    {
-      match: (category) => normalizeCategory(category).includes("coaster"),
-      cfg: {
-        mockupSrc: "/assets/mockup/coaster-mockup.jpg",
-        cardAspectRatio: "1 / 1.2",
-        overlay: {
+  {
+    match: (category) => normalizeCategory(category).includes("coaster"),
+    cfg: {
+      mockupSrc: "/assets/mockup/coaster-mockup.jpg",
+      cardAspectRatio: "1 / 1.2",
+      overlay: {
           top: "16.5%",
           left: "18%",
           width: "64%",
@@ -60,9 +60,27 @@ const CATEGORY_MOCKUPS: Array<{
           borderRadius: "2px",
           opacity: 0.98,
           filter: "contrast(1.05) saturate(1.02)",
-        },
       },
     },
+  },
+  // Candle mockup
+  {
+    match: (category) => normalizeCategory(category).includes("candles"),
+    cfg: {
+      mockupSrc: "/assets/mockup/candle-mockup.jpeg",
+      cardAspectRatio: "1 / 1.2",
+      overlay: {
+        top: "30%",
+        left: "25%",
+        width: "50%",
+        height: "50%",
+        rotate: "0deg",
+        objectFit: "contain",
+        opacity: 0.98,
+        filter: "contrast(1.05) saturate(1.02)",
+      },
+    },
+  },
     // Invitation
     {
       match: (category) => normalizeCategory(category).includes("invites"),
@@ -135,17 +153,17 @@ const CATEGORY_MOCKUPS: Array<{
         },
       },
     },
-    // Balloon sticker
+    // Sticker mockup
     {
       match: (category) => normalizeCategory(category).includes("sticker"),
       cfg: {
-        mockupSrc: "/assets/mockup/sticker-mockup.jpg",
+        mockupSrc: "/assets/mockup/stickers-Mockup.jpeg",
         cardAspectRatio: "1 / 1.2",
         overlay: {
-          top: "30%",
-          left: "30%",
-          width: "40%",
-          height: "40%",
+          top: "10%",
+          left: "10%",
+          width: "70%",
+          height: "70%",
           rotate: "0deg",
           objectFit: "contain",
           opacity: 0.98,
@@ -177,10 +195,10 @@ const CATEGORY_MOCKUPS: Array<{
         mockupSrc: "/assets/mockup/notebook-mockup.jpg",
         cardAspectRatio: "1 / 1",
         overlay: {
-          top: "18.5%",
+          top: "20%",
           left: "36.9%",
           width: "28.5%",
-          height: "62.2%",
+          height: "58.5%",
           rotate: "0deg",
           objectFit: "fill",
           opacity: 0.98,
@@ -194,13 +212,13 @@ const CATEGORY_MOCKUPS: Array<{
         return c.includes("leaflet") || c.includes("photo art") || c.includes("flyer");
       },
       cfg: {
-        mockupSrc: "/assets/mockup/photoArt-mockup.jpg",
+        mockupSrc: "/assets/mockup/photoArt-mockup.jpeg",
         cardAspectRatio: "1 / 1.25",
         overlay: {
-          top: "24%",
-          left: "36.7%",
-          width: "26.5%",
-          height: "52%",
+          top: "21%",
+          left: "36%",
+          width: "32%",
+          height: "57%",
           rotate: "0deg",
           objectFit: "fill",
           opacity: 0.98,

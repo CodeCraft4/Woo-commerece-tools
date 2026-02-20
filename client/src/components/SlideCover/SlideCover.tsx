@@ -34,7 +34,6 @@ import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
 import { pickPolygonLayout } from "../../lib/polygon";
 import { fetchCardById, fetchDraftByCardId } from "../../source/source";
-import RulerOverlay from "../RulerOverlay/RulerOverlay";
 import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../hooks/useAlignGuides";
 
@@ -1106,7 +1105,6 @@ const SlideCover = ({
               : {},
           }}
         >
-          <RulerOverlay hide={!isSlideActive1} />
           <AlignmentGuides
             {...align.guides}
             hide={!isSlideActive1 || !align.isActive}

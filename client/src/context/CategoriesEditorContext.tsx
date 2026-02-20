@@ -447,10 +447,15 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
         dpi: 96,
       };
 
+      const fitCanvas = {
+        width: Math.round(rawStores.config.mmWidth * multiplier),
+        height: Math.round(rawStores.config.mmHeight * multiplier),
+      };
 
       const configWithMultiplier = {
         ...rawStores.config,
         multiplier, // ðŸ‘ˆ future reference ke liye
+        fitCanvas, // keeps editor-space sizing for previews/thumbnails
       };
 
 
@@ -468,6 +473,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
         // json storage (safe place for everything)
         raw_stores: {
           ...rawStores,
+          config: configWithMultiplier,
           // keep original arrays normalized
           imageElements: normImageElements,
           stickerElements: normStickerElements,

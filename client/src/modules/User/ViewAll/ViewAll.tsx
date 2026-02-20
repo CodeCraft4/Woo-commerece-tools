@@ -9,6 +9,8 @@ import useModal from "../../../hooks/useModal";
 import ProductPopup from "../../../components/ProductPopup/ProductPopup";
 import MainLayout from "../../../layout/MainLayout";
 import { USER_ROUTES } from "../../../constant/route";
+import SmartImage from "../../../components/SmartImage/SmartImage";
+import { shouldSmartCropCategory } from "../../../lib/thumbnail";
 
 const VIEW_ALL = "View All Filters";
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
@@ -342,6 +344,9 @@ const ViewAllCard = () => {
 
                 const MUGS = e.category === "Mugs";
                 const B_CARD = e.category == 'Business Cards'
+                const templetCategory =
+                  e?.category ?? e?.categoryName ?? e?.templetCategory ?? e?.cardcategory ?? e?.cardCategory ?? "";
+                const enableSmartCrop = e.__type === "templet" && shouldSmartCropCategory(templetCategory);
 
                 return (
                   <Box
@@ -362,7 +367,18 @@ const ViewAllCard = () => {
                     {/* {plan === "pro" && <IconBadge kind="pro" /> : null} */}
                     {plan === "bundle" && null}
 
-                    <Box component="img" src={src} alt={e.title || e.name || e.cardname || "product"} sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
+                    <SmartImage
+                      src={src}
+                      alt={e.title || e.name || e.cardname || "product"}
+                      enable={enableSmartCrop}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                        display: "block",
+                      }}
+                    />
                   </Box>
                 );
               })

@@ -23,7 +23,6 @@ import mergePreservePdf from "../../utils/mergePreservePdf";
 import { safeGetStorage } from "../../lib/storage";
 import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
-import RulerOverlay from "../RulerOverlay/RulerOverlay";
 import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../hooks/useAlignGuides";
 
@@ -476,7 +475,6 @@ const UserSlide4Preview = () => {
           : {},
       }}
     >
-      <RulerOverlay hide={!isSlideActive4} />
       <AlignmentGuides
         {...align.guides}
         hide={!isSlideActive4 || !align.isActive}
@@ -1098,7 +1096,6 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
           : {},
       }}
     >
-      <RulerOverlay hide={!isSlideActive4} />
       <AlignmentGuides
         {...align.guides}
         hide={!isSlideActive4 || !align.isActive}

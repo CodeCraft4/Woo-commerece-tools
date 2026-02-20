@@ -1,7 +1,6 @@
 // path: src/pages/admin/.../TempletForm.tsx
 import { useMemo, useState, useEffect, useRef } from "react";
-import { Box, Typography, useMediaQuery } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { Box, Typography } from "@mui/material";
 import { Controller, useForm, type FieldErrors } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -191,6 +190,35 @@ const getPricingConfig = (categoryName?: string): CategoryPricingConfig => {
     };
   }
 
+  if (name.includes("business leaflet"))
+    return {
+      title: "Prices by Size",
+      sizes: [
+        { ...SIZES.A5, helper: "2 per A4 sheet" },
+        { ...SIZES.A4, helper: "1 per A4 sheet" },
+        { ...SIZES.HALF_US_LETTER, helper: "2 per US Letter sheet" },
+        { ...SIZES.US_LETTER, helper: "1 per US Letter sheet" },
+      ],
+    };
+
+  if (name.includes("business card"))
+    return {
+      title: "Prices by Size",
+      sizes: [
+        { ...SIZES.A4, helper: "1 per A4 sheet" },
+        { ...SIZES.US_LETTER, helper: "1 per US Letter sheet" },
+      ],
+    };
+
+  if (name.includes("candle"))
+    return {
+      title: "Prices by Size",
+      sizes: [
+        { ...SIZES.A4, helper: "6 labels per A4 sheet (70mm × 70mm)" },
+        { ...SIZES.US_TABLOID, helper: "6 labels per sheet (70mm × 70mm)" },
+      ],
+    };
+
   if (name.includes("clothing"))
     return {
       title: "Prices by Size",
@@ -258,9 +286,7 @@ const TempletForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const navState = location.state as any;
-  const theme = useTheme();
-  const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
-  const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
+
 
   const mode: string | undefined = navState?.mode;
   const templateId: string | undefined = navState?.id ?? undefined;
@@ -869,6 +895,40 @@ const TempletForm = () => {
 
   const mmToPx = (mm: number) => (mm / 25.4) * 96;
 
+  const toNum = (v: any, d = 0) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : d;
+  };
+
+  const canvasDims = useMemo(() => {
+    const fitW = toNum(rawStores?.config?.fitCanvas?.width, 0);
+    const fitH = toNum(rawStores?.config?.fitCanvas?.height, 0);
+
+    const canvasMmW = toNum(rawStores?.canvas?.mm?.w, 0);
+    const canvasMmH = toNum(rawStores?.canvas?.mm?.h, 0);
+
+    const canvasPxW = toNum(rawStores?.canvas?.px?.w, 0);
+    const canvasPxH = toNum(rawStores?.canvas?.px?.h, 0);
+
+    const mmW = toNum(rawStores?.config?.mmWidth, 0);
+    const mmH = toNum(rawStores?.config?.mmHeight, 0);
+
+    const width = fitW || canvasMmW || canvasPxW || (mmW ? mmToPx(mmW) : 0);
+    const height = fitH || canvasMmH || canvasPxH || (mmH ? mmToPx(mmH) : 0);
+
+    if (!width || !height) return { width: 400, height: 565 };
+    return { width, height };
+  }, [
+    rawStores?.config?.fitCanvas?.width,
+    rawStores?.config?.fitCanvas?.height,
+    rawStores?.canvas?.mm?.w,
+    rawStores?.canvas?.mm?.h,
+    rawStores?.canvas?.px?.w,
+    rawStores?.canvas?.px?.h,
+    rawStores?.config?.mmWidth,
+    rawStores?.config?.mmHeight,
+  ]);
+
   // preview کی max boundaries (responsive)
   // const previewBounds = useMemo(() => {
   //     if (isMdUp) return { maxW: 600, maxH: 900 };
@@ -877,35 +937,8 @@ const TempletForm = () => {
   // }, [isMdUp, isSmUp]);
 
   const previewSize = useMemo(() => {
-    const canvasW =
-      rawStores?.config?.fitCanvas?.width ??
-      mmToPx(rawStores?.config?.mmWidth ?? 210);
-    const canvasH =
-      rawStores?.config?.fitCanvas?.height ??
-      mmToPx(rawStores?.config?.mmHeight ?? 297);
-    console.log(canvasH, "h", canvasW, "w");
-
-    if (!canvasW || !canvasH) {
-      // fallback اگر canvas سائز موجود نہ ہو
-      return { width: 400, height: 565 };
-    }
-
-    // const { maxW, maxH } = previewBounds;
-
-    // canvas کو viewport کے اندر فٹ کرو، aspect ratio برقرار رکھتے ہوئے
-    // const scale = Math.min(maxW / canvasW, maxH / canvasH, 1);
-    const width = canvasW;
-    const height = canvasH;
-
-    return { width, height };
-  }, [
-    rawStores?.config?.fitCanvas?.width,
-    rawStores?.config?.fitCanvas?.height,
-    rawStores?.config?.mmWidth,
-    rawStores?.config?.mmHeight,
-    isMdUp,
-    isSmUp,
-  ]);
+    return { width: canvasDims.width, height: canvasDims.height };
+  }, [canvasDims.width, canvasDims.height]);
 
   const MUGS = navState.rawStores?.category === "Mugs";
   const BCARD = navState.rawStores?.category === "Business Cards";
@@ -1004,33 +1037,39 @@ const TempletForm = () => {
                   (rawStores.imageElements?.length ?? 0) > 0 ||
                   (rawStores.stickerElements?.length ?? 0) > 0;
 
+                const asSlideId = (v: any) => {
+                  const n = Number(v);
+                  return Number.isFinite(n) ? n : null;
+                };
+
+                const firstSlideId =
+                  asSlideId(firstSlide?.id ?? firstSlide?.slideId ?? firstSlide?.slide_id) ??
+                  0;
+
                 const slideTextElements = hasSeparatedEls
-                  ? rawStores.textElements?.filter(
-                      (te: any) => te.slideId === firstSlide.id,
-                    ) || []
-                  : (firstSlide?.elements ?? []).filter(
-                      (el: any) =>
-                        String(el?.type ?? "").toLowerCase() === "text" ||
-                        (!el?.type && el?.text != null),
-                    );
+                  ? rawStores.textElements?.filter((te: any) => {
+                      const sid = asSlideId(te?.slideId ?? te?.slide_id);
+                      return sid === firstSlideId;
+                    }) || []
+                  : (firstSlide?.elements ?? []).filter((el: any) => {
+                      const t = String(el?.type ?? "").toLowerCase();
+                      return t === "text" || (!t && el?.text != null);
+                    });
 
                 const slideImageElements = hasSeparatedEls
-                  ? rawStores.imageElements?.filter(
-                      (ie: any) => ie.slideId === firstSlide.id,
-                    ) || []
+                  ? rawStores.imageElements?.filter((ie: any) => {
+                      const sid = asSlideId(ie?.slideId ?? ie?.slide_id);
+                      return sid === firstSlideId;
+                    }) || []
                   : (firstSlide?.elements ?? []).filter((el: any) => {
                       const t = String(el?.type ?? "").toLowerCase();
                       return t === "image" || t === "sticker" || (!t && (el?.src || el?.image || el?.url));
                     });
-                const slideBg = rawStores.slideBg?.[firstSlide.id] || null;
+                const slideBg = rawStores.slideBg?.[firstSlideId] || rawStores.slideBg?.[firstSlide?.id] || null;
 
                 // canvas کا سائز جو ایڈیٹر سے آیا ہے
-                const canvasW =
-                  rawStores.config?.fitCanvas?.width ??
-                  mmToPx(rawStores.config?.mmWidth ?? 210);
-                const canvasH =
-                  rawStores.config?.fitCanvas?.height ??
-                  mmToPx(rawStores.config?.mmHeight ?? 297);
+                const canvasW = canvasDims.width;
+                const canvasH = canvasDims.height;
 
                 // preview کنٹینر کا سائز
                 const containerW = previewSize.width;
@@ -1041,6 +1080,23 @@ const TempletForm = () => {
                   containerW / canvasW,
                   containerH / canvasH,
                 );
+
+                const normalizePos = (el: any) => {
+                  let x = toNum(el?.x ?? el?.left, 0);
+                  let y = toNum(el?.y ?? el?.top, 0);
+                  let w = toNum(el?.width ?? el?.w, 0);
+                  let h = toNum(el?.height ?? el?.h, 0);
+
+                  const rel = (n: number) => n > 0 && n <= 1;
+                  if (rel(x) || rel(y) || rel(w) || rel(h)) {
+                    x = x * canvasW;
+                    y = y * canvasH;
+                    w = w * canvasW;
+                    h = h * canvasH;
+                  }
+
+                  return { x, y, w, h };
+                };
 
                 return (
                   <Box
@@ -1077,50 +1133,64 @@ const TempletForm = () => {
                       )}
 
                       {/* Images */}
-                      {slideImageElements.map((img: any) => (
-                        <Box
-                          key={img.id}
-                          component="img"
-                          src={img.src ?? img.sticker ?? img.image ?? img.url ?? img.imageUrl}
-                          sx={{
-                            position: "absolute",
-                            left: `${img.x * scale}px`,
-                            top: `${img.y * scale}px`,
-                            width: `${img.width * scale}px`,
-                            height: `${img.height * scale}px`,
-                            objectFit: "cover",
-                          }}
-                        />
-                      ))}
+                      {slideImageElements.map((img: any) => {
+                        const { x, y, w, h } = normalizePos(img);
+                        return (
+                          <Box
+                            key={img.id}
+                            component="img"
+                            src={img.src ?? img.sticker ?? img.image ?? img.url ?? img.imageUrl}
+                            sx={{
+                              position: "absolute",
+                              left: `${x * scale}px`,
+                              top: `${y * scale}px`,
+                              width: `${w * scale}px`,
+                              height: `${h * scale}px`,
+                              objectFit: "cover",
+                            }}
+                          />
+                        );
+                      })}
 
                       {/* Text */}
-                      {slideTextElements.map((txt: any) => (
-                        <Typography
-                          sx={{
-                            position: "absolute",
-                            left: `${txt.x * scale}px`,
-                            top: `${txt.y * scale}px`,
-                            width: `${txt.width * scale}px`,
-                            height: `${txt.height * scale}px`,
-                            fontWeight: txt.bold ? 700 : 400,
-                            fontStyle: txt.italic ? "italic" : "normal",
-                            fontSize: txt.fontSize ?? 20,
-                            fontFamily: txt.fontFamily ?? "Arial",
-                            color: txt.color ?? "#111111",
-                            textAlign: "center", // always center horizontally
-                            display: "flex",
-                            alignItems: "center", // center vertically
-                            justifyContent: "center", // center horizontally
-                            whiteSpace: "pre-wrap",
-                            overflowWrap: "break-word",
-                            wordBreak: "break-word",
-                            userSelect: "none",
-                            pointerEvents: "none",
-                          }}
-                        >
-                          {txt.text ?? txt.value}
-                        </Typography>
-                      ))}
+                      {slideTextElements.map((txt: any) => {
+                        const { x, y, w, h } = normalizePos(txt);
+                        const align = (String(txt?.align ?? "center").toLowerCase() as
+                          | "left"
+                          | "center"
+                          | "right");
+                        const justify =
+                          align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+
+                        return (
+                          <Typography
+                            key={txt.id}
+                            sx={{
+                              position: "absolute",
+                              left: `${x * scale}px`,
+                              top: `${y * scale}px`,
+                              width: `${w * scale}px`,
+                              height: `${h * scale}px`,
+                              fontWeight: txt.bold ? 700 : 400,
+                              fontStyle: txt.italic ? "italic" : "normal",
+                              fontSize: toNum(txt.fontSize ?? txt.font_size, 20),
+                              fontFamily: txt.fontFamily ?? txt.font_family ?? "Arial",
+                              color: txt.color ?? "#111111",
+                              textAlign: align,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: justify,
+                              whiteSpace: "pre-wrap",
+                              overflowWrap: "break-word",
+                              wordBreak: "break-word",
+                              userSelect: "none",
+                              pointerEvents: "none",
+                            }}
+                          >
+                            {txt.text ?? txt.value}
+                          </Typography>
+                        );
+                      })}
                     </Box>
                   </Box>
                 );

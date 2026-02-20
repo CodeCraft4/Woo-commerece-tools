@@ -24,6 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import useModal from "../../hooks/useModal";
 import ProductPopup, { type CategoryType } from "../ProductPopup/ProductPopup";
 import { fetchAllTempletDesigns } from "../../source/source";
+import { shouldSmartCropCategory } from "../../lib/thumbnail";
 
 type BirthdayTypes = {
   title?: string;
@@ -271,6 +272,9 @@ const TempletsCardSlider = ({ title, description }: BirthdayTypes) => {
                     poster={cate?.img_url}
                     tabsSlider
                     layoutCard={cate?.polygonLayout}
+                    smartCrop={shouldSmartCropCategory(
+                      cate?.category ?? cate?.categoryName ?? cate?.templetCategory ?? cate?.cardcategory ?? ""
+                    )}
                     openModal={() => openDetailModal(cate)}
                   />
                 </Box>

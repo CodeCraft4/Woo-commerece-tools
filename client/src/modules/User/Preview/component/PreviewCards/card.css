@@ -25,7 +25,6 @@
 
 .front {
   backface-visibility: hidden;
-  border-left: 10px solid #8d6da1;
   border-radius: 14px;
 }
 
