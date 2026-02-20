@@ -221,6 +221,9 @@ export async function removeWhiteBg(
     minBrightness?: number;
     satThreshold?: number;
     mode?: "edge" | "all";
+    whiteOnly?: boolean;
+    requireWhiteBg?: boolean;
+    whiteMinChannel?: number;
   }
 ): Promise<string> {
   return new Promise((resolve) => {
@@ -248,6 +251,7 @@ export async function removeWhiteBg(
       const alphaThreshold = opts?.alphaThreshold ?? 8;
       const minBrightness = opts?.minBrightness ?? 230;
       const satThreshold = opts?.satThreshold ?? 18;
+      const whiteMinChannel = opts?.whiteMinChannel ?? minBrightness;
 
       const getPixel = (x: number, y: number) => {
         const i = (y * width + x) * 4;
@@ -283,8 +287,31 @@ export async function removeWhiteBg(
         [width - 1, Math.floor(height / 2)],
       ]);
 
-      const isBg = (r: number, g: number, b: number, a: number) => {
+      const isWhiteish = (r: number, g: number, b: number, a: number) => {
         if (a <= alphaThreshold) return true;
+        const maxc = Math.max(r, g, b);
+        const minc = Math.min(r, g, b);
+        const brightness = (r + g + b) / 3;
+        const sat = maxc - minc;
+        return (
+          brightness >= minBrightness &&
+          sat <= satThreshold &&
+          r >= whiteMinChannel &&
+          g >= whiteMinChannel &&
+          b >= whiteMinChannel
+        );
+      };
+
+      if (opts?.requireWhiteBg) {
+        const bgIsWhite = isWhiteish(bg[0], bg[1], bg[2], 255);
+        if (!bgIsWhite) {
+          resolve(imgUrl);
+          return;
+        }
+      }
+
+      const isBg = (r: number, g: number, b: number, a: number) => {
+        if (opts?.whiteOnly) return isWhiteish(r, g, b, a);
         const maxc = Math.max(r, g, b);
         const minc = Math.min(r, g, b);
         const brightness = (r + g + b) / 3;

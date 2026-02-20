@@ -590,9 +590,22 @@ const Subscription = () => {
           return baseSlides;
         })();
 
-        const shouldRemoveBg =
-          /sticker|bag|tote|clothing|apparel/i.test(String(categoryName ?? "")) &&
-          !isCandlesGrid;
+        const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
+        const isBagOrClothingForPdf = /bag|tote|clothing|apparel/i.test(String(categoryName ?? ""));
+        const bgRemoveOpts =
+          !isCandlesGrid && isBagOrClothingForPdf
+            ? {
+                threshold: 18,
+                alphaThreshold: 8,
+                minBrightness: 245,
+                satThreshold: 10,
+                whiteMinChannel: 240,
+                whiteOnly: true,
+                requireWhiteBg: true,
+              }
+            : !isCandlesGrid && isStickerForPdf
+            ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
+            : null;
 
         const processedCandleSlides = isCandlesGrid
           ? await (async () => {
@@ -614,18 +627,13 @@ const Subscription = () => {
             })()
           : baseSlides;
 
-        const processedBgSlides = shouldRemoveBg
+        const processedBgSlides = bgRemoveOpts
           ? await (async () => {
               const entries = await Promise.all(
                 Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
                   const src = typeof v === "string" ? v : "";
                   if (!src) return [k, v] as const;
-                  const cleaned = await removeWhiteBg(src, {
-                    threshold: 28,
-                    alphaThreshold: 8,
-                    minBrightness: 228,
-                    satThreshold: 18,
-                  });
+                  const cleaned = await removeWhiteBg(src, bgRemoveOpts);
                   return [k, cleaned] as const;
                 })
               );
@@ -834,6 +842,16 @@ const Subscription = () => {
 
     const opts = isCandleCategory
       ? { threshold: 24, alphaThreshold: 8, minBrightness: 235, satThreshold: 16, mode: "all" as const }
+      : isBagCategory || isClothingCategory
+      ? {
+          threshold: 18,
+          alphaThreshold: 8,
+          minBrightness: 245,
+          satThreshold: 10,
+          whiteMinChannel: 240,
+          whiteOnly: true,
+          requireWhiteBg: true,
+        }
       : { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 };
 
     removeWhiteBg(firstSlideUrl, opts).then((res) => {
