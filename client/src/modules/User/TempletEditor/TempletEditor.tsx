@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Collections, ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import * as htmlToImage from "html-to-image";
+import { Rnd } from "react-rnd";
 
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
@@ -22,6 +23,8 @@ import { COLORS } from "../../../constant/color";
 import { CATEGORY_CONFIG, type CategoryKey } from "../../../constant/data";
 import toast from "react-hot-toast";
 import { safeGetStorage, safeSetLocalStorage } from "../../../lib/storage";
+import AlignmentGuides from "../../../components/AlignmentGuides/AlignmentGuides";
+import { useAlignGuides } from "../../../hooks/useAlignGuides";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -65,7 +68,14 @@ type AdminPreview = {
 // "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
 const cloneSlides = (slides: Slide[]): Slide[] => JSON.parse(JSON.stringify(slides));
-const asNum = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
+const asNum = (v: any, d = 0) => {
+  if (typeof v === "number" && !Number.isNaN(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (!Number.isNaN(n)) return n;
+  }
+  return d;
+};
 const asStr = (v: any, d = "") => (typeof v === "string" ? v : d);
 const asBool = (v: any, d = false) => (typeof v === "boolean" ? v : d);
 const A = <T,>(v: any): T[] => (Array.isArray(v) ? v : []);
@@ -195,6 +205,8 @@ export default function TempletEditor() {
   const setSlideRef = (i: number) => (el: HTMLDivElement | null) => {
     slideRefs.current[i] = el;
   };
+  const activeSlideRef = useRef<HTMLDivElement | null>(null);
+  const align = useAlignGuides(activeSlideRef);
 
   const { productId } = useParams<{ productId: string }>();
   const { state } = useLocation() as { state?: { templetDesign?: any } };
@@ -348,13 +360,15 @@ export default function TempletEditor() {
 
     const slideBgMap = (src as any)?.slideBg ?? (raw as any)?.slideBg ?? null;
 
+    const matchesSlide = (e: any, sid: number) => asNum(e?.slideId ?? e?.slide_id, sid) === sid;
+
     const slides: Slide[] = slidesDef.map((sl, i) => {
       const sid = asNum(sl?.id ?? i, i);
       const label = labels[i] ?? asStr(sl?.label, `Slide ${i + 1}`);
 
-      const images = imgEls.filter((e) => (e?.slideId ?? e?.slide_id) === sid).map(coerceImage);
-      const texts = txtEls.filter((e) => (e?.slideId ?? e?.slide_id) === sid).map(coerceText);
-      const stickers = stkEls.filter((e) => (e?.slideId ?? e?.slide_id) === sid).map(coerceSticker);
+      const images = imgEls.filter((e) => matchesSlide(e, sid)).map(coerceImage);
+      const texts = txtEls.filter((e) => matchesSlide(e, sid)).map(coerceText);
+      const stickers = stkEls.filter((e) => matchesSlide(e, sid)).map(coerceSticker);
 
       const elements: AnyEl[] = [...images, ...texts, ...stickers].sort(
         (a, b) => asNum(a.zIndex, 1) - asNum(b.zIndex, 1)
@@ -518,6 +532,20 @@ export default function TempletEditor() {
   const artboardWidth = canvasSize.width;
   const artboardHeight = canvasSize.height;
 
+  const alignItems = useMemo(() => {
+    const slide = userSlides[activeSlide];
+    if (!slide) return [];
+    const items: { id: string; x: number; y: number; w: number; h: number }[] = [];
+    slide.elements?.forEach((el: AnyEl) => {
+      const x = asNum(el.x, 0);
+      const y = asNum(el.y, 0);
+      const w = asNum(el.width, 0);
+      const h = asNum(el.height, 0);
+      if (!Number.isNaN(x + y + w + h)) items.push({ id: el.id, x, y, w, h });
+    });
+    return items;
+  }, [userSlides, activeSlide]);
+
   // Auto-center active slide in scroller
   useEffect(() => {
     const container = scrollRef.current;
@@ -546,6 +574,17 @@ export default function TempletEditor() {
       const copy = cloneSlides(prev);
       const el = copy[slideIndex]?.elements.find((e) => e.id === elId);
       if (el && el.type === "text" && (el as TextEl).editable !== false) (el as TextEl).text = text;
+      return copy;
+    });
+  };
+
+  const updateElement = (slideIndex: number, elId: string, patch: Partial<AnyEl>) => {
+    setIsDirty(true);
+    setUserSlides((prev) => {
+      const copy = cloneSlides(prev);
+      const el = copy[slideIndex]?.elements.find((e) => e.id === elId);
+      if (!el || el.editable === false) return copy;
+      Object.assign(el, patch);
       return copy;
     });
   };
@@ -735,7 +774,11 @@ export default function TempletEditor() {
           <Box sx={{ flex: "0 0 auto", width: sidePad }} />
 
           {userSlides.map((slide, i) => {
-            const ordered = [...slide.elements].sort((a, b) => asNum(a.zIndex, 1) - asNum(b.zIndex, 1));
+            const ordered = [...slide.elements].sort((a, b) => {
+              const zA = asNum(a.zIndex, 1) + (a.type === "text" ? 100000 : 0);
+              const zB = asNum(b.zIndex, 1) + (b.type === "text" ? 100000 : 0);
+              return zA - zB;
+            });
             const isActive = i === activeSlide;
 
             return (
@@ -757,6 +800,7 @@ export default function TempletEditor() {
                 <Box
                   ref={(el: any) => {
                     setSlideRef(i)(el);
+                    if (isActive) activeSlideRef.current = el;
                   }}
                   sx={{
                     width: artboardWidth,
@@ -770,75 +814,109 @@ export default function TempletEditor() {
                   }}
                   onClick={() => isActive && setSelectedElId(null)}
                 >
+                  <AlignmentGuides {...align.guides} hide={!isActive || !align.isActive} />
                   {ordered.map((el) => {
                     const isLocked = el.editable === false;
                     const isSelected = selectedElId === el.id && isActive;
                     const cursor = isSelected ? "text" : isLocked ? "not-allowed" : "text";
 
-                    // ✅ REMOVE 1.23 SCALE
-                    const baseStyle = {
-                      position: "absolute" as const,
-                      left: el.x,
-                      top: el.y,
-                      width: el.width,
-                      height: el.height,
-                      zIndex: asNum(el.zIndex, 1),
-                      cursor,
-                      borderRadius: 1,
+                    const canMove = isActive && !isLocked;
+                    const commonRnd = {
+                      bounds: "parent" as const,
+                      size: { width: el.width, height: el.height },
+                      position: { x: el.x, y: el.y },
+                      dragCancel: ".no-drag, input, textarea, button",
+                      disableDragging: !canMove,
+                      enableResizing: canMove ? { bottomRight: true } : false,
+                      style: {
+                        zIndex: asNum(el.zIndex, 1),
+                        cursor,
+                        borderRadius: 1,
+                        border: isSelected ? "1px solid #1976d2" : "1px solid transparent",
+                      },
+                      onDragStart: () => {
+                        if (canMove) align.onDragStart();
+                      },
+                      onDrag: (_: any, d: any) => {
+                        if (!canMove) return;
+                        const snap = align.onDrag(d.x, d.y, el.width, el.height, alignItems, el.id);
+                        if (snap.snappedX || snap.snappedY) {
+                          updateElement(i, el.id, { x: snap.x, y: snap.y });
+                        }
+                      },
+                      onDragStop: (_: any, d: any) => {
+                        if (!canMove) return;
+                        const snap = align.onDrag(d.x, d.y, el.width, el.height, alignItems, el.id);
+                        updateElement(i, el.id, { x: snap.x, y: snap.y });
+                        align.onDragStop();
+                      },
+                      onResizeStop: (_: any, __: any, ref: any, ___: any, position: any) => {
+                        if (!canMove) return;
+                        const newW = parseInt(ref.style.width, 10);
+                        const newH = parseInt(ref.style.height, 10);
+                        updateElement(i, el.id, {
+                          width: newW,
+                          height: newH,
+                          x: position.x,
+                          y: position.y,
+                        });
+                        align.onDragStop();
+                      },
                     };
 
                     if (el.type === "image") {
                       const img = el as ImageEl;
                       return (
-                        <Box
-                          key={el.id}
-                          sx={{ ...baseStyle, overflow: "hidden" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!isActive) return;
-                            setSelectedElId(el.id);
-                          }}
-                        >
-                          <img
-                            crossOrigin="anonymous"
-                            src={img.src}
-                            alt=""
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                          />
+                        <Rnd key={el.id} {...commonRnd}>
+                          <Box
+                            sx={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isActive) return;
+                              setSelectedElId(el.id);
+                            }}
+                          >
+                            <img
+                              crossOrigin="anonymous"
+                              src={img.src}
+                              alt=""
+                              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                            />
 
-                          {el.editable !== false && isActive && (
-                            <Box
-                              className="capture-exclude"
-                              sx={{
-                                position: "absolute",
-                                inset: 0,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                opacity: 0,
-                                transition: "opacity .15s ease",
-                                "&:hover": { opacity: 1, background: "rgba(0,0,0,0.18)" },
-                                cursor: "pointer",
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedElId(el.id);
-                                fileInputsRef.current[el.id]?.click();
-                              }}
-                            >
-                              <Collections sx={{ color: "#fff" }} />
-                            </Box>
-                          )}
+                            {el.editable !== false && isActive && (
+                              <Box
+                                className="capture-exclude no-drag"
+                                sx={{
+                                  position: "absolute",
+                                  inset: 0,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  opacity: 0,
+                                  transition: "opacity .15s ease",
+                                  "&:hover": { opacity: 1, background: "rgba(0,0,0,0.18)" },
+                                  cursor: "pointer",
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedElId(el.id);
+                                  fileInputsRef.current[el.id]?.click();
+                                }}
+                              >
+                                <Collections sx={{ color: "#fff" }} />
+                              </Box>
+                            )}
 
-                          <input
-                            type="file"
-                            accept="image/*"
-                            ref={setImageInputRef(el.id)}
-                            onChange={(e) => onImagePicked(i, el.id, e.target.files?.[0] || null)}
-                            style={{ display: "none" }}
-                            disabled={el.editable === false}
-                          />
-                        </Box>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              ref={setImageInputRef(el.id)}
+                              onChange={(e) => onImagePicked(i, el.id, e.target.files?.[0] || null)}
+                              style={{ display: "none" }}
+                              disabled={el.editable === false}
+                            />
+                          </Box>
+                        </Rnd>
                       );
                     }
 
@@ -847,104 +925,107 @@ export default function TempletEditor() {
                       const align = t.align ?? "center";
 
                       return (
-                        <Box
-                          key={el.id}
-                          sx={{ ...baseStyle, p: 0.5 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!isActive) return;
-                            setSelectedElId(el.id);
-                          }}
-                        >
-                          {t.editable !== false && isActive ? (
-                            <TextField
-                              multiline
-                              value={t.text}
-                              onChange={(e) => onTextChange(i, el.id, e.target.value)}
-                              variant="standard"
-                              InputProps={{
-                                disableUnderline: true,
-                                sx: {
-                                  height: "100%",
-                                  width: "100%",
-                                  p: 0.5,
-                                  "& .MuiInputBase-root": {
+                        <Rnd key={el.id} {...commonRnd}>
+                          <Box
+                            sx={{ width: "100%", height: "100%", p: 0.5 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isActive) return;
+                              setSelectedElId(el.id);
+                            }}
+                          >
+                            {t.editable !== false && isActive ? (
+                              <TextField
+                                className="no-drag"
+                                multiline
+                                value={t.text}
+                                onChange={(e) => onTextChange(i, el.id, e.target.value)}
+                                variant="standard"
+                                InputProps={{
+                                  disableUnderline: true,
+                                  sx: {
                                     height: "100%",
                                     width: "100%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent:
-                                      align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
-                                  },
+                                    p: 0.5,
+                                    "& .MuiInputBase-root": {
+                                      height: "100%",
+                                      width: "100%",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent:
+                                        align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
+                                    },
 
-                                  "& textarea.MuiInputBase-inputMultiline": {
-                                    height: "auto",
-                                    minHeight: 0,
-                                    width: "100%",
-                                    padding: 0,
-                                    margin: "auto 0",
-                                    textAlign: align,
-                                    resize: "none",
-                                    overflow: "hidden",
+                                    "& textarea.MuiInputBase-inputMultiline": {
+                                      height: "auto",
+                                      minHeight: 0,
+                                      width: "100%",
+                                      padding: 0,
+                                      margin: "auto 0",
+                                      textAlign: align,
+                                      resize: "none",
+                                      overflow: "hidden",
+                                    },
                                   },
-                                },
-                              }}
-                              inputProps={{
-                                style: {
+                                }}
+                                inputProps={{
+                                  style: {
+                                    fontWeight: t.bold ? 700 : 400,
+                                    fontStyle: t.italic ? "italic" : "normal",
+                                    fontSize: t.fontSize,
+                                    fontFamily: t.fontFamily,
+                                    color: t.color,
+                                    lineHeight: 1,
+                                  },
+                                }}
+                                sx={{ height: "100%", width: "100%" }}
+                              />
+
+                            ) : (
+                              <Typography
+                                sx={{
+                                  width: "100%",
+                                  height: "100%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent:
+                                    align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
                                   fontWeight: t.bold ? 700 : 400,
                                   fontStyle: t.italic ? "italic" : "normal",
                                   fontSize: t.fontSize,
                                   fontFamily: t.fontFamily,
                                   color: t.color,
-                                  lineHeight: 1,
-                                },
-                              }}
-                              sx={{ height: "100%", width: "100%" }}
-                            />
+                                  textAlign: align as any,
+                                  whiteSpace: "pre-wrap",
+                                  overflow: "visible",
+                                  userSelect: "none",
+                                }}
+                              >
+                                {t.text}
+                              </Typography>
+                            )}
 
-                          ) : (
-                            <Typography
-                              sx={{
-                                width: "100%",
-                                height: "100%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent:
-                                  align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
-                                fontWeight: t.bold ? 700 : 400,
-                                fontStyle: t.italic ? "italic" : "normal",
-                                fontSize: t.fontSize,
-                                fontFamily: t.fontFamily,
-                                color: t.color,
-                                textAlign: align as any,
-                                whiteSpace: "pre-wrap",
-                                overflow: "visible",
-                                userSelect: "none",
-                              }}
-                            >
-                              {t.text}
-                            </Typography>
-                          )}
-
-                        </Box>
+                          </Box>
+                        </Rnd>
                       );
                     }
 
                     if (el.type === "sticker") {
                       const st = el as StickerEl;
                       return (
-                        <Box
-                          key={el.id}
-                          component="img"
-                          src={st.src}
-                          alt=""
-                          sx={{ ...baseStyle, objectFit: "contain", display: "block" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!isActive) return;
-                            setSelectedElId(el.id);
-                          }}
-                        />
+                        <Rnd key={el.id} {...commonRnd}>
+                          <Box
+                            component="img"
+                            src={st.src}
+                            alt=""
+                            sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isActive) return;
+                              setSelectedElId(el.id);
+                            }}
+                          />
+                        </Rnd>
                       );
                     }
 

@@ -129,6 +129,35 @@ const toText = (obj: any, i: number, editable: boolean, prefix = "te"): TextEl =
   };
 };
 
+const normalizeMultiTexts = (arr: any[]) =>
+  (Array.isArray(arr) ? arr : []).map((t) => ({
+    ...t,
+    fontSize1: t?.fontSize1 ?? t?.fontSize ?? 16,
+    fontWeight1: t?.fontWeight1 ?? t?.fontWeight ?? 400,
+    fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
+    fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
+    textAlign: t?.textAlign ?? "center",
+    verticalAlign: t?.verticalAlign ?? "center",
+    lineHeight: t?.lineHeight ?? 1.5,
+    letterSpacing: t?.letterSpacing ?? 0,
+  }));
+
+const stripLayoutTextElements = (
+  layout: any,
+  opts: { stripMulti?: boolean; stripOne?: boolean }
+) => {
+  if (!layout || !Array.isArray(layout.textElements)) return layout;
+  const { stripMulti, stripOne } = opts;
+  if (!stripMulti && !stripOne) return layout;
+  const textElements = layout.textElements.filter((t: any) => {
+    const id = String(t?.id ?? "");
+    if (stripMulti && id.startsWith("mte-")) return false;
+    if (stripOne && (id === "single-text" || id.startsWith("ote-"))) return false;
+    return true;
+  });
+  return { ...layout, textElements };
+};
+
 function normalizeSlide(slide: any): {
   bgColor: string | null;
   bgImage: string | null;
@@ -306,6 +335,7 @@ const SpreadRightSide = ({
     setVerticalAlign3,
     setTextAlign3,
     rotation3,
+    setRotation3,
     setTexts3,
     setShowOneTextRightSideBox3,
     fontFamily3,
@@ -320,6 +350,8 @@ const SpreadRightSide = ({
     setFontColor3,
     setFontWeight3,
     setFontFamily3,
+    setLineHeight3,
+    setLetterSpacing3,
     selectedVideoUrl3,
     setSelectedVideoUrl3,
     draggableImages3,
@@ -383,6 +415,47 @@ const SpreadRightSide = ({
   console.log(draftSlide3, 'slide3')
 
   const restoredDraftRef = useRef(false);
+
+  const applyTemplateLayout3 = (baseSlide: any, norm: ReturnType<typeof normalizeSlide>) => {
+    const flags = baseSlide?.flags ?? {};
+    const templateMulti =
+      flags?.multipleText === true ||
+      (Array.isArray(baseSlide?.multipleTexts) && baseSlide.multipleTexts.length > 0);
+    const templateOne =
+      flags?.showOneText === true ||
+      String(baseSlide?.oneText?.value ?? "").trim().length > 0;
+
+    if (templateMulti) {
+      setSelectedLayout3?.("multipleText");
+      setMultipleTextValue3?.(true);
+      setShowOneTextRightSideBox3?.(false);
+      setTexts3?.(normalizeMultiTexts(baseSlide?.multipleTexts ?? []));
+    } else if (templateOne) {
+      setSelectedLayout3?.("oneText");
+      setShowOneTextRightSideBox3?.(true);
+      setMultipleTextValue3?.(false);
+      const ot = baseSlide?.oneText ?? {};
+      setOneTextValue3?.(ot.value ?? "");
+      if (ot.fontSize != null) setFontSize3?.(ot.fontSize);
+      if (ot.fontWeight != null) setFontWeight3?.(ot.fontWeight);
+      if (ot.fontColor != null) setFontColor3?.(ot.fontColor);
+      if (ot.fontFamily != null) setFontFamily3?.(ot.fontFamily);
+      if (ot.textAlign != null) setTextAlign3?.(ot.textAlign);
+      if (ot.verticalAlign != null) setVerticalAlign3?.(ot.verticalAlign);
+      if (ot.rotation != null) setRotation3?.(ot.rotation);
+      if (ot.lineHeight != null) setLineHeight3?.(ot.lineHeight);
+      if (ot.letterSpacing != null) setLetterSpacing3?.(ot.letterSpacing);
+    } else {
+      setSelectedLayout3?.("blank");
+      setShowOneTextRightSideBox3?.(false);
+      setMultipleTextValue3?.(false);
+    }
+
+    return stripLayoutTextElements(norm.layout, {
+      stripMulti: templateMulti,
+      stripOne: templateOne,
+    });
+  };
 
   useEffect(() => {
     // ✅ 1) Draft restore
@@ -479,7 +552,7 @@ const SpreadRightSide = ({
     const norm = normalizeSlide(slide3Template);
     setBgColor3?.(norm.bgColor);
     setBgImage3?.(norm.bgImage);
-    setLayout3?.(norm.layout);
+    setLayout3?.(applyTemplateLayout3(slide3Template, norm));
   }, [draftSlide3, slide3Template]);
 
 

@@ -173,7 +173,7 @@ const CATEGORY_MOCKUPS: Array<{
     },
     // Mug (cup of tea)
     {
-      match: (category) => normalizeCategory(category).includes("mugs"),
+      match: (category) => normalizeCategory(category).includes("mug"),
       cfg: {
         mockupSrc: "/assets/mockup/mug-mockup.jpg",
         cardAspectRatio: "1 / 1",

@@ -29,7 +29,7 @@ let material:
 let currentTextureUrl: string | null = null;
 
 
-const SRGB = (THREE as any).sRGBEncoding ?? (THREE as any).SRGBColorSpace ?? "srgb";
+const SRGB = (THREE as any).SRGBColorSpace ?? "srgb";
 
 const onWindowResize = () => {
   if (!container || !camera || !renderer) return;

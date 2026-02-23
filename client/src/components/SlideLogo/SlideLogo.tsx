@@ -130,6 +130,35 @@ const toText = (obj: any, i: number, editable: boolean, prefix = "te"): TextEl =
   };
 };
 
+const normalizeMultiTexts = (arr: any[]) =>
+  (Array.isArray(arr) ? arr : []).map((t) => ({
+    ...t,
+    fontSize1: t?.fontSize1 ?? t?.fontSize ?? 16,
+    fontWeight1: t?.fontWeight1 ?? t?.fontWeight ?? 400,
+    fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
+    fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
+    textAlign: t?.textAlign ?? "center",
+    verticalAlign: t?.verticalAlign ?? "center",
+    lineHeight: t?.lineHeight ?? 1.5,
+    letterSpacing: t?.letterSpacing ?? 0,
+  }));
+
+const stripLayoutTextElements = (
+  layout: any,
+  opts: { stripMulti?: boolean; stripOne?: boolean }
+) => {
+  if (!layout || !Array.isArray(layout.textElements)) return layout;
+  const { stripMulti, stripOne } = opts;
+  if (!stripMulti && !stripOne) return layout;
+  const textElements = layout.textElements.filter((t: any) => {
+    const id = String(t?.id ?? "");
+    if (stripMulti && id.startsWith("mte-")) return false;
+    if (stripOne && (id === "single-text" || id.startsWith("ote-"))) return false;
+    return true;
+  });
+  return { ...layout, textElements };
+};
+
 function normalizeSlide(slide: any): {
   bgColor: string | null;
   bgImage: string | null;
@@ -294,18 +323,14 @@ const SlideLogo = ({
   return (
     <Box sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}>
       {activeIndex === 3 && rightBox ? (
-        isAdminEditor ? (
-          <AdminSlide4Canvas addTextRight={addTextRight} />
-        ) : (
-          <UserSlide4Preview />
-        )
+        <AdminSlide4Canvas addTextRight={addTextRight} isAdminEditor={isAdminEditor} />
       ) : null}
     </Box>
   );
 };
 
 /* -------------------- USER VIEW-ONLY -------------------- */
-const UserSlide4Preview = () => {
+export const UserSlide4Preview = () => {
   const {
     isSlideActive4,
     bgColor4,
@@ -694,7 +719,13 @@ const UserSlide4Preview = () => {
 };
 
 /* -------------------- ADMIN EDITOR -------------------- */
-const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
+const AdminSlide4Canvas = ({
+  addTextRight,
+  isAdminEditor,
+}: {
+  addTextRight?: number;
+  isAdminEditor?: boolean;
+}) => {
   const {
     images4,
     selectedImg4,
@@ -712,6 +743,7 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
     textAlign4,
     verticalAlign4,
     rotation4,
+    setRotation4,
     setTexts4,
     setShowOneTextRightSideBox4,
     fontFamily4,
@@ -727,6 +759,8 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
     setFontFamily4,
     setTextAlign4,
     setVerticalAlign4,
+    setLineHeight4,
+    setLetterSpacing4,
     selectedVideoUrl4,
     setSelectedVideoUrl4,
     selectedAudioUrl4,
@@ -739,19 +773,24 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
     setQrAudioPosition4,
     isAIimage4,
     setIsAIimage4,
+    setSelectedAIimageUrl4,
     selectedAIimageUrl4,
     selectedStickers4,
+    setSelectedStickers4,
     updateSticker4,
     removeSticker4,
     aimage4,
     setAIImage4,
     setSelectedLayout4,
+    setLayout4,
     setImageFilter4,
     setActiveFilterImageId4,
     lineHeight4,
     letterSpacing4,
     bgColor4,
+    setBgColor4,
     bgImage4,
+    setBgImage4,
     bgEdit4,
     setBgEdit4,
     bgLocked4,
@@ -763,6 +802,144 @@ const AdminSlide4Canvas = ({ addTextRight }: { addTextRight?: number }) => {
   } = useSlide4();
 
   const [selectedStickerIndex2, setSelectedStickerIndex2] = useState<number | null>(null);
+  const location = useLocation();
+  const { id: routeId } = useParams<{ id?: string }>();
+  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : getDraftCardId() ?? ""), [routeId]);
+  const localDraftFull = useMemo(
+    () => (!isAdminEditor && draftId ? readDraftFull(draftId) : null),
+    [draftId, isAdminEditor]
+  );
+  const slide4Template = location.state?.layout?.slides?.slide4 ?? null;
+  const draftSlide4 = location.state?.draftFull?.slide4 ?? localDraftFull?.slide4 ?? null;
+
+  const applyTemplateLayout4 = (baseSlide: any, norm: ReturnType<typeof normalizeSlide>) => {
+    const flags = baseSlide?.flags ?? {};
+    const templateMulti =
+      flags?.multipleText === true ||
+      (Array.isArray(baseSlide?.multipleTexts) && baseSlide.multipleTexts.length > 0);
+    const templateOne =
+      flags?.showOneText === true ||
+      String(baseSlide?.oneText?.value ?? "").trim().length > 0;
+
+    if (templateMulti) {
+      setSelectedLayout4?.("multipleText");
+      setMultipleTextValue4?.(true);
+      setShowOneTextRightSideBox4?.(false);
+      setTexts4?.(normalizeMultiTexts(baseSlide?.multipleTexts ?? []));
+    } else if (templateOne) {
+      setSelectedLayout4?.("oneText");
+      setShowOneTextRightSideBox4?.(true);
+      setMultipleTextValue4?.(false);
+      const ot = baseSlide?.oneText ?? {};
+      setOneTextValue4?.(ot.value ?? "");
+      if (ot.fontSize != null) setFontSize4?.(ot.fontSize);
+      if (ot.fontWeight != null) setFontWeight4?.(ot.fontWeight);
+      if (ot.fontColor != null) setFontColor4?.(ot.fontColor);
+      if (ot.fontFamily != null) setFontFamily4?.(ot.fontFamily);
+      if (ot.textAlign != null) setTextAlign4?.(ot.textAlign);
+      if (ot.verticalAlign != null) setVerticalAlign4?.(ot.verticalAlign);
+      if (ot.rotation != null) setRotation4?.(ot.rotation);
+      if (ot.lineHeight != null) setLineHeight4?.(ot.lineHeight);
+      if (ot.letterSpacing != null) setLetterSpacing4?.(ot.letterSpacing);
+    } else {
+      setSelectedLayout4?.("blank");
+      setShowOneTextRightSideBox4?.(false);
+      setMultipleTextValue4?.(false);
+    }
+
+    return stripLayoutTextElements(norm.layout, {
+      stripMulti: templateMulti,
+      stripOne: templateOne,
+    });
+  };
+
+  useEffect(() => {
+    if (isAdminEditor) return;
+
+    // ✅ 1) Draft restore
+    if (draftSlide4) {
+      setLayout4?.(draftSlide4.layout ?? draftSlide4);
+      if (draftSlide4.bgColor4 !== undefined || draftSlide4.bgColor !== undefined) {
+        setBgColor4?.(draftSlide4.bgColor4 ?? draftSlide4.bgColor ?? null);
+      }
+      if (draftSlide4.bgImage4 !== undefined || draftSlide4.bgImage !== undefined) {
+        setBgImage4?.(draftSlide4.bgImage4 ?? draftSlide4.bgImage ?? null);
+      }
+
+      setSelectedLayout4?.(draftSlide4.selectedLayout4 ?? "blank");
+      setShowOneTextRightSideBox4?.(
+        draftSlide4.selectedLayout4 === "oneText" || !!draftSlide4.showOneTextRightSideBox4
+      );
+      setMultipleTextValue4?.(!!draftSlide4.multipleTextValue4);
+      setOneTextValue4?.(draftSlide4.oneTextValue4 ?? "");
+
+      const restoredTexts =
+        draftSlide4.texts4 ??
+        draftSlide4.multipleTextLayout ??
+        draftSlide4.texts ??
+        [];
+      setTexts4?.(Array.isArray(restoredTexts) ? restoredTexts : []);
+
+      setTextElements4?.(draftSlide4.textElements4 ?? draftSlide4.textElements ?? []);
+      setDraggableImages4?.(draftSlide4.draggableImages4 ?? draftSlide4.draggableImages ?? []);
+
+      const idsFromDraftImages = (draftSlide4.draggableImages4 ?? draftSlide4.draggableImages ?? []).map(
+        (x: any) => x.id
+      );
+      setSelectedImage4?.(
+        Array.isArray(draftSlide4.selectedImg4) ? draftSlide4.selectedImg4 : idsFromDraftImages
+      );
+
+      setSelectedStickers4?.(
+        draftSlide4.selectedStickers4 ??
+        draftSlide4.selectedStickers2 ??
+        draftSlide4.selectedStickers ??
+        []
+      );
+
+      setSelectedVideoUrl4?.(draftSlide4.selectedVideoUrl4 ?? draftSlide4.selectedVideoUrl ?? null);
+      setSelectedAudioUrl4?.(draftSlide4.selectedAudioUrl4 ?? draftSlide4.selectedAudioUrl ?? null);
+
+      setQrPosition4?.(
+        draftSlide4.qrPosition4 ??
+        draftSlide4.qrPosition ??
+        { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" }
+      );
+
+      setQrAudioPosition4?.(
+        draftSlide4.qrAudioPosition4 ??
+        draftSlide4.qrAudioPosition ??
+        { x: 0, y: 0, width: 120, height: 120, zIndex: 1, url: "" }
+      );
+
+      setIsAIimage4?.(!!(draftSlide4.isAIimage4 ?? draftSlide4.isAIimage));
+      setSelectedAIimageUrl4?.(draftSlide4.selectedAIimageUrl4 ?? draftSlide4.selectedAIimageUrl ?? "");
+      setAIImage4?.(draftSlide4.aimage4 ?? draftSlide4.aiImage ?? { x: 0, y: 0, width: 200, height: 200 });
+
+      return;
+    }
+
+    // ✅ 1.5) Saved state restore
+    const saved = safeGetStorage("slide4_state");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.layout4) {
+          if (parsed.bgColor4 !== undefined) setBgColor4?.(parsed.bgColor4);
+          if (parsed.bgImage4 !== undefined) setBgImage4?.(parsed.bgImage4);
+          setLayout4?.(parsed.layout4);
+          return;
+        }
+      } catch { }
+    }
+
+    // ✅ 2) Template normalize
+    if (!slide4Template) return;
+    const norm = normalizeSlide(slide4Template);
+    setBgColor4?.(norm.bgColor);
+    setBgImage4?.(norm.bgImage);
+    setLayout4?.(applyTemplateLayout4(slide4Template, norm));
+  }, [isAdminEditor, draftSlide4, slide4Template]);
   const rightBoxRef = useRef<HTMLDivElement>(null);
   const align = useAlignGuides(rightBoxRef);
   const alignItems = useMemo(() => {

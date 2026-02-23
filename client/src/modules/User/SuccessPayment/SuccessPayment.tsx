@@ -14,6 +14,7 @@ import {
   isBusinessCardsCategory,
   isBusinessLeafletsCategory,
   isCandlesCategory,
+  isCoastersCategory,
   isNotebooksCategory,
   isMirrorPrintCategory,
   mirrorSlides,
@@ -24,6 +25,10 @@ import {
   getLeafletTwoUpPageMm,
   getNotebookTwoUpPageMm,
   getPageMmForSize,
+  isInviteTwoUpSize,
+  getInviteTwoUpPageMm,
+  isMugWrapSize,
+  getMugWrapPageMm,
 } from "../../../lib/pdfTwoUp";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
@@ -56,6 +61,17 @@ async function getSlidesPayload() {
     return {};
   }
 }
+
+const buildPdfFileName = (category?: string) => {
+  const trimmed = String(category ?? "").trim();
+  const lower = trimmed.toLowerCase();
+  let label = trimmed;
+  if (lower && !lower.endsWith("ss") && lower.endsWith("s")) {
+    label = trimmed.slice(0, -1);
+  }
+  const clean = label.replace(/\s+/g, " ").trim().toLowerCase();
+  return `personalised ${clean || "design"} pdf`;
+};
 
 function getSelectedPlan() {
   return (
@@ -101,13 +117,17 @@ export default function PremiumSuccess() {
       const mirrorPrint = isMirrorPrintCategory(categoryName);
       const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
       const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
+      const isInviteTwoUp =
+        /invite/i.test(String(categoryName ?? "")) && isInviteTwoUpSize(cardSize);
       const isLeafletTwoUp =
         isBusinessLeafletsCategory(categoryName) && isLeafletTwoUpSize(cardSize);
       const isTenUpBusinessCards =
         isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(cardSize);
       const isCandlesGrid = isCandlesCategory(categoryName);
+      const isCoastersGrid = isCoastersCategory(categoryName);
       const isNotebookTwoUp =
         isNotebooksCategory(categoryName) && isNotebookTwoUpSize(cardSize);
+      const isMugWrap = /mug/i.test(String(categoryName ?? "")) && isMugWrapSize(cardSize);
 
       const notebookSlides = (() => {
         if (!isNotebookTwoUp) return baseSlides;
@@ -122,8 +142,9 @@ export default function PremiumSuccess() {
 
       const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
       const isBagOrClothingForPdf = /bag|tote|clothing|apparel/i.test(String(categoryName ?? ""));
+      const isNotebookCategory = isNotebooksCategory(categoryName);
       const bgRemoveOpts =
-        !isCandlesGrid && isBagOrClothingForPdf
+        !isCandlesGrid && !isCoastersGrid && isBagOrClothingForPdf
           ? {
               threshold: 18,
               alphaThreshold: 8,
@@ -133,9 +154,15 @@ export default function PremiumSuccess() {
               whiteOnly: true,
               requireWhiteBg: true,
             }
-          : !isCandlesGrid && isStickerForPdf
+          : !isCandlesGrid && !isCoastersGrid && isStickerForPdf
           ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
           : null;
+      const isTransparentPdf =
+        isStickerForPdf ||
+        isBagOrClothingForPdf ||
+        isCoastersGrid ||
+        isMugWrap ||
+        isNotebookCategory;
 
       const processedCandleSlides = isCandlesGrid
         ? await (async () => {
@@ -149,6 +176,51 @@ export default function PremiumSuccess() {
                   minBrightness: 235,
                   satThreshold: 16,
                   mode: "all",
+                });
+                return [k, cleaned] as const;
+              })
+            );
+            return Object.fromEntries(entries);
+          })()
+        : baseSlides;
+
+      const processedCoasterSlides = isCoastersGrid
+        ? await (async () => {
+            const entries = await Promise.all(
+              Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                const src = typeof v === "string" ? v : "";
+                if (!src) return [k, v] as const;
+                const cleaned = await removeWhiteBg(src, {
+                  threshold: 24,
+                  alphaThreshold: 8,
+                  minBrightness: 235,
+                  satThreshold: 16,
+                  mode: "edge",
+                  whiteOnly: true,
+                  requireWhiteBg: true,
+                });
+                return [k, cleaned] as const;
+              })
+            );
+            return Object.fromEntries(entries);
+          })()
+        : baseSlides;
+
+      const processedMugSlides = isMugWrap
+        ? await (async () => {
+            const entries = await Promise.all(
+              Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                const src = typeof v === "string" ? v : "";
+                if (!src) return [k, v] as const;
+                const cleaned = await removeWhiteBg(src, {
+                  threshold: 18,
+                  alphaThreshold: 8,
+                  minBrightness: 245,
+                  satThreshold: 10,
+                  whiteMinChannel: 240,
+                  whiteOnly: true,
+                  requireWhiteBg: true,
+                  mode: "edge",
                 });
                 return [k, cleaned] as const;
               })
@@ -191,6 +263,40 @@ export default function PremiumSuccess() {
             fit: "contain",
             pageMm: getPageMmForSize(cardSize),
           })
+        : isCoastersGrid
+        ? await buildFixedGridSlides(processedCoasterSlides, {
+            columns: 2,
+            rows: 3,
+            labelMm: { w: 95, h: 95 },
+            gapMm: 0,
+            distribute: true,
+            fit: "contain",
+            pageMm: getPageMmForSize(cardSize),
+            background: "transparent",
+            outputFormat: "png",
+          })
+        : isMugWrap
+        ? await buildFixedGridSlides(processedMugSlides, {
+            columns: 1,
+            rows: 1,
+            labelMm: getMugWrapPageMm(cardSize),
+            gapMm: 0,
+            distribute: false,
+            fit: "cover",
+            pageMm: getMugWrapPageMm(cardSize),
+            background: "transparent",
+            outputFormat: "png",
+          })
+        : isInviteTwoUp
+        ? await buildFixedGridSlides(baseSlides, {
+            columns: 2,
+            rows: 1,
+            labelMm: getPageMmForSize(cardSize),
+            gapMm: 0,
+            distribute: false,
+            fit: "contain",
+            pageMm: getInviteTwoUpPageMm(cardSize),
+          })
         : isNotebookTwoUp
         ? await buildTwoUpSlides(notebookSlides, {
             gapPx: 0,
@@ -199,6 +305,8 @@ export default function PremiumSuccess() {
             pairStrategy: "sequential",
             swapPairs: false,
             pageMm: getNotebookTwoUpPageMm(cardSize),
+            background: "transparent",
+            outputFormat: "png",
           })
         : isLeafletTwoUp
         ? await buildTwoUpSlides(baseSlides, {
@@ -239,7 +347,9 @@ export default function PremiumSuccess() {
           sessionId,
           slides,
           cardSize,
-          ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp
+          fileName: buildPdfFileName(categoryName),
+          ...(isTransparentPdf ? { outputFormat: "png" } : {}),
+          ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap
             ? { pageOrientation: "landscape" }
             : {}),
         }),

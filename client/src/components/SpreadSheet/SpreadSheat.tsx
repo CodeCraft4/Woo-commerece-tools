@@ -43,6 +43,35 @@ const createNewTextElement = (defaults: any) => ({
   isEditing: false,
 });
 
+const normalizeMultiTexts = (arr: any[]) =>
+  (Array.isArray(arr) ? arr : []).map((t) => ({
+    ...t,
+    fontSize1: t?.fontSize1 ?? t?.fontSize ?? 16,
+    fontWeight1: t?.fontWeight1 ?? t?.fontWeight ?? 400,
+    fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
+    fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
+    textAlign: t?.textAlign ?? "center",
+    verticalAlign: t?.verticalAlign ?? "center",
+    lineHeight: t?.lineHeight ?? 1.5,
+    letterSpacing: t?.letterSpacing ?? 0,
+  }));
+
+const stripLayoutTextElements = (
+  layout: any,
+  opts: { stripMulti?: boolean; stripOne?: boolean }
+) => {
+  if (!layout || !Array.isArray(layout.textElements)) return layout;
+  const { stripMulti, stripOne } = opts;
+  if (!stripMulti && !stripOne) return layout;
+  const textElements = layout.textElements.filter((t: any) => {
+    const id = String(t?.id ?? "");
+    if (stripMulti && id.startsWith("mte-")) return false;
+    if (stripOne && (id === "single-text" || id.startsWith("ote-"))) return false;
+    return true;
+  });
+  return { ...layout, textElements };
+};
+
 interface SlideSpreadProps {
   textAlign?: "start" | "center" | "end";
   rotation?: number;
@@ -78,6 +107,7 @@ const SlideSpread = ({
     textAlign,
     verticalAlign,
     rotation,
+    setRotation,
     setTexts,
     setShowOneTextRightSideBox,
     fontFamily,
@@ -120,7 +150,9 @@ const SlideSpread = ({
     setActiveFilterImageId,
 
     lineHeight2,
+    setLineHeight2,
     letterSpacing2,
+    setLetterSpacing2,
     layout2,
     setLayout2,
 
@@ -222,7 +254,47 @@ const SlideSpread = ({
     const norm = normalizeSlide(slide2Template);
     setBgColor2?.(norm.bgColor);
     setBgImage2?.(norm.bgImage);
-    setLayout2?.(norm.layout);
+
+    const templateFlags = slide2Template?.flags ?? {};
+    const templateMulti =
+      templateFlags?.multipleText === true ||
+      (Array.isArray(slide2Template?.multipleTexts) &&
+        slide2Template.multipleTexts.length > 0);
+    const templateOne =
+      templateFlags?.showOneText === true ||
+      String(slide2Template?.oneText?.value ?? "").trim().length > 0;
+
+    if (templateMulti) {
+      setSelectedLayout?.("multipleText");
+      setMultipleTextValue?.(true);
+      setShowOneTextRightSideBox?.(false);
+      setTexts?.(normalizeMultiTexts(slide2Template?.multipleTexts ?? []));
+    } else if (templateOne) {
+      setSelectedLayout?.("oneText");
+      setShowOneTextRightSideBox?.(true);
+      setMultipleTextValue?.(false);
+      const ot = slide2Template?.oneText ?? {};
+      setOneTextValue?.(ot.value ?? "");
+      if (ot.fontSize != null) setFontSize?.(ot.fontSize);
+      if (ot.fontWeight != null) setFontWeight?.(ot.fontWeight);
+      if (ot.fontColor != null) setFontColor?.(ot.fontColor);
+      if (ot.fontFamily != null) setFontFamily?.(ot.fontFamily);
+      if (ot.textAlign != null) setTextAlign?.(ot.textAlign);
+      if (ot.verticalAlign != null) setVerticalAlign?.(ot.verticalAlign);
+      if (ot.rotation != null) setRotation?.(ot.rotation);
+      if (ot.lineHeight != null) setLineHeight2?.(ot.lineHeight);
+      if (ot.letterSpacing != null) setLetterSpacing2?.(ot.letterSpacing);
+    } else {
+      setSelectedLayout?.("blank");
+      setShowOneTextRightSideBox?.(false);
+      setMultipleTextValue?.(false);
+    }
+
+    const cleanedLayout = stripLayoutTextElements(norm.layout, {
+      stripMulti: templateMulti,
+      stripOne: templateOne,
+    });
+    setLayout2?.(cleanedLayout);
   }, [draftSlide2, slide2Template]);
 
 

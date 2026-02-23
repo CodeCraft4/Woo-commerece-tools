@@ -47,6 +47,7 @@ type FormValues = {
 };
 
 const MAX_CHIPS = 50;
+const MUG_DEFAULT_SUBS = ["Initials/Name", "Slogans"];
 
 // --- helpers ---
 const tokenize = (text: string): string[] =>
@@ -73,6 +74,20 @@ const normalizeAdd = (
   return room === 0 ? existing : [...existing, ...dedupIncoming.slice(0, room)];
 };
 
+const ensureMugSubs = (category: string, current: string[]) => {
+  if (!/mug/i.test(category)) return current;
+  const lower = new Set(current.map((v) => v.toLowerCase()));
+  const next = [...current];
+  for (const label of MUG_DEFAULT_SUBS) {
+    const key = label.toLowerCase();
+    if (!lower.has(key)) {
+      next.push(label);
+      lower.add(key);
+    }
+  }
+  return next.slice(0, MAX_CHIPS);
+};
+
 const CategoryModal: React.FC<Props> = ({
   open,
   onCloseModal,
@@ -88,6 +103,7 @@ const CategoryModal: React.FC<Props> = ({
     handleSubmit,
     setValue,
     reset,
+    watch,
     formState: { errors, isSubmitting },
     clearErrors,
     setError,
@@ -122,6 +138,13 @@ const CategoryModal: React.FC<Props> = ({
   useEffect(() => {
     setValue("subCategories", subs, { shouldDirty: true, shouldValidate: false });
   }, [subs, setValue]);
+
+  const watchedCategory = watch("category");
+  useEffect(() => {
+    const cat = String(watchedCategory ?? "").trim();
+    if (!cat) return;
+    setSubs((cur) => ensureMugSubs(cat, cur));
+  }, [watchedCategory]);
 
   // rehydrate on open/initial change
   useEffect(() => {
@@ -273,7 +296,7 @@ const CategoryModal: React.FC<Props> = ({
     const payload = {
       category,
       image: imagePreview || data.image!, // prefer latest picked
-      subCategories: subs,
+      subCategories: ensureMugSubs(category, subs),
       subSubCategories: subSubMap,
     };
 

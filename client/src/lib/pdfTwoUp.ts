@@ -3,13 +3,14 @@ export type SlidesPayload = Record<string, string>;
 type TwoUpOptions = {
   gapPx?: number;
   dpi?: number;
-  background?: string;
+  background?: string | null;
   quality?: number;
   orientation?: "portrait" | "landscape";
   fit?: "contain" | "cover";
   pairStrategy?: "sequential" | "outer-inner";
   swapPairs?: boolean;
   pageMm?: { w: number; h: number };
+  outputFormat?: "jpeg" | "png";
   pageTitle?: (args: {
     pageIndex: number;
     leftKey?: string;
@@ -40,6 +41,9 @@ const A5_PORTRAIT_MM = { w: 148, h: 210 };
 const US_LETTER_MM = { w: 215.9, h: 279.4 };
 const HALF_US_LETTER_MM = { w: 139.7, h: 215.9 };
 const US_TABLOID_MM = { w: 279.4, h: 431.8 };
+const A4_LANDSCAPE_MM = { w: 297, h: 210 };
+const US_LETTER_LANDSCAPE_MM = { w: 279.4, h: 215.9 };
+const MUG_WRAP_11OZ_MM = { w: 228, h: 88.9 };
 const mmToPx = (mm: number, dpi: number) => Math.round((mm / 25.4) * dpi);
 
 const normalizeSizeKey = (size?: string) => {
@@ -69,6 +73,7 @@ const defaultOptions: Required<TwoUpOptions> = {
   pairStrategy: "sequential",
   swapPairs: false,
   pageMm: A4_PORTRAIT_MM,
+  outputFormat: "jpeg",
   pageTitle: () => undefined,
   titleStyle: {
     font: "22px Arial",
@@ -156,9 +161,13 @@ export const isCandlesCategory = (name?: string) =>
 export const isNotebooksCategory = (name?: string) =>
   /notebook/i.test(String(name ?? ""));
 
+export const isCoastersCategory = (name?: string) =>
+  /coaster/i.test(String(name ?? ""));
+
 export const isMirrorPrintCategory = (name?: string) => {
   const n = String(name ?? "").trim().toLowerCase();
   return (
+    n.includes("coaster") ||
     n.includes("notebook") ||
     n.includes("apparel") ||
     n.includes("clothing") ||
@@ -216,6 +225,7 @@ export const getPageMmForSize = (size?: string) => {
   const s = normalizeSizeKey(size);
   if (s === "a3") return A3_PORTRAIT_MM;
   if (s === "a5") return A5_PORTRAIT_MM;
+  if (s === "mug_wrap_11oz") return MUG_WRAP_11OZ_MM;
   if (s === "us_letter") return US_LETTER_MM;
   if (s === "half_us_letter") return HALF_US_LETTER_MM;
   if (s === "us_tabloid") return US_TABLOID_MM;
@@ -239,6 +249,26 @@ export const getNotebookTwoUpPageMm = (size?: string) => {
   return A4_PORTRAIT_MM;
 };
 
+export const isInviteTwoUpSize = (size?: string) => {
+  const s = normalizeSizeKey(size);
+  return s === "a5" || s === "half_us_letter";
+};
+
+export const getInviteTwoUpPageMm = (size?: string) => {
+  const s = normalizeSizeKey(size);
+  if (s === "half_us_letter") return US_LETTER_LANDSCAPE_MM;
+  return A4_LANDSCAPE_MM;
+};
+
+export const isMugWrapSize = (size?: string) =>
+  normalizeSizeKey(size) === "mug_wrap_11oz";
+
+export const getMugWrapPageMm = (size?: string) => {
+  const s = normalizeSizeKey(size);
+  if (s === "mug_wrap_11oz") return MUG_WRAP_11OZ_MM;
+  return MUG_WRAP_11OZ_MM;
+};
+
 type FixedGridOptions = {
   columns?: number;
   rows?: number;
@@ -247,9 +277,10 @@ type FixedGridOptions = {
   gapMm?: number;
   distribute?: boolean;
   dpi?: number;
-  background?: string;
+  background?: string | null;
   quality?: number;
   fit?: "contain" | "cover";
+  outputFormat?: "jpeg" | "png";
 };
 
 export async function buildFixedGridSlides(
@@ -267,6 +298,7 @@ export async function buildFixedGridSlides(
     background: "#ffffff",
     quality: 0.92,
     fit: "contain",
+    outputFormat: "jpeg",
     ...(options ?? {}),
   };
 
@@ -323,8 +355,11 @@ export async function buildFixedGridSlides(
     const ctx = canvas.getContext("2d");
     if (!ctx) continue;
 
-    ctx.fillStyle = opts.background;
-    ctx.fillRect(0, 0, pageWidth, pageHeight);
+    const bg = opts.background;
+    if (bg && bg !== "transparent") {
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, pageWidth, pageHeight);
+    }
 
     for (let r = 0; r < rows; r += 1) {
       for (let c = 0; c < cols; c += 1) {
@@ -342,7 +377,10 @@ export async function buildFixedGridSlides(
       }
     }
 
-    output[`slide${pageIndex}`] = canvas.toDataURL("image/jpeg", opts.quality);
+    output[`slide${pageIndex}`] =
+      opts.outputFormat === "png"
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", opts.quality);
     pageIndex += 1;
   }
 
@@ -397,8 +435,10 @@ export async function buildTwoUpSlides(
     const ctx = canvas.getContext("2d");
     if (!ctx) continue;
 
-    ctx.fillStyle = opts.background;
-    ctx.fillRect(0, 0, pageWidth, pageHeight);
+    if (opts.background && opts.background !== "transparent") {
+      ctx.fillStyle = opts.background;
+      ctx.fillRect(0, 0, pageWidth, pageHeight);
+    }
 
     const slotWidth = (pageWidth - opts.gapPx) / 2;
     const slotHeight = pageHeight;
@@ -476,7 +516,10 @@ export async function buildTwoUpSlides(
       ctx.restore();
     }
 
-    output[`slide${pageIndex}`] = canvas.toDataURL("image/jpeg", opts.quality);
+    output[`slide${pageIndex}`] =
+      opts.outputFormat === "png"
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", opts.quality);
     pageIndex += 1;
   }
 
@@ -531,8 +574,10 @@ export async function buildTenUpSlides(
     const ctx = canvas.getContext("2d");
     if (!ctx) continue;
 
-    ctx.fillStyle = opts.background;
-    ctx.fillRect(0, 0, pageWidth, pageHeight);
+    if (opts.background && opts.background !== "transparent") {
+      ctx.fillStyle = opts.background;
+      ctx.fillRect(0, 0, pageWidth, pageHeight);
+    }
 
     for (let r = 0; r < rows; r += 1) {
       for (let c = 0; c < cols; c += 1) {
@@ -550,7 +595,10 @@ export async function buildTenUpSlides(
       }
     }
 
-    output[`slide${pageIndex}`] = canvas.toDataURL("image/jpeg", opts.quality);
+    output[`slide${pageIndex}`] =
+      opts.outputFormat === "png"
+        ? canvas.toDataURL("image/png")
+        : canvas.toDataURL("image/jpeg", opts.quality);
     pageIndex += 1;
   }
 

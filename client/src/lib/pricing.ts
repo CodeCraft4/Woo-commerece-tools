@@ -99,6 +99,7 @@ export const getPricingConfig = (
         { key: "A4", title: "A4" },
         { key: "A3", title: "A3" },
         { key: "US_LETTER", title: "US Letter" },
+        { key: "US_TABLOID", title: "US Tabloid" },
       ],
     };
 

@@ -241,6 +241,7 @@ interface Slide4ContextType {
 
   // For Sticker
   selectedStickers4: StickerItem[];
+  setSelectedStickers4: React.Dispatch<React.SetStateAction<StickerItem[]>>;
   addSticker4: (
     sticker: Omit<StickerItem, "x" | "y" | "width" | "height" | "zIndex">
   ) => void;
@@ -885,6 +886,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
 
         addSticker4,
         selectedStickers4,
+        setSelectedStickers4,
         updateSticker4,
         removeSticker4,
 

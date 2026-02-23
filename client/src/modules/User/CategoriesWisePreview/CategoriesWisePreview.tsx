@@ -6,7 +6,7 @@ import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage";
 import { saveSlidesToIdb } from "../../../lib/idbSlides";
-import { toJpeg } from "html-to-image";
+import { toJpeg, toPng } from "html-to-image";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
 
 /* ---------- Types ---------- */
@@ -107,6 +107,7 @@ const CategoriesWisePreview: React.FC = () => {
 
   const config = state?.config;
   const category = state?.category ?? "";
+  const isStickerCategory = /sticker/i.test(String(category ?? ""));
   const start = state?.slideIndex ?? 0;
   const slides = useMemo<Slide[]>(() => {
     if (state?.slides?.length) return state.slides;
@@ -168,9 +169,11 @@ const CategoriesWisePreview: React.FC = () => {
 
   const renderSlide = useCallback((slide?: Slide) => {
     if (!slide) return null;
-    const ordered = [...(slide.elements || [])].sort(
-      (a, b) => (Number(a?.zIndex ?? 1) - Number(b?.zIndex ?? 1))
-    );
+    const ordered = [...(slide.elements || [])].sort((a, b) => {
+      const zA = Number(a?.zIndex ?? 1) + (a?.type === "text" ? 100000 : 0);
+      const zB = Number(b?.zIndex ?? 1) + (b?.type === "text" ? 100000 : 0);
+      return zA - zB;
+    });
     return (
       <Box sx={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
         {ordered.map((el: any) => {
@@ -267,19 +270,29 @@ const CategoriesWisePreview: React.FC = () => {
   // ✅ Download loading
   const [downloading, setDownloading] = useState(false);
 
-  const captureSlidesFromDom = async () => {
+  const captureSlidesFromDom = async (format: "jpeg" | "png") => {
     const out: string[] = [];
     for (let i = 0; i < slides.length; i++) {
       const node = slideNodeRefs.current[i];
       if (!node) continue;
-      const jpg = await toJpeg(node, {
-        quality: 0.78,
-        pixelRatio: 1.5,
-        backgroundColor: "#ffffff",
-        cacheBust: false,
-        skipFonts: false,
-      });
-      out.push(jpg);
+      if (format === "png") {
+        const png = await toPng(node, {
+          pixelRatio: 2,
+          backgroundColor: "transparent",
+          cacheBust: false,
+          skipFonts: false,
+        });
+        out.push(png);
+      } else {
+        const jpg = await toJpeg(node, {
+          quality: 0.78,
+          pixelRatio: 1.5,
+          backgroundColor: "#ffffff",
+          cacheBust: false,
+          skipFonts: false,
+        });
+        out.push(jpg);
+      }
       await new Promise((r) => setTimeout(r, 0));
     }
     return out;
@@ -289,17 +302,26 @@ const CategoriesWisePreview: React.FC = () => {
     try {
       setDownloading(true);
 
-      let list = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
-      if (!list.length && slides.length) {
-        list = await captureSlidesFromDom();
+      let list: string[] = [];
+      if (isStickerCategory) {
+        list = await captureSlidesFromDom("png");
+      } else {
+        list = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+        if (!list.length && slides.length) {
+          list = await captureSlidesFromDom("jpeg");
+        }
       }
 
-      // ✅ Convert ALL to JPEG (sequential)
+      // ✅ Convert to JPEG for non-stickers (sequential)
       const out: string[] = [];
-      for (let i = 0; i < list.length; i++) {
-        const jpg = await toJpegDataUrl(list[i], 0.78, 1600);
-        out.push(jpg);
-        await new Promise((r) => setTimeout(r, 0));
+      if (isStickerCategory) {
+        out.push(...list);
+      } else {
+        for (let i = 0; i < list.length; i++) {
+          const jpg = await toJpegDataUrl(list[i], 0.78, 1600);
+          out.push(jpg);
+          await new Promise((r) => setTimeout(r, 0));
+        }
       }
 
       // ✅ store one-by-one (slide1, slide2, slide3...)

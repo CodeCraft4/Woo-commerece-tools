@@ -140,6 +140,35 @@ export const toText = (obj: any, i: number, editable: boolean, prefix = "te"): T
   };
 };
 
+const normalizeMultiTexts = (arr: any[]) =>
+  (Array.isArray(arr) ? arr : []).map((t) => ({
+    ...t,
+    fontSize1: t?.fontSize1 ?? t?.fontSize ?? 16,
+    fontWeight1: t?.fontWeight1 ?? t?.fontWeight ?? 400,
+    fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
+    fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
+    textAlign: t?.textAlign ?? "center",
+    verticalAlign: t?.verticalAlign ?? "center",
+    lineHeight: t?.lineHeight ?? 1.5,
+    letterSpacing: t?.letterSpacing ?? 0,
+  }));
+
+const stripLayoutTextElements = (
+  layout: any,
+  opts: { stripMulti?: boolean; stripOne?: boolean }
+) => {
+  if (!layout || !Array.isArray(layout.textElements)) return layout;
+  const { stripMulti, stripOne } = opts;
+  if (!stripMulti && !stripOne) return layout;
+  const textElements = layout.textElements.filter((t: any) => {
+    const id = String(t?.id ?? "");
+    if (stripMulti && id.startsWith("mte-")) return false;
+    if (stripOne && (id === "single-text" || id.startsWith("ote-"))) return false;
+    return true;
+  });
+  return { ...layout, textElements };
+};
+
 export function normalizeSlide(slide: any): {
   bgColor: string | null;
   bgImage: string | null;
@@ -328,6 +357,7 @@ const SlideCover = ({
     setVerticalAlign1,
     setTextAlign1,
     rotation1,
+    setRotation1,
     setTexts1,
     setShowOneTextRightSideBox1,
     fontFamily1,
@@ -343,6 +373,8 @@ const SlideCover = ({
     setFontColor1,
     setFontWeight1,
     setFontFamily1,
+    setLineHeight1,
+    setLetterSpacing1,
 
     // media
     selectedVideoUrl1,
@@ -408,6 +440,47 @@ const SlideCover = ({
 
   // console.log(layout1, '---')
 
+  const applyTemplateLayout1 = (baseSlide: any, norm: ReturnType<typeof normalizeSlide>) => {
+    const flags = baseSlide?.flags ?? {};
+    const templateMulti =
+      flags?.multipleText === true ||
+      (Array.isArray(baseSlide?.multipleTexts) && baseSlide.multipleTexts.length > 0);
+    const templateOne =
+      flags?.showOneText === true ||
+      String(baseSlide?.oneText?.value ?? "").trim().length > 0;
+
+    if (templateMulti) {
+      setSelectedLayout1?.("multipleText");
+      setMultipleTextValue1?.(true);
+      setShowOneTextRightSideBox1?.(false);
+      setTexts1?.(normalizeMultiTexts(baseSlide?.multipleTexts ?? []));
+    } else if (templateOne) {
+      setSelectedLayout1?.("oneText");
+      setShowOneTextRightSideBox1?.(true);
+      setMultipleTextValue1?.(false);
+      const ot = baseSlide?.oneText ?? {};
+      setOneTextValue1?.(ot.value ?? "");
+      if (ot.fontSize != null) setFontSize1?.(ot.fontSize);
+      if (ot.fontWeight != null) setFontWeight1?.(ot.fontWeight);
+      if (ot.fontColor != null) setFontColor1?.(ot.fontColor);
+      if (ot.fontFamily != null) setFontFamily1?.(ot.fontFamily);
+      if (ot.textAlign != null) setTextAlign1?.(ot.textAlign);
+      if (ot.verticalAlign != null) setVerticalAlign1?.(ot.verticalAlign);
+      if (ot.rotation != null) setRotation1?.(ot.rotation);
+      if (ot.lineHeight != null) setLineHeight1?.(ot.lineHeight);
+      if (ot.letterSpacing != null) setLetterSpacing1?.(ot.letterSpacing);
+    } else {
+      setSelectedLayout1?.("blank");
+      setShowOneTextRightSideBox1?.(false);
+      setMultipleTextValue1?.(false);
+    }
+
+    return stripLayoutTextElements(norm.layout, {
+      stripMulti: templateMulti,
+      stripOne: templateOne,
+    });
+  };
+
   /* ------------------ normalize slide1 -> user view state ------------------ */
   useEffect(() => {
     if (draftFull?.slide1) {
@@ -443,7 +516,7 @@ const SlideCover = ({
     const norm = normalizeSlide(slide1);
     setBgColor1?.(norm.bgColor);
     setBgImage1?.(norm.bgImage);
-    setLayout1?.(norm.layout);
+    setLayout1?.(applyTemplateLayout1(slide1, norm));
     if (slide1?.bg?.rect) setBgRect1?.(slide1.bg.rect);
     return;
   }, [draftFull, slide1, setBgColor1, setBgImage1, setLayout1, setBgRect1]);
@@ -512,7 +585,7 @@ const SlideCover = ({
             const norm = normalizeSlide(baseSlide1);
             setBgColor1?.(norm.bgColor);
             setBgImage1?.(norm.bgImage);
-            setLayout1?.(norm.layout);
+            setLayout1?.(applyTemplateLayout1(baseSlide1, norm));
             if (baseSlide1?.bg?.rect) setBgRect1?.(baseSlide1.bg.rect);
             usedBase = true;
           }
@@ -591,7 +664,7 @@ const SlideCover = ({
         if (cancelled) return;
         setBgColor1?.(norm.bgColor);
         setBgImage1?.(norm.bgImage);
-        setLayout1?.(norm.layout);
+        setLayout1?.(applyTemplateLayout1(s1, norm));
         if (s1?.bg?.rect) setBgRect1?.(s1.bg.rect);
       } catch {}
     })();

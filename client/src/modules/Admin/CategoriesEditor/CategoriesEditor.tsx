@@ -1,7 +1,7 @@
 import {
   Box, IconButton, Typography, TextField, Select, MenuItem, Tooltip,
   FormControl, InputLabel, Divider, Chip, Stack, Switch,
-  Paper
+  Paper, useMediaQuery
 } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
 import {
@@ -20,6 +20,8 @@ import { COLORS } from "../../../constant/color";
 import { ADMINS_GOOGLE_FONTS, CATEGORY_CONFIG, SHAPES, STICKERS_DATA, type CategoryKey } from "../../../constant/data";
 import PopupWrapper from "../../../components/PopupWrapper/PopupWrapper";
 import LandingButton from "../../../components/LandingButton/LandingButton";
+import AlignmentGuides from "../../../components/AlignmentGuides/AlignmentGuides";
+import { useAlignGuides } from "../../../hooks/useAlignGuides";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllCategoriesFromDB } from "../../../source/source";
 import {
@@ -211,6 +213,18 @@ const CategoriesEditor = () => {
   // ====== Local UI-only state ======
   const [fontSizeInput, setFontSizeInput] = useState<string>("20");
   const [showStickerPopup, setShowStickerPopup] = useState(false);
+  const isMobile = useMediaQuery("(max-width:600px)");
+  const [viewport, setViewport] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const onResize = () => {
+      if (typeof window === "undefined") return;
+      setViewport({ w: window.innerWidth, h: window.innerHeight });
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Per-slide mirror toggle
   const [mirrorBySlide, setMirrorBySlide] = useState<Record<number, boolean>>({});
@@ -258,6 +272,21 @@ const CategoriesEditor = () => {
     height: config.mmHeight * multiplier,
   };
 
+  const renderScale = useMemo(() => {
+    if (!isMobile) return 1;
+    const w = viewport.w || (typeof window !== "undefined" ? window.innerWidth : 360);
+    const h = viewport.h || (typeof window !== "undefined" ? window.innerHeight : 640);
+    const maxW = Math.max(240, w - 32);
+    const maxH = Math.max(240, h - 320);
+    const scale = Math.min(1, maxW / canvasPx.width, maxH / canvasPx.height);
+    return Math.max(0.4, scale);
+  }, [isMobile, viewport.w, viewport.h, canvasPx.width, canvasPx.height]);
+
+  const renderCanvas = {
+    width: Math.round(canvasPx.width * renderScale),
+    height: Math.round(canvasPx.height * renderScale),
+  };
+
 
   // ====== Viewport-aware canvas sizing ======
   // const [viewport, setViewport] = useState({ w: 1200, h: 800 });
@@ -284,8 +313,46 @@ const CategoriesEditor = () => {
   // current slide id
   const artboardWidth = canvasPx.width;
   const artboardHeight = canvasPx.height;
+  const scaleSafe = renderScale || 1;
 
   const currentSlideId = slides[selectedSlide]?.id ?? null;
+  const activeSlideRef = useRef<HTMLDivElement | null>(null);
+  const alignGuides = useAlignGuides(activeSlideRef);
+  const alignItems = useMemo(() => {
+    if (!currentSlideId) return [];
+    const mirrorOn = !!mirrorBySlide[currentSlideId];
+    const items: { id: string; x: number; y: number; w: number; h: number }[] = [];
+    const push = (id: string, x?: number, y?: number, w?: number, h?: number) => {
+      if (
+        typeof x !== "number" ||
+        typeof y !== "number" ||
+        typeof w !== "number" ||
+        typeof h !== "number" ||
+        Number.isNaN(x + y + w + h)
+      ) {
+        return;
+      }
+      items.push({ id, x, y, w, h });
+    };
+
+    textElements
+      .filter((t) => t.slideId === currentSlideId)
+      .forEach((t) => {
+        const viewX = toViewX(mirrorOn, artboardWidth, t.x, t.width) * scaleSafe;
+        const viewY = t.y * scaleSafe;
+        push(`text:${t.id}`, viewX, viewY, t.width * scaleSafe, t.height * scaleSafe);
+      });
+
+    imageElements
+      .filter((img) => img.slideId === currentSlideId)
+      .forEach((img) => {
+        const viewX = toViewX(mirrorOn, artboardWidth, img.x, img.width) * scaleSafe;
+        const viewY = img.y * scaleSafe;
+        push(`image:${img.id}`, viewX, viewY, img.width * scaleSafe, img.height * scaleSafe);
+      });
+
+    return items;
+  }, [currentSlideId, textElements, imageElements, mirrorBySlide, artboardWidth, scaleSafe]);
   const colorInputRef = useRef<HTMLInputElement | null>(null);
 
   const openNativeColorPicker = () => {
@@ -624,29 +691,29 @@ const CategoriesEditor = () => {
   const [showShapePopup, setShowShapePopup] = useState(false);
 
   // ====== Toolbar (responsive)
-  const Toolbar = (
-    <Box
-      sx={{
-        position: { xs: "static", md: "absolute" },
-        left: { md: 16 }, top: 0,
-        display: "flex",
-        flexDirection: { xs: "row", md: "column" },
-        alignItems: { xs: "center", md: "stretch" },
-        gap: 0.75,
-        p: 1,
-        bgcolor: "#fff",
-        boxShadow: 3,
-        borderRadius: 2,
-        zIndex: 5,
-        // width: canvasPx.width,
-        height: canvasPx.height,
-        // height: { md: canvasSize.height, xs: "auto" },
-        overflowX: { xs: "hidden", md: "hidden" },
-        overflowY: { xs: "hidden", md: "auto" },
-        maxWidth: { xs: "100%", md: "none" },
-        "&::-webkit-scrollbar": { height: 5, width: 5 },
-        "&::-webkit-scrollbar-thumb": {
-          backgroundColor: COLORS.primary,
+    const Toolbar = (
+      <Box
+        sx={{
+          position: { xs: "static", md: "absolute" },
+          left: { xs: 0, md: 16 }, top: 0,
+          display: "flex",
+          flexDirection: { xs: "row", md: "column" },
+          alignItems: { xs: "center", md: "stretch" },
+          gap: 0.75,
+          p: 1,
+          bgcolor: "#fff",
+          boxShadow: 3,
+          borderRadius: 2,
+          zIndex: 5,
+          width: { xs: "100%", md: "auto" },
+          height: { xs: "auto", md: renderCanvas.height },
+          maxHeight: { xs: "none", md: renderCanvas.height },
+          overflowX: { xs: "auto", md: "hidden" },
+          overflowY: { xs: "hidden", md: "auto" },
+          maxWidth: { xs: "100%", md: "none" },
+          "&::-webkit-scrollbar": { height: 5, width: 5 },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: COLORS.primary,
           borderRadius: "20px",
         },
       }}
@@ -870,12 +937,28 @@ const CategoriesEditor = () => {
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFileSelected} />
 
       {/* Header */}
-      <Box sx={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, mb: 1, px: 2, flexWrap: "wrap" }}>
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <FormControl size="small" sx={{ minWidth: 260 }}>
-            <InputLabel id="cat-label">Category</InputLabel>
-            <Select
-              labelId="cat-label"
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: { xs: "stretch", md: "center" },
+            justifyContent: "space-between",
+            gap: 2,
+            mb: 1,
+            px: { xs: 1, md: 2 },
+          }}
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            alignItems={{ xs: "stretch", sm: "center" }}
+            spacing={2}
+            sx={{ width: "100%", flexWrap: "wrap" }}
+          >
+            <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 240, md: 260 } }}>
+              <InputLabel id="cat-label">Category</InputLabel>
+              <Select
+                labelId="cat-label"
               value={category}
               label="Category"
               onChange={(e) => setCategory(String(e.target.value))}
@@ -902,26 +985,26 @@ const CategoriesEditor = () => {
             </Stack>
           )}
         </Stack>
-        <Stack direction="row" spacing={1}>
-          <LandingButton personal title="Save Design" width="150px" onClick={goNextWithRawStores} loading={loading} />
-        </Stack>
-      </Box>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", md: "auto" } }}>
+            <LandingButton personal title="Save Design" width="150px" onClick={goNextWithRawStores} loading={loading} />
+          </Stack>
+        </Box>
 
       {/* MAIN SLIDE SCROLLER */}
-      <Box
-        ref={mainScrollerRef}
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          overflowX: "auto",
-          overflowY: "hidden",
-          width: "100%",
-          p: 2,
-          gap: "75px",
-          scrollBehavior: "smooth",
-          userSelect: "none",
-          justifyContent: "flex-start",
+        <Box
+          ref={mainScrollerRef}
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: { xs: "flex-start", md: "center" },
+            overflowX: "auto",
+            overflowY: "hidden",
+            width: "100%",
+            p: { xs: 1, sm: 1.5, md: 2 },
+            gap: { xs: 2, sm: 3, md: "75px" },
+            scrollBehavior: "smooth",
+            userSelect: "none",
+            justifyContent: "flex-start",
           minWidth: "100%",
           scrollSnapType: "x mandatory",
           "&::-webkit-scrollbar": { height: 6, width: 6 },
@@ -937,21 +1020,21 @@ const CategoriesEditor = () => {
           const elements = getSlideElements(slide.id);
 
           return (
-            <Box
-              key={slide.id}
-              ref={index === 0 ? registerFirstSlideNode : undefined}
-              sx={{
-                flex: "0 0 auto",
-                width: canvasPx.width,
-                height: canvasPx.height,
-                borderRadius: 2,
-                boxShadow: index === selectedSlide ? 8 : 4,
-                position: "relative",
-                outline: index === selectedSlide ? "2px solid #1976d2" : "1px solid rgba(0,0,0,0.08)",
-                transition: "box-shadow .2s ease, outline .2s ease, filter .2s ease, opacity .2s ease, background-color .2s ease",
-                opacity: isInactive ? 0.45 : 1,
+              <Box
+                key={slide.id}
+                ref={index === 0 ? registerFirstSlideNode : undefined}
+                sx={{
+                  flex: "0 0 auto",
+                  width: renderCanvas.width,
+                  height: renderCanvas.height,
+                  borderRadius: 2,
+                  boxShadow: index === selectedSlide ? 8 : 4,
+                  position: "relative",
+                  outline: index === selectedSlide ? "2px solid #1976d2" : "1px solid rgba(0,0,0,0.08)",
+                  transition: "box-shadow .2s ease, outline .2s ease, filter .2s ease, opacity .2s ease, background-color .2s ease",
+                  opacity: isInactive ? 0.45 : 1,
                 filter: isInactive ? "grayscale(0.4)" : "none",
-                ml: index === 0 ? 30 : 0,
+                ml: index === 0 ? { xs: 0, md: 30 } : 0,
               }}
               onClick={() => { setSelectedTextId(null); setSelectedImageId(null); }}
             >
@@ -986,12 +1069,20 @@ const CategoriesEditor = () => {
                 </>
               )}
 
-              {/* Toolbar */}
-              {index === selectedSlide && (
-                <Box sx={{ position: { xs: "static", md: "absolute" }, left: { md: -100 }, top: 0, mb: { xs: 1, md: 0 } }}>
-                  {Toolbar}
-                </Box>
-              )}
+                {/* Toolbar */}
+                {index === selectedSlide && (
+                  <Box
+                    sx={{
+                      position: { xs: "static", md: "absolute" },
+                      left: { xs: 0, md: -100 },
+                      top: 0,
+                      mb: { xs: 1, md: 0 },
+                      width: { xs: "100%", md: "auto" },
+                    }}
+                  >
+                    {Toolbar}
+                  </Box>
+                )}
 
               {slideBg[slide.id]?.image && (
                 <Rnd
@@ -1023,43 +1114,80 @@ const CategoriesEditor = () => {
 
               {/* Elements */}
               <Box
+                ref={index === selectedSlide ? activeSlideRef : undefined}
                 sx={{
                   width: "100%", height: "100%",
                   pointerEvents: isInactive ? "none" : "auto",
                 }}
               >
+                <AlignmentGuides {...alignGuides.guides} hide={isInactive || !alignGuides.isActive} />
                 {elements.map((el: any) => {
-                  const isEditable = el.editable !== false;
                   const isSelected = selectedTextId === el.id || selectedImageId === el.id;
 
-                  const viewX = toViewX(mirrorOn, artboardWidth, el.x, el.width);
+                    const viewX = toViewX(mirrorOn, artboardWidth, el.x, el.width);
+                    const viewXScaled = viewX * scaleSafe;
+                    const viewYScaled = el.y * scaleSafe;
+                    const widthScaled = el.width * scaleSafe;
+                    const heightScaled = el.height * scaleSafe;
+                    const alignKey = `${el.type}:${el.id}`;
 
                   // runtime z-index: text always above images
                   const runtimeZ = (el.type === "text" ? 100000 : 0) + Number(el.zIndex ?? 1);
 
-                  const common = {
-                    key: el.id,
-                    position: { x: viewX, y: el.y },
-                    size: { width: el.width, height: el.height },
-                    bounds: "parent" as const,
-                    dragCancel: ".no-drag",
-                    // disableDragging: isInactive || !isEditable,
-                    enableResizing: isInactive || !isEditable
-                      ? false
-                      : { bottomRight: true },
-                    onDragStop: (_: any, d: any) => {
-                      const modelX = toModelX(mirrorOn, artboardWidth, d.x, el.width);
-                      if (el.type === "text") updateText(el.id, { x: modelX, y: d.y });
-                      if (el.type === "image") updateImage(el.id, { x: modelX, y: d.y });
-                    },
-                    onResizeStop: (_: any, __: any, ref: any, ___: any, position: any) => {
-                      const newW = parseInt(ref.style.width, 10);
-                      const newH = parseInt(ref.style.height, 10);
-                      const modelX = toModelX(mirrorOn, artboardWidth, position.x, newW);
-                      const patch = { width: newW, height: newH, x: modelX, y: position.y };
-                      if (el.type === "text") updateText(el.id, patch);
-                      if (el.type === "image") updateImage(el.id, patch);
-                    },
+                    const common = {
+                      key: el.id,
+                      position: { x: viewXScaled, y: viewYScaled },
+                      size: { width: widthScaled, height: heightScaled },
+                      bounds: "parent" as const,
+                      dragCancel: ".no-drag",
+                      disableDragging: isInactive,
+                      enableResizing: isInactive ? false : { bottomRight: true },
+                      onDragStart: () => {
+                        if (!isInactive) alignGuides.onDragStart();
+                      },
+                      onDrag: (_: any, d: any) => {
+                        if (isInactive) return;
+                        const snap = alignGuides.onDrag(
+                          d.x,
+                          d.y,
+                          widthScaled,
+                          heightScaled,
+                          alignItems,
+                          alignKey
+                        );
+                        if (snap.snappedX || snap.snappedY) {
+                          const modelX = toModelX(mirrorOn, artboardWidth, snap.x / scaleSafe, el.width);
+                          const modelY = snap.y / scaleSafe;
+                          if (el.type === "text") updateText(el.id, { x: modelX, y: modelY });
+                          if (el.type === "image") updateImage(el.id, { x: modelX, y: modelY });
+                        }
+                      },
+                      onDragStop: (_: any, d: any) => {
+                        if (isInactive) return;
+                        const snap = alignGuides.onDrag(
+                          d.x,
+                          d.y,
+                          widthScaled,
+                          heightScaled,
+                          alignItems,
+                          alignKey
+                        );
+                        const modelX = toModelX(mirrorOn, artboardWidth, snap.x / scaleSafe, el.width);
+                        const modelY = snap.y / scaleSafe;
+                        if (el.type === "text") updateText(el.id, { x: modelX, y: modelY });
+                        if (el.type === "image") updateImage(el.id, { x: modelX, y: modelY });
+                        alignGuides.onDragStop();
+                      },
+                      onResizeStop: (_: any, __: any, ref: any, ___: any, position: any) => {
+                        const newW = parseInt(ref.style.width, 10) / scaleSafe;
+                        const newH = parseInt(ref.style.height, 10) / scaleSafe;
+                        const modelX = toModelX(mirrorOn, artboardWidth, position.x / scaleSafe, newW);
+                        const modelY = position.y / scaleSafe;
+                        const patch = { width: newW, height: newH, x: modelX, y: modelY };
+                        if (el.type === "text") updateText(el.id, patch);
+                        if (el.type === "image") updateImage(el.id, patch);
+                        alignGuides.onDragStop();
+                      },
                     style: {
                       borderRadius: 4,
                       position: "absolute" as const,
@@ -1156,8 +1284,13 @@ const CategoriesEditor = () => {
                     );
                   }
 
-                  const align: TextAlignVal = (el.align ?? "left") as TextAlignVal;
-                  const justify = align === "left" ? "flex-start" : align === "center" ? "center" : "flex-end";
+                  const textAlignVal: TextAlignVal = (el.align ?? "left") as TextAlignVal;
+                  const justify =
+                    textAlignVal === "left"
+                      ? "flex-start"
+                      : textAlignVal === "center"
+                      ? "center"
+                      : "flex-end";
 
                   return (
                     <Rnd
@@ -1230,7 +1363,7 @@ const CategoriesEditor = () => {
                                   fontFamily: el.fontFamily ?? "Arial",
                                   color: el.color ?? "#111111",
                                   lineHeight: 1.2,
-                                  textAlign: align,
+                                  textAlign: textAlignVal,
                                   transform: mirrorOn ? "scaleX(-1)" : "none",
                                 },
                               }}
@@ -1252,7 +1385,7 @@ const CategoriesEditor = () => {
                               fontSize: el.fontSize ?? 20,
                               fontFamily: el.fontFamily ?? "Arial",
                               color: el.color ?? "#111111",
-                              textAlign: align,
+                              textAlign: textAlignVal,
                               width: "100%", height: "100%",
                               alignItems: "center", display: "flex",
                               userSelect: "none", pointerEvents: "none",
@@ -1361,8 +1494,8 @@ const CategoriesEditor = () => {
           onClick={addSlide}
           sx={{
             flex: "0 0 auto",
-            width: canvasPx.width,
-            height: canvasPx.height,
+            width: renderCanvas.width,
+            height: renderCanvas.height,
             display: 'flex', justifyContent: 'center', alignItems: 'center', m: 'auto',
             borderRadius: 2,
             boxShadow: 8,
@@ -1393,13 +1526,13 @@ const CategoriesEditor = () => {
           display: "flex",
           alignItems: "center",
           gap: 3,
-          width: { xs: "96%", md: "60%" },
+          width: { xs: "100%", md: "60%" },
           justifyContent: "center",
           m: "16px auto 0",
           flexDirection: "column",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%", justifyContent: "center" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, md: 2 }, width: "100%", justifyContent: "center" }}>
           <IconButton onClick={slideScrollLeft} disabled={!canLeft}>
             <ArrowBackIos />
           </IconButton>
@@ -1410,7 +1543,7 @@ const CategoriesEditor = () => {
               display: "flex",
               overflowX: "auto",
               gap: 1,
-              width: "64%",
+              width: { xs: "100%", sm: "80%", md: "64%" },
               "&::-webkit-scrollbar": { display: "none" },
               cursor: "grab",
               justifyContent: "flex-start",
@@ -1487,7 +1620,10 @@ export default CategoriesEditor;
 const toolBtn = {
   display: "flex",
   flexDirection: "column" as const,
-  fontSize: "12px",
+  alignItems: "center",
+  fontSize: { xs: "10px", sm: "12px" },
+  minWidth: { xs: 54, md: "auto" },
+  px: { xs: 0.5, md: 0 },
   color: "#212121",
   "&:hover": { color: "#3a7bd5" },
 };

@@ -100,16 +100,37 @@ export default function Header(props: Props) {
     refetchOnReconnect: false,
   });
 
+  const navCategoriesWithFallback = React.useMemo(() => {
+    const addMugSubs = (subs: any[]) => {
+      const desired = ["Initials/Name", "Slogans"];
+      const list = Array.isArray(subs) ? [...subs] : [];
+      desired.forEach((d) => {
+        if (!list.some((s) => String(s).trim().toLowerCase() === d.toLowerCase())) {
+          list.push(d);
+        }
+      });
+      return list;
+    };
+
+    return (navCategories ?? []).map((c: any) => {
+      const name = String(c?.name ?? "");
+      if (name.toLowerCase().includes("mug")) {
+        return { ...c, subcategories: addMugSubs(c?.subcategories) };
+      }
+      return c;
+    });
+  }, [navCategories]);
+
   // Only strings for the top row
   const mainCategoryNames = React.useMemo(
-    () => navCategories.map((c) => c.name).filter(Boolean),
-    [navCategories]
+    () => navCategoriesWithFallback.map((c) => c.name).filter(Boolean),
+    [navCategoriesWithFallback]
   );
 
   // Build a map: main name -> MegaMenuItem
   const megaMenuMap: Record<string, any> = React.useMemo(() => {
     const map: Record<string, any> = {};
-    for (const c of navCategories) {
+    for (const c of navCategoriesWithFallback) {
       const subs = c.subcategories ?? [];
       const subSub = c.sub_subcategories ?? {};
 

@@ -17,6 +17,7 @@ import {
   isBusinessCardsCategory,
   isBusinessLeafletsCategory,
   isCandlesCategory,
+  isCoastersCategory,
   isNotebooksCategory,
   isMirrorPrintCategory,
   mirrorSlides,
@@ -27,6 +28,10 @@ import {
   getLeafletTwoUpPageMm,
   getNotebookTwoUpPageMm,
   getPageMmForSize,
+  isInviteTwoUpSize,
+  getInviteTwoUpPageMm,
+  isMugWrapSize,
+  getMugWrapPageMm,
 } from "../../../lib/pdfTwoUp";
 import { supabase } from "../../../supabase/supabase";
 import { USER_ROUTES } from "../../../constant/route";
@@ -80,6 +85,12 @@ const singularizeCategory = (name?: string) => {
   if (lower.endsWith("ss")) return trimmed;
   if (lower.endsWith("s")) return trimmed.slice(0, -1);
   return trimmed;
+};
+
+const buildPdfFileName = (category?: string) => {
+  const label = singularizeCategory(category) || "design";
+  const clean = label.replace(/\s+/g, " ").trim().toLowerCase();
+  return `personalised ${clean} pdf`;
 };
 
 const getItemAccessPlan = (p: any): "free" | "bundle" | "pro" => {
@@ -168,8 +179,9 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
     ];
   }
 
-  if (name.includes("mugs")) return [{ key: "mug_wrap_11oz", title: "228mm × 88.9mm wrap (11oz mug)" }];
-  if (name.includes("coaster")) return [{ key: "coaster_95", title: "95mm × 95mm (×2 coasters)" }];
+  if (name.includes("mug")) return [{ key: "mug_wrap_11oz", title: "228mm × 88.9mm wrap (11oz mug)" }];
+  if (name.includes("coaster"))
+    return [{ key: "coaster_95", title: "95mm × 95mm (6 per sheet: 2 × 3)" }];
 
   return [
     { key: "a5", title: "A3" },
@@ -283,6 +295,14 @@ const Subscription = () => {
         const fromIdb = await loadSlidesFromIdb();
         if (mounted && fromIdb) {
           setSlidesObj(fromIdb);
+          return;
+        }
+      } catch { }
+
+      try {
+        const fromSession = JSON.parse(sessionStorage.getItem("slides") || "{}");
+        if (mounted && fromSession && Object.keys(fromSession).length) {
+          setSlidesObj(fromSession);
           return;
         }
       } catch { }
@@ -418,7 +438,7 @@ const Subscription = () => {
   useEffect(() => {
     let alive = true;
 
-    if (!mock?.mockupSrc || mugPreview) {
+    if (!mock?.mockupSrc || (!isMugsCategory && mugPreview)) {
       setMockupOk(false);
       return;
     }
@@ -435,9 +455,10 @@ const Subscription = () => {
     return () => {
       alive = false;
     };
-  }, [mock?.mockupSrc, mugPreview]);
+  }, [mock?.mockupSrc, mugPreview, isMugsCategory]);
 
-  const useMockupBackground = Boolean(mock?.mockupSrc) && !mugPreview && mockupOk;
+  const useMockupBackground =
+    Boolean(mock?.mockupSrc) && mockupOk && (!mugPreview || isMugsCategory);
   const mockupAspectRatio = useMockupBackground ? "818 / 600" : undefined;
 
   // ✅ load user plan
@@ -584,13 +605,17 @@ const Subscription = () => {
         const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
         const cardSize = localStorage.getItem("selectedSize") || selectedPlan;
         const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
+        const isInviteTwoUp =
+          /invite/i.test(String(categoryName ?? "")) && isInviteTwoUpSize(cardSize);
         const isLeafletTwoUp =
           isBusinessLeafletsCategory(categoryName) && isLeafletTwoUpSize(cardSize);
         const isTenUpBusinessCards =
           isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(cardSize);
         const isCandlesGrid = isCandlesCategory(categoryName);
+        const isCoastersGrid = isCoastersCategory(categoryName);
         const isNotebookTwoUp =
           isNotebooksCategory(categoryName) && isNotebookTwoUpSize(cardSize);
+        const isMugWrap = isMugsCategory && isMugWrapSize(cardSize);
 
         const notebookSlides = (() => {
           if (!isNotebookTwoUp) return baseSlides;
@@ -605,8 +630,9 @@ const Subscription = () => {
 
         const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
         const isBagOrClothingForPdf = /bag|tote|clothing|apparel/i.test(String(categoryName ?? ""));
+        const isNotebookCategory = isNotebooksCategory(categoryName);
         const bgRemoveOpts =
-          !isCandlesGrid && isBagOrClothingForPdf
+          !isCandlesGrid && !isCoastersGrid && isBagOrClothingForPdf
             ? {
                 threshold: 18,
                 alphaThreshold: 8,
@@ -616,9 +642,15 @@ const Subscription = () => {
                 whiteOnly: true,
                 requireWhiteBg: true,
               }
-            : !isCandlesGrid && isStickerForPdf
+            : !isCandlesGrid && !isCoastersGrid && isStickerForPdf
             ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
             : null;
+        const isTransparentPdf =
+          isStickerForPdf ||
+          isBagOrClothingForPdf ||
+          isCoastersGrid ||
+          isMugWrap ||
+          isNotebookCategory;
 
         const processedCandleSlides = isCandlesGrid
           ? await (async () => {
@@ -632,6 +664,51 @@ const Subscription = () => {
                     minBrightness: 235,
                     satThreshold: 16,
                     mode: "all",
+                  });
+                  return [k, cleaned] as const;
+                })
+              );
+              return Object.fromEntries(entries);
+            })()
+          : baseSlides;
+
+        const processedCoasterSlides = isCoastersGrid
+          ? await (async () => {
+              const entries = await Promise.all(
+                Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                  const src = typeof v === "string" ? v : "";
+                  if (!src) return [k, v] as const;
+                  const cleaned = await removeWhiteBg(src, {
+                    threshold: 24,
+                    alphaThreshold: 8,
+                    minBrightness: 235,
+                    satThreshold: 16,
+                    mode: "edge",
+                    whiteOnly: true,
+                    requireWhiteBg: true,
+                  });
+                  return [k, cleaned] as const;
+                })
+              );
+              return Object.fromEntries(entries);
+            })()
+          : baseSlides;
+
+        const processedMugSlides = isMugWrap
+          ? await (async () => {
+              const entries = await Promise.all(
+                Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                  const src = typeof v === "string" ? v : "";
+                  if (!src) return [k, v] as const;
+                  const cleaned = await removeWhiteBg(src, {
+                    threshold: 18,
+                    alphaThreshold: 8,
+                    minBrightness: 245,
+                    satThreshold: 10,
+                    whiteMinChannel: 240,
+                    whiteOnly: true,
+                    requireWhiteBg: true,
+                    mode: "edge",
                   });
                   return [k, cleaned] as const;
                 })
@@ -674,6 +751,40 @@ const Subscription = () => {
               fit: "contain",
               pageMm: getPageMmForSize(cardSize),
             })
+          : isCoastersGrid
+          ? await buildFixedGridSlides(processedCoasterSlides, {
+              columns: 2,
+              rows: 3,
+              labelMm: { w: 95, h: 95 },
+              gapMm: 0,
+              distribute: true,
+              fit: "contain",
+              pageMm: getPageMmForSize(cardSize),
+              background: "transparent",
+              outputFormat: "png",
+            })
+          : isMugWrap
+          ? await buildFixedGridSlides(processedMugSlides, {
+              columns: 1,
+              rows: 1,
+              labelMm: getMugWrapPageMm(cardSize),
+              gapMm: 0,
+              distribute: false,
+              fit: "cover",
+              pageMm: getMugWrapPageMm(cardSize),
+              background: "transparent",
+              outputFormat: "png",
+            })
+          : isInviteTwoUp
+          ? await buildFixedGridSlides(baseSlides, {
+              columns: 2,
+              rows: 1,
+              labelMm: getPageMmForSize(cardSize),
+              gapMm: 0,
+              distribute: false,
+              fit: "contain",
+              pageMm: getInviteTwoUpPageMm(cardSize),
+            })
           : isNotebookTwoUp
           ? await buildTwoUpSlides(notebookSlides, {
               gapPx: 0,
@@ -682,31 +793,33 @@ const Subscription = () => {
               pairStrategy: "sequential",
               swapPairs: false,
               pageMm: getNotebookTwoUpPageMm(cardSize),
+              background: "transparent",
+              outputFormat: "png",
             })
-            : isLeafletTwoUp
-            ? await buildTwoUpSlides(baseSlides, {
-                gapPx: 0,
-                orientation: "landscape",
-                fit: "cover",
-                pairStrategy: "sequential",
-                swapPairs: false,
-                pageMm: getLeafletTwoUpPageMm(cardSize),
-              })
-            : isTwoUpLandscape
-            ? await buildTwoUpSlides(baseSlides, {
-                gapPx: 0,
-                orientation: "landscape",
-                fit: "cover",
-                pairStrategy: "outer-inner",
-                swapPairs: true,
-                pageMm: getPageMmForSize(cardSize),
+          : isLeafletTwoUp
+          ? await buildTwoUpSlides(baseSlides, {
+              gapPx: 0,
+              orientation: "landscape",
+              fit: "cover",
+              pairStrategy: "sequential",
+              swapPairs: false,
+              pageMm: getLeafletTwoUpPageMm(cardSize),
+            })
+          : isTwoUpLandscape
+          ? await buildTwoUpSlides(baseSlides, {
+              gapPx: 0,
+              orientation: "landscape",
+              fit: "cover",
+              pairStrategy: "outer-inner",
+              swapPairs: true,
+              pageMm: getPageMmForSize(cardSize),
               pageTitle: ({ pageIndex }) => {
                 if (pageIndex === 1) return "Page 1: slide4 (back) and slide1 (front)";
                 if (pageIndex === 2) return "Page 2: slide3 (inside 2) and slide2 (inside 1)";
                 return null;
               },
             })
-            : processedBgSlides;
+          : processedBgSlides;
         const res = await fetch(`${API_BASE}/pdf/send-subscription`, {
           method: "POST",
           headers: {
@@ -717,8 +830,10 @@ const Subscription = () => {
             slides,
             cardSize,
             category: categoryName,
+            fileName: buildPdfFileName(categoryName),
+            ...(isTransparentPdf ? { outputFormat: "png" } : {}),
             accessplan: selectedItemAccessPlan,
-            ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp
+            ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap
               ? { pageOrientation: "landscape" }
               : {}),
 
@@ -890,7 +1005,9 @@ const Subscription = () => {
   //     }
   //   })();
 
-  // console.log(firstSlideProcessed,'-')
+  const previewSrc = mugPreview || firstSlideProcessed || "";
+  const showOverlayPreview = Boolean(previewSrc) && useMockupBackground;
+  const showFlatPreview = Boolean(previewSrc) && !useMockupBackground;
 
   return (
     <MainLayout>
@@ -979,9 +1096,7 @@ const Subscription = () => {
                 overflow: "hidden",
               }}
             >
-              {mugPreview ? (
-                <Box component="img" src={mugPreview} sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
-              ) : firstSlideUrl ? (
+              {showOverlayPreview ? (
                 <Box
                   sx={{
                     position: "absolute",
@@ -999,7 +1114,7 @@ const Subscription = () => {
                 >
                   <Box
                     component="img"
-                    src={firstSlideProcessed || mugPreview || ""}
+                    src={previewSrc}
                     alt="first slide"
                     sx={{
                       width: "100%",
@@ -1011,6 +1126,8 @@ const Subscription = () => {
                     }}
                   />
                 </Box>
+              ) : showFlatPreview ? (
+                <Box component="img" src={previewSrc} sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
               ) : (
                 <Box
                   sx={{

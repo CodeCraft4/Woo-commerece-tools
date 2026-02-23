@@ -231,7 +231,7 @@ const getPricingConfig = (categoryName?: string): CategoryPricingConfig => {
   if (name.includes("sticker"))
     return {
       title: "Prices by Size",
-      sizes: [SIZES.A4, SIZES.A3, SIZES.US_LETTER],
+      sizes: [SIZES.A4, SIZES.A3, SIZES.US_LETTER, SIZES.US_TABLOID],
     };
   if (name.includes("notebook"))
     return {
