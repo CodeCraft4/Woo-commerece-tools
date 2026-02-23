@@ -61,7 +61,24 @@ export const fetchAllCategoriesFromDB = async () => {
   const { data, error } = await supabase.from("categories").select("*");
   if (error) throw new Error(error.message);
 
-  return (data ?? []).slice().sort((a: any, b: any) =>
+  const MUG_DEFAULT_SUBS = ["Initials/Name", "Slogans"];
+  const normalized = (data ?? []).map((row: any) => {
+    const name = String(row?.name ?? "");
+    if (!/mug/i.test(name)) return row;
+    const existing = Array.isArray(row?.subcategories) ? row.subcategories : [];
+    const lower = new Set(existing.map((v: string) => v.toLowerCase()));
+    const merged = [...existing];
+    for (const label of MUG_DEFAULT_SUBS) {
+      const key = label.toLowerCase();
+      if (!lower.has(key)) {
+        merged.push(label);
+        lower.add(key);
+      }
+    }
+    return { ...row, subcategories: merged };
+  });
+
+  return normalized.slice().sort((a: any, b: any) =>
     String(a?.name ?? "").localeCompare(String(b?.name ?? ""), undefined, {
       sensitivity: "base",
       numeric: true,

@@ -610,6 +610,10 @@ export default function TempletEditor() {
   };
 
   const isMugCategory = (cat?: string) => /mug/i.test(String(cat ?? ""));
+  const hideTextOutline = useMemo(
+    () => isMugCategory(adminDesign?.category),
+    [adminDesign?.category]
+  );
   const previewCapture = useMemo(
     () => ({
       quality: isTablet ? 0.6 : 0.72,
@@ -832,7 +836,11 @@ export default function TempletEditor() {
                         zIndex: asNum(el.zIndex, 1),
                         cursor,
                         borderRadius: 1,
-                        border: isSelected ? "1px solid #1976d2" : "1px solid transparent",
+                        border: hideTextOutline
+                          ? "1px solid transparent"
+                          : isSelected
+                          ? "1px solid #1976d2"
+                          : "1px solid transparent",
                       },
                       onDragStart: () => {
                         if (canMove) align.onDragStart();

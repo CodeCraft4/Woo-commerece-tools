@@ -1,5 +1,5 @@
 // SlideLogo.tsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -317,9 +317,6 @@ const SlideLogo = ({
   isAdminEditor,
   addTextRight, // ⬅ receive it here
 }: SlideLogoProps) => {
-
-
-
   return (
     <Box sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}>
       {activeIndex === 3 && rightBox ? (
@@ -368,6 +365,26 @@ export const UserSlide4Preview = () => {
   const [uploadTarget, setUploadTarget] = useState<{ type: "bg" | "sticker"; index: number } | null>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
   const align = useAlignGuides(rightBoxRef);
+  const [selectedStickerIndex2, setSelectedStickerIndex2] = useState<number | null>(null);
+  const isMugsCategory = useMemo(() => {
+    const direct = safeGetStorage("selectedCategory");
+    if (direct && /mug/i.test(String(direct))) return true;
+    try {
+      const variant = JSON.parse(safeGetStorage("selectedVariant") || "{}");
+      if (/mug/i.test(String(variant?.category ?? ""))) return true;
+    } catch {}
+    try {
+      const product = JSON.parse(safeGetStorage("selectedProduct") || "{}");
+      if (/mug/i.test(String(product?.category ?? ""))) return true;
+    } catch {}
+    return false;
+  }, []);
+  const hideTextOutline = isMugsCategory;
+  const handleBlankClick = (e: ReactMouseEvent) => {
+    if (!hideTextOutline) return;
+    if (e.target !== e.currentTarget) return;
+    setEditingIndex(null);
+  };
 
   /* ------------------ user upload handlers (editable only) ------------------ */
   const handleImageUploadClick = (type: "bg" | "sticker", index: number) => {
@@ -475,6 +492,7 @@ export const UserSlide4Preview = () => {
   return (
     <Box
       ref={rightBoxRef}
+      onClick={handleBlankClick}
       sx={{
         flex: 1,
         zIndex: 10,
@@ -654,7 +672,9 @@ export const UserSlide4Preview = () => {
                   cursor: !isEditable ? "not-allowed" : (isActive ? "text" : "pointer"),
 
                   // ✅ border
-                  border: isEditable
+                  border: hideTextOutline
+                    ? "none"
+                    : isEditable
                     ? (isActive ? "1px dashed #1976d2" : "1px dashed rgba(25,118,210,.35)")
                     : "none",
                   borderRadius: "6px",
@@ -801,7 +821,30 @@ const AdminSlide4Canvas = ({
     setSelectedShapeImageId4,
   } = useSlide4();
 
-  const [selectedStickerIndex2, setSelectedStickerIndex2] = useState<number | null>(null);
+  const isMugsCategory = useMemo(() => {
+    const direct = safeGetStorage("selectedCategory");
+    if (direct && /mug/i.test(String(direct))) return true;
+    try {
+      const variant = JSON.parse(safeGetStorage("selectedVariant") || "{}");
+      if (/mug/i.test(String(variant?.category ?? ""))) return true;
+    } catch {}
+    try {
+      const product = JSON.parse(safeGetStorage("selectedProduct") || "{}");
+      if (/mug/i.test(String(product?.category ?? ""))) return true;
+    } catch {}
+    return false;
+  }, []);
+  const hideTextOutline = !isAdminEditor && isMugsCategory;
+  const handleBlankClick = (e: ReactMouseEvent) => {
+    if (!hideTextOutline) return;
+    if (e.target !== e.currentTarget) return;
+    setSelectedTextId4(null);
+    setEditingIndex4(null);
+    setSelectedImage4([]);
+    setSelectedShapeImageId4(null);
+    setSelectedStickerIndex2(null);
+  };
+
   const location = useLocation();
   const { id: routeId } = useParams<{ id?: string }>();
   const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : getDraftCardId() ?? ""), [routeId]);
@@ -1250,6 +1293,7 @@ const AdminSlide4Canvas = ({
   return (
     <Box
       ref={rightBoxRef}
+      onClick={handleBlankClick}
       sx={{
         flex: 1,
         zIndex: 10,
@@ -1608,7 +1652,11 @@ const AdminSlide4Canvas = ({
                     userSelect: "none",
                     touchAction: "none",
                     transform: `rotate(${textElement.rotation || 0}deg)`,
-                    border: textElement.id === selectedTextId4 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
+                    border: hideTextOutline
+                      ? "none"
+                      : textElement.id === selectedTextId4
+                      ? "2px solid #1976d2"
+                      : "1px dashed #4a7bd5",
                     zIndex: textElement.zIndex,
                     cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
                   }}
@@ -1997,7 +2045,7 @@ const AdminSlide4Canvas = ({
             justifyContent: "center",
             height: { md: "675px", sm: "575px", xs: "575px" },
             width: { md: "470px", sm: "370px", xs: "90%" },
-            border: "3px dashed #3a7bd5",
+            border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
             position: "absolute",
             bgcolor: "#6183cc36",
             p: 1,
@@ -2087,7 +2135,7 @@ const AdminSlide4Canvas = ({
                 height: { md: "210px", sm: "180px", xs: "180px" },
                 width: "100%",
                 mb: 2,
-                border: "3px dashed #3a7bd5",
+                border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                 borderRadius: "6px",
                 justifyContent: "center",
                 display: "flex",

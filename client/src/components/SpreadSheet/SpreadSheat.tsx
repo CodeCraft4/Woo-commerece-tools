@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -90,6 +90,30 @@ const SlideSpread = ({
   isAdminEditor
 }: // togglePopup,
   SlideSpreadProps) => {
+  const isMugsCategory = useMemo(() => {
+    const direct = safeGetStorage("selectedCategory");
+    if (direct && /mug/i.test(String(direct))) return true;
+    try {
+      const variant = JSON.parse(safeGetStorage("selectedVariant") || "{}");
+      if (/mug/i.test(String(variant?.category ?? ""))) return true;
+    } catch {}
+    try {
+      const product = JSON.parse(safeGetStorage("selectedProduct") || "{}");
+      if (/mug/i.test(String(product?.category ?? ""))) return true;
+    } catch {}
+    return false;
+  }, []);
+  const hideTextOutline = !isAdminEditor && isMugsCategory;
+  const handleBlankClick = (e: ReactMouseEvent) => {
+    if (!hideTextOutline) return;
+    if (e.target !== e.currentTarget) return;
+    setSelectedTextId(null);
+    setEditingIndex(null);
+    setSelectedImage([]);
+    setSelectedShapeImageId2(null);
+    setSelectedStickerIndex2(null);
+    setSelectedBgIndex2(null);
+  };
   const {
     images,
     selectedImg,
@@ -785,6 +809,7 @@ const SlideSpread = ({
       {activeIndex === 1 && rightBox && (
         <Box
           ref={rightBoxRef}
+          onClick={handleBlankClick}
           sx={{
             flex: 1,
             zIndex: 10,
@@ -1160,7 +1185,11 @@ const SlideSpread = ({
                             userSelect: "none",
                             touchAction: "none",
                             transform: `rotate(${textElement.rotation || 0}deg)`,
-                            border: textElement.id === selectedTextId ? "2px solid #1976d2" : "1px dashed #4a7bd5",
+                            border: hideTextOutline
+                              ? "none"
+                              : textElement.id === selectedTextId
+                              ? "2px solid #1976d2"
+                              : "1px dashed #4a7bd5",
                             zIndex: textElement.zIndex,
                             cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
                           }}
@@ -1621,7 +1650,7 @@ const SlideSpread = ({
                     justifyContent: "center",
                     height: { md: "675px", sm: "575px", xs: "575px" },
                     width: { md: "470px", sm: "370px", xs: "90%" },
-                    border: "3px dashed #3a7bd5",
+                    border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                     position: "absolute",
                     bgcolor: "#6183cc36",
                     p: 1,
@@ -1723,7 +1752,7 @@ const SlideSpread = ({
                         height: { md: "210px", sm: "180px", xs: "180px" },
                         width: "100%",
                         mb: 2,
-                        border: "3px dashed #3a7bd5",
+                        border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                         borderRadius: "6px",
                         justifyContent: "center",
                         display: "flex",
@@ -2184,7 +2213,9 @@ const SlideSpread = ({
                           cursor: !isEditable ? "not-allowed" : (isActive ? "text" : "pointer"),
 
                           // ✅ border
-                          border: isEditable
+                          border: hideTextOutline
+                            ? "none"
+                            : isEditable
                             ? (isActive ? "1px dashed #1976d2" : "1px dashed rgba(25,118,210,.35)")
                             : "none",
                           borderRadius: "6px",
@@ -2459,10 +2490,11 @@ const SlideSpread = ({
                                 userSelect: "none",
                                 touchAction: "none",
                                 transform: `rotate(${textElement.rotation || 0}deg)`,
-                                border:
-                                  textElement.id === selectedTextId
-                                    ? "2px solid #1976d2"
-                                    : "1px dashed #4a7bd5",
+                                border: hideTextOutline
+                                  ? "none"
+                                  : textElement.id === selectedTextId
+                                  ? "2px solid #1976d2"
+                                  : "1px dashed #4a7bd5",
                                 zIndex: textElement.zIndex
                               }}
                             >
@@ -2953,7 +2985,7 @@ const SlideSpread = ({
                     justifyContent: "center",
                     height: { md: "675px", sm: "575px", xs: '575px' },
                     width: { md: "470px", sm: "370px", xs: "100%" },
-                    border: "3px dashed #3a7bd5",
+                    border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                     bgcolor: "#6183cc36",
                     position: "relative",
                     p: 1,
@@ -3045,7 +3077,7 @@ const SlideSpread = ({
                         height: { md: "210px", sm: "180px", xs: '180px' },
                         width: "100%",
                         mb: 2,
-                        border: "3px dashed #3a7bd5",
+                        border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                         borderRadius: "6px",
                         justifyContent: "center",
                         display: "flex",

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, type MouseEvent as ReactMouseEvent } from "react";
 import {
   Box,
   IconButton,
@@ -337,6 +337,30 @@ const SlideCover = ({
   addTextRight,
 }: SlideCoverProps) => {
   const coverRef = useRef<HTMLDivElement>(null);
+  const isMugsCategory = useMemo(() => {
+    const direct = safeGetStorage("selectedCategory");
+    if (direct && /mug/i.test(String(direct))) return true;
+    try {
+      const variant = JSON.parse(safeGetStorage("selectedVariant") || "{}");
+      if (/mug/i.test(String(variant?.category ?? ""))) return true;
+    } catch {}
+    try {
+      const product = JSON.parse(safeGetStorage("selectedProduct") || "{}");
+      if (/mug/i.test(String(product?.category ?? ""))) return true;
+    } catch {}
+    return false;
+  }, []);
+  const hideTextOutline = !isAdminEditor && isMugsCategory;
+  const handleBlankClick = (e: ReactMouseEvent) => {
+    if (!hideTextOutline) return;
+    if (e.target !== e.currentTarget) return;
+    setSelectedTextId1(null);
+    setEditingIndex1(null);
+    setSelectedImage1([]);
+    setSelectedShapeImageId1(null);
+    setSelectedStickerIndex(null);
+    setSelectedBgIndex(null);
+  };
 
   const {
     images1,
@@ -1153,10 +1177,16 @@ const SlideCover = ({
   // Draft capture 
   const captureClean = !!isCaptureMode || !!isAdminEditor;
   return (
-    <Box ref={coverRef} id="slide-cover-capture" sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}>
+    <Box
+      ref={coverRef}
+      id="slide-cover-capture"
+      onClick={handleBlankClick}
+      sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}
+    >
       {activeIndex === 0 && rightBox && (
         <Box
           ref={rightBoxRef}
+          onClick={handleBlankClick}
           sx={{
             zIndex: 10,
             p: 2,
@@ -1470,7 +1500,9 @@ const SlideCover = ({
                         cursor: !isEditable ? "not-allowed" : (isActive ? "text" : "pointer"),
 
                         // ✅ border
-                        border: isEditable
+                        border: hideTextOutline
+                          ? "none"
+                          : isEditable
                           ? (isActive ? "1px dashed #1976d2" : "1px dashed rgba(25,118,210,.35)")
                           : "none",
                         borderRadius: "6px",
@@ -1734,7 +1766,11 @@ const SlideCover = ({
                             userSelect: "none",
                             touchAction: "none",
                             transform: `rotate(${textElement.rotation || 0}deg)`,
-                            border: textElement.id === selectedTextId1 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
+                            border: hideTextOutline
+                              ? "none"
+                              : textElement.id === selectedTextId1
+                              ? "2px solid #1976d2"
+                              : "1px dashed #4a7bd5",
                             zIndex: textElement.zIndex,
                             cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
                           }}
@@ -2195,7 +2231,7 @@ const SlideCover = ({
                     justifyContent: "center",
                     height: { md: "675px", sm: "575px", xs: "575px" },
                     width: { md: "470px", sm: "370px", xs: "90%" },
-                    border: "3px dashed #3a7bd5",
+                    border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                     position: "absolute",
                     bgcolor: "#6183cc36",
                     p: 1,
@@ -2297,7 +2333,7 @@ const SlideCover = ({
                         height: { md: "210px", sm: "180px", xs: "180px" },
                         width: "100%",
                         mb: 2,
-                        border: "3px dashed #3a7bd5",
+                        border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                         borderRadius: "6px",
                         justifyContent: "center",
                         display: "flex",

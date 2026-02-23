@@ -89,8 +89,12 @@ const singularizeCategory = (name?: string) => {
 
 const buildPdfFileName = (category?: string) => {
   const label = singularizeCategory(category) || "design";
-  const clean = label.replace(/\s+/g, " ").trim().toLowerCase();
-  return `personalised ${clean} pdf`;
+  const clean = label
+    .replace(/[^a-z0-9]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  return `personalised ${clean || "design"} pdf`;
 };
 
 const getItemAccessPlan = (p: any): "free" | "bundle" | "pro" => {
@@ -381,6 +385,12 @@ const Subscription = () => {
     return variant?.category || product?.category || lsCat || "default";
   }, [variant?.category, product?.category]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem("selectedCategory", String(categoryName));
+    } catch {}
+  }, [categoryName]);
+
   const isMugsCategory = useMemo(() => lc(categoryName).includes("mug"), [categoryName]);
   const categoryLabel = useMemo(
     () => singularizeCategory(product?.category || categoryName),
@@ -434,11 +444,12 @@ const Subscription = () => {
   
   const mock = useMemo(() => getMockupConfig(categoryName), [categoryName]);
   const [mockupOk, setMockupOk] = useState(false);
+  const allowMockup = !isMugsCategory;
 
   useEffect(() => {
     let alive = true;
 
-    if (!mock?.mockupSrc || (!isMugsCategory && mugPreview)) {
+    if (!allowMockup || !mock?.mockupSrc || (!isMugsCategory && mugPreview)) {
       setMockupOk(false);
       return;
     }
@@ -455,10 +466,9 @@ const Subscription = () => {
     return () => {
       alive = false;
     };
-  }, [mock?.mockupSrc, mugPreview, isMugsCategory]);
+  }, [mock?.mockupSrc, mugPreview, isMugsCategory, allowMockup]);
 
-  const useMockupBackground =
-    Boolean(mock?.mockupSrc) && mockupOk && (!mugPreview || isMugsCategory);
+  const useMockupBackground = allowMockup && Boolean(mock?.mockupSrc) && mockupOk;
   const mockupAspectRatio = useMockupBackground ? "818 / 600" : undefined;
 
   // ✅ load user plan
@@ -556,7 +566,9 @@ const Subscription = () => {
       const stripe = await stripePromise;
       if (!stripe) throw new Error("Stripe not available");
 
-      const successUrl = `${window.location.origin}${location.pathname}?paid=1&session_id={CHECKOUT_SESSION_ID}`;
+      const successUrl = `${window.location.origin}${location.pathname}?paid=1&session_id={CHECKOUT_SESSION_ID}&category=${encodeURIComponent(
+        categoryName
+      )}`;
       const cancelUrl = `${window.location.origin}${location.pathname}`;
 
       const res = await fetch(`${API_BASE}/checkout/one-time/create`, {
@@ -1084,7 +1096,11 @@ const Subscription = () => {
             <Grid
               size={{ md: 7, sm: 7, xs: 12 }}
               sx={{
-                backgroundImage: useMockupBackground ? `url(${mock?.mockupSrc})` : `url(${TableBgImg})`,
+                backgroundImage: useMockupBackground
+                  ? `url(${mock?.mockupSrc})`
+                  : isMugsCategory
+                  ? "none"
+                  : `url(${TableBgImg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
                 backgroundSize: "cover",

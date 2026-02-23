@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -316,6 +316,30 @@ const SpreadRightSide = ({
   rightBox,
   isAdminEditor
 }: SpreadRightSideProps) => {
+  const isMugsCategory = useMemo(() => {
+    const direct = safeGetStorage("selectedCategory");
+    if (direct && /mug/i.test(String(direct))) return true;
+    try {
+      const variant = JSON.parse(safeGetStorage("selectedVariant") || "{}");
+      if (/mug/i.test(String(variant?.category ?? ""))) return true;
+    } catch {}
+    try {
+      const product = JSON.parse(safeGetStorage("selectedProduct") || "{}");
+      if (/mug/i.test(String(product?.category ?? ""))) return true;
+    } catch {}
+    return false;
+  }, []);
+  const hideTextOutline = !isAdminEditor && isMugsCategory;
+  const handleBlankClick = (e: ReactMouseEvent) => {
+    if (!hideTextOutline) return;
+    if (e.target !== e.currentTarget) return;
+    setSelectedTextId3(null);
+    setEditingIndex3(null);
+    setSelectedImage3([]);
+    setSelectedShapeImageId3(null);
+    setSelectedStickerIndex2(null);
+    setSelectedBgIndex3(null);
+  };
   const {
     images3,
     selectedImg3,
@@ -1048,6 +1072,7 @@ const SpreadRightSide = ({
       {activeIndex === 2 && rightBox && (
         <Box
           ref={rightBoxRef}
+          onClick={handleBlankClick}
           sx={{
             flex: 1,
             zIndex: 10,
@@ -1425,7 +1450,11 @@ const SpreadRightSide = ({
                                   userSelect: "none",
                                   touchAction: "none",
                                   transform: `rotate(${textElement.rotation || 0}deg)`,
-                                  border: textElement.id === selectedTextId3 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
+                                  border: hideTextOutline
+                                    ? "none"
+                                    : textElement.id === selectedTextId3
+                                    ? "2px solid #1976d2"
+                                    : "1px dashed #4a7bd5",
                                   zIndex: textElement.zIndex,
                                   cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
                                 }}
@@ -1889,7 +1918,7 @@ const SpreadRightSide = ({
                       justifyContent: "center",
                       height: { md: "675px", sm: "575px", xs: "575px" },
                       width: { md: "470px", sm: "370px", xs: "90%" },
-                      border: "3px dashed #3a7bd5",
+                      border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                       position: "absolute",
                       bgcolor: "#6183cc36",
                       p: 1,
@@ -1991,7 +2020,7 @@ const SpreadRightSide = ({
                           height: { md: "210px", sm: "180px", xs: "180px" },
                           width: "100%",
                           mb: 2,
-                          border: "3px dashed #3a7bd5",
+                          border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                           borderRadius: "6px",
                           justifyContent: "center",
                           display: "flex",
@@ -2465,7 +2494,11 @@ const SpreadRightSide = ({
                             display: "flex",
                             alignItems: te.verticalAlign === "top" ? "flex-start" : te.verticalAlign === "bottom" ? "flex-end" : "center",
                             justifyContent: te.textAlign === "left" ? "flex-start" : te.textAlign === "right" ? "flex-end" : "center",
-                            outline: te.isEditable && isActive ? "2px solid #1976d2" : "none",   // ✅ blue border on select
+                            outline: hideTextOutline
+                              ? "none"
+                              : te.isEditable && isActive
+                              ? "2px solid #1976d2"
+                              : "none",   // ✅ blue border on select
                             borderRadius: "6px",
                           }}>
                           <TextField
@@ -2689,7 +2722,11 @@ const SpreadRightSide = ({
                               userSelect: "none",
                               touchAction: "none",
                               transform: `rotate(${textElement.rotation || 0}deg)`,
-                              border: textElement.id === selectedTextId3 ? "2px solid #1976d2" : "1px dashed #4a7bd5",
+                              border: hideTextOutline
+                                ? "none"
+                                : textElement.id === selectedTextId3
+                                ? "2px solid #1976d2"
+                                : "1px dashed #4a7bd5",
                               zIndex: textElement.zIndex,
                               cursor: textElement.isEditing ? "text" : "move",
                             }}
@@ -3173,7 +3210,7 @@ const SpreadRightSide = ({
                       justifyContent: "center",
                       height: { md: "675px", sm: "575px", xs: '575px' },
                       width: { md: "470px", sm: "370px", xs: "90%" },
-                      border: "3px dashed #3a7bd5",
+                      border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                       position: "absolute",
                       bgcolor: "#6183cc36",
                       p: 1,
@@ -3274,7 +3311,7 @@ const SpreadRightSide = ({
                           height: { md: "210px", sm: "180px", xs: '180px' },
                           width: "100%",
                           mb: 2,
-                          border: "3px dashed #3a7bd5",
+                          border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                           borderRadius: "6px",
                           justifyContent: "center",
                           display: "flex",

@@ -45,7 +45,7 @@ const onSubmitForm = async (data: SigninForm) => {
     >
       <Box
         component={"img"}
-        src="/assets/images/animated-banner.jpg"
+        src="/assets/images/signinbg.png"
         sx={{
           position: "absolute",
           top: 0,

@@ -30,13 +30,13 @@ const CATEGORY_MOCKUPS: Array<{
     {
       match: (category) => normalizeCategory(category).includes("bags"),
       cfg: {
-        mockupSrc: "/assets/mockup/bag-mockup.jpg",
+        mockupSrc: "/assets/mockup/bag-mockup.png",
         cardAspectRatio: "1 / 1.2",
         overlay: {
           top: "45%",
           left: "20%",
           width: "60%",
-          height: "43%",
+          height: "40%",
           rotate: "0deg",
           objectFit: "contain",
           opacity: 0.98,

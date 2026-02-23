@@ -69,7 +69,11 @@ const buildPdfFileName = (category?: string) => {
   if (lower && !lower.endsWith("ss") && lower.endsWith("s")) {
     label = trimmed.slice(0, -1);
   }
-  const clean = label.replace(/\s+/g, " ").trim().toLowerCase();
+  const clean = label
+    .replace(/[^a-z0-9]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
   return `personalised ${clean || "design"} pdf`;
 };
 
@@ -82,8 +86,21 @@ function getSelectedPlan() {
 }
 
 function getSelectedCategory() {
+  try {
+    if (typeof window !== "undefined") {
+      const fromUrl = new URLSearchParams(window.location.search).get("category");
+      if (fromUrl) return fromUrl;
+    }
+  } catch {}
+
   const direct = localStorage.getItem("selectedCategory");
   if (direct) return direct;
+
+  try {
+    const variant = JSON.parse(localStorage.getItem("selectedVariant") || "{}");
+    if (variant?.category) return variant.category;
+  } catch {}
+
   try {
     const raw = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
     return raw?.category || "";
