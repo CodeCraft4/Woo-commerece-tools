@@ -284,7 +284,7 @@ const Footer = () => {
         </Box>
       </Box>
 
-      <Typography sx={{ display: 'flex', justifyContent: 'center', p: 2, alignItems: 'center', fontSize: 13, color: 'gray' }}>8 Dodwood, Welwyn Garden City, Hertfordshire</Typography>
+      <Typography sx={{ display: 'flex', justifyContent: 'center', p: 2, alignItems: 'center', fontSize: 13, color: 'gray' }}>diypersonalisation@gmail.com</Typography>
     </Box>
   );
 };

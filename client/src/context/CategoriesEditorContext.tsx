@@ -182,6 +182,7 @@ const resolveEditorCategory = (value: unknown, fallback: CategoryKey = DEFAULT_C
   const exact = keys.find((k) => k.trim().toLowerCase() === raw);
   if (exact) return exact;
 
+  if (raw.includes("candle")) return "Candles";
   if (raw.includes("clothing") || raw.includes("clothes") || raw.includes("cloth")) return "Apparel";
 
   return String(value ?? "").trim() || fallback;

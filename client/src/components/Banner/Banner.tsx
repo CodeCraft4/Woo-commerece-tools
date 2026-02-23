@@ -159,7 +159,7 @@ const Banner = () => {
               lineHeight: 1.25,
             }}
           >
-            Edit any design, personalise it your way, and receive a high quality printable pdf instantly.
+            Edit any design, personalise it your way, and receive a higher resolution print ready file instantly.
             <br />
             Create at home your own thoughtful cards, invites, gifts and more, with no delivery, no waiting and low
             prices.

@@ -1638,6 +1638,7 @@ export const CATEGORY_KEYS = [
   "Apparel",
   "Mugs",
   "Coasters",
+  "Candles",
   "Stickers",
   "Notebooks",
   "Wall Art",
@@ -1696,6 +1697,18 @@ export const CATEGORY_CONFIG = {
     allowAddRemovePages: false,
     bleedMm: 3, // ✅ 3mm bleed
     mirrorPrint: true, // ✅ mirror for transfer
+    features: { text: true, photo: true, sticker: true, aiArt: false },
+  },
+  Candles: {
+    key: "Candles",
+    label: "Candles",
+    mmWidth: 70,
+    mmHeight: 70,
+    slideLabels: ["Label"],
+    maxSlides: 1,
+    allowAddRemovePages: false,
+    bleedMm: 3,
+    mirrorPrint: false,
     features: { text: true, photo: true, sticker: true, aiArt: false },
   },
   Stickers: {

@@ -17,12 +17,12 @@ const Description = () => {
       />
 
       <Typography sx={{ fontSize: { md: 22, sm: 18, xs: 16 }, mt: 2, textAlign: "start" }}>
-        DIY Personalisation is a UK-based platform that lets you personalise and instantly download printable cards, invites and gifts,
+        DIY Personalisation is a UK based platform that lets you personalise and instantly download printable cards, invites and gifts,
         so you can create and print them anywhere in the world.
       </Typography>
 
       <Typography sx={{ fontSize: { md: 22, sm: 18, xs: 16 }, mt: 2, textAlign: "start" }}>
-        Designs are downloaded as printable PDFs, making them accessible globally with no shipping, delays or borders.
+        Designs are downloaded as print ready files, making them accessible globally with no shipping, delays or borders.
       </Typography>
 
       <Box sx={{ textAlign: "center", py: { xs: 2, md: 3 } }}>

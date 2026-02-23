@@ -18,7 +18,7 @@ const steps = [
     {
         step: 3,
         title: "Print & Create",
-        description: `Pay and receive your high quality PDF instantly in your inbox. Print at home, at work or in a store, you can apply your design to your own blanks for personalised gifts.`,
+        description: `Pay and receive a high resolution print ready file instantly in your inbox. Print at home, at work or in a store, you can apply your design to your own blanks for personalised gifts.`,
         color: COLORS.green
     }
 ]

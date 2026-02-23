@@ -7,7 +7,7 @@ import { USER_ROUTES } from "../../../../../constant/route";
 const bullets = [
     {
         id: 1,
-        title: "Instant PDFs,  no waiting, no shipping delays",
+        title: "Instant print ready files,  no waiting, no shipping delays",
         borderColor: COLORS.primary
     },
     {

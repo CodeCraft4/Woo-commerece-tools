@@ -73,6 +73,15 @@ type UserPlan = {
 
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
 
+const singularizeCategory = (name?: string) => {
+  const trimmed = String(name ?? "").trim();
+  if (!trimmed) return "";
+  const lower = trimmed.toLowerCase();
+  if (lower.endsWith("ss")) return trimmed;
+  if (lower.endsWith("s")) return trimmed.slice(0, -1);
+  return trimmed;
+};
+
 const getItemAccessPlan = (p: any): "free" | "bundle" | "pro" => {
   const v = lc(p?.accessplan ?? p?.accessPlan ?? p?.plan ?? p?.plan_code ?? p?.code);
   if (v === "pro" || v === "premium") return "pro";
@@ -353,6 +362,10 @@ const Subscription = () => {
   }, [variant?.category, product?.category]);
 
   const isMugsCategory = useMemo(() => lc(categoryName).includes("mug"), [categoryName]);
+  const categoryLabel = useMemo(
+    () => singularizeCategory(product?.category || categoryName),
+    [product?.category, categoryName]
+  );
 
   const mugPreview = useMemo(() => {
     if (!isMugsCategory) return "";
@@ -906,7 +919,7 @@ const Subscription = () => {
               flexWrap: "wrap",
             }}
           >
-            Please select your {product?.category} print size!
+            Please select your {categoryLabel} print size!
             {showTrophyIcon ? (
               <Chip icon={<EmojiEvents />} label="Pro" color="warning" size="small" sx={{ fontWeight: 900 }} />
             ) : null}
@@ -1022,7 +1035,7 @@ const Subscription = () => {
               sx={{ display: "flex", flexDirection: "column", gap: "25px", textAlign: "start" }}
             >
               <Box sx={{ p: { md: 2, sm: 2, xs: "5px" }, bgcolor: COLORS.primary, borderRadius: 2 }}>
-                <Typography variant="h5">🎉 Your {product?.category} design is ready for Checkout!</Typography>
+                <Typography variant="h5">🎉 Your {categoryLabel} design is ready for checkout!</Typography>
 
                 <Typography sx={{ fontSize: 14, mt: 1, opacity: 0.8 }}>
                   {planLoading || bundleKeyLoading
