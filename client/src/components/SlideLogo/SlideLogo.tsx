@@ -365,7 +365,6 @@ export const UserSlide4Preview = () => {
   const [uploadTarget, setUploadTarget] = useState<{ type: "bg" | "sticker"; index: number } | null>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
   const align = useAlignGuides(rightBoxRef);
-  const [selectedStickerIndex2, setSelectedStickerIndex2] = useState<number | null>(null);
   const isMugsCategory = useMemo(() => {
     const direct = safeGetStorage("selectedCategory");
     if (direct && /mug/i.test(String(direct))) return true;
@@ -821,6 +820,7 @@ const AdminSlide4Canvas = ({
     setSelectedShapeImageId4,
   } = useSlide4();
 
+  const [selectedStickerIndex2, setSelectedStickerIndex2] = useState<number | null>(null);
   const isMugsCategory = useMemo(() => {
     const direct = safeGetStorage("selectedCategory");
     if (direct && /mug/i.test(String(direct))) return true;
