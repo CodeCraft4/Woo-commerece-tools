@@ -357,6 +357,8 @@ const TempletEditorPreview: React.FC = () => {
                 const flipped = flipCanvasDataUrl(mugImageSrc);
                 console.log(flipped)
                 sessionStorage.setItem("slides", JSON.stringify({ slide1: flipped }));
+                sessionStorage.setItem("slides_mirrored", "1");
+                sessionStorage.setItem("slides_mirrored_category", "mug");
                 toast.success("Preview saved successfully!");
                 navigate(USER_ROUTES.SUBSCRIPTION);
               } catch (err) {

@@ -8,6 +8,7 @@ import { useCartStore, type SizeKey } from "../../../stores/cartStore";
 import useModal from "../../../hooks/useModal";
 import ProductPopup from "../../../components/ProductPopup/ProductPopup";
 import { sizeLabel } from "../../../lib/pricing";
+import { isMirrorPrintCategory } from "../../../lib/pdfTwoUp";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../context/AuthContext";
 import ZIPModal from "./components/ZIPModal";
@@ -70,6 +71,11 @@ const normalizeCartType = (t: any): "card" | "templet" => {
   return "card";
 };
 
+const isPngCategoryForZip = (category?: string) =>
+  /mug|clothes|clothing|apparel|tote|bag|notebook|sticker/i.test(
+    String(category ?? "")
+  );
+
 
 const AddToCart = () => {
   const { cart, removeFromCart, clearCart } = useCartStore();
@@ -129,11 +135,22 @@ const AddToCart = () => {
   const { open: isZipLoadingModal, closeModal: closeZiploadingModal, openModal: openZipLoadingModal } = useModal()
 
   const getCartItemsForZip = () =>
-    cart.map((x: any) => ({
-      id: x.id,
-      type: normalizeCartType(x.type),
-      selectedSize: normalizeSize(x.selectedSize),
-    }));
+    cart.map((x: any) => {
+      const category = String(x?.category ?? "");
+      const outputFormat = isPngCategoryForZip(category) ? "png" : "pdf";
+      const mirror = isMirrorPrintCategory(category) && outputFormat === "png";
+
+      return {
+        id: x.id,
+        type: normalizeCartType(x.type),
+        selectedSize: normalizeSize(x.selectedSize),
+        category,
+        outputFormat,
+        transparent: outputFormat === "png",
+        mirror,
+        removeWhiteBg: outputFormat === "png",
+      };
+    });
 
   // ✅ Pro: Generate ZIP and Email (no Stripe)
   const handleGenerateZip = async () => {
@@ -174,7 +191,7 @@ const AddToCart = () => {
       setZipStep(3);
       setZipDone(true);
 
-      toast.success(`ZIP generated & emailed ✅ (${data.count ?? 0} PDFs)`);
+      toast.success(`ZIP generated & emailed ✅ (${data.count ?? 0} files)`);
     } catch (e: any) {
       setZipError(e?.message || "Failed");
       toast.error(e?.message || "Failed");

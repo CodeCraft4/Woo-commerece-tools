@@ -169,11 +169,14 @@ export const isMirrorPrintCategory = (name?: string) => {
   return (
     n.includes("coaster") ||
     n.includes("notebook") ||
+    n.includes("mug") ||
     n.includes("apparel") ||
     n.includes("clothing") ||
+    n.includes("clothes") ||
     n.includes("tote bag") ||
     n.includes("tote") ||
-    n.includes("bag")
+    n.includes("bag") ||
+    n.includes("sticker")
   );
 };
 

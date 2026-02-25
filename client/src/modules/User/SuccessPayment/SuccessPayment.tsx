@@ -62,7 +62,7 @@ async function getSlidesPayload() {
   }
 }
 
-const buildPdfFileName = (category?: string) => {
+const buildPdfFileName = (category?: string, ext: "pdf" | "png" = "pdf") => {
   const trimmed = String(category ?? "").trim();
   const lower = trimmed.toLowerCase();
   let label = trimmed;
@@ -74,7 +74,7 @@ const buildPdfFileName = (category?: string) => {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-  return `personalised ${clean || "design"} pdf`;
+  return `personalised ${clean || "design"} ${ext}`;
 };
 
 function getSelectedPlan() {
@@ -128,11 +128,33 @@ export default function PremiumSuccess() {
       const token = await getTokenSafely();
       if (!token) throw new Error("Login required");
 
+      const sentKey = `payment_email_sent_${sessionId}`;
+      const sentState = sessionStorage.getItem(sentKey);
+      if (sentState === "1" || sentState === "sending") {
+        setStatus("success");
+        setMsg("Payment successful. File sent to your email 📧");
+        return;
+      }
+      sessionStorage.setItem(sentKey, "sending");
+
       const rawSlides = await getSlidesPayload();
       const cardSize = getSelectedPlan();
       const categoryName = getSelectedCategory();
-      const mirrorPrint = isMirrorPrintCategory(categoryName);
+      const slidesAlreadyMirrored = (() => {
+        try {
+          return sessionStorage.getItem("slides_mirrored") === "1";
+        } catch {
+          return false;
+        }
+      })();
+      const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored;
       const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
+      if (slidesAlreadyMirrored) {
+        try {
+          sessionStorage.removeItem("slides_mirrored");
+          sessionStorage.removeItem("slides_mirrored_category");
+        } catch {}
+      }
       const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
       const isInviteTwoUp =
         /invite/i.test(String(categoryName ?? "")) && isInviteTwoUpSize(cardSize);
@@ -146,22 +168,13 @@ export default function PremiumSuccess() {
         isNotebooksCategory(categoryName) && isNotebookTwoUpSize(cardSize);
       const isMugWrap = /mug/i.test(String(categoryName ?? "")) && isMugWrapSize(cardSize);
 
-      const notebookSlides = (() => {
-        if (!isNotebookTwoUp) return baseSlides;
-        const keys = Object.keys(baseSlides).filter((k) => baseSlides[k]);
-        if (keys.length >= 2) return baseSlides;
-        if (keys.length === 1) {
-          const k = keys[0];
-          return { [k]: baseSlides[k], [`${k}-copy`]: baseSlides[k] };
-        }
-        return baseSlides;
-      })();
-
       const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
-      const isBagOrClothingForPdf = /bag|tote|clothing|apparel/i.test(String(categoryName ?? ""));
+      const isBagOrClothingForPdf = /bag|tote|clothing|clothes|apparel/i.test(
+        String(categoryName ?? "")
+      );
       const isNotebookCategory = isNotebooksCategory(categoryName);
       const bgRemoveOpts =
-        !isCandlesGrid && !isCoastersGrid && isBagOrClothingForPdf
+        !isCandlesGrid && !isCoastersGrid && !isMugWrap && (isBagOrClothingForPdf || isNotebookCategory)
           ? {
               threshold: 18,
               alphaThreshold: 8,
@@ -171,7 +184,7 @@ export default function PremiumSuccess() {
               whiteOnly: true,
               requireWhiteBg: true,
             }
-          : !isCandlesGrid && !isCoastersGrid && isStickerForPdf
+          : !isCandlesGrid && !isCoastersGrid && !isMugWrap && isStickerForPdf
           ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
           : null;
       const isTransparentPdf =
@@ -259,6 +272,18 @@ export default function PremiumSuccess() {
             return Object.fromEntries(entries);
           })()
         : baseSlides;
+
+      const notebookSlides = (() => {
+        if (!isNotebookTwoUp) return baseSlides;
+        const sourceSlides = processedBgSlides;
+        const keys = Object.keys(sourceSlides).filter((k) => sourceSlides[k]);
+        if (keys.length >= 2) return sourceSlides;
+        if (keys.length === 1) {
+          const k = keys[0];
+          return { [k]: sourceSlides[k], [`${k}-copy`]: sourceSlides[k] };
+        }
+        return sourceSlides;
+      })();
 
       const slides = isTenUpBusinessCards
         ? await buildTenUpSlides(baseSlides, {
@@ -354,6 +379,8 @@ export default function PremiumSuccess() {
         throw new Error("Slides data missing");
       }
 
+      const outputFormat = isTransparentPdf ? "png" : "pdf";
+
       const res = await fetch(`${API_BASE}/send-pdf-after-success`, {
         method: "POST",
         headers: {
@@ -364,8 +391,9 @@ export default function PremiumSuccess() {
           sessionId,
           slides,
           cardSize,
-          fileName: buildPdfFileName(categoryName),
-          ...(isTransparentPdf ? { outputFormat: "png" } : {}),
+          category: categoryName,
+          fileName: buildPdfFileName(categoryName, outputFormat),
+          ...(isTransparentPdf ? { outputFormat } : {}),
           ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap
             ? { pageOrientation: "landscape" }
             : {}),
@@ -377,10 +405,15 @@ export default function PremiumSuccess() {
         throw new Error(err?.error || `Failed (${res.status})`);
       }
 
+      sessionStorage.setItem(`payment_email_sent_${sessionId}`, "1");
+
       setStatus("success");
-      setMsg("Payment successful. PDF sent to your email 📧");
-      toast.success("PDF generated & sent to your email!");
+      setMsg("Payment successful. File sent to your email 📧");
+      toast.success("File generated & sent to your email!");
     } catch (e: any) {
+      if (sessionId) {
+        sessionStorage.removeItem(`payment_email_sent_${sessionId}`);
+      }
       setStatus("error");
       setMsg(e?.message || "Failed");
       toast.error(e?.message || "Failed");

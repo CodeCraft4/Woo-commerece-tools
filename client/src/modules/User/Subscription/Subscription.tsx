@@ -87,14 +87,14 @@ const singularizeCategory = (name?: string) => {
   return trimmed;
 };
 
-const buildPdfFileName = (category?: string) => {
+const buildPdfFileName = (category?: string, ext: "pdf" | "png" = "pdf") => {
   const label = singularizeCategory(category) || "design";
   const clean = label
     .replace(/[^a-z0-9]+/gi, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-  return `personalised ${clean || "design"} pdf`;
+  return `personalised ${clean || "design"} ${ext}`;
 };
 
 const getItemAccessPlan = (p: any): "free" | "bundle" | "pro" => {
@@ -613,8 +613,21 @@ const Subscription = () => {
         if (!token) throw new Error("Login session not found");
 
         const rawSlides = await getSlidesPayload();
-        const mirrorPrint = isMirrorPrintCategory(categoryName);
+        const slidesAlreadyMirrored = (() => {
+          try {
+            return sessionStorage.getItem("slides_mirrored") === "1";
+          } catch {
+            return false;
+          }
+        })();
+        const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored;
         const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
+        if (slidesAlreadyMirrored) {
+          try {
+            sessionStorage.removeItem("slides_mirrored");
+            sessionStorage.removeItem("slides_mirrored_category");
+          } catch {}
+        }
         const cardSize = localStorage.getItem("selectedSize") || selectedPlan;
         const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
         const isInviteTwoUp =
@@ -629,22 +642,13 @@ const Subscription = () => {
           isNotebooksCategory(categoryName) && isNotebookTwoUpSize(cardSize);
         const isMugWrap = isMugsCategory && isMugWrapSize(cardSize);
 
-        const notebookSlides = (() => {
-          if (!isNotebookTwoUp) return baseSlides;
-          const keys = Object.keys(baseSlides).filter((k) => baseSlides[k]);
-          if (keys.length >= 2) return baseSlides;
-          if (keys.length === 1) {
-            const k = keys[0];
-            return { [k]: baseSlides[k], [`${k}-copy`]: baseSlides[k] };
-          }
-          return baseSlides;
-        })();
-
         const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
-        const isBagOrClothingForPdf = /bag|tote|clothing|apparel/i.test(String(categoryName ?? ""));
+        const isBagOrClothingForPdf = /bag|tote|clothing|clothes|apparel/i.test(
+          String(categoryName ?? "")
+        );
         const isNotebookCategory = isNotebooksCategory(categoryName);
         const bgRemoveOpts =
-          !isCandlesGrid && !isCoastersGrid && isBagOrClothingForPdf
+          !isCandlesGrid && !isCoastersGrid && !isMugWrap && (isBagOrClothingForPdf || isNotebookCategory)
             ? {
                 threshold: 18,
                 alphaThreshold: 8,
@@ -654,7 +658,7 @@ const Subscription = () => {
                 whiteOnly: true,
                 requireWhiteBg: true,
               }
-            : !isCandlesGrid && !isCoastersGrid && isStickerForPdf
+            : !isCandlesGrid && !isCoastersGrid && !isMugWrap && isStickerForPdf
             ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
             : null;
         const isTransparentPdf =
@@ -742,6 +746,18 @@ const Subscription = () => {
               return Object.fromEntries(entries);
             })()
           : baseSlides;
+
+        const notebookSlides = (() => {
+          if (!isNotebookTwoUp) return baseSlides;
+          const sourceSlides = processedBgSlides;
+          const keys = Object.keys(sourceSlides).filter((k) => sourceSlides[k]);
+          if (keys.length >= 2) return sourceSlides;
+          if (keys.length === 1) {
+            const k = keys[0];
+            return { [k]: sourceSlides[k], [`${k}-copy`]: sourceSlides[k] };
+          }
+          return sourceSlides;
+        })();
 
         const slides = isTenUpBusinessCards
           ? await buildTenUpSlides(baseSlides, {
@@ -832,30 +848,42 @@ const Subscription = () => {
               },
             })
           : processedBgSlides;
-        const res = await fetch(`${API_BASE}/pdf/send-subscription`, {
+        const outputFormat = isTransparentPdf ? "png" : "pdf";
+
+        const isPaidFlow = Boolean(opts?.paid && opts?.sessionId);
+        const endpoint = isPaidFlow
+          ? `${API_BASE}/send-pdf-after-success`
+          : `${API_BASE}/pdf/send-subscription`;
+
+        const basePayload = {
+          slides,
+          cardSize,
+          category: categoryName,
+          fileName: buildPdfFileName(categoryName, outputFormat),
+          ...(isTransparentPdf ? { outputFormat } : {}),
+          ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap
+            ? { pageOrientation: "landscape" }
+            : {}),
+        };
+
+        const paidPayload = isPaidFlow
+          ? { sessionId: opts?.sessionId }
+          : {
+              accessplan: selectedItemAccessPlan,
+              inBundleItems: isInBundleItems,
+              productKey,
+              userPlan: planCode,
+              paid: Boolean(opts?.paid),
+              payment_session_id: opts?.sessionId ?? null,
+            };
+
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            slides,
-            cardSize,
-            category: categoryName,
-            fileName: buildPdfFileName(categoryName),
-            ...(isTransparentPdf ? { outputFormat: "png" } : {}),
-            accessplan: selectedItemAccessPlan,
-            ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap
-              ? { pageOrientation: "landscape" }
-              : {}),
-
-            inBundleItems: isInBundleItems,
-            productKey,
-            userPlan: planCode,
-
-            paid: Boolean(opts?.paid),
-            payment_session_id: opts?.sessionId ?? null,
-          }),
+          body: JSON.stringify({ ...basePayload, ...paidPayload }),
         });
 
         if (!res.ok) {
@@ -864,9 +892,9 @@ const Subscription = () => {
         }
 
         await res.json();
-        toast.success("PDF generated & emailed to you!");
+        toast.success("File generated & emailed to you!");
       } catch (e: any) {
-        toast.error(e?.message || "Could not generate PDF");
+        toast.error(e?.message || "Could not generate file");
       } finally {
         setLoading(false);
       }
@@ -883,6 +911,11 @@ const Subscription = () => {
 
     (async () => {
       try {
+        const sentKey = `payment_email_sent_${sessionId}`;
+        const sentState = sessionStorage.getItem(sentKey);
+        if (sentState === "1" || sentState === "sending") return;
+        sessionStorage.setItem(sentKey, "sending");
+
         const token = await getAccessToken();
         if (token) {
           const verifyRes = await fetch(`${API_BASE}/checkout/one-time/verify`, {
@@ -901,9 +934,12 @@ const Subscription = () => {
         }
 
         await sendPdfDirectForSubscription({ paid: true, sessionId });
+        sessionStorage.setItem(sentKey, "1");
         navigate(location.pathname, { replace: true, state });
       } catch (e: any) {
-        toast.error(e?.message || "Payment done but PDF couldn't be generated");
+        const sentKey = `payment_email_sent_${sessionId}`;
+        sessionStorage.removeItem(sentKey);
+        toast.error(e?.message || "Payment done but file couldn't be generated");
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1085,8 +1121,8 @@ const Subscription = () => {
             )}
 
             {mugPreview && (
-              <Box sx={{ p: 1.5, bgcolor: COLORS.black, borderRadius: 2,color:COLORS.white }}>
-                📒 <b>MUGS</b>: For mugs preview is flipped in the pdf
+              <Box sx={{ p: 1.5, bgcolor: COLORS.black, borderRadius: 2, color: COLORS.white }}>
+                📒 <b>MUGS</b>: Preview is mirrored in the downloaded file
               </Box>
             )}
           </Box>
