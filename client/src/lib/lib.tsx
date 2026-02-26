@@ -213,6 +213,8 @@ export const getCanvasMultiplier = (category: CategoryKey | string) =>
 
 
 
+const removeBgCache = new Map<string, Promise<string>>();
+
 export async function removeWhiteBg(
   imgUrl: string,
   opts?: {
@@ -224,11 +226,29 @@ export async function removeWhiteBg(
     whiteOnly?: boolean;
     requireWhiteBg?: boolean;
     whiteMinChannel?: number;
+    softness?: number;
   }
 ): Promise<string> {
-  return new Promise((resolve) => {
+  const cacheKey = [
+    imgUrl,
+    opts?.threshold ?? 26,
+    opts?.alphaThreshold ?? 8,
+    opts?.minBrightness ?? 230,
+    opts?.satThreshold ?? 18,
+    opts?.mode ?? "edge",
+    opts?.whiteOnly ?? false,
+    opts?.requireWhiteBg ?? false,
+    opts?.whiteMinChannel ?? (opts?.minBrightness ?? 230),
+    opts?.softness ?? 0,
+  ].join("|");
+
+  const cached = removeBgCache.get(cacheKey);
+  if (cached) return cached;
+
+  const task = new Promise<string>((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
+    img.decoding = "async";
     img.src = imgUrl;
     img.onload = () => {
       const canvas = document.createElement("canvas");
@@ -258,25 +278,28 @@ export async function removeWhiteBg(
         return [data[i], data[i + 1], data[i + 2], data[i + 3]] as const;
       };
 
-      const avgColor = (points: Array<[number, number]>) => {
-        let r = 0;
-        let g = 0;
-        let b = 0;
-        let count = 0;
+      const median = (arr: number[]) => {
+        if (!arr.length) return 255;
+        const sorted = [...arr].sort((a, b) => a - b);
+        return sorted[Math.floor(sorted.length / 2)] ?? sorted[0];
+      };
+
+      const sampleBg = (points: Array<[number, number]>) => {
+        const rs: number[] = [];
+        const gs: number[] = [];
+        const bs: number[] = [];
         points.forEach(([x, y]) => {
           const xx = Math.max(0, Math.min(width - 1, x));
           const yy = Math.max(0, Math.min(height - 1, y));
           const [pr, pg, pb] = getPixel(xx, yy);
-          r += pr;
-          g += pg;
-          b += pb;
-          count += 1;
+          rs.push(pr);
+          gs.push(pg);
+          bs.push(pb);
         });
-        if (!count) return [255, 255, 255] as const;
-        return [Math.round(r / count), Math.round(g / count), Math.round(b / count)] as const;
+        return [median(rs), median(gs), median(bs)] as const;
       };
 
-      const bg = avgColor([
+      const bg = sampleBg([
         [0, 0],
         [width - 1, 0],
         [0, height - 1],
@@ -310,14 +333,25 @@ export async function removeWhiteBg(
         }
       }
 
+      const softness = Math.max(0, opts?.softness ?? 0);
+      const bgDiff = (r: number, g: number, b: number) =>
+        Math.max(Math.abs(r - bg[0]), Math.abs(g - bg[1]), Math.abs(b - bg[2]));
+
+      const alphaFromDiff = (diff: number) => {
+        if (diff <= threshold) return 0;
+        if (!softness) return 255;
+        if (diff >= threshold + softness) return 255;
+        const t = (diff - threshold) / softness;
+        return Math.max(0, Math.min(255, Math.round(t * 255)));
+      };
+
       const isBg = (r: number, g: number, b: number, a: number) => {
         if (opts?.whiteOnly) return isWhiteish(r, g, b, a);
         const maxc = Math.max(r, g, b);
         const minc = Math.min(r, g, b);
-        const brightness = (r + g + b) / 3;
         const sat = maxc - minc;
-        const diff = Math.max(Math.abs(r - bg[0]), Math.abs(g - bg[1]), Math.abs(b - bg[2]));
-        return (diff <= threshold && sat <= satThreshold) || (brightness >= minBrightness && sat <= satThreshold);
+        const diff = bgDiff(r, g, b);
+        return diff <= threshold + softness && sat <= satThreshold;
       };
 
       const mode = opts?.mode ?? "edge";
@@ -325,7 +359,12 @@ export async function removeWhiteBg(
       if (mode === "all") {
         for (let i = 0; i < data.length; i += 4) {
           if (isBg(data[i], data[i + 1], data[i + 2], data[i + 3])) {
-            data[i + 3] = 0;
+            if (opts?.whiteOnly) {
+              data[i + 3] = 0;
+            } else {
+              const diff = bgDiff(data[i], data[i + 1], data[i + 2]);
+              data[i + 3] = Math.min(data[i + 3], alphaFromDiff(diff));
+            }
           }
         }
       } else {
@@ -359,7 +398,12 @@ export async function removeWhiteBg(
           const y = Math.floor(idx / width);
 
           const i = idx * 4;
-          data[i + 3] = 0; // transparent
+          if (opts?.whiteOnly) {
+            data[i + 3] = 0;
+          } else {
+            const diff = bgDiff(data[i], data[i + 1], data[i + 2]);
+            data[i + 3] = Math.min(data[i + 3], alphaFromDiff(diff));
+          }
 
           pushIfBg(x + 1, y);
           pushIfBg(x - 1, y);
@@ -373,4 +417,12 @@ export async function removeWhiteBg(
     };
     img.onerror = () => resolve(imgUrl);
   });
+
+  removeBgCache.set(cacheKey, task);
+  if (removeBgCache.size > 50) {
+    const firstKey = removeBgCache.keys().next().value;
+    if (firstKey) removeBgCache.delete(firstKey);
+  }
+
+  return task;
 }

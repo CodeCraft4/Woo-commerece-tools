@@ -19,7 +19,7 @@ import {
   setCSSProperty,
   setInnerHTML,
   showWarning
-} from "./chunk-NBQCNOND.js";
+} from "./chunk-6AZPPJCY.js";
 import {
   require_react
 } from "./chunk-5GCMZSAB.js";
@@ -427,6 +427,10 @@ function updateSlides() {
     setCSSProperty(wrapperEl, "--swiper-centered-offset-before", "");
     setCSSProperty(wrapperEl, "--swiper-centered-offset-after", "");
   }
+  if (params.cssMode) {
+    setCSSProperty(wrapperEl, "--swiper-slides-offset-before", `${offsetBefore}px`);
+    setCSSProperty(wrapperEl, "--swiper-slides-offset-after", `${offsetAfter}px`);
+  }
   const gridEnabled = params.grid && params.grid.rows > 1 && swiper.grid;
   if (gridEnabled) {
     swiper.grid.initSlides(slides);
@@ -533,17 +537,44 @@ function updateSlides() {
     swiper.grid.updateWrapperSize(slideSize, snapGrid);
   }
   if (!params.centeredSlides) {
+    const isFractionalSlidesPerView = params.slidesPerView !== "auto" && params.slidesPerView % 1 !== 0;
+    const shouldSnapToSlideEdge = params.snapToSlideEdge && !params.loop && (params.slidesPerView === "auto" || isFractionalSlidesPerView);
+    let lastAllowedSnapIndex = snapGrid.length;
+    if (shouldSnapToSlideEdge) {
+      let minVisibleSlides;
+      if (params.slidesPerView === "auto") {
+        minVisibleSlides = 1;
+        let accumulatedSize = 0;
+        for (let i = slidesSizesGrid.length - 1; i >= 0; i -= 1) {
+          accumulatedSize += slidesSizesGrid[i] + (i < slidesSizesGrid.length - 1 ? spaceBetween : 0);
+          if (accumulatedSize <= swiperSize) {
+            minVisibleSlides = slidesSizesGrid.length - i;
+          } else {
+            break;
+          }
+        }
+      } else {
+        minVisibleSlides = Math.floor(params.slidesPerView);
+      }
+      lastAllowedSnapIndex = Math.max(slidesLength - minVisibleSlides, 0);
+    }
     const newSlidesGrid = [];
     for (let i = 0; i < snapGrid.length; i += 1) {
       let slidesGridItem = snapGrid[i];
       if (params.roundLengths) slidesGridItem = Math.floor(slidesGridItem);
-      if (snapGrid[i] <= swiper.virtualSize - swiperSize) {
+      if (shouldSnapToSlideEdge) {
+        if (i <= lastAllowedSnapIndex) {
+          newSlidesGrid.push(slidesGridItem);
+        }
+      } else if (snapGrid[i] <= swiper.virtualSize - swiperSize) {
         newSlidesGrid.push(slidesGridItem);
       }
     }
     snapGrid = newSlidesGrid;
     if (Math.floor(swiper.virtualSize - swiperSize) - Math.floor(snapGrid[snapGrid.length - 1]) > 1) {
-      snapGrid.push(swiper.virtualSize - swiperSize);
+      if (!shouldSnapToSlideEdge) {
+        snapGrid.push(swiper.virtualSize - swiperSize);
+      }
     }
   }
   if (isVirtual && params.loop) {
@@ -595,9 +626,8 @@ function updateSlides() {
       allSlidesSize += slideSizeValue + (spaceBetween || 0);
     });
     allSlidesSize -= spaceBetween;
-    const offsetSize = (offsetBefore || 0) + (offsetAfter || 0);
-    if (allSlidesSize + offsetSize < swiperSize) {
-      const allSlidesOffset = (swiperSize - allSlidesSize - offsetSize) / 2;
+    if (allSlidesSize < swiperSize) {
+      const allSlidesOffset = (swiperSize - allSlidesSize) / 2;
       snapGrid.forEach((snap, snapIndex) => {
         snapGrid[snapIndex] = snap - allSlidesOffset;
       });
@@ -875,12 +905,12 @@ var processLazyPreloader = (swiper, imageEl) => {
         requestAnimationFrame(() => {
           if (slideEl.shadowRoot) {
             lazyEl = slideEl.shadowRoot.querySelector(`.${swiper.params.lazyPreloaderClass}`);
-            if (lazyEl) lazyEl.remove();
+            if (lazyEl && !lazyEl.lazyPreloaderManaged) lazyEl.remove();
           }
         });
       }
     }
-    if (lazyEl) lazyEl.remove();
+    if (lazyEl && !lazyEl.lazyPreloaderManaged) lazyEl.remove();
   }
 };
 var unlazy = (swiper, index) => {
@@ -991,8 +1021,12 @@ function updateActiveIndex(newActiveIndex) {
   }
   const gridEnabled = swiper.grid && params.grid && params.grid.rows > 1;
   let realIndex;
-  if (swiper.virtual && params.virtual.enabled && params.loop) {
-    realIndex = getVirtualRealIndex(activeIndex);
+  if (swiper.virtual && params.virtual.enabled) {
+    if (params.loop) {
+      realIndex = getVirtualRealIndex(activeIndex);
+    } else {
+      realIndex = activeIndex;
+    }
   } else if (gridEnabled) {
     const firstSlideInColumn = swiper.slides.find((slideEl) => slideEl.column === activeIndex);
     let activeSlideIndex = parseInt(firstSlideInColumn.getAttribute("data-swiper-slide-index"), 10);
@@ -3007,6 +3041,7 @@ var defaults = {
   // in px
   normalizeSlideIndex: true,
   centerInsufficientSlides: false,
+  snapToSlideEdge: false,
   // Disable swiper and hide navigation when container not overflow
   watchOverflow: true,
   // Round length
@@ -3155,7 +3190,11 @@ var Swiper = class _Swiper {
     swiper.eventsAnyListeners = [];
     swiper.modules = [...swiper.__modules__];
     if (params.modules && Array.isArray(params.modules)) {
-      swiper.modules.push(...params.modules);
+      params.modules.forEach((mod) => {
+        if (typeof mod === "function" && swiper.modules.indexOf(mod) < 0) {
+          swiper.modules.push(mod);
+        }
+      });
     }
     const allModulesParams = {};
     swiper.modules.forEach((mod) => {
@@ -3711,6 +3750,7 @@ var paramsList = [
   "_slidesOffsetAfter",
   "normalizeSlideIndex",
   "_centerInsufficientSlides",
+  "_snapToSlideEdge",
   "_watchOverflow",
   "roundLengths",
   "touchRatio",
@@ -4455,11 +4495,17 @@ var SwiperSlide = (0, import_react.forwardRef)(({
     className: "swiper-zoom-container",
     "data-swiper-zoom": typeof zoom === "number" ? zoom : void 0
   }, renderChildren(), lazy && !lazyLoaded && import_react.default.createElement("div", {
-    className: "swiper-lazy-preloader"
+    className: "swiper-lazy-preloader",
+    ref: (node) => {
+      if (node) node.lazyPreloaderManaged = true;
+    }
   }))), !zoom && import_react.default.createElement(SwiperSlideContext.Provider, {
     value: slideData
   }, renderChildren(), lazy && !lazyLoaded && import_react.default.createElement("div", {
-    className: "swiper-lazy-preloader"
+    className: "swiper-lazy-preloader",
+    ref: (node) => {
+      if (node) node.lazyPreloaderManaged = true;
+    }
   })));
 });
 SwiperSlide.displayName = "SwiperSlide";

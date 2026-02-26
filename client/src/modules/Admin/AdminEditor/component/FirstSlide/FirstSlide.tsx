@@ -12,6 +12,7 @@ type FirstSlideProps = { firstSlide?: any };
 
 const FirstSlide = (_props: FirstSlideProps) => {
   const {
+    formData,
     elements,
     setElements,
     textElements,
@@ -24,6 +25,8 @@ const FirstSlide = (_props: FirstSlideProps) => {
 
   const navigate = useNavigate();
   const canvasRef = useRef<EditorCanvasHandle | null>(null);
+  const isCandleCategory = /candle/i.test(String(formData?.cardCategory ?? ""));
+  const canvasScale = isCandleCategory ? 1.5 : 1;
 
   return (
     <>
@@ -70,6 +73,7 @@ const FirstSlide = (_props: FirstSlideProps) => {
           setTextElements={setTextElements}
           stickerElements={stickerElements}
           setStickerElements={setStickerElements}
+          canvasScale={canvasScale}
         />
 
         <Box sx={{ position: "relative", alignSelf: "flex-start" }}>

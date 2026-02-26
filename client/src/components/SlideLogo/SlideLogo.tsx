@@ -235,8 +235,12 @@ function normalizeSlide(slide: any): {
 
   // texts
   out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
+  const multiRaw = Array.isArray(slide?.multipleTexts) ? slide.multipleTexts : [];
+  const hasMultiContent = multiRaw.some((o: any) => str(o?.text ?? o?.value, "").trim().length > 0);
+  const includeMulti = flags?.multipleText === true || hasMultiContent;
+  const multiToRender = includeMulti ? multiRaw : [];
   out.textElements.push(
-    ...(slide.multipleTexts ?? []).map((o: any, i: number) => {
+    ...multiToRender.map((o: any, i: number) => {
       const explicit =
         typeof o?.isEditable === "boolean"
           ? o.isEditable
@@ -320,7 +324,11 @@ const SlideLogo = ({
   return (
     <Box sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}>
       {activeIndex === 3 && rightBox ? (
-        <AdminSlide4Canvas addTextRight={addTextRight} isAdminEditor={isAdminEditor} />
+        isAdminEditor ? (
+          <AdminSlide4Canvas addTextRight={addTextRight} isAdminEditor={isAdminEditor} />
+        ) : (
+          <UserSlide4Preview />
+        )
       ) : null}
     </Box>
   );
@@ -472,7 +480,10 @@ export const UserSlide4Preview = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed?.layout4) {
+        const currentDraftId = draftId || getDraftCardId();
+        const savedDraftId = parsed?.draftId;
+        const canUseSaved = !currentDraftId || (savedDraftId && savedDraftId === currentDraftId);
+        if (canUseSaved && parsed?.layout4) {
           if (parsed.bgColor4 !== undefined) setBgColor4?.(parsed.bgColor4);
           if (parsed.bgImage4 !== undefined) setBgImage4?.(parsed.bgImage4);
           setLayout4?.(parsed.layout4);
@@ -857,9 +868,11 @@ const AdminSlide4Canvas = ({
 
   const applyTemplateLayout4 = (baseSlide: any, norm: ReturnType<typeof normalizeSlide>) => {
     const flags = baseSlide?.flags ?? {};
-    const templateMulti =
-      flags?.multipleText === true ||
-      (Array.isArray(baseSlide?.multipleTexts) && baseSlide.multipleTexts.length > 0);
+    const multiRaw = Array.isArray(baseSlide?.multipleTexts) ? baseSlide.multipleTexts : [];
+    const hasMultiContent = multiRaw.some(
+      (o: any) => str(o?.text ?? o?.value, "").trim().length > 0
+    );
+    const templateMulti = flags?.multipleText === true || hasMultiContent;
     const templateOne =
       flags?.showOneText === true ||
       String(baseSlide?.oneText?.value ?? "").trim().length > 0;
@@ -967,7 +980,10 @@ const AdminSlide4Canvas = ({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed?.layout4) {
+        const currentDraftId = draftId || getDraftCardId();
+        const savedDraftId = parsed?.draftId;
+        const canUseSaved = !currentDraftId || (savedDraftId && savedDraftId === currentDraftId);
+        if (canUseSaved && parsed?.layout4) {
           if (parsed.bgColor4 !== undefined) setBgColor4?.(parsed.bgColor4);
           if (parsed.bgImage4 !== undefined) setBgImage4?.(parsed.bgImage4);
           setLayout4?.(parsed.layout4);
@@ -2433,3 +2449,4 @@ const AdminSlide4Canvas = ({
 };
 
 export default SlideLogo;
+

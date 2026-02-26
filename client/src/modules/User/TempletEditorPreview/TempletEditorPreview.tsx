@@ -255,22 +255,27 @@ const init = () => {
   );
 };
 
-function flipCanvasDataUrl(dataUrl: string): string {
-  const img = new Image();
-  img.src = dataUrl;
+async function flipCanvasDataUrl(dataUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    if (!dataUrl) return resolve("");
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(dataUrl);
 
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas not supported");
+      canvas.width = img.width;
+      canvas.height = img.height;
 
-  canvas.width = img.width;
-  canvas.height = img.height;
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0);
 
-  ctx.translate(canvas.width, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(img, 0, 0);
-
-  return canvas.toDataURL("image/jpeg", 0.9);
+      resolve(canvas.toDataURL("image/jpeg", 0.9));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
 }
 
 
@@ -353,12 +358,19 @@ const TempletEditorPreview: React.FC = () => {
 
                 // Capture current 3D preview as JPEG
                 const mugPreview = captureMugPreviewJpg();
-                if (!mugPreview) throw new Error("Failed to capture mug preview");
-                const flipped = flipCanvasDataUrl(mugImageSrc);
-                console.log(flipped)
-                sessionStorage.setItem("slides", JSON.stringify({ slide1: flipped }));
+                if (!mugPreview && !mugImageSrc) throw new Error("Failed to capture mug preview");
+                const flipped = await flipCanvasDataUrl(mugImageSrc || "");
+                const slide1 = flipped || mugImageSrc || mugPreview || "";
+                const payload = { slide1 };
+                sessionStorage.setItem("slides", JSON.stringify(payload));
                 sessionStorage.setItem("slides_mirrored", "1");
                 sessionStorage.setItem("slides_mirrored_category", "mug");
+                try {
+                  localStorage.setItem("slides_backup", JSON.stringify(payload));
+                } catch {}
+                try {
+                  (globalThis as any).__slidesCache = payload;
+                } catch {}
                 toast.success("Preview saved successfully!");
                 navigate(USER_ROUTES.SUBSCRIPTION);
               } catch (err) {

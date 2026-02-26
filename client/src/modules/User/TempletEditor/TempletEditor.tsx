@@ -197,16 +197,21 @@ export default function TempletEditor() {
   const [selectedElId, setSelectedElId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
+  const [sidePadPx, setSidePadPx] = useState(0);
 
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const slideRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const slideItemRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const setSlideRef = (i: number) => (el: HTMLDivElement | null) => {
     slideRefs.current[i] = el;
   };
+  const setSlideItemRef = (i: number) => (el: HTMLDivElement | null) => {
+    slideItemRefs.current[i] = el;
+  };
   const activeSlideRef = useRef<HTMLDivElement | null>(null);
-  const align = useAlignGuides(activeSlideRef);
+  const align = useAlignGuides(activeSlideRef, { scale: canvasScale });
 
   const { productId } = useParams<{ productId: string }>();
   const { state } = useLocation() as { state?: { templetDesign?: any } };
@@ -518,16 +523,25 @@ export default function TempletEditor() {
 
   // ====== Render sizing ======
   const canvasSize = useMemo(() => {
-    // ⭐ DB سے exact width/height لے لو (ایڈیٹر میں جو store ہوا تھا)
-    const exactW = state?.templetDesign.canvas.mm.w;  // fallback
-    const exactH = state?.templetDesign.canvas.mm.h;
+    // ⭐ Prefer state.templetDesign size, then adminDesign config, then sensible defaults
+    const exactW = asNum(state?.templetDesign?.canvas?.mm?.w, 0);
+    const exactH = asNum(state?.templetDesign?.canvas?.mm?.h, 0);
+    const cfgW = asNum(state?.templetDesign?.config?.mmWidth, 0);
+    const cfgH = asNum(state?.templetDesign?.config?.mmHeight, 0);
+    const adminW = asNum(adminDesign?.config?.mmWidth, asNum(adminDesign?.canvasPx?.w, 210));
+    const adminH = asNum(adminDesign?.config?.mmHeight, asNum(adminDesign?.canvasPx?.h, 297));
 
-    // اب کوئی viewport یا resize نہیں — سیدھا DB والا سائز استعمال کرو
     return {
-      width: exactW,
-      height: exactH,
+      width: exactW || cfgW || adminW,
+      height: exactH || cfgH || adminH,
     };
-  }, [adminDesign?.canvasPx?.w, adminDesign?.canvasPx?.h]);
+  }, [
+    state?.templetDesign,
+    adminDesign?.config?.mmWidth,
+    adminDesign?.config?.mmHeight,
+    adminDesign?.canvasPx?.w,
+    adminDesign?.canvasPx?.h,
+  ]);
 
   const artboardWidth = canvasSize.width;
   const artboardHeight = canvasSize.height;
@@ -546,26 +560,70 @@ export default function TempletEditor() {
     return items;
   }, [userSlides, activeSlide]);
 
+  // compute side padding to allow center snap on first/last slide
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const update = () => {
+      const first = slideItemRefs.current[0];
+      const itemW = first?.getBoundingClientRect().width ?? artboardWidth;
+      if (!itemW) return;
+      const pad = Math.max(0, (container.clientWidth - itemW) / 2);
+      setSidePadPx(Math.floor(pad));
+    };
+
+    update();
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(update);
+      ro.observe(container);
+      window.addEventListener("resize", update);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener("resize", update);
+      };
+    }
+
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+    };
+  }, [artboardWidth, userSlides.length]);
+
   // Auto-center active slide in scroller
   useEffect(() => {
     const container = scrollRef.current;
-    const node = slideRefs.current[activeSlide];
+    const node = slideItemRefs.current[activeSlide];
     if (!container || !node) return;
 
-    const containerRect = container.getBoundingClientRect();
-    const nodeRect = node.getBoundingClientRect();
+    const center = () => {
+      const containerRect = container.getBoundingClientRect();
+      const nodeRect = node.getBoundingClientRect();
+      const nodeCenter =
+        nodeRect.left - containerRect.left + container.scrollLeft + nodeRect.width / 2;
+      const target = nodeCenter - container.clientWidth / 2;
+      container.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+    };
 
-    const currentScrollLeft = container.scrollLeft;
-    const nodeCenter = nodeRect.left - containerRect.left + nodeRect.width / 2;
-    const containerCenter = containerRect.width / 2;
-
-    const delta = nodeCenter - containerCenter;
-    container.scrollTo({ left: currentScrollLeft + delta, behavior: "smooth" });
-  }, [activeSlide]);
+    requestAnimationFrame(() => requestAnimationFrame(center));
+  }, [activeSlide, userSlides.length, sidePadPx]);
 
   const scrollToSlide = (index: number) => {
     setActiveSlide(index);
     setSelectedElId(null);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const container = scrollRef.current;
+        const node = slideItemRefs.current[index];
+        if (!container || !node) return;
+        const containerRect = container.getBoundingClientRect();
+        const nodeRect = node.getBoundingClientRect();
+        const nodeCenter =
+          nodeRect.left - containerRect.left + container.scrollLeft + nodeRect.width / 2;
+        const target = nodeCenter - container.clientWidth / 2;
+        container.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+      })
+    );
   };
 
   const onTextChange = (slideIndex: number, elId: string, text: string) => {
@@ -610,10 +668,34 @@ export default function TempletEditor() {
   };
 
   const isMugCategory = (cat?: string) => /mug/i.test(String(cat ?? ""));
+  const isBagCategory = (cat?: string) => /bag|tote/i.test(String(cat ?? ""));
+  const isLeafletCategory = (cat?: string) => /business\s*leaflets?/i.test(String(cat ?? ""));
+  const isCandleCategory = (cat?: string) => /candle/i.test(String(cat ?? ""));
   const hideTextOutline = useMemo(
-    () => isMugCategory(adminDesign?.category),
+    () =>
+      isMugCategory(adminDesign?.category) ||
+      isBagCategory(adminDesign?.category) ||
+      isLeafletCategory(adminDesign?.category),
     [adminDesign?.category]
   );
+  const textLineHeight = useMemo(
+    () =>
+      isBagCategory(adminDesign?.category) || isLeafletCategory(adminDesign?.category)
+        ? 1.2
+        : 1,
+    [adminDesign?.category]
+  );
+  const textPaddingTop = useMemo(
+    () =>
+      isBagCategory(adminDesign?.category) || isLeafletCategory(adminDesign?.category)
+        ? 2
+        : 0,
+    [adminDesign?.category]
+  );
+  const canvasScale = useMemo(() => {
+    if (!isCandleCategory(adminDesign?.category)) return 1;
+    return isTablet ? 1.2 : 1.5;
+  }, [adminDesign?.category, isTablet]);
   const previewCapture = useMemo(
     () => ({
       quality: isTablet ? 0.6 : 0.72,
@@ -728,7 +810,7 @@ export default function TempletEditor() {
 
   if (!adminDesign) return <Typography>No template found.</Typography>;
 
-  const sidePad = `max(0px, calc((90% - ${artboardWidth}px) / 2))`;
+  const sidePad = sidePadPx;
 
   return (
     <>
@@ -771,6 +853,8 @@ export default function TempletEditor() {
             justifyContent: "flex-start",
             minWidth: "100%",
             scrollSnapType: "x mandatory",
+            scrollPaddingLeft: `${sidePad}px`,
+            scrollPaddingRight: `${sidePad}px`,
             "&::-webkit-scrollbar": { height: 6, width: 6 },
             "&::-webkit-scrollbar-thumb": { backgroundColor: COLORS.primary, borderRadius: "20px" },
           }}
@@ -784,10 +868,13 @@ export default function TempletEditor() {
               return zA - zB;
             });
             const isActive = i === activeSlide;
+            const scaledW = artboardWidth * canvasScale;
+            const scaledH = artboardHeight * canvasScale;
 
             return (
               <Box
                 key={slide.id}
+                ref={setSlideItemRef(i)}
                 sx={{
                   position: "relative",
                   display: "flex",
@@ -798,28 +885,42 @@ export default function TempletEditor() {
                   filter: isActive ? "none" : "grayscale(0.35)",
                   transition: "opacity .2s ease, filter .2s ease",
                   ml: i === 0 ? (isTablet ? 1 : 3) : 0,
+                  width: scaledW,
+                  height: scaledH,
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {/* ARTBOARD */}
+                {/* ARTBOARD (scaled for candles) */}
                 <Box
-                  ref={(el: any) => {
-                    setSlideRef(i)(el);
-                    if (isActive) activeSlideRef.current = el;
-                  }}
                   sx={{
-                    width: artboardWidth,
-                    height: artboardHeight,
-                    borderRadius: 0,
+                    width: scaledW,
+                    height: scaledH,
                     position: "relative",
-                    overflow: "hidden",
-                    bgcolor: slide.bgColor ?? "transparent",
-                    boxShadow: isActive ? 10 : 4,
-                    outline: "none",
+                    overflow: "visible",
                   }}
-                  onClick={() => isActive && setSelectedElId(null)}
                 >
-                  <AlignmentGuides {...align.guides} hide={!isActive || !align.isActive} />
-                  {ordered.map((el) => {
+                  <Box
+                    ref={(el: any) => {
+                      setSlideRef(i)(el);
+                      if (isActive) activeSlideRef.current = el;
+                    }}
+                    sx={{
+                      width: artboardWidth,
+                      height: artboardHeight,
+                      borderRadius: 0,
+                      position: "relative",
+                      overflow: "hidden",
+                      bgcolor: slide.bgColor ?? "transparent",
+                      boxShadow: isActive ? 10 : 4,
+                      outline: "none",
+                      transform: `scale(${canvasScale})`,
+                      transformOrigin: "top left",
+                    }}
+                    onClick={() => isActive && setSelectedElId(null)}
+                  >
+                    <AlignmentGuides {...align.guides} hide={!isActive || !align.isActive} />
+                    {ordered.map((el) => {
                     const isLocked = el.editable === false;
                     const isSelected = selectedElId === el.id && isActive;
                     const cursor = isSelected ? "text" : isLocked ? "not-allowed" : "text";
@@ -827,6 +928,7 @@ export default function TempletEditor() {
                     const canMove = isActive && !isLocked;
                     const commonRnd = {
                       bounds: "parent" as const,
+                      scale: canvasScale,
                       size: { width: el.width, height: el.height },
                       position: { x: el.x, y: el.y },
                       dragCancel: ".no-drag, input, textarea, button",
@@ -955,6 +1057,7 @@ export default function TempletEditor() {
                                     height: "100%",
                                     width: "100%",
                                     p: 0.5,
+                                    backgroundColor: "transparent",
                                     "& .MuiInputBase-root": {
                                       height: "100%",
                                       width: "100%",
@@ -962,6 +1065,7 @@ export default function TempletEditor() {
                                       alignItems: "center",
                                       justifyContent:
                                         align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
+                                      backgroundColor: "transparent",
                                     },
 
                                     "& textarea.MuiInputBase-inputMultiline": {
@@ -969,10 +1073,12 @@ export default function TempletEditor() {
                                       minHeight: 0,
                                       width: "100%",
                                       padding: 0,
+                                      paddingTop: textPaddingTop,
                                       margin: "auto 0",
                                       textAlign: align,
                                       resize: "none",
                                       overflow: "hidden",
+                                      backgroundColor: "transparent",
                                     },
                                   },
                                 }}
@@ -983,7 +1089,7 @@ export default function TempletEditor() {
                                     fontSize: t.fontSize,
                                     fontFamily: t.fontFamily,
                                     color: t.color,
-                                    lineHeight: 1,
+                                    lineHeight: textLineHeight,
                                   },
                                 }}
                                 sx={{ height: "100%", width: "100%" }}
@@ -1004,6 +1110,7 @@ export default function TempletEditor() {
                                   fontFamily: t.fontFamily,
                                   color: t.color,
                                   textAlign: align as any,
+                                  lineHeight: textLineHeight,
                                   whiteSpace: "pre-wrap",
                                   overflow: "visible",
                                   userSelect: "none",
@@ -1038,11 +1145,13 @@ export default function TempletEditor() {
                     }
 
                     return null;
-                  })}
+                    })}
+                  </Box>
                 </Box>
               </Box>
             );
           })}
+          <Box sx={{ flex: "0 0 auto", width: sidePad }} />
         </Box>
       </Box>
       {/* Thumbnails */}

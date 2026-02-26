@@ -216,6 +216,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
     () => Boolean(isTempletDesign && shouldSmartCropCategory(categoryName)),
     [categoryName, isTempletDesign]
   );
+  const isCandleCategory = useMemo(
+    () => /candle/i.test(String(categoryName ?? "")),
+    [categoryName]
+  );
   const isBusinessCard = useMemo(
     () => /business\s*card/i.test(String(categoryName ?? "")),
     [categoryName]
@@ -531,11 +535,12 @@ const ProductPopup = (props: ProductsPopTypes) => {
               sx={{
                 width: "100%",
                 height: "100%",
-                objectFit: "cover",
+                objectFit: isCandleCategory ? "contain" : "cover",
                 objectPosition: "center",
                 transition: "transform 0.3s ease-in-out",
                 transform: isZoomed ? "scale(1.5)" : "scale(1)",
                 cursor: isZoomed ? "zoom-out" : "zoom-in",
+                backgroundColor: isCandleCategory ? "#fff" : "transparent",
               }}
             />
           </Box>

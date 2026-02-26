@@ -17,6 +17,7 @@ export type AlignItem = {
 
 type Options = {
   threshold?: number;
+  scale?: number;
 };
 
 type DragResult = {
@@ -67,6 +68,7 @@ export function useAlignGuides(
   options?: Options
 ) {
   const threshold = options?.threshold ?? 4;
+  const scale = options?.scale ?? 1;
   const [active, setActive] = useState(false);
   const [guides, setGuides] = useState<AlignGuides>({
     showV: false,
@@ -89,14 +91,16 @@ export function useAlignGuides(
       if (!el) return { x, y, snappedX: false, snappedY: false };
 
       const rect = el.getBoundingClientRect();
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
+      const width = rect.width / Math.max(0.0001, scale);
+      const height = rect.height / Math.max(0.0001, scale);
+      const cx = width / 2;
+      const cy = height / 2;
 
       const filtered =
         items?.filter((it) => (excludeId ? it.id !== excludeId : true)) ?? [];
 
-      const candidateX = [0, cx, rect.width, ...buildLines(filtered, "x")];
-      const candidateY = [0, cy, rect.height, ...buildLines(filtered, "y")];
+      const candidateX = [0, cx, width, ...buildLines(filtered, "x")];
+      const candidateY = [0, cy, height, ...buildLines(filtered, "y")];
 
       const movingX = [
         { type: "start" as const, value: x },
@@ -152,7 +156,7 @@ export function useAlignGuides(
         snappedY: Boolean(snapY),
       };
     },
-    [containerRef, threshold]
+    [containerRef, threshold, scale]
   );
 
   const start = useCallback(() => {

@@ -644,6 +644,11 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       const saved = safeGetStorage("slide4_state");
       if (saved) {
         const parsed = JSON.parse(saved);
+        const currentDraftId = getDraftCardId();
+        const savedDraftId = parsed?.draftId;
+        if (currentDraftId) {
+          if (!savedDraftId || savedDraftId !== currentDraftId) return;
+        }
 
         if (parsed.textElements4) setTextElements4(parsed.textElements4);
         if (parsed.draggableImages4) setDraggableImages4(parsed.draggableImages4);

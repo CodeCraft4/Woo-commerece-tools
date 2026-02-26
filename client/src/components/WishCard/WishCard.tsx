@@ -320,6 +320,8 @@ const WishCard = (props: wishCardType) => {
   const isMainDragging: any = useRef(false);
   const mainStartX: any = useRef(0);
   const mainScrollLeft: any = useRef(0);
+  const slideItemRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [sidePadPx, setSidePadPx] = useState(0);
 
   // Thumbnail scroll refs and drag state
   const thumbRef: any = useRef(null);
@@ -358,14 +360,21 @@ const WishCard = (props: wishCardType) => {
     thumbRef.current.scrollLeft = thumbScrollLeft.current - walk;
   };
 
+  const centerSlide = (index: number, behavior: ScrollBehavior = "smooth") => {
+    const container = mainRef.current as HTMLDivElement | null;
+    const slide = slideItemRefs.current[index];
+    if (!container || !slide) return;
+    const containerRect = container.getBoundingClientRect();
+    const slideRect = slide.getBoundingClientRect();
+    const currentScroll = container.scrollLeft;
+    const deltaLeft = slideRect.left - containerRect.left;
+    const targetLeft =
+      currentScroll + deltaLeft - (containerRect.width - slideRect.width) / 2;
+    container.scrollTo({ left: Math.max(0, targetLeft), behavior });
+  };
+
   // Scroll to selected slide
   const scrollToSlide = (index: number) => {
-    if (!mainRef.current) return;
-    const slide = mainRef.current.children[index];
-    if (!slide) return;
-
-    slide.scrollIntoView({ behavior: "smooth", inline: "center" });
-
     // ✅ Deactivate all slides first
     setIsSlideActive1(false);
     setIsSlideActive(false);
@@ -379,7 +388,44 @@ const WishCard = (props: wishCardType) => {
     if (index === 3) setIsSlideActive4(true);
 
     setActiveIndex(index);
+    centerSlide(index);
   };
+
+  useEffect(() => {
+    const container = mainRef.current as HTMLDivElement | null;
+    if (!container || typeof window === "undefined") return;
+
+    const computePad = () => {
+      const slide = slideItemRefs.current[activeIndex] || slideItemRefs.current.find(Boolean);
+      const containerWidth = container.clientWidth || 0;
+      const slideWidth = slide?.clientWidth || 0;
+      const pad = Math.max(0, Math.floor((containerWidth - slideWidth) / 2));
+      setSidePadPx(pad);
+    };
+
+    computePad();
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => computePad());
+      ro.observe(container);
+      const activeSlide = slideItemRefs.current[activeIndex];
+      if (activeSlide) ro.observe(activeSlide);
+    } else {
+      const onResize = () => computePad();
+      window.addEventListener("resize", onResize);
+      return () => window.removeEventListener("resize", onResize);
+    }
+
+    return () => {
+      ro?.disconnect();
+    };
+  }, [activeIndex]);
+
+  useEffect(() => {
+    // ensure centered after layout changes
+    requestAnimationFrame(() => centerSlide(activeIndex, "auto"));
+  }, [activeIndex, sidePadPx]);
 
   const measureImageDimensions = (src: string) =>
     new Promise<{ width: number; height: number; aspect: number }>((resolve) => {
@@ -601,6 +647,8 @@ const WishCard = (props: wishCardType) => {
             scrollSnapType: "x mandatory",
             scrollBehavior: "smooth",
             width: '100%',
+            scrollPaddingLeft: `${sidePadPx}px`,
+            scrollPaddingRight: `${sidePadPx}px`,
           }}
           ref={mainRef}
           onMouseDown={onMainMouseDown}
@@ -608,16 +656,25 @@ const WishCard = (props: wishCardType) => {
           onMouseUp={onMainMouseUp}
         // onMouseMove={onMainMouseMove}
         >
+          <Box
+            sx={{
+              flex: "0 0 auto",
+              width: `${sidePadPx}px`,
+              height: 1,
+            }}
+          />
           {slides.map((e, index) => {
             return (
               <Box
                 key={e.id}
+                ref={(node) => {
+                  slideItemRefs.current[index] = node;
+                }}
                 sx={{
                   flex: "0 0 auto",
-                  width: { md: 500, sm: 400, xs: "100%" },
+                  width: { md: 500, sm: 420, xs: "100%" },
+                  maxWidth: "100%",
                   height: { md: 700, sm: 600, xs: 600 },
-                  ml: index === 0 ? { md: 80, sm: 23, xs: 0 } : 0,
-                  mr: adminEditor && index === 3 ? 55 : 0,
                   borderRadius: 2,
                   overflow: "hidden",
                   display: "flex",
@@ -625,6 +682,8 @@ const WishCard = (props: wishCardType) => {
                   boxShadow: 5,
                   transition: "all 0.3s ease",
                   position: "relative",
+                  scrollSnapAlign: "center",
+                  scrollSnapStop: "always",
                 }}
               >
                 {e.id === 1 ? (
@@ -665,6 +724,13 @@ const WishCard = (props: wishCardType) => {
               </Box>
             );
           })}
+          <Box
+            sx={{
+              flex: "0 0 auto",
+              width: `${sidePadPx}px`,
+              height: 1,
+            }}
+          />
 
           {activeIndex === 0 && (
             <>

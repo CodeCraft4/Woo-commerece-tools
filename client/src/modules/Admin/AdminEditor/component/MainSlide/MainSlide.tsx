@@ -8,6 +8,7 @@ import SharedToolbar from "../SharedToolbar/SharedToolbar";
 
 const MainSlide: React.FC = () => {
   const {
+    formData,
     midLeftElements,
     setMidLeftElements,
     midLeftTextElements,
@@ -30,6 +31,8 @@ const MainSlide: React.FC = () => {
 
   const isLeftActive = activeMid === "left";
   const isRightActive = activeMid === "right";
+  const isCandleCategory = /candle/i.test(String(formData?.cardCategory ?? ""));
+  const canvasScale = isCandleCategory ? 1.5 : 1;
 
   return (
     <Box>
@@ -65,6 +68,7 @@ const MainSlide: React.FC = () => {
             setStickerElements={setMidLeftStickerElements}
             onFocus={() => setActiveMid("left")}
             disabled={!isLeftActive}
+            canvasScale={canvasScale}
           />
         </Box>
 
@@ -93,6 +97,7 @@ const MainSlide: React.FC = () => {
             setStickerElements={setMidRightStickerElements}
             onFocus={() => setActiveMid("right")}
             disabled={!isRightActive}
+            canvasScale={canvasScale}
           />
         </Box>
       </Box>

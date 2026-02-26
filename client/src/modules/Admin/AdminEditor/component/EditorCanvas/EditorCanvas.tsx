@@ -38,6 +38,7 @@ type Props = {
   setStickerElements: React.Dispatch<React.SetStateAction<StickerType[]>>;
   onFocus?: () => void;
   disabled?: boolean;
+  canvasScale?: number;
 };
 
 const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(
@@ -51,6 +52,7 @@ const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(
       setStickerElements,
       onFocus,
       disabled = false,
+      canvasScale,
     },
     ref
   ) => {
@@ -182,25 +184,55 @@ const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(
       e.target.value = "";
     };
 
+    const scale = Math.max(1, canvasScale ?? 1);
+    const baseSize = {
+      mdW: 500,
+      mdH: 700,
+      smW: 400,
+      smH: 600,
+      xsW: 320,
+      xsH: 400,
+    };
+
     return (
       <Box
         onMouseDown={onFocus}
         sx={{
-          width: { md: "500px", sm: "400px", xs: "100%" },
-          height: { md: "700px", sm: "600px", xs: 400 },
+          width: {
+            md: `${baseSize.mdW * scale}px`,
+            sm: `${baseSize.smW * scale}px`,
+            xs: `${baseSize.xsW * scale}px`,
+          },
+          height: {
+            md: `${baseSize.mdH * scale}px`,
+            sm: `${baseSize.smH * scale}px`,
+            xs: `${baseSize.xsH * scale}px`,
+          },
           borderRadius: "12px",
           boxShadow: "3px 5px 8px gray",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           position: "relative",
-          overflow: "hidden",
+          overflow: "visible",
           border: `1px solid lightGray`,
           cursor: disabled ? "not-allowed" : "pointer",
           pointerEvents: disabled ? "none" : "auto", // why: freeze when inactive
           backgroundColor: "#fff",
         }}
       >
+        <Box
+          sx={{
+            width: { md: "500px", sm: "400px", xs: "320px" },
+            height: { md: "700px", sm: "600px", xs: 400 },
+            borderRadius: "12px",
+            position: "relative",
+            overflow: "hidden",
+            backgroundColor: "#fff",
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+        >
         <input
           type="file"
           accept="image/*"
@@ -214,6 +246,7 @@ const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(
             key={el.id}
             default={{ x: el.x, y: el.y, width: el.width, height: el.height }}
             bounds="parent"
+            scale={scale}
             onDragStart={() => {
               draggingRef.current = true;
             }}
@@ -335,6 +368,7 @@ const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(
             key={t.id}
             default={{ x: t.x, y: t.y, width: t.width, height: t.height }}
             bounds="parent"
+            scale={scale}
             onDragStart={() => {
               draggingRef.current = true;
             }}
@@ -496,6 +530,7 @@ const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(
             key={st.id}
             default={{ x: st.x, y: st.y, width: st.width, height: st.height }}
             bounds="parent"
+            scale={scale}
             onDragStop={(_, d) => {
               setStickerElements((prev) =>
                 prev.map((s) => (s.id === st.id ? { ...s, x: d.x, y: d.y } : s))
@@ -592,6 +627,7 @@ const EditorCanvas = forwardRef<EditorCanvasHandle, Props>(
             </Box>
           </Rnd>
         ))}
+      </Box>
       </Box>
     );
   }

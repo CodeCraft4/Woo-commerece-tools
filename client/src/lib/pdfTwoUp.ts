@@ -175,8 +175,7 @@ export const isMirrorPrintCategory = (name?: string) => {
     n.includes("clothes") ||
     n.includes("tote bag") ||
     n.includes("tote") ||
-    n.includes("bag") ||
-    n.includes("sticker")
+    n.includes("bag")
   );
 };
 

@@ -11,6 +11,7 @@ import SharedToolbar from "../SharedToolbar/SharedToolbar";
 const LastSlide = () => {
   const navigate = useNavigate();
   const {
+    formData,
     lastElements,
     setLastElements,
     lastTextElements,
@@ -29,6 +30,8 @@ const LastSlide = () => {
   } = useCardEditor();
 
   const canvasRef = useRef<EditorCanvasHandle | null>(null);
+  const isCandleCategory = /candle/i.test(String(formData?.cardCategory ?? ""));
+  const canvasScale = isCandleCategory ? 1.5 : 1;
 
   const onSave = () => {
     navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS, {
@@ -72,6 +75,7 @@ const LastSlide = () => {
           setTextElements={setLastTextElements}
           stickerElements={lastStickerElements}
           setStickerElements={setLastStickerElements}
+          canvasScale={canvasScale}
         />
 
         <Box sx={{ position: "relative", alignSelf: "flex-start" }}>

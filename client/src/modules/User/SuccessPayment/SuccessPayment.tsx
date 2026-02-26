@@ -118,6 +118,32 @@ export default function PremiumSuccess() {
   const [status, setStatus] = useState<Status>("loading");
   const [msg, setMsg] = useState("");
 
+  const clearPreviewStorage = () => {
+    try {
+      sessionStorage.removeItem("slides");
+      sessionStorage.removeItem("slides_preview_only");
+      sessionStorage.removeItem("rawSlidesCount");
+      sessionStorage.removeItem("capturedSlides");
+      sessionStorage.removeItem("capturedSlidesKey");
+      sessionStorage.removeItem("templ_preview_slides");
+      sessionStorage.removeItem("templ_preview_key");
+      sessionStorage.removeItem("templ_preview_category");
+      sessionStorage.removeItem("templ_preview_config");
+      sessionStorage.removeItem("slides_mirrored");
+      sessionStorage.removeItem("slides_mirrored_category");
+    } catch {}
+
+    try {
+      localStorage.removeItem("slides_backup");
+    } catch {}
+
+    try {
+      delete (globalThis as any).__slidesCache;
+      delete (globalThis as any).__rawSlidesCache;
+      delete (globalThis as any).__previewConfigCache;
+    } catch {}
+  };
+
   async function handlePaymentSuccess() {
     if (!sessionId) return;
 
@@ -169,21 +195,39 @@ export default function PremiumSuccess() {
       const isMugWrap = /mug/i.test(String(categoryName ?? "")) && isMugWrapSize(cardSize);
 
       const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
-      const isBagOrClothingForPdf = /bag|tote|clothing|clothes|apparel/i.test(
+      const isBagCategory = /bag|tote/i.test(String(categoryName ?? ""));
+      const isClothingCategory = /clothing|clothes|apparel/i.test(
         String(categoryName ?? "")
       );
+      const isBagOrClothingForPdf = isBagCategory || isClothingCategory;
       const isNotebookCategory = isNotebooksCategory(categoryName);
+      const clothingBgRemoveOpts = {
+        threshold: 28,
+        alphaThreshold: 6,
+        minBrightness: 160,
+        satThreshold: 32,
+        whiteOnly: false,
+        requireWhiteBg: false,
+        softness: 18,
+        mode: "edge" as const,
+      };
+      const bagBgRemoveOpts = {
+        threshold: 18,
+        alphaThreshold: 8,
+        minBrightness: 245,
+        satThreshold: 10,
+        whiteMinChannel: 240,
+        whiteOnly: true,
+        requireWhiteBg: true,
+      };
       const bgRemoveOpts =
-        !isCandlesGrid && !isCoastersGrid && !isMugWrap && (isBagOrClothingForPdf || isNotebookCategory)
-          ? {
-              threshold: 18,
-              alphaThreshold: 8,
-              minBrightness: 245,
-              satThreshold: 10,
-              whiteMinChannel: 240,
-              whiteOnly: true,
-              requireWhiteBg: true,
-            }
+        !isCandlesGrid &&
+        !isCoastersGrid &&
+        !isMugWrap &&
+        (isBagOrClothingForPdf || isNotebookCategory)
+          ? isClothingCategory
+            ? clothingBgRemoveOpts
+            : bagBgRemoveOpts
           : !isCandlesGrid && !isCoastersGrid && !isMugWrap && isStickerForPdf
           ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
           : null;
@@ -285,6 +329,24 @@ export default function PremiumSuccess() {
         return sourceSlides;
       })();
 
+      const leafletSlides = (() => {
+        if (!isLeafletTwoUp) return baseSlides;
+        const keys = Object.keys(baseSlides).filter((k) => baseSlides[k]).sort();
+        if (keys.length === 0) return baseSlides;
+        if (keys.length === 1) {
+          const k = keys[0];
+          return { slide1: baseSlides[k], slide2: baseSlides[k] };
+        }
+        const frontKey = keys[0];
+        const backKey = keys[1];
+        return {
+          slide1: baseSlides[frontKey],
+          slide2: baseSlides[frontKey],
+          slide3: baseSlides[backKey],
+          slide4: baseSlides[backKey],
+        };
+      })();
+
       const slides = isTenUpBusinessCards
         ? await buildTenUpSlides(baseSlides, {
             columns: 2,
@@ -351,7 +413,7 @@ export default function PremiumSuccess() {
             outputFormat: "png",
           })
         : isLeafletTwoUp
-        ? await buildTwoUpSlides(baseSlides, {
+        ? await buildTwoUpSlides(leafletSlides, {
             gapPx: 0,
             orientation: "landscape",
             fit: "cover",
@@ -406,6 +468,7 @@ export default function PremiumSuccess() {
       }
 
       sessionStorage.setItem(`payment_email_sent_${sessionId}`, "1");
+      clearPreviewStorage();
 
       setStatus("success");
       setMsg("Payment successful. File sent to your email 📧");

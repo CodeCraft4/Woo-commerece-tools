@@ -618,6 +618,11 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
       const saved = safeGetStorage("slide3_state");
       if (saved) {
         const parsed = JSON.parse(saved);
+        const currentDraftId = getDraftCardId();
+        const savedDraftId = parsed?.draftId;
+        if (currentDraftId) {
+          if (!savedDraftId || savedDraftId !== currentDraftId) return;
+        }
 
         if (parsed.textElements3) setTextElements3(parsed.textElements3);
         if (parsed.draggableImages3) setDraggableImages3(parsed.draggableImages3);

@@ -1,5 +1,5 @@
 import { Box, Container, Grid, Typography, Chip, Button } from "@mui/material";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import TableBgImg from "/assets/images/table.png";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { loadStripe } from "@stripe/stripe-js";
@@ -9,6 +9,7 @@ import { CardGiftcard, EmojiEvents } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { type SizeKey } from "../../../stores/cartStore";
 import { getMockupConfig } from "../../../lib/mockup";
+import { toJpeg, toPng } from "html-to-image";
 import {
   buildTenUpSlides,
   buildTwoUpSlides,
@@ -38,7 +39,7 @@ import { USER_ROUTES } from "../../../constant/route";
 import MainLayout from "../../../layout/MainLayout";
 import { COLORS } from "../../../constant/color";
 import { removeWhiteBg } from "../../../lib/lib";
-import { loadSlidesFromIdb } from "../../../lib/idbSlides";
+import { loadSlidesFromIdb, saveSlidesToIdb } from "../../../lib/idbSlides";
 import { API_BASE } from "../../../lib/apiBase";
 
 // ------------------ ENV ------------------
@@ -65,6 +66,9 @@ type SelectedProduct = {
   accessplan?: string;
   accessPlan?: string;
 };
+
+type RawSlide = { id: number; label?: string; elements: any[] };
+type PreviewConfig = { mmWidth?: number; mmHeight?: number };
 
 type PriceTables = { actual: any; sale: any };
 type SizeDef = { key: any; title: string; sub?: string };
@@ -278,18 +282,41 @@ const Subscription = () => {
   const [bundleKeySet, setBundleKeySet] = useState<Set<string>>(new Set());
   const [bundleKeyLoading, setBundleKeyLoading] = useState(false);
 
-  const location: any = useLocation() as { state?: { slides?: Record<string, string> } };
+  const location: any = useLocation() as { state?: { slides?: Record<string, string>; previewOnly?: boolean } };
   const { state } = location;
 
   const { user, plan } = useAuth();
   const navigate = useNavigate();
 
   const [slidesObj, setSlidesObj] = useState<Record<string, string>>({});
+  const [rawSlides, setRawSlides] = useState<RawSlide[]>([]);
+  const [previewConfig, setPreviewConfig] = useState<PreviewConfig | null>(null);
+  const isPreviewOnly = useMemo(() => {
+    if (state?.previewOnly) {
+      try {
+        if (sessionStorage.getItem("slides_preview_only") === "0") return false;
+      } catch {}
+      return true;
+    }
+    try {
+      return sessionStorage.getItem("slides_preview_only") === "1";
+    } catch {
+      return false;
+    }
+  }, [state?.previewOnly]);
 
   useEffect(() => {
     let mounted = true;
 
     const loadSlides = async () => {
+      try {
+        const globalSlides = (globalThis as any).__slidesCache;
+        if (globalSlides && Object.keys(globalSlides).length) {
+          if (mounted) setSlidesObj(globalSlides);
+          return;
+        }
+      } catch {}
+
       if (state?.slides) {
         if (mounted) setSlidesObj(state.slides);
         return;
@@ -325,7 +352,145 @@ const Subscription = () => {
     };
   }, [state?.slides]);
 
+  useEffect(() => {
+    try {
+      const cachedSlides = (globalThis as any).__rawSlidesCache;
+      if (Array.isArray(cachedSlides) && cachedSlides.length) {
+        setRawSlides(cachedSlides);
+      } else {
+        const storedSlides = sessionStorage.getItem("templ_preview_slides");
+        if (storedSlides) setRawSlides(JSON.parse(storedSlides));
+      }
+    } catch {}
+
+    try {
+      const cachedCfg = (globalThis as any).__previewConfigCache;
+      if (cachedCfg && typeof cachedCfg === "object") {
+        setPreviewConfig(cachedCfg);
+      } else {
+        const storedCfg = sessionStorage.getItem("templ_preview_config");
+        if (storedCfg) setPreviewConfig(JSON.parse(storedCfg));
+      }
+    } catch {}
+  }, []);
+
   const firstSlideUrl = slidesObj?.slide1 || "";
+  const captureWidth = Math.max(1, Math.round(Number(previewConfig?.mmWidth) || 800));
+  const captureHeight = Math.max(1, Math.round(Number(previewConfig?.mmHeight) || 600));
+
+  const slideNodeRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const setSlideNodeRef = (i: number) => (el: HTMLDivElement | null) => {
+    slideNodeRefs.current[i] = el;
+  };
+
+  const renderSlide = useCallback((slide?: RawSlide) => {
+    if (!slide) return null;
+    const ordered = [...(slide.elements || [])].sort((a, b) => {
+      const zA = Number(a?.zIndex ?? 1) + (a?.type === "text" ? 100000 : 0);
+      const zB = Number(b?.zIndex ?? 1) + (b?.type === "text" ? 100000 : 0);
+      return zA - zB;
+    });
+    return (
+      <Box sx={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+        {ordered.map((el: any) => {
+          const baseStyle: any = {
+            position: "absolute",
+            left: el.x,
+            top: el.y,
+            width: el.width,
+            height: el.height,
+            zIndex: el.zIndex ?? 1,
+          };
+
+          if (el.type === "image") {
+            return (
+              <Box
+                key={el.id}
+                component="img"
+                src={el.src}
+                alt=""
+                sx={{ ...baseStyle, objectFit: "cover", display: "block" }}
+              />
+            );
+          }
+
+          if (el.type === "sticker") {
+            return (
+              <Box
+                key={el.id}
+                component="img"
+                src={el.src}
+                alt=""
+                sx={{ ...baseStyle, objectFit: "contain", display: "block" }}
+              />
+            );
+          }
+
+          if (el.type === "text") {
+            const align = el.align ?? "center";
+            const justify =
+              align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+            return (
+              <Box
+                key={el.id}
+                sx={{
+                  ...baseStyle,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: justify,
+                  textAlign: align,
+                  fontWeight: el.bold ? 700 : 400,
+                  fontStyle: el.italic ? "italic" : "normal",
+                  fontSize: el.fontSize,
+                  fontFamily: el.fontFamily,
+                  color: el.color,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {el.text}
+              </Box>
+            );
+          }
+
+          return null;
+        })}
+      </Box>
+    );
+  }, []);
+
+  const captureSlidesFromDom = useCallback(
+    async (format: "jpeg" | "png", maxDim = 1600) => {
+      const out: string[] = [];
+      for (let i = 0; i < rawSlides.length; i++) {
+        const node = slideNodeRefs.current[i];
+        if (!node) continue;
+        const rect = node.getBoundingClientRect();
+        const maxSide = Math.max(rect.width || 0, rect.height || 0);
+        const ratio = maxSide ? maxDim / maxSide : 1.5;
+        const pixelRatio = Math.min(2, Math.max(0.5, ratio));
+        if (format === "png") {
+          const png = await toPng(node, {
+            pixelRatio,
+            backgroundColor: "transparent",
+            cacheBust: false,
+            skipFonts: false,
+          });
+          out.push(png);
+        } else {
+          const jpg = await toJpeg(node, {
+            quality: 0.78,
+            pixelRatio,
+            backgroundColor: "#ffffff",
+            cacheBust: false,
+            skipFonts: false,
+          });
+          out.push(jpg);
+        }
+      }
+      return out;
+    },
+    [rawSlides.length]
+  );
 
   // ✅ read local selections
   useEffect(() => {
@@ -532,6 +697,10 @@ const Subscription = () => {
   const getSlidesPayload = async () => {
     if (slidesObj && Object.keys(slidesObj).length) return slidesObj;
     try {
+      const globalSlides = (globalThis as any).__slidesCache;
+      if (globalSlides && Object.keys(globalSlides).length) return globalSlides;
+    } catch {}
+    try {
       const fromIdb = await loadSlidesFromIdb();
       if (fromIdb && Object.keys(fromIdb).length) return fromIdb;
     } catch { }
@@ -542,6 +711,32 @@ const Subscription = () => {
       return slidesObj ?? {};
     }
   };
+
+  const clearPreviewStorage = useCallback(() => {
+    try {
+      sessionStorage.removeItem("slides");
+      sessionStorage.removeItem("slides_preview_only");
+      sessionStorage.removeItem("rawSlidesCount");
+      sessionStorage.removeItem("capturedSlides");
+      sessionStorage.removeItem("capturedSlidesKey");
+      sessionStorage.removeItem("templ_preview_slides");
+      sessionStorage.removeItem("templ_preview_key");
+      sessionStorage.removeItem("templ_preview_category");
+      sessionStorage.removeItem("templ_preview_config");
+      sessionStorage.removeItem("slides_mirrored");
+      sessionStorage.removeItem("slides_mirrored_category");
+    } catch {}
+
+    try {
+      localStorage.removeItem("slides_backup");
+    } catch {}
+
+    try {
+      delete (globalThis as any).__slidesCache;
+      delete (globalThis as any).__rawSlidesCache;
+      delete (globalThis as any).__previewConfigCache;
+    } catch {}
+  }, []);
 
   const syncLocalSelection = (p: { id: any; title: string; price: number }) => {
     try {
@@ -605,6 +800,56 @@ const Subscription = () => {
     }
   };
 
+  const ensureSlidesPayload = useCallback(
+    async (format: "jpeg" | "png") => {
+      const current = await getSlidesPayload();
+      const currentKeys = Object.keys(current || {}).filter((k) => current[k]);
+      const expectedCount = (() => {
+        if (rawSlides.length) return rawSlides.length;
+        try {
+          const n = Number(sessionStorage.getItem("rawSlidesCount") || "0");
+          return Number.isFinite(n) && n > 0 ? n : 0;
+        } catch {
+          return 0;
+        }
+      })();
+
+      const hasEnough = expectedCount ? currentKeys.length >= expectedCount : currentKeys.length > 0;
+      const needPng = format === "png";
+      const hasPng = !needPng
+        ? true
+        : currentKeys.every((k) => String(current[k] || "").startsWith("data:image/png"));
+
+      if (hasEnough && hasPng && !isPreviewOnly) return current;
+
+      if (!rawSlides.length) return current;
+
+      // ensure DOM nodes are ready
+      await new Promise((r) => setTimeout(r, 0));
+      const list = await captureSlidesFromDom(format, needPng ? 2400 : 1600);
+      if (!list.length) return current;
+
+      const next = Object.fromEntries(list.map((u, idx) => [`slide${idx + 1}`, u]));
+      setSlidesObj(next);
+      (globalThis as any).__slidesCache = next;
+      try {
+        sessionStorage.setItem("slides_preview_only", "0");
+        sessionStorage.setItem("rawSlidesCount", String(list.length));
+      } catch {}
+
+      try {
+        sessionStorage.setItem("slides", JSON.stringify(next));
+      } catch {}
+
+      try {
+        void saveSlidesToIdb(next);
+      } catch {}
+
+      return next;
+    },
+    [captureSlidesFromDom, getSlidesPayload, isPreviewOnly, rawSlides.length]
+  );
+
   const sendPdfDirectForSubscription = useCallback(
     async (opts?: { paid?: boolean; sessionId?: string }) => {
       setLoading(true);
@@ -612,22 +857,6 @@ const Subscription = () => {
         const token = await getAccessToken();
         if (!token) throw new Error("Login session not found");
 
-        const rawSlides = await getSlidesPayload();
-        const slidesAlreadyMirrored = (() => {
-          try {
-            return sessionStorage.getItem("slides_mirrored") === "1";
-          } catch {
-            return false;
-          }
-        })();
-        const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored;
-        const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
-        if (slidesAlreadyMirrored) {
-          try {
-            sessionStorage.removeItem("slides_mirrored");
-            sessionStorage.removeItem("slides_mirrored_category");
-          } catch {}
-        }
         const cardSize = localStorage.getItem("selectedSize") || selectedPlan;
         const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
         const isInviteTwoUp =
@@ -643,21 +872,39 @@ const Subscription = () => {
         const isMugWrap = isMugsCategory && isMugWrapSize(cardSize);
 
         const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
-        const isBagOrClothingForPdf = /bag|tote|clothing|clothes|apparel/i.test(
+        const isBagCategory = /bag|tote/i.test(String(categoryName ?? ""));
+        const isClothingCategory = /clothing|clothes|apparel/i.test(
           String(categoryName ?? "")
         );
+        const isBagOrClothingForPdf = isBagCategory || isClothingCategory;
         const isNotebookCategory = isNotebooksCategory(categoryName);
+        const clothingBgRemoveOpts = {
+          threshold: 28,
+          alphaThreshold: 6,
+          minBrightness: 160,
+          satThreshold: 32,
+          whiteOnly: false,
+          requireWhiteBg: false,
+          softness: 18,
+          mode: "edge" as const,
+        };
+        const bagBgRemoveOpts = {
+          threshold: 18,
+          alphaThreshold: 8,
+          minBrightness: 245,
+          satThreshold: 10,
+          whiteMinChannel: 240,
+          whiteOnly: true,
+          requireWhiteBg: true,
+        };
         const bgRemoveOpts =
-          !isCandlesGrid && !isCoastersGrid && !isMugWrap && (isBagOrClothingForPdf || isNotebookCategory)
-            ? {
-                threshold: 18,
-                alphaThreshold: 8,
-                minBrightness: 245,
-                satThreshold: 10,
-                whiteMinChannel: 240,
-                whiteOnly: true,
-                requireWhiteBg: true,
-              }
+          !isCandlesGrid &&
+          !isCoastersGrid &&
+          !isMugWrap &&
+          (isBagOrClothingForPdf || isNotebookCategory)
+            ? isClothingCategory
+              ? clothingBgRemoveOpts
+              : bagBgRemoveOpts
             : !isCandlesGrid && !isCoastersGrid && !isMugWrap && isStickerForPdf
             ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
             : null;
@@ -667,6 +914,25 @@ const Subscription = () => {
           isCoastersGrid ||
           isMugWrap ||
           isNotebookCategory;
+
+        const captureFormat: "png" | "jpeg" = isTransparentPdf ? "png" : "jpeg";
+        const rawSlides = await ensureSlidesPayload(captureFormat);
+
+        const slidesAlreadyMirrored = (() => {
+          try {
+            return sessionStorage.getItem("slides_mirrored") === "1";
+          } catch {
+            return false;
+          }
+        })();
+        const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored;
+        const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
+        if (slidesAlreadyMirrored) {
+          try {
+            sessionStorage.removeItem("slides_mirrored");
+            sessionStorage.removeItem("slides_mirrored_category");
+          } catch {}
+        }
 
         const processedCandleSlides = isCandlesGrid
           ? await (async () => {
@@ -759,6 +1025,24 @@ const Subscription = () => {
           return sourceSlides;
         })();
 
+        const leafletSlides = (() => {
+          if (!isLeafletTwoUp) return baseSlides;
+          const keys = Object.keys(baseSlides).filter((k) => baseSlides[k]).sort();
+          if (keys.length === 0) return baseSlides;
+          if (keys.length === 1) {
+            const k = keys[0];
+            return { slide1: baseSlides[k], slide2: baseSlides[k] };
+          }
+          const frontKey = keys[0];
+          const backKey = keys[1];
+          return {
+            slide1: baseSlides[frontKey],
+            slide2: baseSlides[frontKey],
+            slide3: baseSlides[backKey],
+            slide4: baseSlides[backKey],
+          };
+        })();
+
         const slides = isTenUpBusinessCards
           ? await buildTenUpSlides(baseSlides, {
               columns: 2,
@@ -825,7 +1109,7 @@ const Subscription = () => {
               outputFormat: "png",
             })
           : isLeafletTwoUp
-          ? await buildTwoUpSlides(baseSlides, {
+          ? await buildTwoUpSlides(leafletSlides, {
               gapPx: 0,
               orientation: "landscape",
               fit: "cover",
@@ -842,8 +1126,8 @@ const Subscription = () => {
               swapPairs: true,
               pageMm: getPageMmForSize(cardSize),
               pageTitle: ({ pageIndex }) => {
-                if (pageIndex === 1) return "Page 1: slide4 (back) and slide1 (front)";
-                if (pageIndex === 2) return "Page 2: slide3 (inside 2) and slide2 (inside 1)";
+                if (pageIndex === 1) return "";
+                if (pageIndex === 2) return "";
                 return null;
               },
             })
@@ -892,6 +1176,7 @@ const Subscription = () => {
         }
 
         await res.json();
+        clearPreviewStorage();
         toast.success("File generated & emailed to you!");
       } catch (e: any) {
         toast.error(e?.message || "Could not generate file");
@@ -899,7 +1184,18 @@ const Subscription = () => {
         setLoading(false);
       }
     },
-    [categoryName, selectedItemAccessPlan, isInBundleItems, productKey, selectedPlan, planCode, slidesObj]
+    [
+      categoryName,
+      selectedItemAccessPlan,
+      isInBundleItems,
+      productKey,
+      selectedPlan,
+      planCode,
+      slidesObj,
+      ensureSlidesPayload,
+      isMugsCategory,
+      clearPreviewStorage,
+    ]
   );
 
   // ✅ Stripe return handler (same)
@@ -997,7 +1293,7 @@ const Subscription = () => {
     [categoryName]
   );
   const isClothingCategory = useMemo(
-    () => /clothing|apparel/i.test(String(categoryName ?? "")),
+    () => /clothing|clothes|apparel/i.test(String(categoryName ?? "")),
     [categoryName]
   );
 
@@ -1016,18 +1312,31 @@ const Subscription = () => {
       return;
     }
 
+    const clothingBgRemoveOpts = {
+      threshold: 28,
+      alphaThreshold: 6,
+      minBrightness: 160,
+      satThreshold: 32,
+      whiteOnly: false,
+      requireWhiteBg: false,
+      softness: 18,
+      mode: "edge" as const,
+    };
+    const bagBgRemoveOpts = {
+      threshold: 18,
+      alphaThreshold: 8,
+      minBrightness: 245,
+      satThreshold: 10,
+      whiteMinChannel: 240,
+      whiteOnly: true,
+      requireWhiteBg: true,
+    };
     const opts = isCandleCategory
       ? { threshold: 24, alphaThreshold: 8, minBrightness: 235, satThreshold: 16, mode: "all" as const }
       : isBagCategory || isClothingCategory
-      ? {
-          threshold: 18,
-          alphaThreshold: 8,
-          minBrightness: 245,
-          satThreshold: 10,
-          whiteMinChannel: 240,
-          whiteOnly: true,
-          requireWhiteBg: true,
-        }
+      ? isClothingCategory
+        ? clothingBgRemoveOpts
+        : bagBgRemoveOpts
       : { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 };
 
     removeWhiteBg(firstSlideUrl, opts).then((res) => {
@@ -1321,7 +1630,7 @@ const Subscription = () => {
                   : proOnlyLocked
                     ? "Go to Premium Plans"
                     : requiresPayment
-                      ? "Pay & Get PDF"
+                      ? "Pay & Get your File!"
                       : "Generate PDF"}
               </Button>
 
@@ -1336,6 +1645,20 @@ const Subscription = () => {
               )}
             </Grid>
           </Grid>
+
+          {rawSlides.length > 0 && (
+            <Box sx={{ position: "fixed", left: -10000, top: 0, opacity: 0, pointerEvents: "none" }}>
+              {rawSlides.map((sl, i) => (
+                <Box
+                  key={sl.id ?? i}
+                  ref={setSlideNodeRef(i)}
+                  sx={{ width: captureWidth, height: captureHeight, position: "relative" }}
+                >
+                  {renderSlide(sl)}
+                </Box>
+              ))}
+            </Box>
+          )}
         </Container>
       </Box>
     </MainLayout>

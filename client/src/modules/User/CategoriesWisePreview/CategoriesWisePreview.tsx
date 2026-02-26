@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Box, IconButton, Typography, useMediaQuery } from "@mui/material";
 import { ArrowBackIos, KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage";
@@ -24,6 +24,7 @@ type NavState = {
   canvasPx?: { w: number; h: number };
   slideIndex?: number;
   category?: string;
+  previewKey?: string;
 
   // ✅ from TempletEditor (new)
   capturedSlides?: string[];
@@ -102,21 +103,46 @@ const collectFontsFromSlides = (slides: Slide[]) => {
 
 const CategoriesWisePreview: React.FC = () => {
   const { state } = useLocation() as { state?: NavState };
+  const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:450px)");
 
   const config = state?.config;
   const category = state?.category ?? "";
-  const isStickerCategory = /sticker/i.test(String(category ?? ""));
+  const isTransparentCaptureCategory =
+    /sticker|bag|tote|clothing|clothes|apparel|notebook/i.test(String(category ?? ""));
   const start = state?.slideIndex ?? 0;
   const slides = useMemo<Slide[]>(() => {
     if (state?.slides?.length) return state.slides;
     try {
+      const storedKey = sessionStorage.getItem("templ_preview_key") || "";
+      const expectedPrefix = productId ? `${productId}::` : "";
+      const stateKey = state?.previewKey || "";
+      const keyMatches = stateKey
+        ? storedKey === stateKey
+        : expectedPrefix
+        ? storedKey.startsWith(expectedPrefix)
+        : Boolean(storedKey);
+      if (!keyMatches) {
+        try {
+          sessionStorage.removeItem("templ_preview_slides");
+          sessionStorage.removeItem("capturedSlides");
+          sessionStorage.removeItem("capturedSlidesKey");
+          sessionStorage.removeItem("templ_preview_key");
+        } catch {}
+        return [];
+      }
       const stored = sessionStorage.getItem("templ_preview_slides");
       if (stored) return JSON.parse(stored);
     } catch {}
     return [];
-  }, [state]);
+  }, [state, productId]);
+
+  const captureKey = useMemo(() => {
+    const ids = slides.map((s) => String(s?.id ?? "")).join(",");
+    const pid = productId ?? "state";
+    return `${pid}::${String(category ?? "")}::${slides.length}::${ids}`;
+  }, [category, slides, productId]);
 
   // Change to (sessionStorage se fallback bhi add kar sakte ho)
   const captured = useMemo(() => {
@@ -125,6 +151,17 @@ const CategoriesWisePreview: React.FC = () => {
 
     // Priority 2: sessionStorage se
     try {
+      const storedKey = sessionStorage.getItem("templ_preview_key") || "";
+      const expectedPrefix = productId ? `${productId}::` : "";
+      const stateKey = state?.previewKey || "";
+      const keyMatches = stateKey
+        ? storedKey === stateKey
+        : expectedPrefix
+        ? storedKey.startsWith(expectedPrefix)
+        : Boolean(storedKey);
+      if (!keyMatches) return [];
+      const storedCaptureKey = sessionStorage.getItem("capturedSlidesKey") || "";
+      if (storedCaptureKey && storedCaptureKey !== captureKey) return [];
       const stored = sessionStorage.getItem("capturedSlides");
       if (stored) return JSON.parse(stored);
     } catch { }
@@ -246,6 +283,9 @@ const CategoriesWisePreview: React.FC = () => {
   const setSlideNodeRef = (i: number) => (el: HTMLDivElement | null) => {
     slideNodeRefs.current[i] = el;
   };
+  const prefetchedSlidesRef = useRef<string[] | null>(null);
+  const prefetchPromiseRef = useRef<Promise<string[]> | null>(null);
+  const prefetchOnce = useRef(false);
 
   const goNext = () => {
     if (active >= slideCount - 1 || flipping) return;
@@ -270,14 +310,18 @@ const CategoriesWisePreview: React.FC = () => {
   // ✅ Download loading
   const [downloading, setDownloading] = useState(false);
 
-  const captureSlidesFromDom = async (format: "jpeg" | "png") => {
+  const captureSlidesFromDom = async (format: "jpeg" | "png", maxDim = 1600) => {
     const out: string[] = [];
     for (let i = 0; i < slides.length; i++) {
       const node = slideNodeRefs.current[i];
       if (!node) continue;
+      const rect = node.getBoundingClientRect();
+      const maxSide = Math.max(rect.width || 0, rect.height || 0);
+      const ratio = maxSide ? maxDim / maxSide : 1.5;
+      const pixelRatio = Math.min(2, Math.max(0.5, ratio));
       if (format === "png") {
         const png = await toPng(node, {
-          pixelRatio: 2,
+          pixelRatio,
           backgroundColor: "transparent",
           cacheBust: false,
           skipFonts: false,
@@ -286,68 +330,235 @@ const CategoriesWisePreview: React.FC = () => {
       } else {
         const jpg = await toJpeg(node, {
           quality: 0.78,
-          pixelRatio: 1.5,
+          pixelRatio,
           backgroundColor: "#ffffff",
           cacheBust: false,
           skipFonts: false,
         });
         out.push(jpg);
       }
-      await new Promise((r) => setTimeout(r, 0));
     }
     return out;
+  };
+
+  const captureSingleSlideFromDom = async (
+    index: number,
+    format: "jpeg" | "png",
+    maxDim = 1200
+  ) => {
+    const node = slideNodeRefs.current[index];
+    if (!node) return "";
+    const rect = node.getBoundingClientRect();
+    const maxSide = Math.max(rect.width || 0, rect.height || 0);
+    const ratio = maxSide ? maxDim / maxSide : 1.5;
+    const pixelRatio = Math.min(2, Math.max(0.5, ratio));
+    if (format === "png") {
+      return await toPng(node, {
+        pixelRatio,
+        backgroundColor: "transparent",
+        cacheBust: false,
+        skipFonts: false,
+      });
+    }
+    return await toJpeg(node, {
+      quality: 0.78,
+      pixelRatio,
+      backgroundColor: "#ffffff",
+      cacheBust: false,
+      skipFonts: false,
+    });
+  };
+
+  const readCapturedFromStorage = () => {
+    try {
+      const storedKey = sessionStorage.getItem("capturedSlidesKey");
+      if (!storedKey || storedKey !== captureKey) return [];
+      const stored = sessionStorage.getItem("capturedSlides");
+      if (stored) return JSON.parse(stored) as string[];
+    } catch {}
+    return [];
   };
 
   const handleDownload = async () => {
     try {
       setDownloading(true);
 
+      let previewOnly = false;
       let list: string[] = [];
-      if (isStickerCategory) {
-        list = await captureSlidesFromDom("png");
-      } else {
-        list = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+      if (isTransparentCaptureCategory) {
+        const stored = readCapturedFromStorage();
+        if (stored.length) {
+          list = stored;
+        } else if (prefetchedSlidesRef.current?.length) {
+          list = prefetchedSlidesRef.current;
+        } else if (prefetchPromiseRef.current) {
+          list = await prefetchPromiseRef.current;
+        } else {
+          list = await captureSlidesFromDom("png", 2400);
+        }
         if (!list.length && slides.length) {
-          list = await captureSlidesFromDom("jpeg");
+          list = await captureSlidesFromDom("png", 2400);
+        }
+        const fullReady = slides.length ? list.length >= slides.length : list.length > 0;
+        if (!fullReady) {
+          previewOnly = true;
+          const preview = await captureSingleSlideFromDom(0, "png", 1200);
+          if (preview) list = [preview];
+        }
+      } else {
+        const stored = readCapturedFromStorage();
+        const quickList = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+        if (stored.length) {
+          list = stored;
+        } else if (quickList.length) {
+          list = quickList;
+        } else if (prefetchedSlidesRef.current?.length) {
+          list = prefetchedSlidesRef.current;
+        } else if (prefetchPromiseRef.current) {
+          list = await prefetchPromiseRef.current;
+        } else {
+          list = [];
+        }
+        if (!list.length && slides.length) {
+          list = await captureSlidesFromDom("jpeg", 1600);
+        }
+        const fullReady = slides.length ? list.length >= slides.length : list.length > 0;
+        if (!fullReady) {
+          previewOnly = true;
+          const preview = await captureSingleSlideFromDom(0, "jpeg", 1200);
+          if (preview) list = [preview];
         }
       }
 
-      // ✅ Convert to JPEG for non-stickers (sequential)
+      // ✅ Convert to JPEG only if needed (avoid double work)
       const out: string[] = [];
-      if (isStickerCategory) {
+      if (isTransparentCaptureCategory) {
         out.push(...list);
       } else {
-        for (let i = 0; i < list.length; i++) {
-          const jpg = await toJpegDataUrl(list[i], 0.78, 1600);
-          out.push(jpg);
-          await new Promise((r) => setTimeout(r, 0));
+        const needsConvert = list.some(
+          (u) => !String(u || "").startsWith("data:image/jpeg")
+        );
+        if (!needsConvert) {
+          out.push(...list);
+        } else {
+          const converted = await Promise.all(
+            list.map((u) =>
+              String(u || "").startsWith("data:image/jpeg")
+                ? Promise.resolve(u)
+                : toJpegDataUrl(u, 0.78, 1600)
+            )
+          );
+          out.push(...converted);
         }
       }
 
       // ✅ store one-by-one (slide1, slide2, slide3...)
       const slidesObj = Object.fromEntries(out.map((u, idx) => [`slide${idx + 1}`, u]));
 
-      const payload = JSON.stringify(slidesObj);
-
-      safeSetSessionStorage("slides", payload);
-
-      // ✅ Keep localStorage minimal to avoid quota issues
-      const minimal = slidesObj?.slide1 ? JSON.stringify({ slide1: slidesObj.slide1 }) : "{}";
-      safeSetLocalStorage("slides_backup", minimal, { clearOnFail: ["slides_backup"] });
-
-      // ✅ Store full slides in IndexedDB
+      (globalThis as any).__slidesCache = slidesObj;
+      (globalThis as any).__rawSlidesCache = slides;
+      (globalThis as any).__previewConfigCache = config ?? null;
       try {
-        await saveSlidesToIdb(slidesObj);
-      } catch { }
+        sessionStorage.setItem("slides_preview_only", previewOnly ? "1" : "0");
+        sessionStorage.setItem("rawSlidesCount", String(slides.length || out.length || 1));
+        if (config) {
+          safeSetSessionStorage("templ_preview_config", JSON.stringify(config));
+        }
+      } catch {}
 
       // ✅ pass slides to subscription via route-state
-      navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesObj } });
+      navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesObj, previewOnly } });
+
+      // ✅ persist storage after navigation to avoid blocking UI
+      const persist = () => {
+        try {
+          const payload = JSON.stringify(slidesObj);
+          safeSetSessionStorage("slides", payload);
+        } catch {}
+
+        try {
+          const minimal = slidesObj?.slide1 ? JSON.stringify({ slide1: slidesObj.slide1 }) : "{}";
+          safeSetLocalStorage("slides_backup", minimal, { clearOnFail: ["slides_backup"] });
+        } catch {}
+
+        try {
+          void saveSlidesToIdb(slidesObj);
+        } catch {}
+      };
+
+      const idle = globalThis as any;
+      if (typeof idle.requestIdleCallback === "function") {
+        idle.requestIdleCallback(persist, { timeout: 1200 });
+      } else {
+        setTimeout(persist, 0);
+      }
     } catch (e) {
       console.error("Download capture failed:", e);
     } finally {
       setDownloading(false);
     }
   };
+
+  // Prefetch captured slides in idle time to speed up download
+  useEffect(() => {
+    prefetchedSlidesRef.current = null;
+    prefetchPromiseRef.current = null;
+    prefetchOnce.current = false;
+  }, [captureKey]);
+
+  useEffect(() => {
+    if (prefetchOnce.current) return;
+    if (hasCaptured || !slides.length) return;
+    prefetchOnce.current = true;
+
+    let cancelled = false;
+    const run = async (): Promise<string[]> => {
+      try {
+        const existing = readCapturedFromStorage();
+        if (existing.length) {
+          prefetchedSlidesRef.current = existing;
+          return existing;
+        }
+        if ((document as any)?.fonts?.ready) {
+          try {
+            await (document as any).fonts.ready;
+          } catch {}
+        }
+        const format = isTransparentCaptureCategory ? "png" : "jpeg";
+        const maxDim = isTransparentCaptureCategory ? 2400 : 1600;
+        const list = await captureSlidesFromDom(format, maxDim);
+        if (cancelled || !list.length) return [];
+        prefetchedSlidesRef.current = list;
+        sessionStorage.setItem("capturedSlides", JSON.stringify(list));
+        sessionStorage.setItem("capturedSlidesKey", captureKey);
+        return list;
+      } catch {}
+      return [];
+    };
+
+    let idleId: any = null;
+    const idle = globalThis as any;
+    const startPrefetch = () => {
+      if (prefetchPromiseRef.current) return;
+      const p = run();
+      prefetchPromiseRef.current = p;
+      p.catch(() => {});
+    };
+    if (typeof idle.requestIdleCallback === "function") {
+      idleId = idle.requestIdleCallback(startPrefetch, { timeout: 600 });
+    } else {
+      idleId = setTimeout(startPrefetch, 80);
+    }
+
+    return () => {
+      cancelled = true;
+      if (typeof idle.cancelIdleCallback === "function" && idleId != null) {
+        idle.cancelIdleCallback(idleId);
+      } else if (idleId != null) {
+        clearTimeout(idleId);
+      }
+    };
+  }, [captureKey, hasCaptured, slides.length, isTransparentCaptureCategory]);
 
   /**
    * ✅ Dynamic box sizing (same as before)

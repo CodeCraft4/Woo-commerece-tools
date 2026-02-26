@@ -234,8 +234,12 @@ function normalizeSlide(slide: any): {
 
   // texts
   out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
+  const multiRaw = Array.isArray(slide?.multipleTexts) ? slide.multipleTexts : [];
+  const hasMultiContent = multiRaw.some((o: any) => str(o?.text ?? o?.value, "").trim().length > 0);
+  const includeMulti = flags?.multipleText === true || hasMultiContent;
+  const multiToRender = includeMulti ? multiRaw : [];
   out.textElements.push(
-    ...(slide.multipleTexts ?? []).map((o: any, i: number) => {
+    ...multiToRender.map((o: any, i: number) => {
       const explicit =
         typeof o?.isEditable === "boolean"
           ? o.isEditable
@@ -442,9 +446,11 @@ const SpreadRightSide = ({
 
   const applyTemplateLayout3 = (baseSlide: any, norm: ReturnType<typeof normalizeSlide>) => {
     const flags = baseSlide?.flags ?? {};
-    const templateMulti =
-      flags?.multipleText === true ||
-      (Array.isArray(baseSlide?.multipleTexts) && baseSlide.multipleTexts.length > 0);
+    const multiRaw = Array.isArray(baseSlide?.multipleTexts) ? baseSlide.multipleTexts : [];
+    const hasMultiContent = multiRaw.some(
+      (o: any) => str(o?.text ?? o?.value, "").trim().length > 0
+    );
+    const templateMulti = flags?.multipleText === true || hasMultiContent;
     const templateOne =
       flags?.showOneText === true ||
       String(baseSlide?.oneText?.value ?? "").trim().length > 0;
@@ -560,7 +566,10 @@ const SpreadRightSide = ({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed?.layout3) {
+        const currentDraftId = draftId || getDraftCardId();
+        const savedDraftId = parsed?.draftId;
+        const canUseSaved = !currentDraftId || (savedDraftId && savedDraftId === currentDraftId);
+        if (canUseSaved && parsed?.layout3) {
           if (parsed.bgColor3 !== undefined) setBgColor3?.(parsed.bgColor3);
           if (parsed.bgImage3 !== undefined) setBgImage3?.(parsed.bgImage3);
           setLayout3?.(parsed.layout3);

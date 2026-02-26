@@ -264,7 +264,10 @@ const SlideSpread = ({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed?.layout2) {
+        const currentDraftId = draftId || getDraftCardId();
+        const savedDraftId = parsed?.draftId;
+        const canUseSaved = !currentDraftId || (savedDraftId && savedDraftId === currentDraftId);
+        if (canUseSaved && parsed?.layout2) {
           if (parsed.bgColor2 !== undefined) setBgColor2?.(parsed.bgColor2);
           if (parsed.bgImage2 !== undefined) setBgImage2?.(parsed.bgImage2);
           setLayout2?.(parsed.layout2);
@@ -280,10 +283,13 @@ const SlideSpread = ({
     setBgImage2?.(norm.bgImage);
 
     const templateFlags = slide2Template?.flags ?? {};
-    const templateMulti =
-      templateFlags?.multipleText === true ||
-      (Array.isArray(slide2Template?.multipleTexts) &&
-        slide2Template.multipleTexts.length > 0);
+    const multiRaw = Array.isArray(slide2Template?.multipleTexts)
+      ? slide2Template.multipleTexts
+      : [];
+    const hasMultiContent = multiRaw.some(
+      (o: any) => String(o?.text ?? o?.value ?? "").trim().length > 0
+    );
+    const templateMulti = templateFlags?.multipleText === true || hasMultiContent;
     const templateOne =
       templateFlags?.showOneText === true ||
       String(slide2Template?.oneText?.value ?? "").trim().length > 0;

@@ -932,6 +932,72 @@ const CategoriesEditor = () => {
     });
   };
 
+  const duplicateSlide = useCallback(
+    (index: number) => {
+      const sourceId = slides[index]?.id;
+      if (!sourceId) return;
+
+      const newSlideId = Date.now();
+
+      setSlides((prev) => {
+        const next = [...prev];
+        next.splice(index + 1, 0, { id: newSlideId });
+        return next;
+      });
+
+      setTextElements((prev) => [
+        ...prev,
+        ...prev
+          .filter((t) => t.slideId === sourceId)
+          .map((t) => ({ ...t, id: uuid(), slideId: newSlideId })),
+      ]);
+      setImageElements((prev) => [
+        ...prev,
+        ...prev
+          .filter((img) => img.slideId === sourceId)
+          .map((img) => ({ ...img, id: uuid(), slideId: newSlideId })),
+      ]);
+      setStickerElements((prev) => [
+        ...prev,
+        ...prev
+          .filter((st) => st.slideId === sourceId)
+          .map((st) => ({ ...st, id: uuid(), slideId: newSlideId })),
+      ]);
+
+      setSlideBg((prev: any) => {
+        if (!prev?.[sourceId]) return prev;
+        return { ...prev, [newSlideId]: { ...prev[sourceId] } };
+      });
+
+      setMirrorBySlide((prev) => ({
+        ...prev,
+        [newSlideId]: !!prev[sourceId],
+      }));
+
+      setSelectedTextId(null);
+      setSelectedImageId(null);
+      const nextIndex = index + 1;
+      setSelectedSlide(nextIndex);
+
+      requestAnimationFrame(() => {
+        scrollToSlide(nextIndex);
+      });
+    },
+    [
+      slides,
+      setSlides,
+      setTextElements,
+      setImageElements,
+      setStickerElements,
+      setSlideBg,
+      setMirrorBySlide,
+      setSelectedTextId,
+      setSelectedImageId,
+      setSelectedSlide,
+      scrollToSlide,
+    ],
+  );
+
   return (
     <DashboardLayout title="Categories Wise Editor">
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFileSelected} />
@@ -1578,6 +1644,29 @@ const CategoriesEditor = () => {
                   <Typography variant="body2">
                     {config.slideLabels?.[index] ?? `Slide ${index + 1}`} {mirrored ? "⟲" : ""}
                   </Typography>
+
+                  <Tooltip title="Duplicate slide">
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        duplicateSlide(index);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: -8,
+                        width: 18,
+                        height: 18,
+                        bgcolor: "#263238",
+                        color: "white",
+                        borderRadius: "50%",
+                        "&:hover": { bgcolor: "#455a64" },
+                        zIndex: 5,
+                      }}
+                    >
+                      <ContentCopyOutlined fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
 
                   {slides.length > 1 && (
                     <IconButton
