@@ -20,8 +20,8 @@ import { getPricingConfig, type SizeKeyConfig } from "../../lib/pricing";
 import { clearSlidesFromIdb } from "../../lib/idbSlides";
 import { pickPolygonLayout } from "../../lib/polygon";
 import { fetchCardById } from "../../source/source";
-import SmartImage from "../SmartImage/SmartImage";
 import { shouldSmartCropCategory } from "../../lib/thumbnail";
+import MockupThumbnail from "../MockupThumbnail/MockupThumbnail";
 
 const style = {
   position: "absolute" as const,
@@ -218,6 +218,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
   );
   const isCandleCategory = useMemo(
     () => /candle/i.test(String(categoryName ?? "")),
+    [categoryName]
+  );
+  const isMugCategory = useMemo(
+    () => /mug/i.test(String(categoryName ?? "")),
     [categoryName]
   );
   const isBusinessCard = useMemo(
@@ -528,21 +532,41 @@ const ProductPopup = (props: ProductsPopTypes) => {
               position: "relative",
             }}
           >
-            <SmartImage
-              src={cate?.imageurl || cate?.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url}
-              onClick={handleToggleZoom}
-              enable={enableSmartCrop}
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: isCandleCategory ? "contain" : "cover",
-                objectPosition: "center",
-                transition: "transform 0.3s ease-in-out",
-                transform: isZoomed ? "scale(1.5)" : "scale(1)",
-                cursor: isZoomed ? "zoom-out" : "zoom-in",
-                backgroundColor: isCandleCategory ? "#fff" : "transparent",
-              }}
-            />
+            <Box onClick={handleToggleZoom} sx={{ width: "100%", height: "100%" }}>
+              {isMugCategory ? (
+                <SmartImage
+                  src={cate?.imageurl || cate?.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url}
+                  alt={cate?.title || cate?.cardname || "product"}
+                  enable={enableSmartCrop}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                    transition: "transform 0.3s ease-in-out",
+                    transform: isZoomed ? "scale(1.5)" : "scale(1)",
+                    cursor: isZoomed ? "zoom-out" : "zoom-in",
+                    backgroundColor: "#fff",
+                  }}
+                />
+              ) : (
+                <MockupThumbnail
+                  category={categoryName}
+                  src={cate?.imageurl || cate?.lastpageimageurl || cate?.poster || cate?.cover_screenshot || cate?.img_url}
+                  alt={cate?.title || cate?.cardname || "product"}
+                  useMockup={false}
+                  enableSmartCrop={enableSmartCrop}
+                  imageSx={{
+                    objectFit: isCandleCategory ? "contain" : "cover",
+                    objectPosition: "center",
+                    transition: "transform 0.3s ease-in-out",
+                    transform: isZoomed ? "scale(1.5)" : "scale(1)",
+                    cursor: isZoomed ? "zoom-out" : "zoom-in",
+                    backgroundColor: isCandleCategory ? "#fff" : "transparent",
+                  }}
+                />
+              )}
+            </Box>
           </Box>
 
           <Box sx={{ width: { md: "50%", sm: "50%", xs: "100%" } }}>

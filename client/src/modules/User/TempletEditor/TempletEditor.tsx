@@ -211,7 +211,6 @@ export default function TempletEditor() {
     slideItemRefs.current[i] = el;
   };
   const activeSlideRef = useRef<HTMLDivElement | null>(null);
-  const align = useAlignGuides(activeSlideRef, { scale: canvasScale });
 
   const { productId } = useParams<{ productId: string }>();
   const { state } = useLocation() as { state?: { templetDesign?: any } };
@@ -523,24 +522,48 @@ export default function TempletEditor() {
 
   // ====== Render sizing ======
   const canvasSize = useMemo(() => {
-    // ⭐ Prefer state.templetDesign size, then adminDesign config, then sensible defaults
-    const exactW = asNum(state?.templetDesign?.canvas?.mm?.w, 0);
-    const exactH = asNum(state?.templetDesign?.canvas?.mm?.h, 0);
-    const cfgW = asNum(state?.templetDesign?.config?.mmWidth, 0);
-    const cfgH = asNum(state?.templetDesign?.config?.mmHeight, 0);
-    const adminW = asNum(adminDesign?.config?.mmWidth, asNum(adminDesign?.canvasPx?.w, 210));
-    const adminH = asNum(adminDesign?.config?.mmHeight, asNum(adminDesign?.canvasPx?.h, 297));
+    const mmToPx = (mm: number, dpi = 96) => Math.round((mm / 25.4) * dpi);
 
-    return {
-      width: exactW || cfgW || adminW,
-      height: exactH || cfgH || adminH,
-    };
+    // Prefer px canvas from raw_stores / fitCanvas (matches element coordinates)
+    const fitW = asNum(state?.templetDesign?.config?.fitCanvas?.width, 0);
+    const fitH = asNum(state?.templetDesign?.config?.fitCanvas?.height, 0);
+    const pxW =
+      fitW ||
+      asNum(state?.templetDesign?.canvas?.px?.w, 0) ||
+      asNum(adminDesign?.canvasPx?.w, 0);
+    const pxH =
+      fitH ||
+      asNum(state?.templetDesign?.canvas?.px?.h, 0) ||
+      asNum(adminDesign?.canvasPx?.h, 0);
+
+    if (pxW && pxH) return { width: pxW, height: pxH };
+
+    // Fallback to mm sizes if px is missing
+    const mmW =
+      asNum(state?.templetDesign?.canvas?.mm?.w, 0) ||
+      asNum(state?.templetDesign?.config?.mmWidth, 0) ||
+      asNum(adminDesign?.config?.mmWidth, 0);
+    const mmH =
+      asNum(state?.templetDesign?.canvas?.mm?.h, 0) ||
+      asNum(state?.templetDesign?.config?.mmHeight, 0) ||
+      asNum(adminDesign?.config?.mmHeight, 0);
+
+    if (mmW && mmH) return { width: mmToPx(mmW), height: mmToPx(mmH) };
+
+    return { width: 1200, height: 800 };
   }, [
-    state?.templetDesign,
-    adminDesign?.config?.mmWidth,
-    adminDesign?.config?.mmHeight,
+    state?.templetDesign?.config?.fitCanvas?.width,
+    state?.templetDesign?.config?.fitCanvas?.height,
+    state?.templetDesign?.canvas?.px?.w,
+    state?.templetDesign?.canvas?.px?.h,
+    state?.templetDesign?.canvas?.mm?.w,
+    state?.templetDesign?.canvas?.mm?.h,
+    state?.templetDesign?.config?.mmWidth,
+    state?.templetDesign?.config?.mmHeight,
     adminDesign?.canvasPx?.w,
     adminDesign?.canvasPx?.h,
+    adminDesign?.config?.mmWidth,
+    adminDesign?.config?.mmHeight,
   ]);
 
   const artboardWidth = canvasSize.width;
@@ -696,6 +719,7 @@ export default function TempletEditor() {
     if (!isCandleCategory(adminDesign?.category)) return 1;
     return isTablet ? 1.2 : 1.5;
   }, [adminDesign?.category, isTablet]);
+  const align = useAlignGuides(activeSlideRef, { scale: canvasScale });
   const previewCapture = useMemo(
     () => ({
       quality: isTablet ? 0.6 : 0.72,

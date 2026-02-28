@@ -667,7 +667,7 @@ const WishCard = (props: wishCardType) => {
             return (
               <Box
                 key={e.id}
-                ref={(node) => {
+                ref={(node: HTMLDivElement | null) => {
                   slideItemRefs.current[index] = node;
                 }}
                 sx={{

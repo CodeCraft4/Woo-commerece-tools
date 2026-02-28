@@ -11,6 +11,7 @@ import MainLayout from "../../../layout/MainLayout";
 import { USER_ROUTES } from "../../../constant/route";
 import SmartImage from "../../../components/SmartImage/SmartImage";
 import { shouldSmartCropCategory } from "../../../lib/thumbnail";
+import MockupThumbnail from "../../../components/MockupThumbnail/MockupThumbnail";
 
 const VIEW_ALL = "View All Filters";
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
@@ -348,6 +349,7 @@ const ViewAllCard = () => {
                   e?.category ?? e?.categoryName ?? e?.templetCategory ?? e?.cardcategory ?? e?.cardCategory ?? "";
                 const enableSmartCrop = e.__type === "templet" && shouldSmartCropCategory(templetCategory);
                 const isCandleCategory = /candle/i.test(String(templetCategory ?? ""));
+                const isMugCategory = /mug/i.test(String(templetCategory ?? ""));
 
                 return (
                   <Box
@@ -368,19 +370,33 @@ const ViewAllCard = () => {
                     {/* {plan === "pro" && <IconBadge kind="pro" /> : null} */}
                     {plan === "bundle" && null}
 
-                    <SmartImage
-                      src={src}
-                      alt={e.title || e.name || e.cardname || "product"}
-                      enable={enableSmartCrop}
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: isCandleCategory ? "contain" : "cover",
-                        objectPosition: "center",
-                        display: "block",
-                        backgroundColor: isCandleCategory ? "#fff" : "transparent",
-                      }}
-                    />
+                    {isMugCategory ? (
+                      <SmartImage
+                        src={src}
+                        alt={e.title || e.name || e.cardname || "product"}
+                        enable={enableSmartCrop}
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                          objectPosition: "center",
+                          display: "block",
+                          backgroundColor: "#fff",
+                        }}
+                      />
+                    ) : (
+                      <MockupThumbnail
+                        category={templetCategory}
+                        src={src}
+                        alt={e.title || e.name || e.cardname || "product"}
+                        useMockup={false}
+                        enableSmartCrop={enableSmartCrop}
+                        imageSx={{
+                          objectFit: isCandleCategory ? "contain" : "cover",
+                          backgroundColor: isCandleCategory ? "#fff" : "transparent",
+                        }}
+                      />
+                    )}
                   </Box>
                 );
               })
