@@ -109,6 +109,7 @@ const CategoriesWisePreview: React.FC = () => {
 
   const config = state?.config;
   const category = state?.category ?? "";
+  const isLeafletCategory = /business\s*leaflets?/i.test(String(category ?? ""));
   const isTransparentCaptureCategory =
     /sticker|bag|tote|clothing|clothes|apparel|notebook/i.test(String(category ?? ""));
   const start = state?.slideIndex ?? 0;
@@ -204,6 +205,27 @@ const CategoriesWisePreview: React.FC = () => {
   const currentSlide = !hasCaptured ? slides?.[active] : null;
   const nextSlide = !hasCaptured ? slides?.[nextIndex] : null;
 
+  const artboardW = config?.mmWidth ?? 1;
+  const artboardH = config?.mmHeight ?? 1;
+
+  const shouldContainImage = useCallback(
+    (el: any) => {
+      const fit = String(el?.fit ?? el?.objectFit ?? el?.object_fit ?? "").toLowerCase();
+      if (fit === "contain") return true;
+      if (!isLeafletCategory) return false;
+      const w = Number(el?.width ?? 0);
+      const h = Number(el?.height ?? 0);
+      const widthRatio = w / Math.max(1, artboardW);
+      const heightRatio = h / Math.max(1, artboardH);
+      const area = widthRatio * heightRatio;
+      const nearTop = Number(el?.y ?? 0) <= artboardH * 0.25;
+      const smallArea = area <= 0.1;
+      const smallSlot = heightRatio <= 0.2 && widthRatio <= 0.6;
+      return nearTop && (smallArea || smallSlot);
+    },
+    [artboardH, artboardW, isLeafletCategory]
+  );
+
   const renderSlide = useCallback((slide?: Slide) => {
     if (!slide) return null;
     const ordered = [...(slide.elements || [])].sort((a, b) => {
@@ -224,13 +246,19 @@ const CategoriesWisePreview: React.FC = () => {
           };
 
           if (el.type === "image") {
+            const useContain = shouldContainImage(el);
             return (
               <Box
                 key={el.id}
                 component="img"
                 src={el.src}
                 alt=""
-                sx={{ ...baseStyle, objectFit: "cover", display: "block" }}
+                sx={{
+                  ...baseStyle,
+                  objectFit: useContain ? "contain" : "cover",
+                  objectPosition: "center",
+                  display: "block",
+                }}
               />
             );
           }
@@ -249,6 +277,7 @@ const CategoriesWisePreview: React.FC = () => {
 
           if (el.type === "text") {
             const align = el.align ?? "center";
+            const textValue = el.text ?? el.value ?? "";
             const justify =
               align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
             return (
@@ -268,7 +297,7 @@ const CategoriesWisePreview: React.FC = () => {
                   whiteSpace: "pre-wrap",
                 }}
               >
-                {el.text}
+                {textValue}
               </Box>
             );
           }
@@ -277,7 +306,7 @@ const CategoriesWisePreview: React.FC = () => {
         })}
       </Box>
     );
-  }, []);
+  }, [shouldContainImage]);
 
   const slideNodeRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const setSlideNodeRef = (i: number) => (el: HTMLDivElement | null) => {

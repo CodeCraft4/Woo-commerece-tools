@@ -166,6 +166,8 @@ export default function PremiumSuccess() {
       const rawSlides = await getSlidesPayload();
       const cardSize = getSelectedPlan();
       const categoryName = getSelectedCategory();
+      const isCandlesGrid = isCandlesCategory(categoryName);
+      const isCoastersGrid = isCoastersCategory(categoryName);
       const slidesAlreadyMirrored = (() => {
         try {
           return sessionStorage.getItem("slides_mirrored") === "1";
@@ -173,7 +175,7 @@ export default function PremiumSuccess() {
           return false;
         }
       })();
-      const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored;
+      const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored && !isCoastersGrid;
       const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
       if (slidesAlreadyMirrored) {
         try {
@@ -188,8 +190,6 @@ export default function PremiumSuccess() {
         isBusinessLeafletsCategory(categoryName) && isLeafletTwoUpSize(cardSize);
       const isTenUpBusinessCards =
         isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(cardSize);
-      const isCandlesGrid = isCandlesCategory(categoryName);
-      const isCoastersGrid = isCoastersCategory(categoryName);
       const isNotebookTwoUp =
         isNotebooksCategory(categoryName) && isNotebookTwoUpSize(cardSize);
       const isMugWrap = /mug/i.test(String(categoryName ?? "")) && isMugWrapSize(cardSize);
@@ -370,12 +370,14 @@ export default function PremiumSuccess() {
         : isCoastersGrid
         ? await buildFixedGridSlides(processedCoasterSlides, {
             columns: 2,
-            rows: 3,
-            labelMm: { w: 95, h: 95 },
+            rows: 1,
+            labelMm: { w: 89, h: 89 },
             gapMm: 0,
             distribute: true,
             fit: "contain",
-            pageMm: getPageMmForSize(cardSize),
+            fillStrategy: "sequential",
+            mirrorPage: true,
+            pageMm: { w: 229, h: 89 },
             background: "transparent",
             outputFormat: "png",
           })

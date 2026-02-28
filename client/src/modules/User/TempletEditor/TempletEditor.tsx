@@ -41,6 +41,7 @@ type BaseEl = {
 type TextEl = BaseEl & {
   type: "text";
   text: string;
+  value?: string;
   bold: boolean;
   italic: boolean;
   color: string;
@@ -129,6 +130,8 @@ const normalize01 = (o: any, pxW: number, pxH: number) => {
   }
   return { x, y, width: w, height: h };
 };
+
+const isContainFit = (val: unknown) => String(val ?? "").toLowerCase() === "contain";
 
 async function waitForAssets(root: HTMLElement) {
   const imgs = Array.from(root.querySelectorAll("img"));
@@ -654,7 +657,10 @@ export default function TempletEditor() {
     setUserSlides((prev) => {
       const copy = cloneSlides(prev);
       const el = copy[slideIndex]?.elements.find((e) => e.id === elId);
-      if (el && el.type === "text" && (el as TextEl).editable !== false) (el as TextEl).text = text;
+      if (el && el.type === "text" && (el as TextEl).editable !== false) {
+        (el as TextEl).text = text;
+        (el as TextEl).value = text;
+      }
       return copy;
     });
   };
@@ -719,6 +725,19 @@ export default function TempletEditor() {
     if (!isCandleCategory(adminDesign?.category)) return 1;
     return isTablet ? 1.2 : 1.5;
   }, [adminDesign?.category, isTablet]);
+
+  const shouldContainImage = (el: AnyEl) => {
+    const fit = (el as any)?.fit ?? (el as any)?.objectFit ?? (el as any)?.object_fit;
+    if (isContainFit(fit)) return true;
+    if (!isLeafletCategory(adminDesign?.category)) return false;
+    const widthRatio = asNum(el.width, 0) / Math.max(1, artboardWidth);
+    const heightRatio = asNum(el.height, 0) / Math.max(1, artboardHeight);
+    const area = widthRatio * heightRatio;
+    const nearTop = asNum(el.y, 0) <= artboardHeight * 0.25;
+    const smallArea = area <= 0.1;
+    const smallSlot = heightRatio <= 0.2 && widthRatio <= 0.6;
+    return nearTop && (smallArea || smallSlot);
+  };
   const align = useAlignGuides(activeSlideRef, { scale: canvasScale });
   const previewCapture = useMemo(
     () => ({
@@ -1000,6 +1019,7 @@ export default function TempletEditor() {
 
                     if (el.type === "image") {
                       const img = el as ImageEl;
+                      const useContain = shouldContainImage(el);
                       return (
                         <Rnd key={el.id} {...commonRnd}>
                           <Box
@@ -1014,7 +1034,13 @@ export default function TempletEditor() {
                               crossOrigin="anonymous"
                               src={img.src}
                               alt=""
-                              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: useContain ? "contain" : "cover",
+                                objectPosition: "center",
+                                display: "block",
+                              }}
                             />
 
                             {el.editable !== false && isActive && (
@@ -1057,6 +1083,7 @@ export default function TempletEditor() {
                     if (el.type === "text") {
                       const t = el as TextEl;
                       const align = t.align ?? "center";
+                      const textValue = t.text ?? t.value ?? "";
 
                       return (
                         <Rnd key={el.id} {...commonRnd}>
@@ -1072,8 +1099,9 @@ export default function TempletEditor() {
                               <TextField
                                 className="no-drag"
                                 multiline
-                                value={t.text}
+                                value={textValue}
                                 onChange={(e) => onTextChange(i, el.id, e.target.value)}
+                                onBlur={(e) => onTextChange(i, el.id, e.target.value)}
                                 variant="standard"
                                 InputProps={{
                                   disableUnderline: true,
@@ -1140,7 +1168,7 @@ export default function TempletEditor() {
                                   userSelect: "none",
                                 }}
                               >
-                                {t.text}
+                                {textValue}
                               </Typography>
                             )}
 

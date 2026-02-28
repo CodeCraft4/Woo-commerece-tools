@@ -189,7 +189,7 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
 
   if (name.includes("mug")) return [{ key: "mug_wrap_11oz", title: "228mm × 88.9mm wrap (11oz mug)" }];
   if (name.includes("coaster"))
-    return [{ key: "coaster_95", title: "95mm × 95mm (6 per sheet: 2 × 3)" }];
+    return [{ key: "coaster_95", title: "89mm × 89mm (2 per sheet: 2 × 1)" }];
 
   return [
     { key: "a5", title: "A3" },
@@ -925,7 +925,7 @@ const Subscription = () => {
             return false;
           }
         })();
-        const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored;
+        const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored && !isCoastersGrid;
         const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
         if (slidesAlreadyMirrored) {
           try {
@@ -1061,17 +1061,20 @@ const Subscription = () => {
               gapMm: 0,
               distribute: true,
               fit: "contain",
+              fillStrategy: "sequential",
               pageMm: getPageMmForSize(cardSize),
             })
           : isCoastersGrid
           ? await buildFixedGridSlides(processedCoasterSlides, {
               columns: 2,
-              rows: 3,
-              labelMm: { w: 95, h: 95 },
+              rows: 1,
+              labelMm: { w: 89, h: 89 },
               gapMm: 0,
               distribute: true,
               fit: "contain",
-              pageMm: getPageMmForSize(cardSize),
+              fillStrategy: "sequential",
+              mirrorPage: true,
+              pageMm: { w: 229, h: 89 },
               background: "transparent",
               outputFormat: "png",
             })

@@ -278,6 +278,8 @@ type FixedGridOptions = {
   pageMm?: { w: number; h: number };
   gapMm?: number;
   distribute?: boolean;
+  fillStrategy?: "repeat" | "sequential";
+  mirrorPage?: boolean;
   dpi?: number;
   background?: string | null;
   quality?: number;
@@ -296,6 +298,8 @@ export async function buildFixedGridSlides(
     pageMm: A4_PORTRAIT_MM,
     gapMm: 0,
     distribute: false,
+    fillStrategy: "repeat",
+    mirrorPage: false,
     dpi: 300,
     background: "#ffffff",
     quality: 0.92,
@@ -333,57 +337,126 @@ export async function buildFixedGridSlides(
   let marginX = Math.max(0, Math.floor((pageWidth - gridW) / 2));
   let marginY = Math.max(0, Math.floor((pageHeight - gridH) / 2));
 
-  if (opts.distribute && cols > 1 && rows > 1) {
-    // distribute gaps so the grid fills the page (no top/bottom/side margins)
-    gapX = Math.max(0, Math.floor((pageWidth - cols * labelW) / (cols - 1)));
-    gapY = Math.max(0, Math.floor((pageHeight - rows * labelH) / (rows - 1)));
-    gridW = cols * labelW + gapX * (cols - 1);
-    gridH = rows * labelH + gapY * (rows - 1);
-    marginX = 0;
-    marginY = 0;
+  if (opts.distribute) {
+    // distribute gaps so the grid fills the page (no side/top margins when possible)
+    if (cols > 1) {
+      gapX = Math.max(0, Math.floor((pageWidth - cols * labelW) / (cols - 1)));
+      gridW = cols * labelW + gapX * (cols - 1);
+      marginX = 0;
+    }
+    if (rows > 1) {
+      gapY = Math.max(0, Math.floor((pageHeight - rows * labelH) / (rows - 1)));
+      gridH = rows * labelH + gapY * (rows - 1);
+      marginY = 0;
+    }
   }
 
   const output: SlidesPayload = {};
   let pageIndex = 1;
 
-  for (const key of keys) {
-    const src = slides[key];
-    if (!src) continue;
+  const drawImageInSlot = (
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    slotX: number,
+    slotY: number,
+  ) => {
+    const scale =
+      opts.fit === "cover"
+        ? Math.max(labelW / img.width, labelH / img.height)
+        : Math.min(labelW / img.width, labelH / img.height);
+    const drawW = img.width * scale;
+    const drawH = img.height * scale;
+    const offsetX = slotX + (labelW - drawW) / 2;
+    const offsetY = slotY + (labelH - drawH) / 2;
+    ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+  };
 
-    const img = await loadImage(src);
-    const canvas = document.createElement("canvas");
-    canvas.width = pageWidth;
-    canvas.height = pageHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) continue;
+  const maybeMirrorCanvas = (canvas: HTMLCanvasElement) => {
+    if (!opts.mirrorPage) return canvas;
+    const flipped = document.createElement("canvas");
+    flipped.width = canvas.width;
+    flipped.height = canvas.height;
+    const ctx = flipped.getContext("2d");
+    if (!ctx) return canvas;
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(canvas, 0, 0);
+    return flipped;
+  };
 
-    const bg = opts.background;
-    if (bg && bg !== "transparent") {
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, pageWidth, pageHeight);
-    }
+  if (opts.fillStrategy === "sequential") {
+    const perPage = cols * rows;
+    let cursor = 0;
 
-    for (let r = 0; r < rows; r += 1) {
-      for (let c = 0; c < cols; c += 1) {
+    while (cursor < keys.length) {
+      const pageKeys = keys.slice(cursor, cursor + perPage);
+      cursor += perPage;
+
+      const imgs = await Promise.all(
+        pageKeys.map((k) => (slides[k] ? loadImage(slides[k]) : Promise.resolve(null))),
+      );
+
+      const canvas = document.createElement("canvas");
+      canvas.width = pageWidth;
+      canvas.height = pageHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+
+      const bg = opts.background;
+      if (bg && bg !== "transparent") {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, pageWidth, pageHeight);
+      }
+
+      imgs.forEach((img, idx) => {
+        if (!img) return;
+        const r = Math.floor(idx / cols);
+        const c = idx % cols;
         const slotX = marginX + c * (labelW + gapX);
         const slotY = marginY + r * (labelH + gapY);
-        const scale =
-          opts.fit === "cover"
-            ? Math.max(labelW / img.width, labelH / img.height)
-            : Math.min(labelW / img.width, labelH / img.height);
-        const drawW = img.width * scale;
-        const drawH = img.height * scale;
-        const offsetX = slotX + (labelW - drawW) / 2;
-        const offsetY = slotY + (labelH - drawH) / 2;
-        ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
-      }
-    }
+        drawImageInSlot(ctx, img, slotX, slotY);
+      });
 
-    output[`slide${pageIndex}`] =
-      opts.outputFormat === "png"
-        ? canvas.toDataURL("image/png")
-        : canvas.toDataURL("image/jpeg", opts.quality);
-    pageIndex += 1;
+      const outCanvas = maybeMirrorCanvas(canvas);
+      output[`slide${pageIndex}`] =
+        opts.outputFormat === "png"
+          ? outCanvas.toDataURL("image/png")
+          : outCanvas.toDataURL("image/jpeg", opts.quality);
+      pageIndex += 1;
+    }
+  } else {
+    for (const key of keys) {
+      const src = slides[key];
+      if (!src) continue;
+
+      const img = await loadImage(src);
+      const canvas = document.createElement("canvas");
+      canvas.width = pageWidth;
+      canvas.height = pageHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+
+      const bg = opts.background;
+      if (bg && bg !== "transparent") {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, pageWidth, pageHeight);
+      }
+
+      for (let r = 0; r < rows; r += 1) {
+        for (let c = 0; c < cols; c += 1) {
+          const slotX = marginX + c * (labelW + gapX);
+          const slotY = marginY + r * (labelH + gapY);
+          drawImageInSlot(ctx, img, slotX, slotY);
+        }
+      }
+
+      const outCanvas = maybeMirrorCanvas(canvas);
+      output[`slide${pageIndex}`] =
+        opts.outputFormat === "png"
+          ? outCanvas.toDataURL("image/png")
+          : outCanvas.toDataURL("image/jpeg", opts.quality);
+      pageIndex += 1;
+    }
   }
 
   return output;
