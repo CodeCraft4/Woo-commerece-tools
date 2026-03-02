@@ -1,7 +1,7 @@
 import {
   Box, IconButton, Typography, TextField, Select, MenuItem, Tooltip,
   FormControl, InputLabel, Divider, Chip, Stack, Switch,
-  Paper, useMediaQuery
+  Paper, useMediaQuery, Slider
 } from "@mui/material";
 import DashboardLayout from "../../../layout/DashboardLayout";
 import {
@@ -99,6 +99,8 @@ const buildElementsFromSnapshot = (slides: any[]) => {
           fontSize: toNum(el?.fontSize ?? el?.font_size, 20),
           fontFamily: String(el?.fontFamily ?? el?.font_family ?? "Arial"),
           color: String(el?.color ?? "#111111"),
+          rotation: toNum(el?.rotation ?? el?.rotate, 0),
+          curve: toNum(el?.curve ?? el?.arc, 0),
           zIndex: toNum(el?.zIndex ?? el?.z_index, 1),
           editable: el?.editable !== false,
           align: el?.align,
@@ -364,6 +366,8 @@ const CategoriesEditor = () => {
     () => (selectedTextId ? (textElements.find(e => e.id === selectedTextId) ?? null) : null),
     [selectedTextId, textElements]
   );
+  const selectedRotation = Number(selectedText?.rotation ?? 0) || 0;
+  const selectedCurve = Number(selectedText?.curve ?? 0) || 0;
 
   /* ---- Font size sync/control ---- */
   useEffect(() => {
@@ -428,6 +432,8 @@ const CategoriesEditor = () => {
       text: "",
       bold: false, italic: false, color: "#111111",
       fontSize: 20, fontFamily: "Arial",
+      rotation: 0,
+      curve: 0,
       align: "center",
       editable: true,
     };
@@ -846,6 +852,70 @@ const CategoriesEditor = () => {
               </IconButton>
             </span>
           </Tooltip>
+
+          <Box
+            sx={{
+              minWidth: { xs: 140, md: 110 },
+              px: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "stretch",
+              gap: 0.25,
+              opacity: selectedTextId ? 1 : 0.5,
+            }}
+          >
+            <Typography variant="caption" sx={{ textAlign: "center", fontWeight: 600 }}>
+              Rotate
+            </Typography>
+            <Slider
+              size="small"
+              value={selectedRotation}
+              min={-180}
+              max={180}
+              step={1}
+              disabled={!selectedTextId}
+              onChange={(_, v) => {
+                if (!selectedTextId) return;
+                const next = Array.isArray(v) ? v[0] : v;
+                updateText(selectedTextId, { rotation: Number(next) });
+              }}
+            />
+            <Typography variant="caption" sx={{ textAlign: "center" }}>
+              {Math.round(selectedRotation)}°
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              minWidth: { xs: 140, md: 110 },
+              px: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "stretch",
+              gap: 0.25,
+              opacity: selectedTextId ? 1 : 0.5,
+            }}
+          >
+            <Typography variant="caption" sx={{ textAlign: "center", fontWeight: 600 }}>
+              Curve
+            </Typography>
+            <Slider
+              size="small"
+              value={selectedCurve}
+              min={-200}
+              max={200}
+              step={1}
+              disabled={!selectedTextId}
+              onChange={(_, v) => {
+                if (!selectedTextId) return;
+                const next = Array.isArray(v) ? v[0] : v;
+                updateText(selectedTextId, { curve: Number(next) });
+              }}
+            />
+            <Typography variant="caption" sx={{ textAlign: "center" }}>
+              {Math.round(selectedCurve)}
+            </Typography>
+          </Box>
 
           {/* Color */}
           <Stack direction="row" spacing={0.5} sx={{ px: 1, flexWrap: "wrap", maxWidth: 220 }}>
@@ -1357,6 +1427,24 @@ const CategoriesEditor = () => {
                       : textAlignVal === "center"
                       ? "center"
                       : "flex-end";
+                  const rotation = Number((el as any).rotation ?? 0) || 0;
+                  const curve = Number((el as any).curve ?? 0) || 0;
+                  const curveVal = Math.max(-200, Math.min(200, curve));
+                  const hasCurve = Math.abs(curveVal) > 0.5;
+                  const safeW = Math.max(1, Number(el.width) || 1);
+                  const safeH = Math.max(1, Number(el.height) || 1);
+                  const curvePx = (curveVal / 100) * (safeH / 2);
+                  const midY = safeH / 2;
+                  const curvePath = `M 0 ${midY} Q ${safeW / 2} ${midY - curvePx} ${safeW} ${midY}`;
+                  const curveId = `curve-${el.id}`;
+                  const textAnchor =
+                    textAlignVal === "left" ? "start" : textAlignVal === "right" ? "end" : "middle";
+                  const startOffset =
+                    textAlignVal === "left" ? "0%" : textAlignVal === "right" ? "100%" : "50%";
+                  const transformParts: string[] = [];
+                  if (mirrorOn) transformParts.push("scaleX(-1)");
+                  if (rotation) transformParts.push(`rotate(${rotation}deg)`);
+                  const textTransform = transformParts.length ? transformParts.join(" ") : "none";
 
                   return (
                     <Rnd
@@ -1368,7 +1456,7 @@ const CategoriesEditor = () => {
                         setSelectedImageId(null);
                       }}
                     >
-                      <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: justify, p: 1, position: "relative" }}>
+                      <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: justify, p: 1, position: "relative", overflow: "visible" }}>
 
                         {/* Layer + Copy controls (text-only) */}
                         {!isInactive && isSelected && (
@@ -1411,30 +1499,42 @@ const CategoriesEditor = () => {
 
                         {selectedTextId === el.id && !isInactive ? (
                           <>
-                            <TextField
-                              className="no-drag"
-                              multiline
-                              value={el.text}
-                              onChange={(e) => updateText(el.id, { text: e.target.value })}
-                              variant="standard"
-                              placeholder="Add Text"
-                              autoFocus
-                              sx={{ width: "100%" }}
-                              InputProps={{ disableUnderline: true }}
-                              inputProps={{
-                                style: {
-                                  fontWeight: el.bold ? 700 : 400,
-                                  fontStyle: el.italic ? "italic" : "normal",
-                                  fontSize: el.fontSize ?? 20,
-                                  fontFamily: el.fontFamily ?? "Arial",
-                                  color: el.color ?? "#111111",
-                                  lineHeight: 1.2,
-                                  textAlign: textAlignVal,
-                                  transform: mirrorOn ? "scaleX(-1)" : "none",
-                                },
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: justify,
+                                transform: textTransform,
+                                transformOrigin: "center",
+                                overflow: "visible",
                               }}
-                              onClick={(e) => e.stopPropagation()}
-                            />
+                            >
+                              <TextField
+                                className="no-drag"
+                                multiline
+                                value={el.text}
+                                onChange={(e) => updateText(el.id, { text: e.target.value })}
+                                variant="standard"
+                                placeholder="Add Text"
+                                autoFocus
+                                sx={{ width: "100%", overflow: "visible" }}
+                                InputProps={{ disableUnderline: true }}
+                                inputProps={{
+                                  style: {
+                                    fontWeight: el.bold ? 700 : 400,
+                                    fontStyle: el.italic ? "italic" : "normal",
+                                    fontSize: el.fontSize ?? 20,
+                                    fontFamily: el.fontFamily ?? "Arial",
+                                    color: el.color ?? "#111111",
+                                    lineHeight: 1.2,
+                                    textAlign: textAlignVal,
+                                  },
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </Box>
                             <IconButton
                               className="no-drag"
                               onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }}
@@ -1444,25 +1544,68 @@ const CategoriesEditor = () => {
                             </IconButton>
                           </>
                         ) : (
-                          <Typography
-                            sx={{
-                              fontWeight: el.bold ? 700 : 400,
-                              fontStyle: el.italic ? "italic" : "normal",
-                              fontSize: el.fontSize ?? 20,
-                              fontFamily: el.fontFamily ?? "Arial",
-                              color: el.color ?? "#111111",
-                              textAlign: textAlignVal,
-                              width: "100%", height: "100%",
-                              alignItems: "center", display: "flex",
-                              userSelect: "none", pointerEvents: "none",
-                              justifyContent: justify,
-                              transform: mirrorOn ? "scaleX(-1)" : "none",
-                              whiteSpace: "pre-wrap",
-                              overflowWrap: "break-word",
-                              wordBreak: "break-word",
-                            }}
-                          >
-                            {el.text}
+                          <>
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: justify,
+                                transform: textTransform,
+                                transformOrigin: "center",
+                                overflow: "visible",
+                                pointerEvents: "none",
+                              }}
+                            >
+                              {hasCurve ? (
+                                <Box
+                                  component="svg"
+                                  viewBox={`0 0 ${safeW} ${safeH}`}
+                                  sx={{ width: "100%", height: "100%", overflow: "visible", display: "block" }}
+                                >
+                                  <defs>
+                                    <path id={curveId} d={curvePath} />
+                                  </defs>
+                                  <text
+                                    fill={el.color ?? "#111111"}
+                                    fontFamily={el.fontFamily ?? "Arial"}
+                                    fontSize={el.fontSize ?? 20}
+                                    fontWeight={el.bold ? 700 : 400}
+                                    fontStyle={el.italic ? "italic" : "normal"}
+                                    textAnchor={textAnchor}
+                                    dominantBaseline="middle"
+                                  >
+                                    <textPath href={`#${curveId}`} startOffset={startOffset}>
+                                      {el.text}
+                                    </textPath>
+                                  </text>
+                                </Box>
+                              ) : (
+                                <Typography
+                                  sx={{
+                                    fontWeight: el.bold ? 700 : 400,
+                                    fontStyle: el.italic ? "italic" : "normal",
+                                    fontSize: el.fontSize ?? 20,
+                                    fontFamily: el.fontFamily ?? "Arial",
+                                    color: el.color ?? "#111111",
+                                    textAlign: textAlignVal,
+                                    width: "100%",
+                                    height: "100%",
+                                    alignItems: "center",
+                                    display: "flex",
+                                    userSelect: "none",
+                                    justifyContent: justify,
+                                    whiteSpace: "pre-wrap",
+                                    overflowWrap: "break-word",
+                                    wordBreak: "break-word",
+                                    overflow: "visible",
+                                  }}
+                                >
+                                  {el.text}
+                                </Typography>
+                              )}
+                            </Box>
                             {!isInactive && (
                               <Box sx={{ position: "absolute", top: -15, right: -8, pointerEvents: "auto" }}>
                                 <IconButton className="no-drag" onClick={(e) => { e.stopPropagation(); setSelectedTextId(el.id); setSelectedImageId(null); }}>
@@ -1470,7 +1613,7 @@ const CategoriesEditor = () => {
                                 </IconButton>
                               </Box>
                             )}
-                          </Typography>
+                          </>
                         )}
                       </Box>
                     </Rnd>

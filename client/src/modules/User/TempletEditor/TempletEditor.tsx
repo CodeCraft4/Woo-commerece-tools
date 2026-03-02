@@ -47,6 +47,8 @@ type TextEl = BaseEl & {
   fontSize: number;
   fontFamily: string;
   align?: "left" | "center" | "right";
+  rotation?: number;
+  curve?: number;
 };
 
 type ImageEl = BaseEl & { type: "image"; src: string };
@@ -195,6 +197,7 @@ export default function TempletEditor() {
   const [userSlides, setUserSlides] = useState<Slide[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedElId, setSelectedElId] = useState<string | null>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [sidePadPx, setSidePadPx] = useState(0);
@@ -331,6 +334,8 @@ export default function TempletEditor() {
         fontSize: asNum(e?.fontSize ?? e?.font_size, 16), // ← یہ لائن شامل کرو
         fontFamily: asStr(e?.fontFamily ?? e?.font_family ?? "inherit"),
         align: (asStr(e?.align, "center") as any) ?? "center",
+        rotation: asNum(e?.rotation ?? e?.rotate, 0),
+        curve: asNum(e?.curve ?? e?.arc, 0),
         zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
         editable: e?.editable !== false,
       };
@@ -625,6 +630,46 @@ export default function TempletEditor() {
     );
   };
 
+  // Update active slide on manual swipe/scroll (mobile/tablet)
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container || userSlides.length <= 1) return;
+
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        const containerRect = container.getBoundingClientRect();
+        const center = containerRect.left + containerRect.width / 2;
+        let nearest = activeSlide;
+        let minDist = Number.POSITIVE_INFINITY;
+
+        slideItemRefs.current.forEach((node, idx) => {
+          if (!node) return;
+          const rect = node.getBoundingClientRect();
+          const nodeCenter = rect.left + rect.width / 2;
+          const dist = Math.abs(nodeCenter - center);
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = idx;
+          }
+        });
+
+        if (nearest !== activeSlide) {
+          setActiveSlide(nearest);
+          setSelectedElId(null);
+        }
+      });
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (raf) window.cancelAnimationFrame(raf);
+      container.removeEventListener("scroll", onScroll);
+    };
+  }, [activeSlide, userSlides.length]);
+
   const onTextChange = (slideIndex: number, elId: string, text: string) => {
     setIsDirty(true);
     setUserSlides((prev) => {
@@ -900,12 +945,12 @@ export default function TempletEditor() {
                     overflow: "visible",
                   }}
                 >
-                  <Box
-                    ref={(el: any) => {
+                    <Box
+                      ref={(el: any) => {
                       setSlideRef(i)(el);
                       if (isActive) activeSlideRef.current = el;
-                    }}
-                    sx={{
+                      }}
+                      sx={{
                       width: artboardWidth,
                       height: artboardHeight,
                       borderRadius: 0,
@@ -917,7 +962,11 @@ export default function TempletEditor() {
                       transform: `scale(${canvasScale})`,
                       transformOrigin: "top left",
                     }}
-                    onClick={() => isActive && setSelectedElId(null)}
+                    onClick={() => {
+                      if (!isActive) return;
+                      setSelectedElId(null);
+                      setEditingTextId(null);
+                    }}
                   >
                     <AlignmentGuides {...align.guides} hide={!isActive || !align.isActive} />
                     {ordered.map((el) => {
@@ -925,13 +974,13 @@ export default function TempletEditor() {
                     const isSelected = selectedElId === el.id && isActive;
                     const cursor = isSelected ? "text" : isLocked ? "not-allowed" : "text";
 
-                    const canMove = isActive && !isLocked;
+                    const canMove = isActive && !isLocked && (!isTablet || isSelected);
                     const commonRnd = {
                       bounds: "parent" as const,
                       scale: canvasScale,
                       size: { width: el.width, height: el.height },
                       position: { x: el.x, y: el.y },
-                      dragCancel: ".no-drag, input, textarea, button",
+                      dragCancel: ".no-drag, input, textarea, button, .MuiInputBase-root, .MuiInputBase-input",
                       disableDragging: !canMove,
                       enableResizing: canMove ? { bottomRight: true } : false,
                       style: {
@@ -976,6 +1025,9 @@ export default function TempletEditor() {
 
                     if (el.type === "image") {
                       const img = el as ImageEl;
+                      const isLeaflet = isLeafletCategory(adminDesign?.category);
+                      const isBg = String(el.id).startsWith("bg-");
+                      const objectFit = isLeaflet && !isBg ? "contain" : "cover";
                       return (
                         <Rnd key={el.id} {...commonRnd}>
                           <Box
@@ -990,7 +1042,14 @@ export default function TempletEditor() {
                               crossOrigin="anonymous"
                               src={img.src}
                               alt=""
-                              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit,
+                                objectPosition: "center",
+                                display: "block",
+                                backgroundColor: objectFit === "contain" ? "#fff" : "transparent",
+                              }}
                             />
 
                             {el.editable !== false && isActive && (
@@ -1033,92 +1092,179 @@ export default function TempletEditor() {
                     if (el.type === "text") {
                       const t = el as TextEl;
                       const align = t.align ?? "center";
+                      const justify =
+                        align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+                      const rotation = asNum((t as any).rotation, 0);
+                      const curve = asNum((t as any).curve, 0);
+                      const curveVal = Math.max(-200, Math.min(200, curve));
+                      const hasCurve = Math.abs(curveVal) > 0.5;
+                      const safeW = Math.max(1, asNum(t.width, 1));
+                      const safeH = Math.max(1, asNum(t.height, 1));
+                      const curvePx = (curveVal / 100) * (safeH / 2);
+                      const midY = safeH / 2;
+                      const curvePath = `M 0 ${midY} Q ${safeW / 2} ${midY - curvePx} ${safeW} ${midY}`;
+                      const curveId = `curve-${t.id}`;
+                      const textAnchor = align === "left" ? "start" : align === "right" ? "end" : "middle";
+                      const startOffset = align === "left" ? "0%" : align === "right" ? "100%" : "50%";
+                      const textTransform = rotation ? `rotate(${rotation}deg)` : "none";
+                      const isEditing = isActive && editingTextId === el.id;
+                      const textRndProps = {
+                        ...commonRnd,
+                        disableDragging: !canMove || isEditing,
+                        enableResizing: !isEditing && canMove ? { bottomRight: true } : false,
+                      };
 
                       return (
-                        <Rnd key={el.id} {...commonRnd}>
+                        <Rnd
+                          key={el.id}
+                          {...textRndProps}
+                          onMouseDown={(e: any) => {
+                            e.stopPropagation();
+                            if (!isActive) return;
+                            setSelectedElId(el.id);
+                          }}
+                          onTouchStart={(e: any) => {
+                            e.stopPropagation();
+                            if (!isActive) return;
+                            setSelectedElId(el.id);
+                            if (t.editable !== false) setEditingTextId(el.id);
+                          }}
+                        >
                           <Box
-                            sx={{ width: "100%", height: "100%", p: 0.5 }}
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              p: 0.5,
+                              position: "relative",
+                              overflow: "visible",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: justify,
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (!isActive) return;
                               setSelectedElId(el.id);
+                              if (t.editable !== false && isTablet) setEditingTextId(el.id);
+                            }}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              if (!isActive) return;
+                              if (t.editable !== false) setEditingTextId(el.id);
+                              setSelectedElId(el.id);
                             }}
                           >
-                            {t.editable !== false && isActive ? (
-                              <TextField
-                                className="no-drag"
-                                multiline
-                                value={t.text}
-                                onChange={(e) => onTextChange(i, el.id, e.target.value)}
-                                variant="standard"
-                                InputProps={{
-                                  disableUnderline: true,
-                                  sx: {
-                                    height: "100%",
-                                    width: "100%",
-                                    p: 0.5,
-                                    backgroundColor: "transparent",
-                                    "& .MuiInputBase-root": {
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: justify,
+                                transform: textTransform,
+                                transformOrigin: "center",
+                                overflow: "visible",
+                              }}
+                            >
+                              {t.editable !== false && isActive && (selectedElId === el.id || editingTextId === el.id) ? (
+                                <TextField
+                                  className="no-drag"
+                                  multiline
+                                  value={t.text}
+                                  onChange={(e) => onTextChange(i, el.id, e.target.value)}
+                                  onFocus={() => setEditingTextId(el.id)}
+                                  onBlur={() => setEditingTextId((curr) => (curr === el.id ? null : curr))}
+                                  variant="standard"
+                                  InputProps={{
+                                    disableUnderline: true,
+                                    sx: {
                                       height: "100%",
                                       width: "100%",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent:
-                                        align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
+                                      p: 0.5,
                                       backgroundColor: "transparent",
-                                    },
+                                      "& .MuiInputBase-root": {
+                                        height: "100%",
+                                        width: "100%",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: justify,
+                                        backgroundColor: "transparent",
+                                      },
 
-                                    "& textarea.MuiInputBase-inputMultiline": {
-                                      height: "auto",
-                                      minHeight: 0,
-                                      width: "100%",
-                                      padding: 0,
-                                      paddingTop: textPaddingTop,
-                                      margin: "auto 0",
-                                      textAlign: align,
-                                      resize: "none",
-                                      overflow: "hidden",
-                                      backgroundColor: "transparent",
+                                      "& textarea.MuiInputBase-inputMultiline": {
+                                        height: "100%",
+                                        minHeight: "100%",
+                                        width: "100%",
+                                        padding: 0,
+                                        paddingTop: textPaddingTop,
+                                        margin: "auto 0",
+                                        textAlign: align,
+                                        resize: "none",
+                                        overflow: "visible",
+                                        backgroundColor: "transparent",
+                                      },
                                     },
-                                  },
-                                }}
-                                inputProps={{
-                                  style: {
+                                  }}
+                                  inputProps={{
+                                    style: {
+                                      fontWeight: t.bold ? 700 : 400,
+                                      fontStyle: t.italic ? "italic" : "normal",
+                                      fontSize: t.fontSize,
+                                      fontFamily: t.fontFamily,
+                                      color: t.color,
+                                      lineHeight: textLineHeight,
+                                    },
+                                  }}
+                                  sx={{ height: "100%", width: "100%", overflow: "visible" }}
+                                />
+
+                              ) : hasCurve ? (
+                                <Box
+                                  component="svg"
+                                  viewBox={`0 0 ${safeW} ${safeH}`}
+                                  sx={{ width: "100%", height: "100%", overflow: "visible", display: "block" }}
+                                >
+                                  <defs>
+                                    <path id={curveId} d={curvePath} />
+                                  </defs>
+                                  <text
+                                    fill={t.color}
+                                    fontFamily={t.fontFamily}
+                                    fontSize={t.fontSize}
+                                    fontWeight={t.bold ? 700 : 400}
+                                    fontStyle={t.italic ? "italic" : "normal"}
+                                    textAnchor={textAnchor}
+                                    dominantBaseline="middle"
+                                  >
+                                    <textPath href={`#${curveId}`} startOffset={startOffset}>
+                                      {t.text}
+                                    </textPath>
+                                  </text>
+                                </Box>
+                              ) : (
+                                <Typography
+                                  sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: justify,
                                     fontWeight: t.bold ? 700 : 400,
                                     fontStyle: t.italic ? "italic" : "normal",
                                     fontSize: t.fontSize,
                                     fontFamily: t.fontFamily,
                                     color: t.color,
+                                    textAlign: align as any,
                                     lineHeight: textLineHeight,
-                                  },
-                                }}
-                                sx={{ height: "100%", width: "100%" }}
-                              />
-
-                            ) : (
-                              <Typography
-                                sx={{
-                                  width: "100%",
-                                  height: "100%",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent:
-                                    align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
-                                  fontWeight: t.bold ? 700 : 400,
-                                  fontStyle: t.italic ? "italic" : "normal",
-                                  fontSize: t.fontSize,
-                                  fontFamily: t.fontFamily,
-                                  color: t.color,
-                                  textAlign: align as any,
-                                  lineHeight: textLineHeight,
-                                  whiteSpace: "pre-wrap",
-                                  overflow: "visible",
-                                  userSelect: "none",
-                                }}
-                              >
-                                {t.text}
-                              </Typography>
-                            )}
+                                    whiteSpace: "pre-wrap",
+                                    overflow: "visible",
+                                    userSelect: "none",
+                                  }}
+                                >
+                                  {t.text}
+                                </Typography>
+                              )}
+                            </Box>
 
                           </Box>
                         </Rnd>

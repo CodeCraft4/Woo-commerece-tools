@@ -1,5 +1,5 @@
 // SlideLogo.tsx
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ComponentProps } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -25,6 +25,13 @@ import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
 import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../hooks/useAlignGuides";
+
+type RndProps = ComponentProps<typeof Rnd>;
+const CanvasScaleContext = createContext(1);
+const ScaledRnd = (props: RndProps) => {
+  const scale = useContext(CanvasScaleContext);
+  return <Rnd {...props} scale={props.scale ?? scale} />;
+};
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
@@ -312,6 +319,7 @@ interface SlideLogoProps {
   addTextRight?: number; // ⬅ comes from your popup counter
   rightBox?: boolean;
   isAdminEditor?: boolean;
+  canvasScale?: number;
 }
 
 /* -------------------- main wrapper -------------------- */
@@ -320,17 +328,21 @@ const SlideLogo = ({
   rightBox,
   isAdminEditor,
   addTextRight, // ⬅ receive it here
+  canvasScale,
 }: SlideLogoProps) => {
+  const rndScale = canvasScale && canvasScale > 0 ? canvasScale : 1;
   return (
-    <Box sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}>
-      {activeIndex === 3 && rightBox ? (
-        isAdminEditor ? (
-          <AdminSlide4Canvas addTextRight={addTextRight} isAdminEditor={isAdminEditor} />
-        ) : (
-          <UserSlide4Preview />
-        )
-      ) : null}
-    </Box>
+    <CanvasScaleContext.Provider value={rndScale}>
+      <Box sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}>
+        {activeIndex === 3 && rightBox ? (
+          isAdminEditor ? (
+            <AdminSlide4Canvas addTextRight={addTextRight} isAdminEditor={isAdminEditor} />
+          ) : (
+            <UserSlide4Preview />
+          )
+        ) : null}
+      </Box>
+    </CanvasScaleContext.Provider>
   );
 };
 
@@ -1315,7 +1327,7 @@ const AdminSlide4Canvas = ({
         zIndex: 10,
         p: 2,
         position: "relative",
-        height: "700px",
+        height: "var(--card-slide-h, 700px)",
         opacity: isSlideActive4 ? 1 : 0.6,
         pointerEvents: isSlideActive4 ? "auto" : "none",
         backgroundColor: bgColor4 ?? "transparent",
@@ -1340,7 +1352,7 @@ const AdminSlide4Canvas = ({
 
       {/* BG */}
       {bgImage4 && (
-        <Rnd
+        <ScaledRnd
           size={{ width: bgRect4.width, height: bgRect4.height }}
           position={{ x: bgRect4.x, y: bgRect4.y }}
           bounds="parent"
@@ -1445,7 +1457,7 @@ const AdminSlide4Canvas = ({
               </Box>
             )}
           </Box>
-        </Rnd>
+        </ScaledRnd>
       )}
       {/* selection switch */}
       <Paper
@@ -1489,7 +1501,7 @@ const AdminSlide4Canvas = ({
           let lastTap = 0;
 
           return (
-            <Rnd
+            <ScaledRnd
               key={textElement.id}
               cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
               enableUserSelectHack={false}
@@ -1718,13 +1730,13 @@ const AdminSlide4Canvas = ({
                   />
                 </Box>
               </Box>
-            </Rnd>
+            </ScaledRnd>
           );
         })}
 
       {/* ====== Video QR ====== */}
       {selectedVideoUrl4 && (
-        <Rnd
+        <ScaledRnd
           cancel=".no-drag"
           position={{ x: qrPosition4.x, y: qrPosition4.y }}
           onDragStop={(_, d) => setQrPosition4((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrPosition4.zIndex }))}
@@ -1755,12 +1767,12 @@ const AdminSlide4Canvas = ({
               </IconButton>
             </Box>
           </motion.div>
-        </Rnd>
+        </ScaledRnd>
       )}
 
       {/* ====== Audio QR ====== */}
       {selectedAudioUrl4 && (
-        <Rnd
+        <ScaledRnd
           cancel=".no-drag"
           position={{ x: qrAudioPosition4.x, y: qrAudioPosition4.y }}
           onDragStop={(_, d) => setQrAudioPosition4((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrAudioPosition4.zIndex }))}
@@ -1784,7 +1796,7 @@ const AdminSlide4Canvas = ({
               </IconButton>
             </Box>
           </motion.div>
-        </Rnd>
+        </ScaledRnd>
       )}
 
       {/* ====== User Images (with lock, z-index, rotate, delete) ====== */}
@@ -1796,7 +1808,7 @@ const AdminSlide4Canvas = ({
           const isLocked = !!locked;
 
           return (
-            <Rnd
+            <ScaledRnd
               key={id}
               size={{ width, height }}
               position={{ x, y }}
@@ -2047,7 +2059,7 @@ const AdminSlide4Canvas = ({
                   </Box>
                 )}
               </Box>
-            </Rnd>
+            </ScaledRnd>
           );
         })}
 
@@ -2059,8 +2071,8 @@ const AdminSlide4Canvas = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            height: { md: "675px", sm: "575px", xs: "575px" },
-            width: { md: "470px", sm: "370px", xs: "90%" },
+            height: "var(--card-slide-h, 675px)",
+            width: "var(--card-slide-w, 470px)",
             border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
             position: "absolute",
             bgcolor: "#6183cc36",
@@ -2134,7 +2146,7 @@ const AdminSlide4Canvas = ({
         <Box
           sx={{
             height: "98%",
-            width: { md: "475px", sm: "375px", xs: "90%" },
+            width: "var(--card-slide-w, 475px)",
             borderRadius: "6px",
             p: 1,
             position: "absolute",
@@ -2264,7 +2276,8 @@ const AdminSlide4Canvas = ({
 
       {/* ====== AI Image ====== */}
       {isAIimage4 && (
-        <Rnd
+        <ScaledRnd
+          bounds="parent"
           size={{ width: aimage4.width, height: aimage4.height }}
           position={{ x: aimage4.x, y: aimage4.y }}
           onDragStart={() => align.onDragStart()}
@@ -2309,7 +2322,7 @@ const AdminSlide4Canvas = ({
               <Close />
             </IconButton>
           </Box>
-        </Rnd>
+        </ScaledRnd>
       )}
 
       {/* ====== Stickers ====== */}
@@ -2319,7 +2332,7 @@ const AdminSlide4Canvas = ({
         const isLocked = !!sticker.locked;
 
         return (
-          <Rnd
+          <ScaledRnd
             key={sticker.id || index}
             size={{ width: sticker.width, height: sticker.height }}
             position={{ x: sticker.x, y: sticker.y }}
@@ -2441,7 +2454,7 @@ const AdminSlide4Canvas = ({
                 </IconButton>
               )}
             </Box>
-          </Rnd>
+          </ScaledRnd>
         );
       })}
     </Box>

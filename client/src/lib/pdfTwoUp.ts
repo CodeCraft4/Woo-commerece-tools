@@ -283,6 +283,8 @@ type FixedGridOptions = {
   quality?: number;
   fit?: "contain" | "cover";
   outputFormat?: "jpeg" | "png";
+  fillMode?: "repeat" | "sequence";
+  mirrorPage?: boolean;
 };
 
 export async function buildFixedGridSlides(
@@ -301,6 +303,8 @@ export async function buildFixedGridSlides(
     quality: 0.92,
     fit: "contain",
     outputFormat: "jpeg",
+    fillMode: "repeat",
+    mirrorPage: false,
     ...(options ?? {}),
   };
 
@@ -346,6 +350,71 @@ export async function buildFixedGridSlides(
   const output: SlidesPayload = {};
   let pageIndex = 1;
 
+  if (opts.fillMode === "sequence") {
+    const slots = cols * rows;
+    for (let i = 0; i < keys.length; i += slots) {
+      const pageKeys = keys.slice(i, i + slots);
+      if (!pageKeys.length) continue;
+
+      const images = await Promise.all(
+        pageKeys.map(async (k) => {
+          const src = slides[k];
+          if (!src) return null;
+          try {
+            return await loadImage(src);
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const canvas = document.createElement("canvas");
+      canvas.width = pageWidth;
+      canvas.height = pageHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+
+      const bg = opts.background;
+      if (bg && bg !== "transparent") {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, pageWidth, pageHeight);
+      }
+
+      if (opts.mirrorPage) {
+        ctx.save();
+        ctx.translate(pageWidth, 0);
+        ctx.scale(-1, 1);
+      }
+
+      images.forEach((img, idx) => {
+        if (!img) return;
+        const r = Math.floor(idx / cols);
+        const c = idx % cols;
+        const slotX = marginX + c * (labelW + gapX);
+        const slotY = marginY + r * (labelH + gapY);
+        const scale =
+          opts.fit === "cover"
+            ? Math.max(labelW / img.width, labelH / img.height)
+            : Math.min(labelW / img.width, labelH / img.height);
+        const drawW = img.width * scale;
+        const drawH = img.height * scale;
+        const offsetX = slotX + (labelW - drawW) / 2;
+        const offsetY = slotY + (labelH - drawH) / 2;
+        ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+      });
+
+      if (opts.mirrorPage) ctx.restore();
+
+      output[`slide${pageIndex}`] =
+        opts.outputFormat === "png"
+          ? canvas.toDataURL("image/png")
+          : canvas.toDataURL("image/jpeg", opts.quality);
+      pageIndex += 1;
+    }
+
+    return output;
+  }
+
   for (const key of keys) {
     const src = slides[key];
     if (!src) continue;
@@ -363,6 +432,12 @@ export async function buildFixedGridSlides(
       ctx.fillRect(0, 0, pageWidth, pageHeight);
     }
 
+    if (opts.mirrorPage) {
+      ctx.save();
+      ctx.translate(pageWidth, 0);
+      ctx.scale(-1, 1);
+    }
+
     for (let r = 0; r < rows; r += 1) {
       for (let c = 0; c < cols; c += 1) {
         const slotX = marginX + c * (labelW + gapX);
@@ -378,6 +453,8 @@ export async function buildFixedGridSlides(
         ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
       }
     }
+
+    if (opts.mirrorPage) ctx.restore();
 
     output[`slide${pageIndex}`] =
       opts.outputFormat === "png"

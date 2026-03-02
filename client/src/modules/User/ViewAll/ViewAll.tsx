@@ -357,7 +357,7 @@ const ViewAllCard = () => {
                     sx={{
                       position: "relative",
                       width: MUGS || B_CARD ? 380 : 248,
-                      height: MUGS || B_CARD ? 230 : 350,
+                      height: MUGS || B_CARD ? 150 : 350,
                       // width: 248,
                       // height: 350,
                       borderRadius: 2,

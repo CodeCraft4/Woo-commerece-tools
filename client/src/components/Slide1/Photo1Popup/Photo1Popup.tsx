@@ -225,9 +225,13 @@ const Photo1Popup = ({ onClose, activeIndex, isAdminEditor = false }: Photo1Popu
         title="Image Filter"
         onClose={() => setImageFilter1(false)}
         sx={{
-          width: { md: 300, sm: 300, xs: "95%" },
-          height: { md: 600, sm: 600, xs: 450 },
-          left: activeIndex === 1 ? { md: "17%", sm: "0%", xs: 0 } : "17%",
+          width: { md: 300, sm: 300, xs: "100%" },
+          height: { md: 600, sm: 600, xs: "45vh" },
+          left: {
+            md: activeIndex === 1 ? "17%" : "17%",
+            sm: activeIndex === 1 ? "0%" : "17%",
+            xs: "auto",
+          },
           zIndex: 99,
         }}
       >
@@ -258,10 +262,14 @@ const Photo1Popup = ({ onClose, activeIndex, isAdminEditor = false }: Photo1Popu
       title={isAdminEditor ? "Admin Photos" : "Photos"}
       onClose={onClose}
       sx={{
-        width: { md: 300, sm: 300, xs: "95%" },
-        height: { md: 600, sm: 600, xs: 450 },
+        width: { md: 300, sm: 300, xs: "100%" },
+        height: { md: 600, sm: 600, xs: "45vh" },
         mt: { md: 0, sm: 0, xs: 0 },
-        left: activeIndex === 1 ? { md: "17%", sm: "0%", xs: 0 } : "17%",
+        left: {
+          md: activeIndex === 1 ? "17%" : "17%",
+          sm: activeIndex === 1 ? "0%" : "17%",
+          xs: "auto",
+        },
         zIndex: 99,
       }}
     >

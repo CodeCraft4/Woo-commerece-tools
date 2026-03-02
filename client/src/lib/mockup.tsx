@@ -70,10 +70,10 @@ const CATEGORY_MOCKUPS: Array<{
       mockupSrc: "/assets/mockup/candle-mockup.jpeg",
       cardAspectRatio: "1 / 1.2",
       overlay: {
-        top: "30%",
+        top: "32%",
         left: "25%",
         width: "50%",
-        height: "50%",
+        height: "43%",
         rotate: "0deg",
         objectFit: "contain",
         opacity: 0.98,

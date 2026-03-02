@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useRef, useState, useMemo, type MouseEvent as ReactMouseEvent, type ComponentProps } from "react";
 import {
   Box,
   IconButton,
@@ -310,6 +310,7 @@ interface SlideCoverProps {
   rightBox?: boolean;
   isCaptureMode?: boolean;
   isAdminEditor?: boolean;
+  canvasScale?: number;
 }
 
 const createNewTextElement1 = (defaults: any) => ({
@@ -335,8 +336,12 @@ const SlideCover = ({
   isCaptureMode,
   isAdminEditor,
   addTextRight,
+  canvasScale,
 }: SlideCoverProps) => {
   const coverRef = useRef<HTMLDivElement>(null);
+  const rndScale = canvasScale && canvasScale > 0 ? canvasScale : 1;
+  type RndProps = ComponentProps<typeof Rnd>;
+  const ScaledRnd = (props: RndProps) => <Rnd {...props} scale={props.scale ?? rndScale} />;
   const isMugsCategory = useMemo(() => {
     const direct = safeGetStorage("selectedCategory");
     if (direct && /mug/i.test(String(direct))) return true;
@@ -1191,7 +1196,7 @@ const SlideCover = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height: "700px",
+            height: "var(--card-slide-h, 700px)",
             width: "100%",
             opacity: captureClean ? 1 : (isSlideActive1 ? 1 : 0.6),
             pointerEvents: captureClean ? "auto" : (isSlideActive1 ? "auto" : "none"),
@@ -1213,7 +1218,7 @@ const SlideCover = ({
             hide={!isSlideActive1 || !align.isActive}
           />
           {isAdminEditor && bgImage1 && (
-            <Rnd
+            <ScaledRnd
               size={{ width: bgRect1.width, height: bgRect1.height }}
               position={{ x: bgRect1.x, y: bgRect1.y }}
               bounds="parent"
@@ -1318,7 +1323,7 @@ const SlideCover = ({
                   </Box>
                 )}
               </Box>
-            </Rnd>
+            </ScaledRnd>
           )}
 
 
@@ -1587,7 +1592,7 @@ const SlideCover = ({
                   let lastTap = 0;
 
                   return (
-                    <Rnd
+                    <ScaledRnd
                       key={textElement.id}
                       cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
                       enableUserSelectHack={false}
@@ -1816,13 +1821,13 @@ const SlideCover = ({
                           />
                         </Box>
                       </Box>
-                    </Rnd>
+                    </ScaledRnd>
                   );
                 })}
 
               {/* VIDEO QR */}
               {selectedVideoUrl1 && (
-                <Rnd
+                <ScaledRnd
                   cancel=".no-drag"
                   position={{ x: qrPosition1.x, y: qrPosition1.y }}
                   onDragStop={(_, d) =>
@@ -1882,12 +1887,12 @@ const SlideCover = ({
                       </IconButton>
                     </Box>
                   </motion.div>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {/* AUDIO QR */}
               {selectedAudioUrl1 && (
-                <Rnd
+                <ScaledRnd
                   cancel=".no-drag"
                   position={{ x: qrAudioPosition1.x, y: qrAudioPosition1.y }}
                   onDragStop={(_, d) =>
@@ -1936,7 +1941,7 @@ const SlideCover = ({
                       </IconButton>
                     </Box>
                   </motion.div>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {/* USER IMAGES */}
@@ -1948,7 +1953,7 @@ const SlideCover = ({
                   const isLocked = !!locked;
 
                   return (
-                    <Rnd
+                    <ScaledRnd
                       key={id}
                       size={{ width, height }}
                       position={{ x, y }}
@@ -2217,7 +2222,7 @@ const SlideCover = ({
                           </Box>
                         )}
                       </Box>
-                    </Rnd>
+                    </ScaledRnd>
                   );
                 })}
 
@@ -2229,8 +2234,8 @@ const SlideCover = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    height: { md: "675px", sm: "575px", xs: "575px" },
-                    width: { md: "470px", sm: "370px", xs: "90%" },
+                    height: "var(--card-slide-h, 675px)",
+                    width: "var(--card-slide-w, 470px)",
                     border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                     position: "absolute",
                     bgcolor: "#6183cc36",
@@ -2316,7 +2321,7 @@ const SlideCover = ({
                 <Box
                   sx={{
                     height: "98%",
-                    width: { md: "475px", sm: "375px", xs: "90%" },
+                    width: "var(--card-slide-w, 475px)",
                     borderRadius: "6px",
                     p: 1,
                     position: "absolute",
@@ -2475,7 +2480,8 @@ const SlideCover = ({
 
               {/* AI IMAGE */}
               {isAIimage1 && (
-                <Rnd
+                <ScaledRnd
+                  bounds="parent"
                   size={{ width: aimage1.width, height: aimage1.height }}
                   position={{ x: aimage1.x, y: aimage1.y }}
                   onDragStart={() => align.onDragStart()}
@@ -2543,7 +2549,7 @@ const SlideCover = ({
                       <Close />
                     </IconButton>
                   </Box>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {/* STICKERS (admin drag/resize) */}
@@ -2553,7 +2559,7 @@ const SlideCover = ({
                 const isLocked = !!sticker.locked;
 
                 return (
-                  <Rnd
+                  <ScaledRnd
                     key={sticker.id || index}
                     size={{ width: sticker.width, height: sticker.height }}
                     position={{ x: sticker.x, y: sticker.y }}
@@ -2696,7 +2702,7 @@ const SlideCover = ({
                         </IconButton>
                       )}
                     </Box>
-                  </Rnd>
+                  </ScaledRnd>
                 );
               })}
             </>

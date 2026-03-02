@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ComponentProps } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -311,15 +311,20 @@ interface SpreadRightSideProps {
   activeIndex?: number;
   addTextRight?: number;
   rightBox?: boolean;
-  isAdminEditor?: boolean
+  isAdminEditor?: boolean;
+  canvasScale?: number;
 }
 
 const SpreadRightSide = ({
   activeIndex,
   addTextRight,
   rightBox,
-  isAdminEditor
+  isAdminEditor,
+  canvasScale,
 }: SpreadRightSideProps) => {
+  const rndScale = canvasScale && canvasScale > 0 ? canvasScale : 1;
+  type RndProps = ComponentProps<typeof Rnd>;
+  const ScaledRnd = (props: RndProps) => <Rnd {...props} scale={props.scale ?? rndScale} />;
   const isMugsCategory = useMemo(() => {
     const direct = safeGetStorage("selectedCategory");
     if (direct && /mug/i.test(String(direct))) return true;
@@ -1087,7 +1092,7 @@ const SpreadRightSide = ({
             zIndex: 10,
             p: 2,
             position: "relative",
-            height: "700px",
+            height: "var(--card-slide-h, 700px)",
             opacity: isSlideActive3 ? 1 : 0.6,
             pointerEvents: isSlideActive3 ? "auto" : "none",
             backgroundColor: bgColor3 ?? "transparent",
@@ -1115,7 +1120,7 @@ const SpreadRightSide = ({
 
           {/* BG */}
           {isAdminEditor && bgImage3 && (
-            <Rnd
+            <ScaledRnd
               size={{ width: bgRect3.width, height: bgRect3.height }}
               position={{ x: bgRect3.x, y: bgRect3.y }}
               bounds="parent"
@@ -1220,7 +1225,7 @@ const SpreadRightSide = ({
                   </Box>
                 )}
               </Box>
-            </Rnd>
+            </ScaledRnd>
           )}
 
 
@@ -1281,7 +1286,7 @@ const SpreadRightSide = ({
                         let lastTap = 0;
 
                         return (
-                          <Rnd
+                          <ScaledRnd
                             key={textElement.id}
                             cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
                             enableUserSelectHack={false}
@@ -1509,7 +1514,7 @@ const SpreadRightSide = ({
                                 />
                               </Box>
                             </Box>
-                          </Rnd>
+                          </ScaledRnd>
                         );
                       })}
                     </>
@@ -1518,7 +1523,7 @@ const SpreadRightSide = ({
 
                 {/* VIDEO QR */}
                 {selectedVideoUrl3 && (
-                  <Rnd
+                  <ScaledRnd
                     cancel=".no-drag"
                     position={{ x: qrPosition3.x, y: qrPosition3.y }}
                     onDragStop={(_, d) =>
@@ -1578,12 +1583,12 @@ const SpreadRightSide = ({
                         </IconButton>
                       </Box>
                     </motion.div>
-                  </Rnd>
+                  </ScaledRnd>
                 )}
 
                 {/* AUDIO QR */}
                 {selectedAudioUrl3 && (
-                  <Rnd
+                  <ScaledRnd
                     cancel=".no-drag"
                     position={{ x: qrAudioPosition3.x, y: qrAudioPosition3.y }}
                     onDragStop={(_, d) =>
@@ -1632,7 +1637,7 @@ const SpreadRightSide = ({
                         </IconButton>
                       </Box>
                     </motion.div>
-                  </Rnd>
+                  </ScaledRnd>
                 )}
 
                 {/* USER IMAGES (per-item lock) */}
@@ -1644,7 +1649,7 @@ const SpreadRightSide = ({
                     const isLocked = !!locked;
 
                     return (
-                      <Rnd
+                      <ScaledRnd
                         key={id}
                         size={{ width, height }}
                         position={{ x, y }}
@@ -1913,7 +1918,7 @@ const SpreadRightSide = ({
                             </Box>
                           )}
                         </Box>
-                      </Rnd>
+                      </ScaledRnd>
                     );
                   })}
 
@@ -1925,8 +1930,8 @@ const SpreadRightSide = ({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      height: { md: "675px", sm: "575px", xs: "575px" },
-                      width: { md: "470px", sm: "370px", xs: "90%" },
+                      height: "var(--card-slide-h, 675px)",
+                      width: "var(--card-slide-w, 470px)",
                       border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                       position: "absolute",
                       bgcolor: "#6183cc36",
@@ -2012,7 +2017,7 @@ const SpreadRightSide = ({
                   <Box
                     sx={{
                       height: "98%",
-                      width: { md: "475px", sm: "375px", xs: "90%" },
+                      width: "var(--card-slide-w, 475px)",
                       borderRadius: "6px",
                       p: 1,
                       position: "absolute",
@@ -2175,7 +2180,8 @@ const SpreadRightSide = ({
 
                 {/* AI IMAGE (kept as-is, not part of lock demo) */}
                 {isAIimage3 && (
-                  <Rnd
+                  <ScaledRnd
+                    bounds="parent"
                     size={{ width: aimage3.width, height: aimage3.height }}
                     position={{ x: aimage3.x, y: aimage3.y }}
                     onDragStart={() => align.onDragStart()}
@@ -2243,7 +2249,7 @@ const SpreadRightSide = ({
                         <Close />
                       </IconButton>
                     </Box>
-                  </Rnd>
+                  </ScaledRnd>
                 )}
 
                 {/* STICKERS (per-item lock) */}
@@ -2253,7 +2259,7 @@ const SpreadRightSide = ({
                   const isLocked = !!sticker.locked;
 
                   return (
-                    <Rnd
+                    <ScaledRnd
                       key={sticker.id || index}
                       size={{ width: sticker.width, height: sticker.height }}
                       position={{ x: sticker.x, y: sticker.y }}
@@ -2398,7 +2404,7 @@ const SpreadRightSide = ({
                           </IconButton>
                         )}
                       </Box>
-                    </Rnd>
+                    </ScaledRnd>
                   );
                 })}
               </> :
@@ -2571,7 +2577,7 @@ const SpreadRightSide = ({
                     let lastTap = 0;
 
                     return (
-                      <Rnd
+                      <ScaledRnd
                         key={textElement.id}
                         cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
                         enableUserSelectHack={false}
@@ -2781,12 +2787,13 @@ const SpreadRightSide = ({
                             />
                           </Box>
                         </Box>
-                      </Rnd>
+                      </ScaledRnd>
                     );
                   })}
 
                 {selectedVideoUrl3 && (
-                  <Rnd
+                  <ScaledRnd
+                    bounds="parent"
                     cancel=".no-drag"
                     position={{ x: qrPosition3.x, y: qrPosition3.y }}
                     onDragStop={(_, d) =>
@@ -2902,11 +2909,12 @@ const SpreadRightSide = ({
                         </IconButton>
                       </Box>
                     </motion.div>
-                  </Rnd>
+                  </ScaledRnd>
                 )}
 
                 {selectedAudioUrl3 && (
-                  <Rnd
+                  <ScaledRnd
+                    bounds="parent"
                     cancel=".no-drag"
                     position={{ x: qrAudioPosition3.x, y: qrAudioPosition3.y }}
                     onDragStop={(_, d) =>
@@ -3020,7 +3028,7 @@ const SpreadRightSide = ({
                         </IconButton>
                       </Box>
                     </motion.div>
-                  </Rnd>
+                  </ScaledRnd>
                 )}
 
                 {draggableImages3
@@ -3031,7 +3039,7 @@ const SpreadRightSide = ({
                       typeof window !== "undefined" && window.innerWidth < 768;
 
                     return (
-                      <Rnd
+                      <ScaledRnd
                         key={id}
                         size={{ width, height }}
                         position={{ x, y }}
@@ -3206,7 +3214,7 @@ const SpreadRightSide = ({
                             <Close fontSize={isMobile ? "medium" : "small"} />
                           </Box>
                         </Box>
-                      </Rnd>
+                      </ScaledRnd>
                     );
                   })}
 
@@ -3217,8 +3225,8 @@ const SpreadRightSide = ({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      height: { md: "675px", sm: "575px", xs: '575px' },
-                      width: { md: "470px", sm: "370px", xs: "90%" },
+                      height: "var(--card-slide-h, 675px)",
+                      width: "var(--card-slide-w, 470px)",
                       border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                       position: "absolute",
                       bgcolor: "#6183cc36",
@@ -3303,7 +3311,7 @@ const SpreadRightSide = ({
                   <Box
                     sx={{
                       height: "98%",
-                      width: { md: "475px", sm: "375px", xs: "90%" },
+                      width: "var(--card-slide-w, 475px)",
                       borderRadius: "6px",
                       p: 1,
                       position: "absolute",
@@ -3467,7 +3475,8 @@ const SpreadRightSide = ({
                 )}
 
                 {isAIimage3 && (
-                  <Rnd
+                  <ScaledRnd
+                    bounds="parent"
                     size={{ width: aimage3.width, height: aimage3.height }}
                     position={{ x: aimage3.x, y: aimage3.y }}
                     onDragStart={() => align.onDragStart()}
@@ -3581,7 +3590,7 @@ const SpreadRightSide = ({
                         <Close />
                       </IconButton>
                     </Box>
-                  </Rnd>
+                  </ScaledRnd>
                 )}
 
                 {selectedStickers3.map((sticker, index) => {
@@ -3589,7 +3598,7 @@ const SpreadRightSide = ({
                     typeof window !== "undefined" && window.innerWidth < 768;
 
                   return (
-                    <Rnd
+                    <ScaledRnd
                       key={sticker.id || index}
                       size={{ width: sticker.width, height: sticker.height }}
                       position={{ x: sticker.x, y: sticker.y }}
@@ -3738,7 +3747,7 @@ const SpreadRightSide = ({
                           <Forward10 fontSize={isMobile ? "medium" : "small"} />
                         </IconButton>
                       </Box>
-                    </Rnd>
+                    </ScaledRnd>
                   );
                 })}
               </>

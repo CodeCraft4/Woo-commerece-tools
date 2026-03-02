@@ -1,5 +1,5 @@
 import { Adjust, Check, Delete, DrawOutlined, Flare, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
-import { Box, IconButton } from "@mui/material";
+import { Box, IconButton, useMediaQuery } from "@mui/material";
 import { COLORS } from "../../../constant/color";
 import { useSlide2 } from "../../../context/Slide2Context";
 import { convertToRealisticSketch } from "../../../source/SketchEffect";
@@ -13,6 +13,7 @@ interface ImageAdjustmentProps {
 
 const ImageAdjustment = (props: ImageAdjustmentProps) => {
     const { onClose, isAdminEditor } = props
+    const isMobile = useMediaQuery("(max-width:600px)");
 
     const { setImageFilter, imageFilter, setDraggableImages, selectedImg, setImages, setSelectedImage, setActiveFilterImageId, draggableImages } = useSlide2()
 
@@ -76,27 +77,51 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
 
 
     return (
-        <Box sx={{ position: 'absolute', left: '33%', zIndex: 99, height: 600, bgcolor: 'white', mt: 1, borderRadius: 1 }}>
+        <Box
+            sx={{
+                position: isMobile ? "fixed" : "absolute",
+                left: isMobile ? 0 : "33%",
+                right: isMobile ? 0 : "auto",
+                bottom: isMobile ? "calc(45vh + 12px)" : "auto",
+                top: isMobile ? "auto" : "auto",
+                transform: "none",
+                zIndex: isMobile ? 1401 : 1299,
+                height: isMobile ? "auto" : 600,
+                width: isMobile ? "100%" : "auto",
+                bgcolor: "white",
+                mt: isMobile ? 0 : 1,
+                borderRadius: 1,
+                boxShadow: isMobile ? 3 : 1,
+                p: isMobile ? 1 : 0,
+                boxSizing: "border-box",
+            }}
+        >
             <Box
                 sx={{
                     display: "flex",
-                    flexDirection: "column",
-                    height: "600px",
-                    width: "auto",
-                    justifyContent: 'center'
+                    flexDirection: isMobile ? "row" : "column",
+                    height: isMobile ? "auto" : "600px",
+                    width: "100%",
+                    alignItems: isMobile ? "center" : "stretch",
+                    justifyContent: isMobile ? "flex-start" : "center",
+                    gap: isMobile ? 1 : 0,
                 }}
             >
                 {/* Scrollable Icon Section */}
                 <Box
                     sx={{
-                        flex: 1,
-                        overflowY: "auto",
+                        flex: isMobile ? "1 1 auto" : 1,
+                        overflowY: isMobile ? "hidden" : "auto",
+                        overflowX: isMobile ? "auto" : "hidden",
                         display: "flex",
-                        flexDirection: "column",
+                        flexDirection: isMobile ? "row" : "column",
                         gap: "10px",
+                        alignItems: isMobile ? "center" : "stretch",
+                        WebkitOverflowScrolling: "touch",
 
                         "&::-webkit-scrollbar": {
-                            width: "6px",
+                            width: isMobile ? "0px" : "6px",
+                            height: isMobile ? "6px" : "0px",
                         },
                         "&::-webkit-scrollbar-thumb": {
                             backgroundColor: "#ccc",
@@ -155,9 +180,11 @@ const ImageAdjustment = (props: ImageAdjustmentProps) => {
                 {/* Fixed Check Button at Bottom */}
                 <Box
                     sx={{
-                        p: 1,
+                        p: isMobile ? 0 : 1,
                         display: "flex",
                         justifyContent: "center",
+                        alignItems: "center",
+                        flexShrink: 0,
                     }}
                 >
                     <IconButton
@@ -186,6 +213,8 @@ const editingButtonStyle = {
     flexDirection: "column",
     alignItems: "center",
     fontSize: "13px",
+    minWidth: "56px",
+    flexShrink: 0,
     color: "#212121",
     "&:hover": {
         color: "#3a7bd5",

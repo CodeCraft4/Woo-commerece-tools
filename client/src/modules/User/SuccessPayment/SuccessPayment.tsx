@@ -366,18 +366,21 @@ export default function PremiumSuccess() {
             distribute: true,
             fit: "contain",
             pageMm: getPageMmForSize(cardSize),
+            fillMode: "sequence",
           })
         : isCoastersGrid
         ? await buildFixedGridSlides(processedCoasterSlides, {
             columns: 2,
-            rows: 3,
-            labelMm: { w: 95, h: 95 },
+            rows: 1,
+            labelMm: { w: 89, h: 89 },
             gapMm: 0,
-            distribute: true,
+            distribute: false,
             fit: "contain",
-            pageMm: getPageMmForSize(cardSize),
+            pageMm: { w: 229, h: 89 },
             background: "transparent",
             outputFormat: "png",
+            fillMode: "sequence",
+            mirrorPage: true,
           })
         : isMugWrap
         ? await buildFixedGridSlides(processedMugSlides, {

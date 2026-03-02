@@ -1161,9 +1161,22 @@ const TempletForm = () => {
                           | "right");
                         const justify =
                           align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+                        const rotation = Number(txt?.rotation ?? 0) || 0;
+                        const curve = Number(txt?.curve ?? 0) || 0;
+                        const curveVal = Math.max(-200, Math.min(200, curve));
+                        const hasCurve = Math.abs(curveVal) > 0.5;
+                        const safeW = Math.max(1, w);
+                        const safeH = Math.max(1, h);
+                        const curvePx = (curveVal / 100) * (safeH / 2);
+                        const midY = safeH / 2;
+                        const curvePath = `M 0 ${midY} Q ${safeW / 2} ${midY - curvePx} ${safeW} ${midY}`;
+                        const curveId = `curve-${txt.id}`;
+                        const textAnchor = align === "left" ? "start" : align === "right" ? "end" : "middle";
+                        const startOffset = align === "left" ? "0%" : align === "right" ? "100%" : "50%";
+                        const textTransform = rotation ? `rotate(${rotation}deg)` : "none";
 
                         return (
-                          <Typography
+                          <Box
                             key={txt.id}
                             sx={{
                               position: "absolute",
@@ -1171,24 +1184,74 @@ const TempletForm = () => {
                               top: `${y * scale}px`,
                               width: `${w * scale}px`,
                               height: `${h * scale}px`,
-                              fontWeight: txt.bold ? 700 : 400,
-                              fontStyle: txt.italic ? "italic" : "normal",
-                              fontSize: toNum(txt.fontSize ?? txt.font_size, 20),
-                              fontFamily: txt.fontFamily ?? txt.font_family ?? "Arial",
-                              color: txt.color ?? "#111111",
-                              textAlign: align,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: justify,
-                              whiteSpace: "pre-wrap",
-                              overflowWrap: "break-word",
-                              wordBreak: "break-word",
+                              overflow: "visible",
                               userSelect: "none",
                               pointerEvents: "none",
                             }}
                           >
-                            {txt.text ?? txt.value}
-                          </Typography>
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: justify,
+                                transform: textTransform,
+                                transformOrigin: "center",
+                                overflow: "visible",
+                              }}
+                            >
+                              {hasCurve ? (
+                                <Box
+                                  component="svg"
+                                  viewBox={`0 0 ${safeW} ${safeH}`}
+                                  sx={{ width: "100%", height: "100%", overflow: "visible", display: "block" }}
+                                >
+                                  <defs>
+                                    <path id={curveId} d={curvePath} />
+                                  </defs>
+                                  <text
+                                    fill={txt.color ?? "#111111"}
+                                    fontFamily={txt.fontFamily ?? txt.font_family ?? "Arial"}
+                                    fontSize={toNum(txt.fontSize ?? txt.font_size, 20)}
+                                    fontWeight={txt.bold ? 700 : 400}
+                                    fontStyle={txt.italic ? "italic" : "normal"}
+                                    textAnchor={textAnchor}
+                                    dominantBaseline="middle"
+                                  >
+                                    <textPath href={`#${curveId}`} startOffset={startOffset}>
+                                      {txt.text ?? txt.value}
+                                    </textPath>
+                                  </text>
+                                </Box>
+                              ) : (
+                                <Typography
+                                  sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: justify,
+                                    fontWeight: txt.bold ? 700 : 400,
+                                    fontStyle: txt.italic ? "italic" : "normal",
+                                    fontSize: toNum(txt.fontSize ?? txt.font_size, 20),
+                                    fontFamily: txt.fontFamily ?? txt.font_family ?? "Arial",
+                                    color: txt.color ?? "#111111",
+                                    textAlign: align,
+                                    whiteSpace: "pre-wrap",
+                                    overflowWrap: "break-word",
+                                    wordBreak: "break-word",
+                                    overflow: "visible",
+                                  }}
+                                >
+                                  {txt.text ?? txt.value}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
                         );
                       })}
                     </Box>

@@ -32,7 +32,7 @@ const PopupWrapper = ({
             opacity: 0,
           }}
           animate={{
-            y: isMobile ? "50%" : 0,
+            y: isMobile ? 0 : 0,
             opacity: 1,
           }}
           exit={{
@@ -45,8 +45,9 @@ const PopupWrapper = ({
           }}
           style={{
             position: "fixed",
-            // bottom: 200,
             left: 0,
+            bottom: isMobile ? 0 : "auto",
+            top: isMobile ? "auto" : 0,
             width: "100%",
             display: "flex",
             justifyContent: isMobile ? "center" : "flex-start",
@@ -78,7 +79,7 @@ const PopupWrapper = ({
               },
               overflowY: "auto",
               zIndex: 1300,
-              mb: 20,
+              mb: { xs: 0, sm: 2, md: 20 },
               ...sx,
             }}
           >
