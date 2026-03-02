@@ -348,6 +348,7 @@ const ViewAllCard = () => {
                   e?.category ?? e?.categoryName ?? e?.templetCategory ?? e?.cardcategory ?? e?.cardCategory ?? "";
                 const enableSmartCrop = e.__type === "templet" && shouldSmartCropCategory(templetCategory);
                 const isCandleCategory = /candle/i.test(String(templetCategory ?? ""));
+                const isMugCategory = /mug/i.test(String(templetCategory ?? ""));
 
                 return (
                   <Box
@@ -375,10 +376,10 @@ const ViewAllCard = () => {
                       sx={{
                         width: "100%",
                         height: "100%",
-                        objectFit: isCandleCategory ? "contain" : "cover",
+                        objectFit: isCandleCategory || isMugCategory ? "contain" : "cover",
                         objectPosition: "center",
                         display: "block",
-                        backgroundColor: isCandleCategory ? "#fff" : "transparent",
+                        backgroundColor: isCandleCategory || isMugCategory ? "#fff" : "transparent",
                       }}
                     />
                   </Box>

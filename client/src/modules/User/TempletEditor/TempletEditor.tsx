@@ -211,7 +211,6 @@ export default function TempletEditor() {
     slideItemRefs.current[i] = el;
   };
   const activeSlideRef = useRef<HTMLDivElement | null>(null);
-  const align = useAlignGuides(activeSlideRef, { scale: canvasScale });
 
   const { productId } = useParams<{ productId: string }>();
   const { state } = useLocation() as { state?: { templetDesign?: any } };
@@ -696,6 +695,7 @@ export default function TempletEditor() {
     if (!isCandleCategory(adminDesign?.category)) return 1;
     return isTablet ? 1.2 : 1.5;
   }, [adminDesign?.category, isTablet]);
+  const align = useAlignGuides(activeSlideRef, { scale: canvasScale });
   const previewCapture = useMemo(
     () => ({
       quality: isTablet ? 0.6 : 0.72,

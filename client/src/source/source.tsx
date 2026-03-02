@@ -62,6 +62,15 @@ export const fetchAllCategoriesFromDB = async () => {
   if (error) throw new Error(error.message);
 
   const MUG_DEFAULT_SUBS = ["Initials/Name", "Slogans"];
+  const MUG_SUBSUB_ALL = [
+    "For Her",
+    "For Him",
+    "Age",
+    "Friends",
+    "Kids",
+    "General",
+    "Write your own",
+  ];
   const normalized = (data ?? []).map((row: any) => {
     const name = String(row?.name ?? "");
     if (!/mug/i.test(name)) return row;
@@ -75,7 +84,23 @@ export const fetchAllCategoriesFromDB = async () => {
         lower.add(key);
       }
     }
-    return { ...row, subcategories: merged };
+    const subSub = typeof row?.sub_subcategories === "object" && row?.sub_subcategories
+      ? { ...row.sub_subcategories }
+      : {};
+    for (const parent of MUG_DEFAULT_SUBS) {
+      const list = Array.isArray(subSub[parent]) ? subSub[parent] : [];
+      const set = new Set(list.map((v: string) => String(v).toLowerCase()));
+      const next = [...list];
+      for (const label of MUG_SUBSUB_ALL) {
+        const key = label.toLowerCase();
+        if (!set.has(key)) {
+          next.push(label);
+          set.add(key);
+        }
+      }
+      subSub[parent] = next;
+    }
+    return { ...row, subcategories: merged, sub_subcategories: subSub };
   });
 
   return normalized.slice().sort((a: any, b: any) =>

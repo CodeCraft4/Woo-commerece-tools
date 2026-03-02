@@ -949,19 +949,19 @@ const CategoriesEditor = () => {
         ...prev,
         ...prev
           .filter((t) => t.slideId === sourceId)
-          .map((t) => ({ ...t, id: uuid(), slideId: newSlideId })),
+          .map((t) => ({ ...t, id: uuid("text"), slideId: newSlideId })),
       ]);
       setImageElements((prev) => [
         ...prev,
         ...prev
           .filter((img) => img.slideId === sourceId)
-          .map((img) => ({ ...img, id: uuid(), slideId: newSlideId })),
+          .map((img) => ({ ...img, id: uuid("img"), slideId: newSlideId })),
       ]);
       setStickerElements((prev) => [
         ...prev,
         ...prev
           .filter((st) => st.slideId === sourceId)
-          .map((st) => ({ ...st, id: uuid(), slideId: newSlideId })),
+          .map((st) => ({ ...st, id: uuid("stk"), slideId: newSlideId })),
       ]);
 
       setSlideBg((prev: any) => {
