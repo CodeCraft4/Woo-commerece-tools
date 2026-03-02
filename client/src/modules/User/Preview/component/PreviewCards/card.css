@@ -11,7 +11,7 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  width: 1000px;
+  width: 100%;
 }
 
 .paper {
@@ -108,12 +108,7 @@
   .book {
     display: none;
   } /* hide 3D book on mobile */
-  .mobile-only {
-    width: 400px;
-  }
   .mobile-slide {
-    width: 400px;
-    height: 600px;
     border-radius: 15px;
     border: 1px solid #dbdbdb;
     overflow: hidden; /* show only active slide */
@@ -122,6 +117,6 @@
   }
 
   .book-container {
-    width: 400px;
+    width: 100%;
   }
 }

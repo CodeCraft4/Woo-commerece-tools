@@ -25,6 +25,31 @@ const PreviewBookCard = () => {
 
 
   const isMobile = useMediaQuery("(max-width:480px)");
+  const previewAreaRef = useRef<HTMLDivElement | null>(null);
+  const [previewArea, setPreviewArea] = useState({ w: 0, h: 0 });
+  const [viewport, setViewport] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const onResize = () => {
+      if (typeof window === "undefined") return;
+      setViewport({ w: window.innerWidth, h: window.innerHeight });
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!previewAreaRef.current || typeof ResizeObserver === "undefined") return;
+    const obs = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const cr = entry.contentRect;
+      setPreviewArea({ w: cr.width, h: cr.height });
+    });
+    obs.observe(previewAreaRef.current);
+    return () => obs.disconnect();
+  }, []);
 
   const numOfPapers = 2;
   const maxLocation = numOfPapers + 1;
@@ -133,6 +158,11 @@ const PreviewBookCard = () => {
     }
   };
 
+  const BASE_PAGE = { w: 500, h: 700 };
+  const areaW = Math.max(260, (previewArea.w || viewport.w || 0) - 8);
+  const areaH = Math.max(360, (previewArea.h || viewport.h || 0) - 8);
+  const mobileScale = Math.min(1, areaW / BASE_PAGE.w, areaH / BASE_PAGE.h);
+
 
   return (
     <>
@@ -156,10 +186,36 @@ const PreviewBookCard = () => {
       </Box>
 
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", m: "auto", flexDirection: "column", mt: 4 }}>
+        <Box
+          ref={previewAreaRef}
+          sx={{
+            width: "100%",
+            maxWidth: "92vw",
+            height: isMobile ? "70vh" : "72vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
         {/* MOBILE: one slide at a time */}
         {isMobile ? (
-          <div className="book-container mobile-only">
-            <div className="mobile-slide" aria-live="polite">
+          <div
+            className="book-container mobile-only"
+            style={{
+              width: `${BASE_PAGE.w * mobileScale}px`,
+              height: `${BASE_PAGE.h * mobileScale}px`,
+            }}
+          >
+            <div
+              className="mobile-slide"
+              aria-live="polite"
+              style={{
+                width: `${BASE_PAGE.w}px`,
+                height: `${BASE_PAGE.h}px`,
+                transform: `scale(${mobileScale})`,
+                transformOrigin: "top left",
+              }}
+            >
               {slides[mobileIndex - 1]}
             </div>
           </div>
@@ -209,6 +265,7 @@ const PreviewBookCard = () => {
           </div>
 
         )}
+        </Box>
 
         {/* Controls */}
         <Box sx={{ display: "flex", gap: "10px", alignItems: "center", mt: 3 }}>
