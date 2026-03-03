@@ -55,7 +55,7 @@ const BasketCard = ({
         position: "relative",
         width: "100%",
         maxWidth: { xs: 320, sm: 300, md: 280 },
-        height: { xs: 315, sm: 345, md: 375 },
+        height: { xs: 315, sm: 210, md: 230 },
         mx: "auto",
         borderRadius: 2,
         bgcolor: bgByCategory(label),

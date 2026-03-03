@@ -196,6 +196,27 @@ const CategoriesWisePreview: React.FC = () => {
 
   const hasCaptured = (captured?.length || 0) > 0;
   const slideCount = Math.max(1, hasCaptured ? captured.length : slides.length);
+  const [previewScale, setPreviewScale] = useState(1);
+  const baseW = Number((config as any)?.fitCanvas?.width ?? config?.mmWidth ?? 1);
+  const baseH = Number((config as any)?.fitCanvas?.height ?? config?.mmHeight ?? 1);
+  const scaledW = Math.max(1, Math.round(baseW * previewScale));
+  const scaledH = Math.max(1, Math.round(baseH * previewScale));
+
+  useEffect(() => {
+    const update = () => {
+      const vw = typeof window !== "undefined" ? window.innerWidth : 1200;
+      const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+      const maxW = vw * (isMobile ? 0.92 : 0.8);
+      const maxH = vh * 0.72;
+      const scale = Math.min(1, maxW / baseW, maxH / baseH);
+      setPreviewScale(Number.isFinite(scale) && scale > 0 ? scale : 1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+    };
+  }, [baseW, baseH, isMobile]);
 
   // ✅ current/next imgs
   const currentImg = hasCaptured ? captured?.[active] || "" : "";
@@ -652,10 +673,8 @@ const CategoriesWisePreview: React.FC = () => {
           {/* Preview box */}
           <Box
             sx={{
-              width: config.mmWidth ?? "auto",
-              height: config.mmHeight ?? "auto",
-              maxWidth: "92vw",
-              maxHeight: "72vh",
+              width: scaledW,
+              height: scaledH,
               overflow: "hidden",
               borderRadius: 3,
               boxShadow: 3,
@@ -683,13 +702,31 @@ const CategoriesWisePreview: React.FC = () => {
               >
                 {hasCaptured ? (
                   <Box
-                    component="img"
-                    src={currentImg}
-                    alt="preview"
-                    sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
-                  />
+                    sx={{
+                      width: baseW,
+                      height: baseH,
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: "top left",
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={currentImg}
+                      alt="preview"
+                      sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
+                    />
+                  </Box>
                 ) : (
-                  renderSlide(currentSlide ?? undefined)
+                  <Box
+                    sx={{
+                      width: baseW,
+                      height: baseH,
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: "top left",
+                    }}
+                  >
+                    {renderSlide(currentSlide ?? undefined)}
+                  </Box>
                 )}
               </Box>
 
@@ -705,13 +742,31 @@ const CategoriesWisePreview: React.FC = () => {
               >
                 {hasCaptured ? (
                   <Box
-                    component="img"
-                    src={nextImg}
-                    alt="next"
-                    sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
-                  />
+                    sx={{
+                      width: baseW,
+                      height: baseH,
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: "top left",
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={nextImg}
+                      alt="next"
+                      sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block", bgcolor: "transparent" }}
+                    />
+                  </Box>
                 ) : (
-                  renderSlide(nextSlide ?? undefined)
+                  <Box
+                    sx={{
+                      width: baseW,
+                      height: baseH,
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: "top left",
+                    }}
+                  >
+                    {renderSlide(nextSlide ?? undefined)}
+                  </Box>
                 )}
               </Box>
 

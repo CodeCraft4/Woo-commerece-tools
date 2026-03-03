@@ -10,7 +10,7 @@ import {
   Chip,
   Modal,
 } from "@mui/material";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Collections, ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import * as htmlToImage from "html-to-image";
@@ -60,7 +60,12 @@ type Slide = { id: number; label: string; elements: AnyEl[]; bgColor?: string };
 type CanvasPx = { w: number; h: number; dpi?: number };
 type AdminPreview = {
   category: string;
-  config: { mmWidth: number; mmHeight: number; slideLabels: string[] };
+  config: {
+    mmWidth: number;
+    mmHeight: number;
+    slideLabels: string[];
+    fitCanvas?: { width: number; height: number };
+  };
   canvasPx: CanvasPx;
   slides: Slide[];
 };
@@ -527,28 +532,59 @@ export default function TempletEditor() {
 
   // ====== Render sizing ======
   const canvasSize = useMemo(() => {
-    // ⭐ Prefer state.templetDesign size, then adminDesign config, then sensible defaults
-    const exactW = asNum(state?.templetDesign?.canvas?.mm?.w, 0);
-    const exactH = asNum(state?.templetDesign?.canvas?.mm?.h, 0);
+    // ⭐ Prefer fitCanvas (matches element coordinates), then px, then mm
+    const fitW = asNum(state?.templetDesign?.config?.fitCanvas?.width, 0);
+    const fitH = asNum(state?.templetDesign?.config?.fitCanvas?.height, 0);
+    const adminFitW = asNum(adminDesign?.config?.fitCanvas?.width, 0);
+    const adminFitH = asNum(adminDesign?.config?.fitCanvas?.height, 0);
+    const exactPxW = asNum(state?.templetDesign?.canvas?.px?.w, 0);
+    const exactPxH = asNum(state?.templetDesign?.canvas?.px?.h, 0);
+    const exactMmW = asNum(state?.templetDesign?.canvas?.mm?.w, 0);
+    const exactMmH = asNum(state?.templetDesign?.canvas?.mm?.h, 0);
     const cfgW = asNum(state?.templetDesign?.config?.mmWidth, 0);
     const cfgH = asNum(state?.templetDesign?.config?.mmHeight, 0);
-    const adminW = asNum(adminDesign?.config?.mmWidth, asNum(adminDesign?.canvasPx?.w, 210));
-    const adminH = asNum(adminDesign?.config?.mmHeight, asNum(adminDesign?.canvasPx?.h, 297));
+    const adminPxW = asNum(adminDesign?.canvasPx?.w, 0);
+    const adminPxH = asNum(adminDesign?.canvasPx?.h, 0);
+    const adminMmW = asNum(adminDesign?.config?.mmWidth, 0);
+    const adminMmH = asNum(adminDesign?.config?.mmHeight, 0);
 
     return {
-      width: exactW || cfgW || adminW,
-      height: exactH || cfgH || adminH,
+      width: fitW || adminFitW || exactPxW || adminPxW || exactMmW || cfgW || adminMmW || 210,
+      height: fitH || adminFitH || exactPxH || adminPxH || exactMmH || cfgH || adminMmH || 297,
     };
   }, [
     state?.templetDesign,
     adminDesign?.config?.mmWidth,
     adminDesign?.config?.mmHeight,
+    adminDesign?.config?.fitCanvas?.width,
+    adminDesign?.config?.fitCanvas?.height,
     adminDesign?.canvasPx?.w,
     adminDesign?.canvasPx?.h,
   ]);
 
   const artboardWidth = canvasSize.width;
   const artboardHeight = canvasSize.height;
+  const [fitScale, setFitScale] = useState(1);
+
+  useEffect(() => {
+    const update = () => {
+      const vw = typeof window !== "undefined" ? window.innerWidth : 0;
+      const vh = typeof window !== "undefined" ? window.innerHeight : 0;
+      if (!vw || !vh || !artboardWidth || !artboardHeight) return;
+      const maxW = Math.max(240, vw - 32);
+      const maxH = Math.max(240, vh - 260); // leave room for header + nav
+      const scaleW = maxW / artboardWidth;
+      const scaleH = maxH / artboardHeight;
+      const next = Math.min(1, scaleW, scaleH);
+      const safe = Number.isFinite(next) && next > 0 ? next : 1;
+      setFitScale(Math.max(0.2, safe));
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+    };
+  }, [artboardWidth, artboardHeight]);
 
   const alignItems = useMemo(() => {
     const slide = userSlides[activeSlide];
@@ -594,40 +630,33 @@ export default function TempletEditor() {
     };
   }, [artboardWidth, userSlides.length]);
 
+  const centerSlideInView = useCallback((index: number) => {
+    const container = scrollRef.current;
+    const node = slideItemRefs.current[index];
+    if (!container || !node) return;
+    const cRect = container.getBoundingClientRect();
+    const nRect = node.getBoundingClientRect();
+    const target =
+      container.scrollLeft +
+      (nRect.left - cRect.left) -
+      (cRect.width / 2 - nRect.width / 2);
+    const next = Math.max(0, target);
+    container.scrollTo({ left: next, behavior: "smooth" });
+    if (Math.abs(container.scrollLeft - next) > 2) {
+      container.scrollLeft = next;
+    }
+  }, []);
+
   // Auto-center active slide in scroller
   useEffect(() => {
-    const container = scrollRef.current;
-    const node = slideItemRefs.current[activeSlide];
-    if (!container || !node) return;
-
-    const center = () => {
-      const containerRect = container.getBoundingClientRect();
-      const nodeRect = node.getBoundingClientRect();
-      const nodeCenter =
-        nodeRect.left - containerRect.left + container.scrollLeft + nodeRect.width / 2;
-      const target = nodeCenter - container.clientWidth / 2;
-      container.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
-    };
-
-    requestAnimationFrame(() => requestAnimationFrame(center));
-  }, [activeSlide, userSlides.length, sidePadPx]);
+    if (userSlides.length <= 1) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => centerSlideInView(activeSlide)));
+  }, [activeSlide, userSlides.length, sidePadPx, centerSlideInView]);
 
   const scrollToSlide = (index: number) => {
     setActiveSlide(index);
     setSelectedElId(null);
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        const container = scrollRef.current;
-        const node = slideItemRefs.current[index];
-        if (!container || !node) return;
-        const containerRect = container.getBoundingClientRect();
-        const nodeRect = node.getBoundingClientRect();
-        const nodeCenter =
-          nodeRect.left - containerRect.left + container.scrollLeft + nodeRect.width / 2;
-        const target = nodeCenter - container.clientWidth / 2;
-        container.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
-      })
-    );
+    requestAnimationFrame(() => requestAnimationFrame(() => centerSlideInView(index)));
   };
 
   // Update active slide on manual swipe/scroll (mobile/tablet)
@@ -741,9 +770,9 @@ export default function TempletEditor() {
     [adminDesign?.category]
   );
   const canvasScale = useMemo(() => {
-    if (!isCandleCategory(adminDesign?.category)) return 1;
-    return isTablet ? 1.2 : 1.5;
-  }, [adminDesign?.category, isTablet]);
+    const base = isCandleCategory(adminDesign?.category) ? (isTablet ? 1.2 : 1.5) : 1;
+    return Math.min(base, fitScale);
+  }, [adminDesign?.category, isTablet, fitScale]);
   const align = useAlignGuides(activeSlideRef, { scale: canvasScale });
   const previewCapture = useMemo(
     () => ({
@@ -1305,7 +1334,24 @@ export default function TempletEditor() {
         </Box>
       </Box>
       {/* Thumbnails */}
-      <Box sx={{ display: "flex", gap: 1, mt: 2, alignItems: "center", justifyContent: "center" }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1,
+          mt: 2,
+          alignItems: "center",
+          justifyContent: "center",
+          overflowX: "auto",
+          maxWidth: "100%",
+          px: 1,
+          flexWrap: "nowrap",
+          scrollBehavior: "smooth",
+          position: "relative",
+          zIndex: 2,
+          "&::-webkit-scrollbar": { height: 6 },
+          "&::-webkit-scrollbar-thumb": { backgroundColor: COLORS.primary, borderRadius: "20px" },
+        }}
+      >
         <IconButton onClick={() => scrollToSlide(Math.max(0, activeSlide - 1))}>
           <ArrowBackIos />
         </IconButton>
