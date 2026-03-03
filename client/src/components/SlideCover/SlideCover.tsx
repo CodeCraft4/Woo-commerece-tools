@@ -2518,7 +2518,6 @@ const SlideCover = ({
                       y: position.y,
                     })
                   }
-                  bounds="parent"
                   enableResizing={{ bottomRight: true }}
                   resizeHandleStyles={{
                     bottomRight: {

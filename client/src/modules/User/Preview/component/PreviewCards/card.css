@@ -92,8 +92,8 @@
 /* Tablets (≤ 768px) */
 @media (max-width: 768px) {
   .book {
-    width: 410px;
-    height: 600px;
+    width: 500px;
+    height: 700px;
   }
 }
 
@@ -101,8 +101,8 @@
 @media (max-width: 480px) {
   .front-content,
   .back-content {
-    width: 100%;
-    height: 100%;
+    width: 80%;
+    height: 90%;
   }
 
   .book {

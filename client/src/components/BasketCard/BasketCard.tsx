@@ -53,9 +53,10 @@ const BasketCard = ({
       onClick={handleOpen}
       sx={{
         position: "relative",
-        width: "120%",
-        height: 235,
-        aspectRatio: "1 / 1",
+        width: "100%",
+        maxWidth: { xs: 320, sm: 300, md: 280 },
+        height: { xs: 315, sm: 345, md: 375 },
+        mx: "auto",
         borderRadius: 2,
         bgcolor: bgByCategory(label),
         overflow: "hidden",
@@ -94,7 +95,8 @@ const BasketCard = ({
               sx={{
                 width: "100%",
                 height: "95%",
-                objectFit: variant === "category" ? "fill" : "contain",
+                objectFit: "cover",
+                backgroundColor: variant === "category" ? "#fff" : "transparent",
                 display: "block",
                 borderRadius: 2,
                 userSelect: "none",
@@ -125,7 +127,7 @@ const BasketCard = ({
           sx={{
             color: "#fff",
             fontWeight: 700,
-            fontSize: { sm: 16, md: 18 },
+            fontSize: { xs: 14, sm: 16, md: 18 },
             textAlign: "center",
             textTransform: "capitalize",
             whiteSpace: "nowrap",

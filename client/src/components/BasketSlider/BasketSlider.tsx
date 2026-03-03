@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Box, CircularProgress, IconButton, Typography, useMediaQuery } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Mousewheel } from "swiper/modules";
@@ -41,10 +42,14 @@ async function fetchCategoriesLight(): Promise<any[]> {
 
 const BasketSliderNoTabs = ({ title, description }: Props) => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [swiper, setSwiper] = useState<SwiperType | null>(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const navItemRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   // ✅ Categories (includes image_base64 because select("*"))
   const { data: categories = [], isLoading: loadingCats } = useQuery({
@@ -78,7 +83,15 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
   const updateEdges = (s: SwiperType) => {
     setIsBeginning(s.isBeginning);
     setIsEnd(s.isEnd);
+    setActiveIndex(s.realIndex ?? 0);
   };
+
+  useEffect(() => {
+    if (!isMobile) return;
+    const node = navItemRefs.current[activeIndex];
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeIndex, isMobile]);
 
   const goToCategory = (name: string) => {
     const n = String(name ?? "").trim();
@@ -94,7 +107,14 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
         </Typography>
       )}
       {description && (
-        <Typography sx={{ mt: 1, fontSize: { md: 24, xs: 16 }, textAlign: "start", opacity: 0.9 }}>
+        <Typography
+          sx={{
+            mt: 1,
+            fontSize: { md: 24, xs: 16 },
+            textAlign: { xs: "center", md: "start" },
+            opacity: 0.9,
+          }}
+        >
           {description}
         </Typography>
       )}
@@ -104,8 +124,8 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
           mt: 2,
           bgcolor: COLORS.black,
           borderRadius: 3,
-          py: 3,
-          px: { md: 2, xs: 2 },
+          py: { xs: 2, md: 3 },
+          px: { xs: 1.5, md: 2 },
           position: "relative",
           overflow: "hidden",
         }}
@@ -121,13 +141,13 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
               freeMode={{ enabled: true, momentum: true }}
               grabCursor
               mousewheel={{ forceToAxis: true }}
-              spaceBetween={50}
+              spaceBetween={16}
               breakpoints={{
-                0: { slidesPerView: 1 },
-                600: { slidesPerView: 4 },
-                900: { slidesPerView: 5 },
-                1200: { slidesPerView: 6 },
-                1536: { slidesPerView: 7 },
+                0: { slidesPerView: 1, spaceBetween: 12 },
+                600: { slidesPerView: 3, spaceBetween: 16 },
+                900: { slidesPerView: 5, spaceBetween: 24 },
+                1200: { slidesPerView: 6, spaceBetween: 28 },
+                1536: { slidesPerView: 7, spaceBetween: 32 },
               }}
               onSwiper={(s) => {
                 setSwiper(s);
@@ -137,10 +157,17 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
               onReachBeginning={updateEdges}
               onReachEnd={updateEdges}
               onFromEdge={updateEdges}
-              style={{ paddingBottom: 6 }}
+              style={{ paddingBottom: isMobile ? 10 : 6 }}
             >
               {categoryTiles.map((cat) => (
-                <SwiperSlide key={`cat-${cat.name}`} style={{ height: "auto" }}>
+                <SwiperSlide
+                  key={`cat-${cat.name}`}
+                  style={{
+                    height: "auto",
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
                   <BasketCard
                     variant="category"
                     title={cat.name}
@@ -152,18 +179,61 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
               ))}
             </Swiper>
 
+            {categoryTiles.length > 0 && (
+              <Box
+                sx={{
+                  mt: 2,
+                  display: { xs: "flex", md: "none" },
+                  gap: 1,
+                  overflowX: "auto",
+                  pb: 0.5,
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
+                {categoryTiles.map((cat, idx) => {
+                  const active = idx === activeIndex;
+                  return (
+                    <Box
+                      ref={(el) => {
+                        navItemRefs.current[idx] = el as HTMLDivElement | null;
+                      }}
+                      key={`cat-nav-${cat.name}`}
+                      onClick={() => goToCategory(cat.name)}
+                      sx={{
+                        flex: "0 0 auto",
+                        px: 1.5,
+                        py: 0.75,
+                        borderRadius: 999,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        cursor: "pointer",
+                        bgcolor: active ? COLORS.white : "rgba(255,255,255,0.12)",
+                        color: active ? COLORS.primary : "#fff",
+                        border: `1px solid ${active ? COLORS.primary : "rgba(255,255,255,0.3)"}`,
+                      }}
+                    >
+                      {cat.name}
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+
             <IconButton
               onClick={() => swiper?.slidePrev()}
               disabled={isBeginning}
               sx={{
                 position: "absolute",
                 top: "50%",
-                left: { xs: 8, md: 12 },
+                left: { xs: 6, md: 12 },
                 transform: "translateY(-50%)",
                 zIndex: 10,
                 bgcolor: COLORS.white,
                 border: `2px solid ${COLORS.primary}`,
                 color: COLORS.primary,
+                width: { xs: 34, md: 40 },
+                height: { xs: 34, md: 40 },
                 "&:hover": { bgcolor: "#f2f2f2" },
                 "&.Mui-disabled": {
                   opacity: 0.4,
@@ -182,12 +252,14 @@ const BasketSliderNoTabs = ({ title, description }: Props) => {
               sx={{
                 position: "absolute",
                 top: "50%",
-                right: { xs: 8, md: 12 },
+                right: { xs: 6, md: 12 },
                 transform: "translateY(-50%)",
                 zIndex: 10,
                 bgcolor: COLORS.white,
                 border: `2px solid ${COLORS.primary}`,
                 color: COLORS.primary,
+                width: { xs: 34, md: 40 },
+                height: { xs: 34, md: 40 },
                 "&:hover": { bgcolor: "#f2f2f2" },
                 "&.Mui-disabled": {
                   opacity: 0.4,

@@ -80,7 +80,8 @@ interface SlideSpreadProps {
   activeIndex?: number;
   addTextRight?: number;
   rightBox?: boolean;
-  isAdminEditor?: boolean
+  isAdminEditor?: boolean;
+  canvasScale?: number;
 }
 
 const SlideSpread = ({

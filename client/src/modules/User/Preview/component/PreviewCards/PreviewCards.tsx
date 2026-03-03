@@ -159,9 +159,11 @@ const PreviewBookCard = () => {
   };
 
   const BASE_PAGE = { w: 500, h: 700 };
+  const BASE_BOOK = { w: 1000, h: 700 };
   const areaW = Math.max(260, (previewArea.w || viewport.w || 0) - 8);
-  const areaH = Math.max(360, (previewArea.h || viewport.h || 0) - 8);
+  const areaH = Math.max(320, (previewArea.h || viewport.h || 0) - 8);
   const mobileScale = Math.min(1, areaW / BASE_PAGE.w, areaH / BASE_PAGE.h);
+  const bookScale = Math.min(1, areaW / BASE_BOOK.w, areaH / BASE_BOOK.h);
 
 
   return (
@@ -200,34 +202,64 @@ const PreviewBookCard = () => {
         {/* MOBILE: one slide at a time */}
         {isMobile ? (
           <div
-            className="book-container mobile-only"
             style={{
               width: `${BASE_PAGE.w * mobileScale}px`,
               height: `${BASE_PAGE.h * mobileScale}px`,
+              position: "relative",
             }}
           >
             <div
-              className="mobile-slide"
-              aria-live="polite"
               style={{
                 width: `${BASE_PAGE.w}px`,
                 height: `${BASE_PAGE.h}px`,
                 transform: `scale(${mobileScale})`,
                 transformOrigin: "top left",
+                position: "absolute",
+                inset: 0,
               }}
             >
-              {slides[mobileIndex - 1]}
+              <div
+                className="book-container mobile-only"
+                style={{ width: `${BASE_PAGE.w}px`, height: `${BASE_PAGE.h}px` }}
+              >
+                <div
+                  className="mobile-slide"
+                  aria-live="polite"
+                  style={{ width: `${BASE_PAGE.w}px`, height: `${BASE_PAGE.h}px` }}
+                >
+                  {slides[mobileIndex - 1]}
+                </div>
+              </div>
             </div>
           </div>
         ) : (
           // DESKTOP/TABLET: 3D flip-book
-          <div className="book-container">
-            <div id="book" className="book"
+          <div
+            style={{
+              width: `${BASE_BOOK.w * bookScale}px`,
+              height: `${BASE_BOOK.h * bookScale}px`,
+              position: "relative",
+            }}
+          >
+            <div
               style={{
-                transform: getBookTransform(),
-                transition: "transform 0.5s ease",
+                width: `${BASE_BOOK.w}px`,
+                height: `${BASE_BOOK.h}px`,
+                transform: `scale(${bookScale})`,
+                transformOrigin: "top left",
+                position: "absolute",
+                inset: 0,
               }}
             >
+              <div className="book-container" style={{ width: `${BASE_BOOK.w}px`, height: `${BASE_BOOK.h}px` }}>
+                <div
+                  id="book"
+                  className="book"
+                  style={{
+                    transform: getBookTransform(),
+                    transition: "transform 0.5s ease",
+                  }}
+                >
 
               {/* Paper 1 */}
               <div id="p1" className={`paper ${currentLocation > 1 ? "flipped" : ""}`}
@@ -261,6 +293,8 @@ const PreviewBookCard = () => {
                 </div>
               </div>
 
+                </div>
+              </div>
             </div>
           </div>
 

@@ -2309,7 +2309,6 @@ const AdminSlide4Canvas = ({
           onResizeStop={(_, __, ref, ___, position) =>
             setAIImage4({ width: parseInt(ref.style.width), height: parseInt(ref.style.height), x: position.x, y: position.y })
           }
-          bounds="parent"
           enableResizing={{ bottomRight: true }}
           resizeHandleStyles={{
             bottomRight: { width: "10px", height: "10px", background: "white", border: "2px solid #1976d2", borderRadius: "10%", right: "-5px", bottom: "-5px", cursor: "se-resize" },

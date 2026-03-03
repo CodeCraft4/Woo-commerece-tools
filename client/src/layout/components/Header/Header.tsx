@@ -621,7 +621,7 @@ export default function Header(props: Props) {
           <Box
             sx={{
               width: "100%",
-              display: { md: "flex", sm: "flex", xs: "none" },
+              display: { md: "flex", sm: "flex", xs: "flex" },
               m: "auto",
               flexDirection: "column",
               position: "relative",
@@ -637,7 +637,7 @@ export default function Header(props: Props) {
               disabled={!canLeft}
               sx={{
                 position: "absolute",
-                left: { lg: 0 },
+                left: { lg: 0, md: 0, sm: 0, xs: 4 },
                 top: "50%",
                 transform: "translateY(-50%)",
                 zIndex: 2,
@@ -647,6 +647,8 @@ export default function Header(props: Props) {
                 "&:hover": { bgcolor: "#fff" },
                 opacity: canLeft ? 1 : 0.5,
                 pointerEvents: canLeft ? "auto" : "none",
+                width: { xs: 28, sm: 32, md: 36 },
+                height: { xs: 28, sm: 32, md: 36 },
               }}
             >
               <ChevronLeft />
@@ -658,7 +660,7 @@ export default function Header(props: Props) {
               disabled={!canRight}
               sx={{
                 position: "absolute",
-                right: { lg: 0 },
+                right: { lg: 0, md: 0, sm: 0, xs: 4 },
                 top: "50%",
                 transform: "translateY(-50%)",
                 zIndex: 2,
@@ -668,6 +670,8 @@ export default function Header(props: Props) {
                 "&:hover": { bgcolor: "#fff" },
                 opacity: canRight ? 1 : 0.5,
                 pointerEvents: canRight ? "auto" : "none",
+                width: { xs: 28, sm: 32, md: 36 },
+                height: { xs: 28, sm: 32, md: 36 },
               }}
             >
               <ChevronRight />
@@ -679,8 +683,8 @@ export default function Header(props: Props) {
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: 5,
-                p: 3,
+                gap: { xs: 2, sm: 3, md: 5 },
+                p: { xs: 1.5, sm: 2, md: 3 },
                 m: "auto",
                 flexWrap: "nowrap",
                 overflowX: "auto",

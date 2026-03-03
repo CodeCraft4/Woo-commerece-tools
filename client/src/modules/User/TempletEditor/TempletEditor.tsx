@@ -645,16 +645,20 @@ export default function TempletEditor() {
         let nearest = activeSlide;
         let minDist = Number.POSITIVE_INFINITY;
 
-        slideItemRefs.current.forEach((node, idx) => {
-          if (!node) return;
-          const rect = node.getBoundingClientRect();
-          const nodeCenter = rect.left + rect.width / 2;
-          const dist = Math.abs(nodeCenter - center);
-          if (dist < minDist) {
-            minDist = dist;
-            nearest = idx;
+        (Object.entries(slideItemRefs.current) as Array<[string, HTMLDivElement | null]>).forEach(
+          ([key, node]) => {
+            if (!node) return;
+            const idx = Number(key);
+            if (Number.isNaN(idx)) return;
+            const rect = node.getBoundingClientRect();
+            const nodeCenter = rect.left + rect.width / 2;
+            const dist = Math.abs(nodeCenter - center);
+            if (dist < minDist) {
+              minDist = dist;
+              nearest = idx;
+            }
           }
-        });
+        );
 
         if (nearest !== activeSlide) {
           setActiveSlide(nearest);

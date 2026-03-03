@@ -55,7 +55,8 @@ const convertImageToTexture = (image: string): THREE.Texture => {
     ctx.save();
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 20);
+    // Move design up by 10px for better mug alignment
+    ctx.drawImage(img, 0, 5);
     ctx.restore();
 
     (tex as any).image = canvas;

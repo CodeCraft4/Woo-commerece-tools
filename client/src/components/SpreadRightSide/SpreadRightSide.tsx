@@ -2218,7 +2218,6 @@ const SpreadRightSide = ({
                         y: position.y,
                       })
                     }
-                    bounds="parent"
                     enableResizing={{ bottomRight: true }}
                     resizeHandleStyles={{
                       bottomRight: {
@@ -2814,7 +2813,6 @@ const SpreadRightSide = ({
                         zIndex: qrPosition3.zIndex,
                       }));
                     }}
-                    bounds="parent"
                     enableResizing={false}
                     style={{
                       padding: "10px",
@@ -2935,7 +2933,6 @@ const SpreadRightSide = ({
                         zIndex: qrAudioPosition3.zIndex, // Bring to front on resize
                       }));
                     }}
-                    bounds="parent"
                     enableResizing={false}
                     style={{
                       padding: "10px",
@@ -3517,7 +3514,6 @@ const SpreadRightSide = ({
                         y: position.y,
                       })
                     }
-                    bounds="parent"
                     enableResizing={{
                       top: false,
                       right: false,

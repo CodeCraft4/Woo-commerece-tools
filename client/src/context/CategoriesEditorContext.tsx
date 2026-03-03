@@ -26,6 +26,8 @@ export type TextElement = {
   editable?: boolean;
   // align exists in editor code via ts-expect-error; keep flexible
   align?: "left" | "center" | "right";
+  rotation?: number;
+  curve?: number;
 };
 
 export type ImageElement = {
