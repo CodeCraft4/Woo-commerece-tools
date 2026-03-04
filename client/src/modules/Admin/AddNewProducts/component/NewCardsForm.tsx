@@ -320,7 +320,19 @@ const NewCardsForm = ({ editProduct }: Props) => {
     // slide2?.resetSlide2State?.();
     // slide3?.resetSlide3State?.();
     // slide4?.resetSlide4State?.();
-  }, [isEditMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, editLayout]);
+
+  useEffect(() => {
+    // New product must always start clean (no carry-over from previous product/session).
+    if (isEditMode) return;
+    if (editLayout) return;
+    slide1.resetSlide1State?.();
+    slide2.resetSlide2State?.();
+    slide3.resetSlide3State?.();
+    slide4.resetSlide4State?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, editLayout]);
 
   const handleEditLayout = async () => {
     if (editLoading) return;
