@@ -1185,14 +1185,21 @@ const SlideCover = ({
 
   /* ------------------ UI ------------------ */
   // Draft capture 
-  const captureClean = !!isCaptureMode || !!isAdminEditor;
+  // Keep capture-only clean mode, but do not disable inactive overlay in admin editor.
+  const captureClean = !!isCaptureMode && !isAdminEditor;
   return (
     <CanvasScaleContext.Provider value={rndScale}>
       <Box
         ref={coverRef}
         id="slide-cover-capture"
         onClick={handleBlankClick}
-        sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}
+        sx={{
+          display: "flex",
+          width: "var(--card-slide-w, 500px)",
+          minWidth: "var(--card-slide-w, 500px)",
+          gap: "5px",
+          position: "relative",
+        }}
       >
         {activeIndex === 0 && rightBox && (
           <Box
@@ -1200,10 +1207,11 @@ const SlideCover = ({
             onClick={handleBlankClick}
             sx={{
               zIndex: 10,
-              p: 2,
+              p: 0,
               position: "relative",
               height: "var(--card-slide-h, 700px)",
-              width: "100%",
+              width: "var(--card-slide-w, 500px)",
+              minWidth: "var(--card-slide-w, 500px)",
               opacity: captureClean ? 1 : (isSlideActive1 ? 1 : 0.6),
               pointerEvents: captureClean ? "auto" : (isSlideActive1 ? "auto" : "none"),
               backgroundColor: bgColor1 ?? "transparent",
@@ -1213,7 +1221,7 @@ const SlideCover = ({
                   position: "absolute",
                   inset: 0,
                   backgroundColor: captureClean ? 'transparent' : "rgba(105,105,105,0.51)",
-                  zIndex: 1000,
+                  zIndex: 30000,
                   pointerEvents: "none",
                 }
                 : {},

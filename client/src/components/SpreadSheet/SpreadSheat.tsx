@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ComponentProps } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -25,6 +25,13 @@ import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
 import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../hooks/useAlignGuides";
+
+type RndProps = ComponentProps<typeof Rnd>;
+const CanvasScaleContext = createContext(1);
+const ScaledRnd = (props: RndProps) => {
+  const scale = useContext(CanvasScaleContext);
+  return <Rnd {...props} scale={props.scale ?? scale} />;
+};
 
 
 // Helper function to create a new text element
@@ -88,9 +95,11 @@ const SlideSpread = ({
   activeIndex,
   addTextRight,
   rightBox,
-  isAdminEditor
+  isAdminEditor,
+  canvasScale,
 }: // togglePopup,
   SlideSpreadProps) => {
+  const rndScale = canvasScale && canvasScale > 0 ? canvasScale : 1;
   const isMugsCategory = useMemo(() => {
     const direct = safeGetStorage("selectedCategory");
     if (direct && /mug/i.test(String(direct))) return true;
@@ -329,7 +338,7 @@ const SlideSpread = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
-  const align = useAlignGuides(rightBoxRef);
+  const align = useAlignGuides(rightBoxRef, { scale: rndScale });
   const alignItems = useMemo(() => {
     const items: { id: string; x: number; y: number; w: number; h: number }[] = [];
     const push = (id: string, x?: number, y?: number, w?: number, h?: number) => {
@@ -803,14 +812,16 @@ const SlideSpread = ({
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        width: "100%",
-        gap: "5px",
-        position: "relative",
-      }}
-    >
+    <CanvasScaleContext.Provider value={rndScale}>
+      <Box
+        sx={{
+          display: "flex",
+          width: "var(--card-slide-w, 500px)",
+          minWidth: "var(--card-slide-w, 500px)",
+          gap: "5px",
+          position: "relative",
+        }}
+      >
       {activeIndex === 1 && rightBox && (
         <Box
           ref={rightBoxRef}
@@ -818,9 +829,11 @@ const SlideSpread = ({
           sx={{
             flex: 1,
             zIndex: 10,
-            p: 2,
+            p: 0,
             position: "relative",
             height: "700px",
+            width: "var(--card-slide-w, 500px)",
+            minWidth: "var(--card-slide-w, 500px)",
             opacity: isSlideActive ? 1 : 0.6,
             pointerEvents: isSlideActive ? "auto" : "none",
             backgroundColor: bgColor2 ?? "transparent",
@@ -848,7 +861,7 @@ const SlideSpread = ({
 
           {/* BG */}
           {isAdminEditor && bgImage2 && (
-            <Rnd
+            <ScaledRnd
               size={{ width: bgRect2.width, height: bgRect2.height }}
               position={{ x: bgRect2.x, y: bgRect2.y }}
               bounds="parent"
@@ -953,7 +966,7 @@ const SlideSpread = ({
                   </Box>
                 )}
               </Box>
-            </Rnd>
+            </ScaledRnd>
           )}
 
           {/* 🎚 Single selection-based switch (admin only) */}
@@ -1012,7 +1025,7 @@ const SlideSpread = ({
                   let lastTap = 0;
 
                   return (
-                    <Rnd
+                    <ScaledRnd
                       key={textElement.id}
                       cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
                       enableUserSelectHack={false}
@@ -1240,13 +1253,13 @@ const SlideSpread = ({
                           />
                         </Box>
                       </Box>
-                    </Rnd>
+                    </ScaledRnd>
                   );
                 })}
 
               {/* VIDEO QR */}
               {selectedVideoUrl && (
-                <Rnd
+                <ScaledRnd
                   cancel=".no-drag"
                   position={{ x: qrPosition.x, y: qrPosition.y }}
                   onDragStop={(_, d) =>
@@ -1306,12 +1319,12 @@ const SlideSpread = ({
                       </IconButton>
                     </Box>
                   </motion.div>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {/* AUDIO QR */}
               {selectedAudioUrl && (
-                <Rnd
+                <ScaledRnd
                   cancel=".no-drag"
                   position={{ x: qrAudioPosition.x, y: qrAudioPosition.y }}
                   onDragStop={(_, d) =>
@@ -1360,7 +1373,7 @@ const SlideSpread = ({
                       </IconButton>
                     </Box>
                   </motion.div>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {/* USER IMAGES (per-item lock) */}
@@ -1372,7 +1385,7 @@ const SlideSpread = ({
                   const isLocked = !!locked;
 
                   return (
-                    <Rnd
+                    <ScaledRnd
                       key={id}
                       size={{ width, height }}
                       position={{ x, y }}
@@ -1641,7 +1654,7 @@ const SlideSpread = ({
                           </Box>
                         )}
                       </Box>
-                    </Rnd>
+                    </ScaledRnd>
                   );
                 })}
 
@@ -1903,7 +1916,7 @@ const SlideSpread = ({
 
               {/* AI IMAGE (kept as-is, not part of lock demo) */}
               {isAIimage2 && (
-                <Rnd
+                <ScaledRnd
                   size={{ width: aimage2.width, height: aimage2.height }}
                   position={{ x: aimage2.x, y: aimage2.y }}
                   onDragStop={(_, d) => setAIImage2((prev) => ({ ...prev, x: d.x, y: d.y }))}
@@ -1946,7 +1959,7 @@ const SlideSpread = ({
                       <Close />
                     </IconButton>
                   </Box>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {/* STICKERS (per-item lock) */}
@@ -1956,7 +1969,7 @@ const SlideSpread = ({
                 const isLocked = !!sticker.locked;
 
                 return (
-                  <Rnd
+                  <ScaledRnd
                     key={sticker.id || index}
                     size={{ width: sticker.width, height: sticker.height }}
                     position={{ x: sticker.x, y: sticker.y }}
@@ -2101,7 +2114,7 @@ const SlideSpread = ({
                         </IconButton>
                       )}
                     </Box>
-                  </Rnd>
+                  </ScaledRnd>
                 );
               })}
             </>
@@ -2311,7 +2324,7 @@ const SlideSpread = ({
                       let lastTap = 0;
 
                       return (
-                        <Rnd
+                        <ScaledRnd
                           key={textElement.id}
                           cancel=".no-drag"
                           dragHandleClassName="drag-area"
@@ -2557,7 +2570,7 @@ const SlideSpread = ({
                             </Box>
 
                           </Box>
-                        </Rnd>
+                        </ScaledRnd>
                       );
                     })}
                   </>
@@ -2565,7 +2578,7 @@ const SlideSpread = ({
               }
 
               {selectedVideoUrl && (
-                <Rnd
+                <ScaledRnd
                   cancel=".no-drag"
                   position={{ x: qrPosition.x, y: qrPosition.y }}
                   onDragStop={(_, d) =>
@@ -2674,11 +2687,11 @@ const SlideSpread = ({
                       </IconButton>
                     </Box>
                   </motion.div>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {selectedAudioUrl && (
-                <Rnd
+                <ScaledRnd
                   cancel=".no-drag"
                   position={{ x: qrAudioPosition.x, y: qrAudioPosition.y }}
                   onDragStop={(_, d) =>
@@ -2791,7 +2804,7 @@ const SlideSpread = ({
                       </IconButton>
                     </Box>
                   </motion.div>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {draggableImages
@@ -2802,7 +2815,7 @@ const SlideSpread = ({
                     typeof window !== "undefined" && window.innerWidth < 768;
 
                   return (
-                    <Rnd
+                    <ScaledRnd
                       key={id}
                       size={{ width, height }}
                       position={{ x, y }}
@@ -2977,7 +2990,7 @@ const SlideSpread = ({
                           <Close fontSize={isMobile ? "medium" : "small"} />
                         </Box>
                       </Box>
-                    </Rnd>
+                    </ScaledRnd>
                   );
                 })}
 
@@ -3225,7 +3238,7 @@ const SlideSpread = ({
               )}
 
               {isAIimage2 && (
-                <Rnd
+                <ScaledRnd
                   cancel=".no-drag"
                   size={{ width: aimage2.width, height: aimage2.height }}
                   position={{ x: aimage2.x, y: aimage2.y }}
@@ -3341,7 +3354,7 @@ const SlideSpread = ({
                       <Close />
                     </IconButton>
                   </Box>
-                </Rnd>
+                </ScaledRnd>
               )}
 
               {selectedStickers2.map((sticker, index) => {
@@ -3349,7 +3362,7 @@ const SlideSpread = ({
                   typeof window !== "undefined" && window.innerWidth < 768;
 
                 return (
-                  <Rnd
+                  <ScaledRnd
                     key={sticker.id || index}
                     size={{ width: sticker.width, height: sticker.height }}
                     position={{ x: sticker.x, y: sticker.y }}
@@ -3498,7 +3511,7 @@ const SlideSpread = ({
                         <Forward10 fontSize={isMobile ? "medium" : "small"} />
                       </IconButton>
                     </Box>
-                  </Rnd>
+                  </ScaledRnd>
                 );
               })}
             </>}
@@ -3506,8 +3519,10 @@ const SlideSpread = ({
         </Box>
       )
       }
-    </Box >
+      </Box >
+    </CanvasScaleContext.Provider>
   );
 };
 
 export default SlideSpread;
+

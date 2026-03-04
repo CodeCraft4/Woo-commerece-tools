@@ -1325,9 +1325,11 @@ const AdminSlide4Canvas = ({
       sx={{
         flex: 1,
         zIndex: 10,
-        p: 2,
+        p: 0,
         position: "relative",
         height: "var(--card-slide-h, 700px)",
+        width: "var(--card-slide-w, 500px)",
+        minWidth: "var(--card-slide-w, 500px)",
         opacity: isSlideActive4 ? 1 : 0.6,
         pointerEvents: isSlideActive4 ? "auto" : "none",
         backgroundColor: bgColor4 ?? "transparent",
@@ -1339,7 +1341,7 @@ const AdminSlide4Canvas = ({
             position: "absolute",
             inset: 0,
             backgroundColor: "rgba(146, 145, 145, 0.51)",
-            zIndex: 1000,
+            zIndex: 30000,
             pointerEvents: "none",
           }
           : {},

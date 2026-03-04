@@ -1082,7 +1082,8 @@ const SpreadRightSide = ({
       <Box
         sx={{
           display: "flex",
-          width: "100%",
+          width: "var(--card-slide-w, 500px)",
+          minWidth: "var(--card-slide-w, 500px)",
           gap: "5px",
           position: "relative",
         }}
@@ -1094,9 +1095,11 @@ const SpreadRightSide = ({
             sx={{
               flex: 1,
               zIndex: 10,
-              p: 2,
+              p: 0,
               position: "relative",
               height: "var(--card-slide-h, 700px)",
+              width: "var(--card-slide-w, 500px)",
+              minWidth: "var(--card-slide-w, 500px)",
               opacity: isSlideActive3 ? 1 : 0.6,
               pointerEvents: isSlideActive3 ? "auto" : "none",
               backgroundColor: bgColor3 ?? "transparent",
@@ -1111,7 +1114,7 @@ const SpreadRightSide = ({
                   right: 0,
                   bottom: 0,
                   backgroundColor: "rgba(146, 145, 145, 0.51)",
-                  zIndex: 1000,
+                  zIndex: 30000,
                   pointerEvents: "none",
                 }
                 : {},
