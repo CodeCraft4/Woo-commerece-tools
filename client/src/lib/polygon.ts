@@ -388,7 +388,7 @@ const normalizeSlideV2 = (ctx: any, opts?: BuildOptions): SlidePayloadV2 => {
   };
 
   // ✅ Keep selection but DON'T filter saved images
-  const selectedImg = pick<string[]>(
+  const selectedImg = pick<string[] | undefined>(
     ctx,
     [
       "selectedImg1",
@@ -397,7 +397,7 @@ const normalizeSlideV2 = (ctx: any, opts?: BuildOptions): SlidePayloadV2 => {
       "selectedImg4",
       "selectedImg",
     ],
-    []
+    undefined
   );
 
   const imagesRaw = pick<any[]>(
@@ -413,10 +413,15 @@ const normalizeSlideV2 = (ctx: any, opts?: BuildOptions): SlidePayloadV2 => {
   );
 
   // ✅ IMPORTANT: if selection empty, treat as "all selected"
-  const selectedFinalIds =
-    Array.isArray(selectedImg) && selectedImg.length > 0
-      ? selectedImg
-      : (imagesRaw ?? []).map((i: any) => i.id);
+  const imageIdSet = new Set((imagesRaw ?? []).map((i: any) => String(i.id)));
+  const hasSelectedField = Array.isArray(selectedImg);
+  const selectedRaw = hasSelectedField ? selectedImg : [];
+  const selectedFiltered = (selectedRaw ?? []).filter((id: any) =>
+    imageIdSet.has(String(id))
+  );
+  const selectedFinalIds = hasSelectedField
+    ? selectedFiltered
+    : (imagesRaw ?? []).map((i: any) => i.id);
 
   const selectedSet = new Set(selectedFinalIds);
 
@@ -929,11 +934,16 @@ function applySlideV2ToContext(
   callFn("setDraggableImages", Array.isArray(images) ? images : []);
 
   // ✅ Selection (THIS is why images weren't showing)
-  const selected = payload.user?.selectedImageIds ?? [];
-  const selectedFinal =
-    Array.isArray(selected) && selected.length > 0
-      ? selected
-      : (images ?? []).map((i: any) => i.id);
+  const selected = payload.user?.selectedImageIds;
+  const imageIdSet = new Set((images ?? []).map((i: any) => String(i.id)));
+  const hasSelectedField = Array.isArray(selected);
+  const selectedRaw = hasSelectedField ? selected : [];
+  const selectedFiltered = (selectedRaw ?? []).filter((id: any) =>
+    imageIdSet.has(String(id))
+  );
+  const selectedFinal = hasSelectedField
+    ? selectedFiltered
+    : (images ?? []).map((i: any) => i.id);
 
   // contexts naming:
   // slide1: setSelectedImage1

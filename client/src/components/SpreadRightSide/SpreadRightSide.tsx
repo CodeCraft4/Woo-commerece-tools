@@ -214,30 +214,11 @@ function normalizeSlide(slide: any): {
   out.elements.push(...(user?.images?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "uimg-locked")));
   out.elements.push(...(user?.images?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "uimg-edit")));
 
-  // stickers (layout + user + qrVideo)
+  // stickers (layout + user)
   out.stickers.push(...(layout?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "st-locked")));
   out.stickers.push(...(layout?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "st-edit")));
   out.stickers.push(...(user?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "ust-locked")));
   out.stickers.push(...(user?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "ust-edit")));
-
-  if (slide.qrVideo?.url) {
-    out.stickers.push(
-      toSticker(
-        {
-          id: "qr-video",
-          x: num(slide.qrVideo.x, 56),
-          y: num(slide.qrVideo.y, 404),
-          width: num(slide.qrVideo.width, 70),
-          height: num(slide.qrVideo.height, 105),
-          zIndex: num(slide.qrVideo.zIndex, 1000),
-          url: slide.qrVideo.url,
-        },
-        9991,
-        false,
-        "qr",
-      ),
-    );
-  }
 
   // texts
   out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
@@ -496,6 +477,9 @@ const SpreadRightSide = ({
   };
 
   useEffect(() => {
+    const defaultQrVideo = { id: "qr1", url: "", x: 0, y: 0, width: 120, height: 120, rotation: 0, zIndex: 1 };
+    const defaultQrAudio = { id: "qr2", url: "", x: 0, y: 0, width: 120, height: 120, rotation: 0, zIndex: 1 };
+
     // ✅ 1) Draft restore
     if (draftSlide3) {
       restoredDraftRef.current = true;
@@ -580,6 +564,10 @@ const SpreadRightSide = ({
         if (canUseSaved && parsed?.layout3) {
           if (parsed.bgColor3 !== undefined) setBgColor3?.(parsed.bgColor3);
           if (parsed.bgImage3 !== undefined) setBgImage3?.(parsed.bgImage3);
+          setSelectedVideoUrl3?.(parsed.selectedVideoUrl3 ?? parsed.selectedVideoUrl ?? null);
+          setSelectedAudioUrl3?.(parsed.selectedAudioUrl3 ?? parsed.selectedAudioUrl ?? null);
+          setQrPosition3?.(parsed.qrPosition3 ?? parsed.qrPosition ?? defaultQrVideo);
+          setQrAudioPosition3?.(parsed.qrAudioPosition3 ?? parsed.qrAudioPosition ?? defaultQrAudio);
           setLayout3?.(parsed.layout3);
           return;
         }
@@ -594,6 +582,32 @@ const SpreadRightSide = ({
     setBgColor3?.(norm.bgColor);
     setBgImage3?.(norm.bgImage);
     setLayout3?.(applyTemplateLayout3(slide3Template, norm));
+
+    const templateVideoUrl =
+      slide3Template?.qrVideo?.url ??
+      slide3Template?.selectedVideoUrl3 ??
+      slide3Template?.selectedVideoUrl ??
+      null;
+    const templateAudioUrl =
+      slide3Template?.qrAudio?.url ??
+      slide3Template?.selectedAudioUrl3 ??
+      slide3Template?.selectedAudioUrl ??
+      null;
+    const templateQrVideo = slide3Template?.qrVideo ?? slide3Template?.qrPosition3 ?? slide3Template?.qrPosition ?? {};
+    const templateQrAudio = slide3Template?.qrAudio ?? slide3Template?.qrAudioPosition3 ?? slide3Template?.qrAudioPosition ?? {};
+
+    setSelectedVideoUrl3?.(templateVideoUrl);
+    setSelectedAudioUrl3?.(templateAudioUrl);
+    setQrPosition3?.({
+      ...defaultQrVideo,
+      ...templateQrVideo,
+      url: templateVideoUrl ?? templateQrVideo?.url ?? "",
+    });
+    setQrAudioPosition3?.({
+      ...defaultQrAudio,
+      ...templateQrAudio,
+      url: templateAudioUrl ?? templateQrAudio?.url ?? "",
+    });
   }, [draftSlide3, slide3Template]);
 
 

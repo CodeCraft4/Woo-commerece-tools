@@ -215,30 +215,11 @@ function normalizeSlide(slide: any): {
   out.elements.push(...(user?.images?.locked ?? []).map((o: any, i: number) => toElement(o, i, false, "uimg-locked")));
   out.elements.push(...(user?.images?.editable ?? []).map((o: any, i: number) => toElement(o, i, true, "uimg-edit")));
 
-  // stickers (layout + user + qrVideo)
+  // stickers (layout + user)
   out.stickers.push(...(layout?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "st-locked")));
   out.stickers.push(...(layout?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "st-edit")));
   out.stickers.push(...(user?.stickers?.locked ?? []).map((o: any, i: number) => toSticker(o, i, false, "ust-locked")));
   out.stickers.push(...(user?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "ust-edit")));
-
-  if (slide.qrVideo?.url) {
-    out.stickers.push(
-      toSticker(
-        {
-          id: "qr-video",
-          x: num(slide.qrVideo.x, 56),
-          y: num(slide.qrVideo.y, 404),
-          width: num(slide.qrVideo.width, 70),
-          height: num(slide.qrVideo.height, 105),
-          zIndex: num(slide.qrVideo.zIndex, 1000),
-          url: slide.qrVideo.url,
-        },
-        9991,
-        false,
-        "qr",
-      ),
-    );
-  }
 
   // texts
   out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
@@ -352,10 +333,14 @@ export const UserSlide4Preview = () => {
     isSlideActive4,
     bgColor4,
     bgImage4,
-    // selectedVideoUrl4,
-    // selectedAudioUrl4,
-    // qrPosition4,
-    // qrAudioPosition4,
+    selectedVideoUrl4,
+    setSelectedVideoUrl4,
+    selectedAudioUrl4,
+    setSelectedAudioUrl4,
+    qrPosition4,
+    setQrPosition4,
+    qrAudioPosition4,
+    setQrAudioPosition4,
     setBgColor4,
     setBgImage4,
     setLayout4,
@@ -468,6 +453,9 @@ export const UserSlide4Preview = () => {
 
   /* ------------------ normalize slide1 -> user view state ------------------ */
   useEffect(() => {
+    const defaultQrVideo = { id: "qr1", url: "", x: 0, y: 0, width: 120, height: 120, rotation: 0, zIndex: 1 };
+    const defaultQrAudio = { id: "qr2", url: "", x: 0, y: 0, width: 120, height: 120, rotation: 0, zIndex: 1 };
+
     if (draftSlide4) {
       setLayout4?.(draftSlide4.layout ?? draftSlide4);
       const hasBgColor = draftSlide4.bgColor4 !== undefined || draftSlide4.bgColor !== undefined;
@@ -478,6 +466,10 @@ export const UserSlide4Preview = () => {
       if (hasBgImage) {
         setBgImage4?.(draftSlide4.bgImage4 ?? draftSlide4.bgImage ?? null);
       }
+      setSelectedVideoUrl4?.(draftSlide4.selectedVideoUrl4 ?? draftSlide4.selectedVideoUrl ?? draftSlide4.qrVideo?.url ?? null);
+      setSelectedAudioUrl4?.(draftSlide4.selectedAudioUrl4 ?? draftSlide4.selectedAudioUrl ?? draftSlide4.qrAudio?.url ?? null);
+      setQrPosition4?.(draftSlide4.qrPosition4 ?? draftSlide4.qrPosition ?? draftSlide4.qrVideo ?? defaultQrVideo);
+      setQrAudioPosition4?.(draftSlide4.qrAudioPosition4 ?? draftSlide4.qrAudioPosition ?? draftSlide4.qrAudio ?? defaultQrAudio);
 
       const baseSlide4 = localDraftFull?.layout?.slides?.slide4 ?? slide4 ?? null;
       if (baseSlide4) {
@@ -498,6 +490,10 @@ export const UserSlide4Preview = () => {
         if (canUseSaved && parsed?.layout4) {
           if (parsed.bgColor4 !== undefined) setBgColor4?.(parsed.bgColor4);
           if (parsed.bgImage4 !== undefined) setBgImage4?.(parsed.bgImage4);
+          setSelectedVideoUrl4?.(parsed.selectedVideoUrl4 ?? parsed.selectedVideoUrl ?? null);
+          setSelectedAudioUrl4?.(parsed.selectedAudioUrl4 ?? parsed.selectedAudioUrl ?? null);
+          setQrPosition4?.(parsed.qrPosition4 ?? parsed.qrPosition ?? defaultQrVideo);
+          setQrAudioPosition4?.(parsed.qrAudioPosition4 ?? parsed.qrAudioPosition ?? defaultQrAudio);
           setLayout4?.(parsed.layout4);
           return;
         }
@@ -509,6 +505,30 @@ export const UserSlide4Preview = () => {
     setBgColor4?.(norm.bgColor);
     setBgImage4?.(norm.bgImage);
     setLayout4?.(norm.layout);
+    const templateVideoUrl =
+      slide4?.qrVideo?.url ??
+      slide4?.selectedVideoUrl4 ??
+      slide4?.selectedVideoUrl ??
+      null;
+    const templateAudioUrl =
+      slide4?.qrAudio?.url ??
+      slide4?.selectedAudioUrl4 ??
+      slide4?.selectedAudioUrl ??
+      null;
+    const templateQrVideo = slide4?.qrVideo ?? slide4?.qrPosition4 ?? slide4?.qrPosition ?? {};
+    const templateQrAudio = slide4?.qrAudio ?? slide4?.qrAudioPosition4 ?? slide4?.qrAudioPosition ?? {};
+    setSelectedVideoUrl4?.(templateVideoUrl);
+    setSelectedAudioUrl4?.(templateAudioUrl);
+    setQrPosition4?.({
+      ...defaultQrVideo,
+      ...templateQrVideo,
+      url: templateVideoUrl ?? templateQrVideo?.url ?? "",
+    });
+    setQrAudioPosition4?.({
+      ...defaultQrAudio,
+      ...templateQrAudio,
+      url: templateAudioUrl ?? templateQrAudio?.url ?? "",
+    });
   }, [draftSlide4, slide4, localDraftFull, setBgColor4, setBgImage4, setLayout4]);
 
   return (
@@ -754,6 +774,108 @@ export const UserSlide4Preview = () => {
             );
           })}
 
+        </Box>
+      )}
+
+      {selectedVideoUrl4 && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: qrPosition4.y,
+            left: qrPosition4.x,
+            width: 300,
+            height: 200,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-end",
+            textAlign: "center",
+            zIndex: qrPosition4.zIndex || 1,
+            pointerEvents: "none",
+          }}
+        >
+          <Box
+            component="img"
+            src="/assets/images/video-qr-tips.png"
+            sx={{ width: 300, height: 200, objectFit: "fill", borderRadius: "6px" }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: 55,
+              left: 8,
+              borderRadius: 2,
+            }}
+          >
+            <QrGenerator
+              url={qrPosition4.url || selectedVideoUrl4}
+              size={Math.min(qrPosition4.width, qrPosition4.height)}
+            />
+          </Box>
+          <Typography
+            sx={{
+              position: "absolute",
+              top: 80,
+              right: 15,
+              zIndex: 99,
+              color: "black",
+              fontSize: "10px",
+              width: "105px",
+              wordBreak: "break-all",
+            }}
+          >
+            {`${selectedVideoUrl4.slice(0, 20)}.....`}
+          </Typography>
+        </Box>
+      )}
+
+      {selectedAudioUrl4 && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: qrAudioPosition4.y,
+            left: qrAudioPosition4.x,
+            width: 300,
+            height: 200,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-end",
+            textAlign: "center",
+            zIndex: qrAudioPosition4.zIndex || 1,
+            pointerEvents: "none",
+          }}
+        >
+          <Box
+            component="img"
+            src="/assets/images/audio-qr-tips.png"
+            sx={{ width: 300, height: 200, objectFit: "fill", borderRadius: "6px" }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: 55,
+              left: 8,
+              borderRadius: 2,
+            }}
+          >
+            <QrGenerator
+              url={qrAudioPosition4.url || selectedAudioUrl4}
+              size={Math.min(qrAudioPosition4.width, qrAudioPosition4.height)}
+            />
+          </Box>
+          <Typography
+            sx={{
+              position: "absolute",
+              top: 78,
+              right: 15,
+              zIndex: 99,
+              color: "black",
+              fontSize: "10px",
+              width: "105px",
+              wordBreak: "break-all",
+            }}
+          >
+            {`${selectedAudioUrl4.slice(0, 20)}.....`}
+          </Typography>
         </Box>
       )}
     </Box>
