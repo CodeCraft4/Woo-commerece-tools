@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ComponentProps } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ComponentProps } from "react";
 import { Box, Chip, IconButton, Paper, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import {
   Close,
@@ -79,6 +79,13 @@ type LayoutNorm = {
   elements: ElementEl[];
   stickers: StickerEl[];
   textElements: TextEl[];
+};
+
+type RndProps = ComponentProps<typeof Rnd>;
+const CanvasScaleContext = createContext(1);
+const ScaledRnd = (props: RndProps) => {
+  const scale = useContext(CanvasScaleContext);
+  return <Rnd {...props} scale={props.scale ?? scale} />;
 };
 
 const toElement = (obj: any, i: number, editable: boolean, prefix = "bg"): ElementEl => ({
@@ -323,8 +330,6 @@ const SpreadRightSide = ({
   canvasScale,
 }: SpreadRightSideProps) => {
   const rndScale = canvasScale && canvasScale > 0 ? canvasScale : 1;
-  type RndProps = ComponentProps<typeof Rnd>;
-  const ScaledRnd = (props: RndProps) => <Rnd {...props} scale={props.scale ?? rndScale} />;
   const isMugsCategory = useMemo(() => {
     const direct = safeGetStorage("selectedCategory");
     if (direct && /mug/i.test(String(direct))) return true;
@@ -444,8 +449,6 @@ const SpreadRightSide = ({
   );
   const slide3Template = location.state?.layout?.slides?.slide3 ?? null;
   const draftSlide3 = location.state?.draftFull?.slide3 ?? localDraftFull?.slide3 ?? null;
-
-  console.log(draftSlide3, 'slide3')
 
   const restoredDraftRef = useRef(false);
 
@@ -597,7 +600,7 @@ const SpreadRightSide = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
-  const align = useAlignGuides(rightBoxRef);
+  const align = useAlignGuides(rightBoxRef, { scale: rndScale });
   const alignItems = useMemo(() => {
     const items: { id: string; x: number; y: number; w: number; h: number }[] = [];
     const push = (id: string, x?: number, y?: number, w?: number, h?: number) => {
@@ -1075,44 +1078,45 @@ const SpreadRightSide = ({
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        width: "100%",
-        gap: "5px",
-        position: "relative",
-      }}
-    >
-      {activeIndex === 2 && rightBox && (
-        <Box
-          ref={rightBoxRef}
-          onClick={handleBlankClick}
-          sx={{
-            flex: 1,
-            zIndex: 10,
-            p: 2,
-            position: "relative",
-            height: "var(--card-slide-h, 700px)",
-            opacity: isSlideActive3 ? 1 : 0.6,
-            pointerEvents: isSlideActive3 ? "auto" : "none",
-            backgroundColor: bgColor3 ?? "transparent",
-            // backgroundImage: bgImage3 ? `url(${bgImage3})` : "none",
-            backgroundSize: "cover",
-            "&::after": !isSlideActive3
-              ? {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(146, 145, 145, 0.51)",
-                zIndex: 1000,
-                pointerEvents: "none",
-              }
-              : {},
-          }}
-        >
+    <CanvasScaleContext.Provider value={rndScale}>
+      <Box
+        sx={{
+          display: "flex",
+          width: "100%",
+          gap: "5px",
+          position: "relative",
+        }}
+      >
+        {activeIndex === 2 && rightBox && (
+          <Box
+            ref={rightBoxRef}
+            onClick={handleBlankClick}
+            sx={{
+              flex: 1,
+              zIndex: 10,
+              p: 2,
+              position: "relative",
+              height: "var(--card-slide-h, 700px)",
+              opacity: isSlideActive3 ? 1 : 0.6,
+              pointerEvents: isSlideActive3 ? "auto" : "none",
+              backgroundColor: bgColor3 ?? "transparent",
+              // backgroundImage: bgImage3 ? `url(${bgImage3})` : "none",
+              backgroundSize: "cover",
+              "&::after": !isSlideActive3
+                ? {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(146, 145, 145, 0.51)",
+                  zIndex: 1000,
+                  pointerEvents: "none",
+                }
+                : {},
+            }}
+          >
           <AlignmentGuides
             {...align.guides}
             hide={!isSlideActive3 || !align.isActive}
@@ -1314,9 +1318,12 @@ const SpreadRightSide = ({
                                 alignItems,
                                 `txt:${textElement.id}`
                               );
-                              if (snap.snappedX || snap.snappedY) {
-                                updateTextElement(textElement.id, { position: { x: snap.x, y: snap.y } });
-                              }
+                              updateTextElement(textElement.id, {
+                                position: {
+                                  x: snap.snappedX ? snap.x : d.x,
+                                  y: snap.snappedY ? snap.y : d.y,
+                                },
+                              });
                             }}
                             onTouchStart={() => { touchStartTime = Date.now(); }}
                             onTouchEnd={() => {
@@ -1662,11 +1669,11 @@ const SpreadRightSide = ({
                         onDrag={(_, d) => {
                           if (isLocked) return;
                           const snap = align.onDrag(d.x, d.y, width, height, alignItems, `img:${id}`);
-                          if (snap.snappedX || snap.snappedY) {
-                            setDraggableImages3((prev) =>
-                              prev.map((img) => (img.id === id ? { ...img, x: snap.x, y: snap.y } : img))
-                            );
-                          }
+                          const nextX = snap.snappedX ? snap.x : d.x;
+                          const nextY = snap.snappedY ? snap.y : d.y;
+                          setDraggableImages3((prev) =>
+                            prev.map((img) => (img.id === id ? { ...img, x: nextX, y: nextY } : img))
+                          );
                         }}
                         onDragStop={(_, d) => {
                           if (isLocked) return;
@@ -2194,9 +2201,11 @@ const SpreadRightSide = ({
                         alignItems,
                         "ai:3"
                       );
-                      if (snap.snappedX || snap.snappedY) {
-                        setAIImage3((prev) => ({ ...prev, x: snap.x, y: snap.y }));
-                      }
+                      setAIImage3((prev) => ({
+                        ...prev,
+                        x: snap.snappedX ? snap.x : d.x,
+                        y: snap.snappedY ? snap.y : d.y,
+                      }));
                     }}
                     onDragStop={(_, d) => {
                       const snap = align.onDrag(
@@ -2279,13 +2288,11 @@ const SpreadRightSide = ({
                           alignItems,
                           `st:${sticker.id ?? index}`
                         );
-                        if (snap.snappedX || snap.snappedY) {
-                          updateSticker3(index, {
-                            x: snap.x,
-                            y: snap.y,
-                            zIndex: sticker.zIndex,
-                          });
-                        }
+                        updateSticker3(index, {
+                          x: snap.snappedX ? snap.x : d.x,
+                          y: snap.snappedY ? snap.y : d.y,
+                          zIndex: sticker.zIndex,
+                        });
                       }}
                       onDragStop={(_, d) => {
                         if (!isLocked) {
@@ -3748,9 +3755,10 @@ const SpreadRightSide = ({
                 })}
               </>
           }
-        </Box>
-      )}
-    </Box>
+          </Box>
+        )}
+      </Box>
+    </CanvasScaleContext.Provider>
   );
 };
 

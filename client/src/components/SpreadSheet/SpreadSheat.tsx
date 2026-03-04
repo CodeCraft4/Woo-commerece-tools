@@ -198,8 +198,6 @@ const SlideSpread = ({
     setSelectedShapeImageId2,
   } = useSlide2();
 
-  console.log(layout2, '--')
-
   const [selectedBgIndex2, setSelectedBgIndex2] = useState<number | null>(null);
 
   const location = useLocation();

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, type MouseEvent as ReactMouseEvent, type ComponentProps } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useMemo, type MouseEvent as ReactMouseEvent, type ComponentProps } from "react";
 import {
   Box,
   IconButton,
@@ -90,6 +90,13 @@ type LayoutNorm = {
   elements: ElementEl[];
   stickers: StickerEl[];
   textElements: TextEl[];
+};
+
+type RndProps = ComponentProps<typeof Rnd>;
+const CanvasScaleContext = createContext(1);
+const ScaledRnd = (props: RndProps) => {
+  const scale = useContext(CanvasScaleContext);
+  return <Rnd {...props} scale={props.scale ?? scale} />;
 };
 
 export const toElement = (obj: any, i: number, editable: boolean, prefix = "bg"): ElementEl => ({
@@ -340,8 +347,6 @@ const SlideCover = ({
 }: SlideCoverProps) => {
   const coverRef = useRef<HTMLDivElement>(null);
   const rndScale = canvasScale && canvasScale > 0 ? canvasScale : 1;
-  type RndProps = ComponentProps<typeof Rnd>;
-  const ScaledRnd = (props: RndProps) => <Rnd {...props} scale={props.scale ?? rndScale} />;
   const isMugsCategory = useMemo(() => {
     const direct = safeGetStorage("selectedCategory");
     if (direct && /mug/i.test(String(direct))) return true;
@@ -706,7 +711,7 @@ const SlideCover = ({
   /* ------------------ local UI state ------------------ */
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
-  const align = useAlignGuides(rightBoxRef);
+  const align = useAlignGuides(rightBoxRef, { scale: rndScale });
   const alignItems = useMemo(() => {
     const items: { id: string; x: number; y: number; w: number; h: number }[] = [];
     const push = (id: string, x?: number, y?: number, w?: number, h?: number) => {
@@ -1182,37 +1187,38 @@ const SlideCover = ({
   // Draft capture 
   const captureClean = !!isCaptureMode || !!isAdminEditor;
   return (
-    <Box
-      ref={coverRef}
-      id="slide-cover-capture"
-      onClick={handleBlankClick}
-      sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}
-    >
-      {activeIndex === 0 && rightBox && (
-        <Box
-          ref={rightBoxRef}
-          onClick={handleBlankClick}
-          sx={{
-            zIndex: 10,
-            p: 2,
-            position: "relative",
-            height: "var(--card-slide-h, 700px)",
-            width: "100%",
-            opacity: captureClean ? 1 : (isSlideActive1 ? 1 : 0.6),
-            pointerEvents: captureClean ? "auto" : (isSlideActive1 ? "auto" : "none"),
-            backgroundColor: bgColor1 ?? "transparent",
-            "&::after": !isSlideActive1
-              ? {
-                content: '""',
-                position: "absolute",
-                inset: 0,
-                backgroundColor: captureClean ? 'transparent' : "rgba(105,105,105,0.51)",
-                zIndex: 1000,
-                pointerEvents: "none",
-              }
-              : {},
-          }}
-        >
+    <CanvasScaleContext.Provider value={rndScale}>
+      <Box
+        ref={coverRef}
+        id="slide-cover-capture"
+        onClick={handleBlankClick}
+        sx={{ display: "flex", width: "100%", gap: "5px", position: "relative" }}
+      >
+        {activeIndex === 0 && rightBox && (
+          <Box
+            ref={rightBoxRef}
+            onClick={handleBlankClick}
+            sx={{
+              zIndex: 10,
+              p: 2,
+              position: "relative",
+              height: "var(--card-slide-h, 700px)",
+              width: "100%",
+              opacity: captureClean ? 1 : (isSlideActive1 ? 1 : 0.6),
+              pointerEvents: captureClean ? "auto" : (isSlideActive1 ? "auto" : "none"),
+              backgroundColor: bgColor1 ?? "transparent",
+              "&::after": !isSlideActive1
+                ? {
+                  content: '""',
+                  position: "absolute",
+                  inset: 0,
+                  backgroundColor: captureClean ? 'transparent' : "rgba(105,105,105,0.51)",
+                  zIndex: 1000,
+                  pointerEvents: "none",
+                }
+                : {},
+            }}
+          >
           <AlignmentGuides
             {...align.guides}
             hide={!isSlideActive1 || !align.isActive}
@@ -1640,11 +1646,12 @@ const SlideCover = ({
                           alignItems,
                           `txt:${textElement.id}`
                         );
-                        if (snap.snappedX || snap.snappedY) {
-                          updateTextElement1(textElement.id, {
-                            position: { x: snap.x, y: snap.y },
-                          });
-                        }
+                        updateTextElement1(textElement.id, {
+                          position: {
+                            x: snap.snappedX ? snap.x : d.x,
+                            y: snap.snappedY ? snap.y : d.y,
+                          },
+                        });
                       }}
                       onDragStop={(_, d) => {
                         const snap = align.onDrag(
@@ -1966,11 +1973,11 @@ const SlideCover = ({
                       onDrag={(_, d) => {
                         if (isLocked) return;
                         const snap = align.onDrag(d.x, d.y, width, height, alignItems, `img:${id}`);
-                        if (snap.snappedX || snap.snappedY) {
-                          setDraggableImages1((prev) =>
-                            prev.map((img) => (img.id === id ? { ...img, x: snap.x, y: snap.y } : img))
-                          );
-                        }
+                        const nextX = snap.snappedX ? snap.x : d.x;
+                        const nextY = snap.snappedY ? snap.y : d.y;
+                        setDraggableImages1((prev) =>
+                          prev.map((img) => (img.id === id ? { ...img, x: nextX, y: nextY } : img))
+                        );
                       }}
                       onDragStop={(_, d) => {
                         if (isLocked) return;
@@ -2494,9 +2501,11 @@ const SlideCover = ({
                       alignItems,
                       "ai:1"
                     );
-                    if (snap.snappedX || snap.snappedY) {
-                      setAIImage1((prev: any) => ({ ...prev, x: snap.x, y: snap.y }));
-                    }
+                    setAIImage1((prev: any) => ({
+                      ...prev,
+                      x: snap.snappedX ? snap.x : d.x,
+                      y: snap.snappedY ? snap.y : d.y,
+                    }));
                   }}
                   onDragStop={(_, d) => {
                     const snap = align.onDrag(
@@ -2579,13 +2588,11 @@ const SlideCover = ({
                         alignItems,
                         `st:${sticker.id ?? index}`
                       );
-                      if (snap.snappedX || snap.snappedY) {
-                        updateSticker1(index, {
-                          x: snap.x,
-                          y: snap.y,
-                          zIndex: sticker.zIndex,
-                        });
-                      }
+                      updateSticker1(index, {
+                        x: snap.snappedX ? snap.x : d.x,
+                        y: snap.snappedY ? snap.y : d.y,
+                        zIndex: sticker.zIndex,
+                      });
                     }}
                     onDragStop={(_, d) => {
                       if (!isLocked) {
@@ -2706,9 +2713,10 @@ const SlideCover = ({
               })}
             </>
           )}
-        </Box>
-      )}
-    </Box>
+          </Box>
+        )}
+      </Box>
+    </CanvasScaleContext.Provider>
   );
 };
 
