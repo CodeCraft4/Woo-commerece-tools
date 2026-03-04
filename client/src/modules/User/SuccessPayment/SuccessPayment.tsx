@@ -280,6 +280,16 @@ export default function PremiumSuccess() {
           })()
         : baseSlides;
 
+      const coasterSlides = isCoastersGrid
+        ? (() => {
+            const keys = Object.keys(processedCoasterSlides)
+              .filter((k) => processedCoasterSlides[k])
+              .sort();
+            const limited = keys.slice(0, 2);
+            return Object.fromEntries(limited.map((k) => [k, processedCoasterSlides[k]]));
+          })()
+        : processedCoasterSlides;
+
       const processedMugSlides = isMugWrap
         ? await (async () => {
             const entries = await Promise.all(
@@ -369,7 +379,7 @@ export default function PremiumSuccess() {
             fillMode: "sequence",
           })
         : isCoastersGrid
-        ? await buildFixedGridSlides(processedCoasterSlides, {
+        ? await buildFixedGridSlides(coasterSlides, {
             columns: 2,
             rows: 1,
             labelMm: { w: 89, h: 89 },

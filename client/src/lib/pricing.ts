@@ -91,7 +91,7 @@ export const getPricingConfig = (
     };
 
   if (name.includes("coaster"))
-    return { sizes: [{ key: "COASTER_95", title: "95mm × 95mm (×2)" }] };
+    return { sizes: [{ key: "COASTER_95", title: "89mm × 89mm (×2)" }] };
 
   if (name.includes("sticker"))
     return {

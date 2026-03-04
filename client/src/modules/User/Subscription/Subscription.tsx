@@ -189,7 +189,7 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
 
   if (name.includes("mug")) return [{ key: "mug_wrap_11oz", title: "228mm × 88.9mm wrap (11oz mug)" }];
   if (name.includes("coaster"))
-    return [{ key: "coaster_95", title: "95mm × 95mm (6 per sheet: 2 × 3)" }];
+    return [{ key: "coaster_95", title: "89mm × 89mm (6 per sheet: 2 × 3)" }];
 
   return [
     { key: "a5", title: "A3" },
@@ -976,6 +976,16 @@ const Subscription = () => {
             })()
           : baseSlides;
 
+        const coasterSlides = isCoastersGrid
+          ? (() => {
+              const keys = Object.keys(processedCoasterSlides)
+                .filter((k) => processedCoasterSlides[k])
+                .sort();
+              const limited = keys.slice(0, 2);
+              return Object.fromEntries(limited.map((k) => [k, processedCoasterSlides[k]]));
+            })()
+          : processedCoasterSlides;
+
         const processedMugSlides = isMugWrap
           ? await (async () => {
               const entries = await Promise.all(
@@ -1062,18 +1072,21 @@ const Subscription = () => {
               distribute: true,
               fit: "contain",
               pageMm: getPageMmForSize(cardSize),
+              fillMode: "sequence",
             })
           : isCoastersGrid
-          ? await buildFixedGridSlides(processedCoasterSlides, {
+          ? await buildFixedGridSlides(coasterSlides, {
               columns: 2,
-              rows: 3,
-              labelMm: { w: 95, h: 95 },
+              rows: 1,
+              labelMm: { w: 89, h: 89 },
               gapMm: 0,
-              distribute: true,
+              distribute: false,
               fit: "contain",
-              pageMm: getPageMmForSize(cardSize),
+              pageMm: { w: 229, h: 89 },
               background: "transparent",
               outputFormat: "png",
+              fillMode: "sequence",
+              mirrorPage: true,
             })
           : isMugWrap
           ? await buildFixedGridSlides(processedMugSlides, {
