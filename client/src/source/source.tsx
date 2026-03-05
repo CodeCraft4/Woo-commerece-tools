@@ -257,9 +257,7 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
 // };
 
 export const fetchAllTempletDesigns = async (): Promise<any[]> => {
-  const { data, error } = await supabase
-    .from("templetDesign")
-    .select(`
+  const baseSelect = `
       id,
       title,
       category,
@@ -283,15 +281,37 @@ export const fetchAllTempletDesigns = async (): Promise<any[]> => {
       salea3price,
       salehalfusletter,
       saleustabloid
-    `) // ← raw_stores اور slides کو بالکل مت لاؤ
+    `;
+
+  const { data, error } = await supabase
+    .from("templetDesign")
+    .select(baseSelect)
     .order("created_at", { ascending: false });
 
-  if (error) {
+  if (!error) return data || [];
+
+  const message = String(error.message ?? "").toLowerCase();
+  const isSchemaDrift =
+    message.includes("column") ||
+    message.includes("schema cache") ||
+    message.includes("does not exist");
+
+  if (!isSchemaDrift) {
     console.error("Templates fetch error:", error);
     throw error;
   }
 
-  return data || [];
+  const fallback = await supabase
+    .from("templetDesign")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (fallback.error) {
+    console.error("Templates fallback fetch error:", fallback.error);
+    throw fallback.error;
+  }
+
+  return fallback.data || [];
 };
 
 
@@ -487,3 +507,4 @@ export async function fileToBase64Url(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+

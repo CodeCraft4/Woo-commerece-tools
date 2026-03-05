@@ -21,8 +21,23 @@ async function fetchTemplatesLight() {
     .from("templetDesign")
     .select("id,img_url,accessplan,created_at")
     .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  if (!error) return data ?? [];
+
+  const message = String(error.message ?? "").toLowerCase();
+  const isSchemaDrift =
+    message.includes("column") ||
+    message.includes("schema cache") ||
+    message.includes("does not exist");
+
+  if (!isSchemaDrift) throw error;
+
+  const fallback = await supabase
+    .from("templetDesign")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (fallback.error) throw fallback.error;
+  return fallback.data ?? [];
 }
 
 const SubscriptionModelSection: React.FC = () => {
@@ -43,12 +58,14 @@ const SubscriptionModelSection: React.FC = () => {
     queryKey: ["allCards"],
     queryFn: fetchCardsLight,
     staleTime: 1000 * 60 * 10,
+    refetchOnMount: "always",
   });
 
   const { data: templateData = [], isLoading: templatesLoading } = useQuery({
     queryKey: ["allTemplates"],
     queryFn: fetchTemplatesLight,
     staleTime: 1000 * 60 * 10,
+    refetchOnMount: "always",
   });
 
   // ✅ IMPORTANT: no setState here, useMemo instead

@@ -239,12 +239,14 @@ const Products = () => {
     queryKey: ["cards"],
     queryFn: fetchAllCardsFromDB,
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: "always",
   });
   const { data: templates = [], isLoading: isLoadingTemplates, isError: isErrorTemplates } = useQuery<TemplateDesign[]>({
     queryKey: ["templates-list"], // الگ key رکھو
     queryFn: fetchAllTempletDesigns,
     staleTime: 1000 * 60 * 10, // 10 منٹ تک cache رکھو
     gcTime: 1000 * 60 * 30,    // garbage collect 30 منٹ بعد
+    refetchOnMount: "always",
   });
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["categories"],
@@ -412,7 +414,9 @@ const Products = () => {
     mutationFn: deleteTemplateById,
     onSuccess: (id) => {
       toast.success("Template deleted successfully");
-      queryClient.setQueryData<TemplateDesign[]>(["templates"], (old) => (old ? old.filter((t) => t.id !== id) : []));
+      queryClient.setQueryData<TemplateDesign[]>(["templates-list"], (old) =>
+        old ? old.filter((t) => t.id !== id) : [],
+      );
       setSelectedToDelete(null);
     },
     onError: () => toast.error("Error deleting template"),

@@ -94,8 +94,23 @@ async function fetchTemplatesLight(): Promise<any[]> {
     .from("templetDesign")
     .select("id,title,img_url,accessplan,category,created_at")
     .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  if (!error) return data ?? [];
+
+  const message = String(error.message ?? "").toLowerCase();
+  const isSchemaDrift =
+    message.includes("column") ||
+    message.includes("schema cache") ||
+    message.includes("does not exist");
+
+  if (!isSchemaDrift) throw error;
+
+  const fallback = await supabase
+    .from("templetDesign")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (fallback.error) throw fallback.error;
+  return fallback.data ?? [];
 }
 
 async function fetchCardFullById(id: string): Promise<any> {
@@ -134,7 +149,7 @@ const ViewAllCard = () => {
     gcTime: 1000 * 60 * 60 * 24,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: false,
+    refetchOnMount: "always",
   });
 
   const allCategories = useMemo(
@@ -149,7 +164,7 @@ const ViewAllCard = () => {
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: false,
+    refetchOnMount: "always",
   });
 
   const { data: templetCardData = [], isLoading: templetsLoading } = useQuery({
@@ -159,7 +174,7 @@ const ViewAllCard = () => {
     gcTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: false,
+    refetchOnMount: "always",
   });
 
   // ✅ when URL changes => activeTab sync

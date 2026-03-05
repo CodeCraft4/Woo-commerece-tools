@@ -161,7 +161,7 @@ type CategoriesEditorContextType = {
     slides: SnapshotSlide[];
   };
 
-  saveDesign: (meta?: PublishMeta) => Promise<void>;
+  saveDesign: (meta?: PublishMeta) => Promise<boolean>;
   captureFirstSlidePng: () => Promise<string | null>;
 
   mainScrollerRef: React.MutableRefObject<HTMLDivElement | null>;
@@ -389,8 +389,9 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
     }
   }, []);
 
-  const saveDesign = async (meta?: PublishMeta) => {
+  const saveDesign = async (meta?: PublishMeta): Promise<boolean> => {
     setLoading(true);
+    let saved = false;
     try {
       const combined = serializeWithElements(); // { editorCategory, size_mm, slides }
       const rawStores = serialize(); // editor raw stores
@@ -526,7 +527,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
       if (!payload.category) {
         toast.error("Card Category is required (DB column: category).");
-        return;
+        return false;
       }
 
       const isEdit = !!meta?.id;
@@ -551,6 +552,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
       } else {
         toast.success(isEdit ? "âœ… Updated template Design" : "âœ… Saved template Design");
         resetState();
+        saved = true;
       }
     } catch (e) {
       console.error("Save error:", e);
@@ -559,6 +561,7 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
       setLoading(false);
       // resetState();
     }
+    return saved;
   };
 
   const value = useMemo<CategoriesEditorContextType>(

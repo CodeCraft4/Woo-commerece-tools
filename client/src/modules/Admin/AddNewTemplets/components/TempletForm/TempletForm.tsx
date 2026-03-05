@@ -3,7 +3,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { Box, Typography } from "@mui/material";
 import { Controller, useForm, type FieldErrors } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchAllCategoriesFromDB,
   fetchTempletDesignFullById,
@@ -283,6 +283,7 @@ const getNestedError = (
 const TempletForm = () => {
   const { saveDesign, loading, setLoading, resetState } =
     useCategoriesEditorState();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
   const navState = location.state as any;
@@ -756,8 +757,8 @@ const TempletForm = () => {
           pixelRatio: 2,
           backgroundColor: "#ffffff",
           style: { transform: "none" },
-          skipFonts: false,
-          // fontEmbedCSS: "",
+          // Avoid cross-origin cssRules SecurityError from Google Fonts stylesheets.
+          skipFonts: true,
         });
       } catch (e) {
         console.error("LeftBox capture failed:", e);
@@ -887,7 +888,20 @@ const TempletForm = () => {
       imgUrl: captured ?? previewUrl,
     };
 
-    await saveDesign(meta);
+    const saved = await saveDesign(meta);
+    if (!saved) {
+      setLoading(false);
+      return;
+    }
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["templates-list"] }),
+      queryClient.invalidateQueries({ queryKey: ["templetCards:light"] }),
+      queryClient.invalidateQueries({ queryKey: ["allTemplates"] }),
+      queryClient.invalidateQueries({ queryKey: ["templates"] }),
+      queryClient.invalidateQueries({ queryKey: ["templates:light"] }),
+    ]);
+
     setLoading(false);
     resetState();
     reset();
