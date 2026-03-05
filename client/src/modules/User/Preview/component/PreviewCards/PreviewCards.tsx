@@ -82,19 +82,12 @@ const PreviewBookCard = () => {
   const isNextDisabled = isMobile ? mobileIndex === slides.length : currentLocation === maxLocation;
 
 
-  const slideRefs: any = {
-    s1: useRef(null),
-    s2: useRef(null),
-    s3: useRef(null),
-    s4: useRef(null),
+  const captureRefs = {
+    s1: useRef<HTMLDivElement | null>(null),
+    s2: useRef<HTMLDivElement | null>(null),
+    s3: useRef<HTMLDivElement | null>(null),
+    s4: useRef<HTMLDivElement | null>(null),
   };
-
-  const [slideImages, setSlideImages] = useState({
-    slide1: "",
-    slide2: "",
-    slide3: "",
-    slide4: "",
-  });
 
   useEffect(() => {
     try {
@@ -102,44 +95,39 @@ const PreviewBookCard = () => {
     } catch {}
   }, []);
 
-
-  console.log(slideImages, "slideImages")
-
   const captureSlides = async () => {
-    setLoading(true)
-    const results: any = {};
+    setLoading(true);
+    try {
+      const results: any = {};
 
-    // 1️⃣ Disable transform ONLY on slide sections
-    const slidesForCapture = document.querySelectorAll(".capture-slide");
-    slidesForCapture.forEach((el) => {
-      el.classList.add("capture-no-transform");
-    });
+      // Ensure web fonts are loaded before capture to preserve text styling.
+      if ((document as any)?.fonts?.ready) {
+        await (document as any).fonts.ready;
+      }
 
-    // 2️⃣ Capture each slide
-    for (let key of ["s1", "s2", "s3", "s4"]) {
-      const node = slideRefs[key].current;
-      if (!node) continue;
+      for (let key of ["s1", "s2", "s3", "s4"]) {
+        const node = captureRefs[key as keyof typeof captureRefs].current;
+        if (!node) continue;
 
-      const dataUrl = await toJpeg(node, {
-        cacheBust: true,
-        pixelRatio: 1.5,
-        quality: 0.8,
-        skipFonts: true,
-        fontEmbedCSS: "",
-      });
+        const dataUrl = await toJpeg(node, {
+          cacheBust: true,
+          pixelRatio: 2,
+          quality: 0.9,
+          skipFonts: false,
+          backgroundColor: "#ffffff",
+        });
 
+        results[key.replace("s", "slide")] = dataUrl;
+      }
 
-      results[key.replace("s", "slide")] = dataUrl;
+      if (!Object.keys(results).length) {
+        throw new Error("Unable to capture card slides. Please try again.");
+      }
+
+      return results;
+    } finally {
+      setLoading(false);
     }
-
-    // 3️⃣ Restore transforms
-    slidesForCapture.forEach((el) => {
-      el.classList.remove("capture-no-transform");
-    });
-
-    setSlideImages(results);
-    setLoading(false)
-    return results;
   };
 
   const persistSlides = async (slidesCaptured: Record<string, string>) => {
@@ -267,12 +255,12 @@ const PreviewBookCard = () => {
               >
                 <div className="front">
                   <div className="front-content capture-slide" id="sf1">
-                    <Slide1 ref={slideRefs.s1} />
+                    <Slide1 />
                   </div>
                 </div>
                 <div className="back">
                   <div className="back-content capture-slide" id="b1">
-                    <Slide2 ref={slideRefs.s2} />
+                    <Slide2 />
                   </div>
                 </div>
               </div>
@@ -283,12 +271,12 @@ const PreviewBookCard = () => {
               >
                 <div className="front">
                   <div className="front-content capture-slide" id="f2">
-                    <Slide3 ref={slideRefs.s3} />
+                    <Slide3 />
                   </div>
                 </div>
                 <div className="back">
                   <div className="back-content capture-slide" id="b2">
-                    <Slide4 ref={slideRefs.s4} />
+                    <Slide4 />
                   </div>
                 </div>
               </div>
@@ -330,6 +318,28 @@ const PreviewBookCard = () => {
           </IconButton>
         </Box>
         <GlobalWatermark />
+      </Box>
+
+      <Box
+        sx={{
+          position: "fixed",
+          left: -10000,
+          top: -10000,
+          pointerEvents: "none",
+        }}
+      >
+        <Box sx={{ width: BASE_PAGE.w, height: BASE_PAGE.h }}>
+          <Slide1 ref={captureRefs.s1} />
+        </Box>
+        <Box sx={{ width: BASE_PAGE.w, height: BASE_PAGE.h }}>
+          <Slide2 ref={captureRefs.s2} />
+        </Box>
+        <Box sx={{ width: BASE_PAGE.w, height: BASE_PAGE.h }}>
+          <Slide3 ref={captureRefs.s3} />
+        </Box>
+        <Box sx={{ width: BASE_PAGE.w, height: BASE_PAGE.h }}>
+          <Slide4 ref={captureRefs.s4} />
+        </Box>
       </Box>
     </>
 
