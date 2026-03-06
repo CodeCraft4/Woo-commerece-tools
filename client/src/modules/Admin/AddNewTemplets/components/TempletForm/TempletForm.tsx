@@ -15,6 +15,7 @@ import {
   type PublishMeta,
 } from "../../../../../context/CategoriesEditorContext";
 import * as htmlToImage from "html-to-image";
+import html2canvas from "html2canvas";
 import { ADMINS_DASHBOARD } from "../../../../../constant/route";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../../../constant/googleFonts";
 
@@ -139,22 +140,129 @@ const readPricingMap = (source: unknown): PricingMap => {
 const normalizeFontFamily = (value?: string | null) => {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
+  const quoted = raw.match(/['"]([^'"]+)['"]/);
+  if (quoted?.[1]) return quoted[1].trim();
   const first = raw.split(",")[0]?.trim() ?? "";
-  return first.replace(/^['"]|['"]$/g, "");
+  if (!first) return "";
+  return first.replace(/^['"]|['"]$/g, "").trim();
 };
+
+const resolveTextFontFamily = (entry: any): string =>
+  normalizeFontFamily(
+    entry?.fontFamily ??
+      entry?.font_family ??
+      entry?.fontFamily1 ??
+      entry?.fontFamily2 ??
+      entry?.fontFamily3 ??
+      entry?.fontFamily4 ??
+      entry?.style?.fontFamily ??
+      entry?.style?.font_family ??
+      "",
+  );
 
 const collectFontsFromRawStores = (rawStores: any): string[] => {
   const fonts = new Set<string>();
-  const list = rawStores?.textElements;
-  if (!Array.isArray(list)) return [];
-  for (const t of list) {
-    const fam = normalizeFontFamily(t?.fontFamily);
-    if (!fam) continue;
+  const add = (value: unknown) => {
+    if (typeof value !== "string") return;
+    const fam = normalizeFontFamily(value);
+    if (!fam) return;
     const lower = fam.toLowerCase();
-    if (["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"].includes(lower)) continue;
+    if (["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"].includes(lower)) return;
     fonts.add(fam);
-  }
+  };
+  const pick = (entry: any) => add(resolveTextFontFamily(entry));
+
+  const separatedText = Array.isArray(rawStores?.textElements) ? rawStores.textElements : [];
+  separatedText.forEach(pick);
+
+  const snapshotSlides =
+    Array.isArray(rawStores?.snapshotSlides)
+      ? rawStores.snapshotSlides
+      : typeof rawStores?.snapshotSlides === "string"
+      ? (() => {
+          try {
+            const parsed = JSON.parse(rawStores.snapshotSlides);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })()
+      : [];
+
+  const slidesSource =
+    snapshotSlides.length > 0
+      ? snapshotSlides
+      : Array.isArray(rawStores?.slides)
+      ? rawStores.slides
+      : [];
+
+  slidesSource.forEach((slide: any) => {
+    const elements = Array.isArray(slide?.elements) ? slide.elements : [];
+    elements.forEach((el: any) => {
+      const t = String(el?.type ?? "").toLowerCase();
+      if (t === "text" || (!t && el?.text != null)) pick(el);
+    });
+  });
+
+  // Fallback: walk unknown/nested template shapes and pick any font* key.
+  const seen = new Set<any>();
+  const walk = (node: any) => {
+    if (!node || typeof node !== "object") return;
+    if (seen.has(node)) return;
+    seen.add(node);
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    pick(node);
+    Object.entries(node).forEach(([key, val]) => {
+      if (/fontfamily/i.test(key) || key === "font_family") add(val);
+      walk(val);
+    });
+  };
+  walk(rawStores);
+
   return Array.from(fonts);
+};
+
+const googleFontCssCache = new Map<string, string>();
+
+const getGoogleFontEmbedCSS = async (families: string[]): Promise<string> => {
+  const urls = buildGoogleFontsUrls(families);
+  if (!urls.length) return "";
+
+  const chunks = await Promise.all(
+    urls.map(async (url) => {
+      const cached = googleFontCssCache.get(url);
+      if (cached != null) return cached;
+      try {
+        const resp = await fetch(url, { mode: "cors" });
+        if (!resp.ok) return "";
+        const cssText = await resp.text();
+        googleFontCssCache.set(url, cssText);
+        return cssText;
+      } catch {
+        return "";
+      }
+    }),
+  );
+
+  return chunks.filter(Boolean).join("\n");
+};
+
+const waitForFontsReady = async (families: string[]) => {
+  const fontApi: any = (document as any)?.fonts;
+  if (!fontApi) return;
+  if (families.length) {
+    await Promise.all(
+      families.map((family) =>
+        fontApi
+          .load(`400 24px "${family}"`)
+          .catch(() => null)
+      ),
+    );
+  }
+  await fontApi.ready?.catch(() => null);
 };
 
 // const chunk = <T,>(arr: T[], size: number) => {
@@ -751,17 +859,36 @@ const TempletForm = () => {
 
     let captured: string | null = null;
     if (previewRef.current) {
+      const captureFonts = collectFontsFromRawStores(rawStores ?? {});
       try {
-        await (document as any).fonts?.ready?.catch(() => { });
-        captured = await htmlToImage.toPng(previewRef.current, {
-          pixelRatio: 2,
+        if (captureFonts.length) {
+          loadGoogleFontsOnce(buildGoogleFontsUrls(captureFonts));
+        }
+        await waitForFontsReady(captureFonts);
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        const canvas = await html2canvas(previewRef.current, {
+          scale: 2,
           backgroundColor: "#ffffff",
-          style: { transform: "none" },
-          // Avoid cross-origin cssRules SecurityError from Google Fonts stylesheets.
-          skipFonts: true,
+          useCORS: true,
+          allowTaint: true,
+          foreignObjectRendering: true,
+          logging: false,
         });
+        captured = canvas.toDataURL("image/png");
       } catch (e) {
-        console.error("LeftBox capture failed:", e);
+        try {
+          const fontEmbedCSS =
+            captureFonts.length > 0 ? await getGoogleFontEmbedCSS(captureFonts) : "";
+          captured = await htmlToImage.toPng(previewRef.current, {
+            pixelRatio: 2,
+            backgroundColor: "#ffffff",
+            style: { transform: "none" },
+            fontEmbedCSS: fontEmbedCSS || undefined,
+            skipFonts: true,
+          });
+        } catch (fallbackErr) {
+          console.error("LeftBox capture failed:", fallbackErr);
+        }
       }
     }
 
@@ -1046,40 +1173,70 @@ const TempletForm = () => {
                   );
                 }
 
-                const hasSeparatedEls =
-                  (rawStores.textElements?.length ?? 0) > 0 ||
-                  (rawStores.imageElements?.length ?? 0) > 0 ||
-                  (rawStores.stickerElements?.length ?? 0) > 0;
-
                 const asSlideId = (v: any) => {
-                  const n = Number(v);
-                  return Number.isFinite(n) ? n : null;
+                  if (typeof v === "number" && Number.isFinite(v)) return v;
+                  if (typeof v !== "string") return null;
+                  const raw = v.trim();
+                  if (!raw) return null;
+                  const direct = Number(raw);
+                  if (Number.isFinite(direct)) return direct;
+                  const lower = raw.toLowerCase();
+                  if (lower === "front") return 1;
+                  if (lower === "back") return 2;
+                  const m = raw.match(/(\d+)/);
+                  if (!m) return null;
+                  const parsed = Number(m[1]);
+                  return Number.isFinite(parsed) ? parsed : null;
                 };
 
                 const firstSlideId =
                   asSlideId(firstSlide?.id ?? firstSlide?.slideId ?? firstSlide?.slide_id) ??
                   0;
+                const belongsToFirstSlide = (el: any) => {
+                  const sid = asSlideId(el?.slideId ?? el?.slide_id);
+                  if (sid == null) return true;
+                  return sid === firstSlideId;
+                };
 
-                const slideTextElements = hasSeparatedEls
-                  ? rawStores.textElements?.filter((te: any) => {
-                      const sid = asSlideId(te?.slideId ?? te?.slide_id);
-                      return sid === firstSlideId;
-                    }) || []
-                  : (firstSlide?.elements ?? []).filter((el: any) => {
-                      const t = String(el?.type ?? "").toLowerCase();
-                      return t === "text" || (!t && el?.text != null);
-                    });
+                const snapshotElements = Array.isArray(firstSlide?.elements) ? firstSlide.elements : [];
 
-                const slideImageElements = hasSeparatedEls
-                  ? rawStores.imageElements?.filter((ie: any) => {
-                      const sid = asSlideId(ie?.slideId ?? ie?.slide_id);
-                      return sid === firstSlideId;
-                    }) || []
-                  : (firstSlide?.elements ?? []).filter((el: any) => {
-                      const t = String(el?.type ?? "").toLowerCase();
-                      return t === "image" || t === "sticker" || (!t && (el?.src || el?.image || el?.url));
-                    });
-                const slideBg = rawStores.slideBg?.[firstSlideId] || rawStores.slideBg?.[firstSlide?.id] || null;
+                const snapshotTextElements = snapshotElements.filter((el: any) => {
+                  const t = String(el?.type ?? "").toLowerCase();
+                  return t === "text" || (!t && el?.text != null);
+                });
+                const separatedTextElements = (Array.isArray(rawStores.textElements) ? rawStores.textElements : [])
+                  .filter((te: any) => belongsToFirstSlide(te));
+                const slideTextElements =
+                  separatedTextElements.length > 0 ? separatedTextElements : snapshotTextElements;
+
+                const snapshotGraphicElements = snapshotElements.filter((el: any) => {
+                  const t = String(el?.type ?? "").toLowerCase();
+                  return t === "image" || t === "sticker" || (!t && (el?.src || el?.image || el?.url || el?.sticker));
+                });
+                const separatedGraphicElements = [
+                  ...(Array.isArray(rawStores.imageElements) ? rawStores.imageElements : []),
+                  ...(Array.isArray(rawStores.stickerElements) ? rawStores.stickerElements : []),
+                ].filter((el: any) => belongsToFirstSlide(el));
+                const slideImageElements =
+                  separatedGraphicElements.length > 0 ? separatedGraphicElements : snapshotGraphicElements;
+                const orderedGraphicElements = [...slideImageElements].sort(
+                  (a: any, b: any) =>
+                    Number(a?.zIndex ?? a?.z_index ?? 1) - Number(b?.zIndex ?? b?.z_index ?? 1),
+                );
+
+                const slideBgMap = rawStores?.slideBg ?? {};
+                const firstSlideLabel = String(firstSlide?.label ?? "").trim();
+                const firstSlideLabelKey = firstSlideLabel.toLowerCase().replace(/\s+/g, "");
+                const slideBg =
+                  slideBgMap?.[firstSlideId] ??
+                  slideBgMap?.[String(firstSlideId)] ??
+                  slideBgMap?.[`slide${firstSlideId}`] ??
+                  slideBgMap?.[`Slide${firstSlideId}`] ??
+                  (firstSlideLabel ? slideBgMap?.[firstSlideLabel] : null) ??
+                  (firstSlideLabelKey ? slideBgMap?.[firstSlideLabelKey] : null) ??
+                  (firstSlideLabelKey === "front" ? slideBgMap?.front ?? slideBgMap?.slide1 : null) ??
+                  (firstSlideLabelKey === "back" ? slideBgMap?.back ?? slideBgMap?.slide2 : null) ??
+                  null;
 
                 // canvas کا سائز جو ایڈیٹر سے آیا ہے
                 const canvasW = canvasDims.width;
@@ -1147,8 +1304,10 @@ const TempletForm = () => {
                       )}
 
                       {/* Images */}
-                      {slideImageElements.map((img: any) => {
+                      {orderedGraphicElements.map((img: any) => {
                         const { x, y, w, h } = normalizePos(img);
+                        const kind = String(img?.type ?? "").toLowerCase();
+                        const isSticker = kind === "sticker" || (!kind && !!img?.sticker);
                         return (
                           <Box
                             key={img.id}
@@ -1160,7 +1319,9 @@ const TempletForm = () => {
                               top: `${y * scale}px`,
                               width: `${w * scale}px`,
                               height: `${h * scale}px`,
-                              objectFit: "cover",
+                              objectFit: isSticker ? "contain" : "cover",
+                              backgroundColor: "transparent",
+                              zIndex: Number(img?.zIndex ?? img?.z_index ?? 1),
                             }}
                           />
                         );
@@ -1229,7 +1390,7 @@ const TempletForm = () => {
                                   </defs>
                                   <text
                                     fill={txt.color ?? "#111111"}
-                                    fontFamily={txt.fontFamily ?? txt.font_family ?? "Arial"}
+                                    fontFamily={resolveTextFontFamily(txt) || "Arial"}
                                     fontSize={toNum(txt.fontSize ?? txt.font_size, 20)}
                                     fontWeight={txt.bold ? 700 : 400}
                                     fontStyle={txt.italic ? "italic" : "normal"}
@@ -1252,7 +1413,7 @@ const TempletForm = () => {
                                     fontWeight: txt.bold ? 700 : 400,
                                     fontStyle: txt.italic ? "italic" : "normal",
                                     fontSize: toNum(txt.fontSize ?? txt.font_size, 20),
-                                    fontFamily: txt.fontFamily ?? txt.font_family ?? "Arial",
+                                    fontFamily: resolveTextFontFamily(txt) || "Arial",
                                     color: txt.color ?? "#111111",
                                     textAlign: align,
                                     whiteSpace: "pre-wrap",

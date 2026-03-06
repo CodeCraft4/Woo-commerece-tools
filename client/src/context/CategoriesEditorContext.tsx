@@ -316,6 +316,10 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
       const blob = await resp.blob();
       return await readBlobAsDataUrl(blob);
     } catch {
+      // Keep original remote/static URLs if conversion fails.
+      // Returning a transparent pixel here can silently drop design assets.
+      if (src.startsWith("http") || src.startsWith("/")) return src;
+      // blob URLs are usually session-bound; do not persist them as-is.
       return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
     }
   };

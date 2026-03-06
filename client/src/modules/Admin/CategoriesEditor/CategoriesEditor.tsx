@@ -55,6 +55,8 @@ const fetchToDataUrl = async (src: string): Promise<string> => {
       fr.readAsDataURL(blob);
     });
   } catch {
+    // Keep original URL when conversion is blocked; avoids dropping visible assets.
+    if (src.startsWith("http") || src.startsWith("/")) return src;
     return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
   }
 };

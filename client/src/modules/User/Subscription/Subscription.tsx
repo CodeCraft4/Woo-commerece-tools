@@ -41,6 +41,7 @@ import { COLORS } from "../../../constant/color";
 import { removeWhiteBg } from "../../../lib/lib";
 import { loadSlidesFromIdb, saveSlidesToIdb } from "../../../lib/idbSlides";
 import { API_BASE } from "../../../lib/apiBase";
+import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
 
 // ------------------ ENV ------------------
 const STRIPE_PK =
@@ -115,6 +116,43 @@ const normalizeItemType = (type?: string) => {
   if (t === "templates") return "template";
   if (t === "cards") return "card";
   return t;
+};
+
+const normalizeFontFamily = (value?: string | null) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const quoted = raw.match(/['"]([^'"]+)['"]/);
+  if (quoted?.[1]) return quoted[1].trim();
+  const first = raw.split(",")[0]?.trim() ?? "";
+  return first.replace(/^['"]|['"]$/g, "").trim();
+};
+
+const resolveTextFontFamily = (entry: any) =>
+  normalizeFontFamily(
+    entry?.fontFamily ??
+      entry?.font_family ??
+      entry?.fontFamily1 ??
+      entry?.fontFamily2 ??
+      entry?.fontFamily3 ??
+      entry?.fontFamily4 ??
+      entry?.style?.fontFamily ??
+      entry?.style?.font_family ??
+      "",
+  );
+
+const collectFontsFromRawSlides = (slides: RawSlide[]) => {
+  const fonts = new Set<string>();
+  (slides ?? []).forEach((sl) => {
+    (sl?.elements ?? []).forEach((el: any) => {
+      if (String(el?.type ?? "").toLowerCase() !== "text") return;
+      const fam = resolveTextFontFamily(el);
+      if (!fam) return;
+      const lower = fam.toLowerCase();
+      if (["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"].includes(lower)) return;
+      fonts.add(fam);
+    });
+  });
+  return Array.from(fonts);
 };
 
 export const isProductInBundle = (
@@ -374,6 +412,13 @@ const Subscription = () => {
     } catch {}
   }, []);
 
+  useEffect(() => {
+    if (!rawSlides?.length) return;
+    const fonts = collectFontsFromRawSlides(rawSlides);
+    if (!fonts.length) return;
+    loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
+  }, [rawSlides]);
+
   const firstSlideUrl = slidesObj?.slide1 || "";
   const captureWidth = Math.max(1, Math.round(Number(previewConfig?.mmWidth) || 800));
   const captureHeight = Math.max(1, Math.round(Number(previewConfig?.mmHeight) || 600));
@@ -442,7 +487,7 @@ const Subscription = () => {
                   fontWeight: el.bold ? 700 : 400,
                   fontStyle: el.italic ? "italic" : "normal",
                   fontSize: el.fontSize,
-                  fontFamily: el.fontFamily,
+                  fontFamily: resolveTextFontFamily(el) || "Arial",
                   color: el.color,
                   whiteSpace: "pre-wrap",
                 }}

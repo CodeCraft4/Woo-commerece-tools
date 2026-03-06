@@ -2,7 +2,6 @@ import {
   Box,
   IconButton,
   Typography,
-  TextField,
   Stack,
   CircularProgress,
   useMediaQuery,
@@ -25,6 +24,7 @@ import toast from "react-hot-toast";
 import { safeGetStorage, safeSetLocalStorage } from "../../../lib/storage";
 import AlignmentGuides from "../../../components/AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../../hooks/useAlignGuides";
+import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -121,6 +121,69 @@ const sanitizeSrc = (src?: string) => {
   return "";
 };
 
+const parseSlideId = (value: any): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  const direct = Number(raw);
+  if (Number.isFinite(direct)) return direct;
+  const lower = raw.toLowerCase();
+  if (lower === "front") return 1;
+  if (lower === "back") return 2;
+  const match = raw.match(/(\d+)/);
+  if (!match) return null;
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const resolveSlideId = (value: any, fallback: number) => {
+  const parsed = parseSlideId(value);
+  return parsed == null ? fallback : parsed;
+};
+
+const readSlideBgEntry = (slideBgMap: any, sid: number, index: number, label?: string) => {
+  if (!slideBgMap) return null;
+
+  const keys = new Set<string | number>([
+    sid,
+    String(sid),
+    `slide${sid}`,
+    `Slide${sid}`,
+    index + 1,
+    String(index + 1),
+    `slide${index + 1}`,
+    `Slide${index + 1}`,
+  ]);
+
+  const rawLabel = String(label ?? "").trim();
+  if (rawLabel) {
+    keys.add(rawLabel);
+    const normalized = rawLabel.toLowerCase().replace(/\s+/g, "");
+    keys.add(normalized);
+    if (normalized === "front") {
+      keys.add(1);
+      keys.add("1");
+      keys.add("slide1");
+    } else if (normalized === "back") {
+      keys.add(2);
+      keys.add("2");
+      keys.add("slide2");
+    }
+  }
+
+  for (const key of keys) {
+    const entry = slideBgMap?.[key as any];
+    if (entry) return entry;
+  }
+
+  if (Array.isArray(slideBgMap)) {
+    return slideBgMap[index] ?? slideBgMap[sid - 1] ?? null;
+  }
+
+  return null;
+};
+
 const normalize01 = (o: any, pxW: number, pxH: number) => {
   let x = asNum(o?.x, 0),
     y = asNum(o?.y, 0),
@@ -189,6 +252,66 @@ const fileToDataUrl = (file: File): Promise<string> =>
     fr.onerror = reject;
     fr.readAsDataURL(file);
   });
+
+const countElementsByType = (slides: Slide[], type: AnyEl["type"]): number =>
+  (slides ?? []).reduce(
+    (sum, sl) => sum + (Array.isArray(sl?.elements) ? sl.elements.filter((e) => e?.type === type).length : 0),
+    0,
+  );
+
+const collectElementIdsByType = (slides: Slide[], type: AnyEl["type"]): Set<string> => {
+  const ids = new Set<string>();
+  (slides ?? []).forEach((sl) => {
+    (sl?.elements ?? []).forEach((el) => {
+      if (el?.type === type && typeof el.id === "string") ids.add(el.id);
+    });
+  });
+  return ids;
+};
+
+const normalizeEditableText = (value: string) =>
+  value
+    .replace(/\r/g, "")
+    .replace(/\u00A0/g, " ")
+    .replace(/\n$/, "");
+
+const resolveTextFontFamily = (entry: any): string =>
+  asStr(
+    entry?.fontFamily ??
+      entry?.font_family ??
+      entry?.fontFamily1 ??
+      entry?.fontFamily2 ??
+      entry?.fontFamily3 ??
+      entry?.fontFamily4 ??
+      entry?.style?.fontFamily ??
+      entry?.style?.font_family ??
+      "inherit",
+    "inherit",
+  );
+
+const normalizeFontFamily = (value?: string | null) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const quoted = raw.match(/['"]([^'"]+)['"]/);
+  if (quoted?.[1]) return quoted[1].trim();
+  const first = raw.split(",")[0]?.trim() ?? "";
+  return first.replace(/^['"]|['"]$/g, "").trim();
+};
+
+const collectFontsFromSlides = (slides: Slide[]) => {
+  const fonts = new Set<string>();
+  (slides ?? []).forEach((sl) => {
+    (sl?.elements ?? []).forEach((el) => {
+      if (el?.type !== "text") return;
+      const fam = normalizeFontFamily(resolveTextFontFamily(el));
+      if (!fam) return;
+      const lower = fam.toLowerCase();
+      if (["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"].includes(lower)) return;
+      fonts.add(fam);
+    });
+  });
+  return Array.from(fonts);
+};
 
 /* ------------ MAIN ------------ */
 export default function TempletEditor() {
@@ -280,12 +403,12 @@ export default function TempletEditor() {
     if (!hasSeparatedEls && slidesDef.length) {
       const snapshotEls: any[] = [];
       slidesDef.forEach((sl, idx) => {
-        const sid = asNum(sl?.id, idx + 1);
+        const sid = resolveSlideId(sl?.id ?? sl?.slideId ?? sl?.slide_id, idx + 1);
         const elements = A<any>(sl?.elements);
         elements.forEach((el) => {
           snapshotEls.push({
             ...el,
-            slideId: asNum(el?.slideId ?? el?.slide_id, sid),
+            slideId: resolveSlideId(el?.slideId ?? el?.slide_id, sid),
           });
         });
       });
@@ -330,14 +453,14 @@ export default function TempletEditor() {
       return {
         type: "text",
         id: asStr(e?.id) || uuid(),
-        slideId: asNum(e?.slideId ?? e?.slide_id, 0),
+        slideId: resolveSlideId(e?.slideId ?? e?.slide_id, 0),
         ...r,
         text: asStr(e?.text ?? e?.value),
         bold: asBool(e?.bold, false),
         italic: asBool(e?.italic, false),
         color: asStr(e?.color ?? "#000"),
         fontSize: asNum(e?.fontSize ?? e?.font_size, 16), // ← یہ لائن شامل کرو
-        fontFamily: asStr(e?.fontFamily ?? e?.font_family ?? "inherit"),
+        fontFamily: resolveTextFontFamily(e),
         align: (asStr(e?.align, "center") as any) ?? "center",
         rotation: asNum(e?.rotation ?? e?.rotate, 0),
         curve: asNum(e?.curve ?? e?.arc, 0),
@@ -346,16 +469,30 @@ export default function TempletEditor() {
       };
     };
 
+    const isLeafletTemplate = /business\s*leaflets?/i.test(category);
     const coerceImage = (e: any): ImageEl => {
       const r = normalize01(e, storedW, storedH);
+      const id = asStr(e?.id) || uuid();
+      const tol = 8;
+      const bgLike =
+        id.startsWith("bg-") ||
+        (isLeafletTemplate &&
+          Math.abs(asNum(r.x, 0)) <= tol &&
+          Math.abs(asNum(r.y, 0)) <= tol &&
+          asNum(r.width, 0) >= storedW - tol &&
+          asNum(r.height, 0) >= storedH - tol);
+
       return {
         type: "image",
-        id: asStr(e?.id) || uuid(),
-        slideId: asNum(e?.slideId ?? e?.slide_id, 0),
-        ...r,
+        id,
+        slideId: resolveSlideId(e?.slideId ?? e?.slide_id, 0),
+        x: bgLike ? 0 : r.x,
+        y: bgLike ? 0 : r.y,
+        width: bgLike ? storedW : r.width,
+        height: bgLike ? storedH : r.height,
         src: sanitizeSrc(asStr(e?.src ?? e?.url ?? e?.imageUrl ?? e?.image)),
         zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
-        editable: e?.editable !== false,
+        editable: bgLike ? e?.editable === true : e?.editable !== false,
       };
     };
 
@@ -364,7 +501,7 @@ export default function TempletEditor() {
       return {
         type: "sticker",
         id: asStr(e?.id) || uuid(),
-        slideId: asNum(e?.slideId ?? e?.slide_id, 0),
+        slideId: resolveSlideId(e?.slideId ?? e?.slide_id, 0),
         ...r,
         src: sanitizeSrc(asStr(e?.src ?? e?.url)),
         zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
@@ -373,11 +510,19 @@ export default function TempletEditor() {
     };
 
     const slideBgMap = (src as any)?.slideBg ?? (raw as any)?.slideBg ?? null;
+    const firstSlideId = resolveSlideId(
+      slidesDef?.[0]?.id ?? slidesDef?.[0]?.slideId ?? slidesDef?.[0]?.slide_id,
+      1,
+    );
 
-    const matchesSlide = (e: any, sid: number) => asNum(e?.slideId ?? e?.slide_id, sid) === sid;
+    const matchesSlide = (e: any, sid: number) => {
+      const parsed = parseSlideId(e?.slideId ?? e?.slide_id);
+      if (parsed != null) return parsed === sid;
+      return sid === firstSlideId;
+    };
 
     const slides: Slide[] = slidesDef.map((sl, i) => {
-      const sid = asNum(sl?.id ?? i, i);
+      const sid = resolveSlideId(sl?.id ?? sl?.slideId ?? sl?.slide_id, i + 1);
       const label = labels[i] ?? asStr(sl?.label, `Slide ${i + 1}`);
 
       const images = imgEls.filter((e) => matchesSlide(e, sid)).map(coerceImage);
@@ -388,7 +533,7 @@ export default function TempletEditor() {
         (a, b) => asNum(a.zIndex, 1) - asNum(b.zIndex, 1)
       );
 
-      const bg = slideBgMap?.[sid] ?? slideBgMap?.[String(sid)] ?? null;
+      const bg = readSlideBgEntry(slideBgMap, sid, i, label);
       if (bg?.image) {
         elements.unshift({
           type: "image",
@@ -400,7 +545,8 @@ export default function TempletEditor() {
           height: storedH,
           src: sanitizeSrc(asStr(bg.image)),
           zIndex: 0,
-          editable: bg?.editable !== false,
+          // Keep template background static by default in user editor.
+          editable: bg?.editable === true,
         });
       }
 
@@ -469,6 +615,24 @@ export default function TempletEditor() {
     }>(safeGetStorage(storageKey(productId)));
 
     if (restored?.adminDesign && restored?.userSlides?.length) {
+      // If incoming template has new/extra elements, ignore stale local restore.
+      if (state?.templetDesign) {
+        const incoming = buildSlidesFromRawStores(state.templetDesign);
+        const types: Array<AnyEl["type"]> = ["text", "image", "sticker"];
+        const hasIncomingDelta = types.some((type) => {
+          const restoredCount = countElementsByType(restored.userSlides, type);
+          const incomingCount = countElementsByType(incoming.slides, type);
+          if (incomingCount > restoredCount) return true;
+          const restoredIds = collectElementIdsByType(restored.userSlides, type);
+          const incomingIds = collectElementIdsByType(incoming.slides, type);
+          return Array.from(incomingIds).some((id) => !restoredIds.has(id));
+        });
+
+        if (hasIncomingDelta) {
+          return;
+        }
+      }
+
       didRestoreRef.current = true;
       setAdminDesign(restored.adminDesign);
       setUserSlides(restored.userSlides);
@@ -476,7 +640,7 @@ export default function TempletEditor() {
       setSelectedElId(restored.selectedElId ?? null);
       setLoading(false);
     }
-  }, [productId]);
+  }, [productId, state?.templetDesign]);
 
   useEffect(() => {
     if (!adminDesign) return;
@@ -528,6 +692,13 @@ export default function TempletEditor() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, state?.templetDesign]);
+
+  useEffect(() => {
+    if (!userSlides?.length) return;
+    const fonts = collectFontsFromSlides(userSlides);
+    if (!fonts.length) return;
+    loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
+  }, [userSlides]);
 
 
   // ====== Render sizing ======
@@ -756,23 +927,26 @@ export default function TempletEditor() {
     [adminDesign?.category]
   );
   const textLineHeight = useMemo(
-    () =>
-      isBagCategory(adminDesign?.category) || isLeafletCategory(adminDesign?.category)
-        ? 1.2
-        : 1,
-    [adminDesign?.category]
-  );
-  const textPaddingTop = useMemo(
-    () =>
-      isBagCategory(adminDesign?.category) || isLeafletCategory(adminDesign?.category)
-        ? 2
-        : 0,
+    () => 1.2,
     [adminDesign?.category]
   );
   const canvasScale = useMemo(() => {
     const base = isCandleCategory(adminDesign?.category) ? (isTablet ? 1.2 : 1.5) : 1;
     return Math.min(base, fitScale);
   }, [adminDesign?.category, isTablet, fitScale]);
+  const isFullBleedImage = useCallback(
+    (el: AnyEl) => {
+      if (el.type !== "image") return false;
+      const tol = 8;
+      return (
+        Math.abs(asNum(el.x, 0)) <= tol &&
+        Math.abs(asNum(el.y, 0)) <= tol &&
+        asNum(el.width, 0) >= artboardWidth - tol &&
+        asNum(el.height, 0) >= artboardHeight - tol
+      );
+    },
+    [artboardWidth, artboardHeight]
+  );
   const align = useAlignGuides(activeSlideRef, { scale: canvasScale });
   const previewCapture = useMemo(
     () => ({
@@ -1005,9 +1179,13 @@ export default function TempletEditor() {
                     {ordered.map((el) => {
                     const isLocked = el.editable === false;
                     const isSelected = selectedElId === el.id && isActive;
+                    const isBgImage =
+                      el.type === "image" &&
+                      (String(el.id).startsWith("bg-") || isFullBleedImage(el));
                     const cursor = isSelected ? "text" : isLocked ? "not-allowed" : "text";
 
-                    const canMove = isActive && !isLocked && (!isTablet || isSelected);
+                    const canMove =
+                      isActive && !isLocked && !isBgImage && (!isTablet || isSelected);
                     const commonRnd = {
                       bounds: "parent" as const,
                       scale: canvasScale,
@@ -1059,7 +1237,7 @@ export default function TempletEditor() {
                     if (el.type === "image") {
                       const img = el as ImageEl;
                       const isLeaflet = isLeafletCategory(adminDesign?.category);
-                      const isBg = String(el.id).startsWith("bg-");
+                      const isBg = String(el.id).startsWith("bg-") || isFullBleedImage(el);
                       const objectFit = isLeaflet && !isBg ? "contain" : "cover";
                       return (
                         <Rnd key={el.id} {...commonRnd}>
@@ -1081,7 +1259,7 @@ export default function TempletEditor() {
                                 objectFit,
                                 objectPosition: "center",
                                 display: "block",
-                                backgroundColor: objectFit === "contain" ? "#fff" : "transparent",
+                                backgroundColor: "transparent",
                               }}
                             />
 
@@ -1167,7 +1345,7 @@ export default function TempletEditor() {
                             sx={{
                               width: "100%",
                               height: "100%",
-                              p: 0.5,
+                              p: 0,
                               position: "relative",
                               overflow: "visible",
                               display: "flex",
@@ -1192,65 +1370,66 @@ export default function TempletEditor() {
                                 width: "100%",
                                 height: "100%",
                                 display: "flex",
-                                alignItems: "center",
+                                alignItems: isEditing ? "stretch" : "center",
+                                alignContent: "center",
                                 justifyContent: justify,
                                 transform: textTransform,
                                 transformOrigin: "center",
-                                overflow: "visible",
+                                overflow: isEditing ? "hidden" : "visible",
                               }}
                             >
                               {t.editable !== false && isActive && (selectedElId === el.id || editingTextId === el.id) ? (
-                                <TextField
+                                <Box
                                   className="no-drag"
-                                  multiline
-                                  value={t.text}
-                                  onChange={(e) => onTextChange(i, el.id, e.target.value)}
-                                  onFocus={() => setEditingTextId(el.id)}
-                                  onBlur={() => setEditingTextId((curr) => (curr === el.id ? null : curr))}
-                                  variant="standard"
-                                  InputProps={{
-                                    disableUnderline: true,
-                                    sx: {
-                                      height: "100%",
-                                      width: "100%",
-                                      p: 0.5,
-                                      backgroundColor: "transparent",
-                                      "& .MuiInputBase-root": {
-                                        height: "100%",
-                                        width: "100%",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: justify,
-                                        backgroundColor: "transparent",
-                                      },
-
-                                      "& textarea.MuiInputBase-inputMultiline": {
-                                        height: "100%",
-                                        minHeight: "100%",
-                                        width: "100%",
-                                        padding: 0,
-                                        paddingTop: textPaddingTop,
-                                        margin: "auto 0",
-                                        textAlign: align,
-                                        resize: "none",
-                                        overflow: "visible",
-                                        backgroundColor: "transparent",
-                                      },
-                                    },
+                                  contentEditable
+                                  suppressContentEditableWarning
+                                  onInput={(e) => {
+                                    const next = normalizeEditableText(
+                                      (e.currentTarget as HTMLDivElement).innerText ?? ""
+                                    );
+                                    if (next !== t.text) onTextChange(i, el.id, next);
                                   }}
-                                  inputProps={{
-                                    style: {
-                                      fontWeight: t.bold ? 700 : 400,
-                                      fontStyle: t.italic ? "italic" : "normal",
-                                      fontSize: t.fontSize,
-                                      fontFamily: t.fontFamily,
-                                      color: t.color,
-                                      lineHeight: textLineHeight,
-                                    },
+                                  onFocus={(e) => {
+                                    e.stopPropagation();
+                                    setEditingTextId(el.id);
                                   }}
-                                  sx={{ height: "100%", width: "100%", overflow: "visible" }}
-                                />
-
+                                  onBlur={(e) => {
+                                    e.stopPropagation();
+                                    setEditingTextId((curr) => (curr === el.id ? null : curr));
+                                  }}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
+                                  sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    maxHeight: "100%",
+                                    minHeight: "100%",
+                                    display: "flex",
+                                    alignContent: "center",
+                                    justifyContent: justify,
+                                    flexWrap: "wrap",
+                                    overflow: "hidden",
+                                    textAlign: align as any,
+                                    whiteSpace: "pre-wrap",
+                                    overflowWrap: "break-word",
+                                    wordBreak: "break-word",
+                                    fontWeight: t.bold ? 700 : 400,
+                                    fontStyle: t.italic ? "italic" : "normal",
+                                    fontSize: t.fontSize,
+                                    fontFamily: t.fontFamily,
+                                    color: t.color,
+                                    lineHeight: textLineHeight,
+                                    backgroundColor: "transparent",
+                                    outline: "none",
+                                    border: "none",
+                                    p: 0,
+                                    m: 0,
+                                    cursor: "text",
+                                    userSelect: "text",
+                                  }}
+                                >
+                                  {t.text}
+                                </Box>
                               ) : hasCurve ? (
                                 <Box
                                   component="svg"
@@ -1281,6 +1460,7 @@ export default function TempletEditor() {
                                     height: "100%",
                                     display: "flex",
                                     alignItems: "center",
+                                    alignContent: "center",
                                     justifyContent: justify,
                                     fontWeight: t.bold ? 700 : 400,
                                     fontStyle: t.italic ? "italic" : "normal",
