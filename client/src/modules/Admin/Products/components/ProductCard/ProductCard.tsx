@@ -3,6 +3,7 @@
 // ===============================================
 import { Delete, Edit } from "@mui/icons-material";
 import { Box, IconButton } from "@mui/material";
+import TemplateSvgThumbnail from "../../../../../components/TemplateSvgThumbnail/TemplateSvgThumbnail";
 
 // Keep in sync with callers
 type Card = {
@@ -19,7 +20,10 @@ type Card = {
   lastpageImageUrl?: string;
   img_url?: string;
   subCategory?:string;
-  subSubCategory?:string
+  subSubCategory?:string;
+  __type?: "card" | "templet";
+  slides?: any;
+  raw_stores?: any;
 };
 
 type Props = {
@@ -30,6 +34,10 @@ type Props = {
 
 const ProductCard = (props: Props) => {
   const { data, openDeleteModal, onEdit } = props || {};
+  const isTemplate = data?.__type === "templet";
+  const useContainThumb = /(mug|candle|business\s*card|business\s*leaflet|tote\s*bag|bag|sticker)/i.test(
+    String(data?.card_category ?? ""),
+  );
 
   return (
     <Box
@@ -51,18 +59,39 @@ const ProductCard = (props: Props) => {
       }}
     >
       {/* Product Image */}
-      <Box
-        component={"img"}
-        src={data?.imageUrl || data?.lastpageImageUrl || data?.img_url}
-        alt="Product"
-        sx={{
-          width: "100%",
-          height: "100%",
-          objectFit: "fill",
-          backgroundColor: "#ffffff",
-          clipPath: data?.polygon_shape || "none",
-        }}
-      />
+      {isTemplate ? (
+        <TemplateSvgThumbnail
+          template={{
+            id: data?.id,
+            category: data?.card_category,
+            img_url: data?.img_url,
+            slides: data?.slides,
+            raw_stores: data?.raw_stores,
+          }}
+          fallbackSrc={data?.img_url || data?.imageUrl || data?.lastpageImageUrl}
+          alt="Product"
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "block",
+            backgroundColor: "#ffffff",
+          }}
+        />
+      ) : (
+        <Box
+          component={"img"}
+          src={data?.imageUrl || data?.lastpageImageUrl || data?.img_url}
+          alt="Product"
+          sx={{
+            width: "100%",
+            height: "100%",
+            objectFit: useContainThumb ? "contain" : "cover",
+            objectPosition: "center",
+            backgroundColor: "#ffffff",
+            clipPath: data?.polygon_shape || "none",
+          }}
+        />
+      )}
 
       {/* Overlay with Buttons */}
       <Box

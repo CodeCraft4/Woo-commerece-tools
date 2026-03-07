@@ -11,6 +11,7 @@ import MainLayout from "../../../layout/MainLayout";
 import { USER_ROUTES } from "../../../constant/route";
 import SmartImage from "../../../components/SmartImage/SmartImage";
 import { shouldSmartCropCategory } from "../../../lib/thumbnail";
+import TemplateSvgThumbnail from "../../../components/TemplateSvgThumbnail/TemplateSvgThumbnail";
 
 const VIEW_ALL = "View All Filters";
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
@@ -364,6 +365,9 @@ const ViewAllCard = () => {
                 const enableSmartCrop = e.__type === "templet" && shouldSmartCropCategory(templetCategory);
                 const isCandleCategory = /candle/i.test(String(templetCategory ?? ""));
                 const isMugCategory = /mug/i.test(String(templetCategory ?? ""));
+                const isBagCategory = /(tote\s*bag|bag)/i.test(String(templetCategory ?? ""));
+                const isStickerCategory = /sticker/i.test(String(templetCategory ?? ""));
+                const useContainThumb = isCandleCategory || isMugCategory || isBagCategory || isStickerCategory;
 
                 return (
                   <Box
@@ -384,19 +388,33 @@ const ViewAllCard = () => {
                     {/* {plan === "pro" && <IconBadge kind="pro" /> : null} */}
                     {plan === "bundle" && null}
 
-                    <SmartImage
-                      src={src}
-                      alt={e.title || e.name || e.cardname || "product"}
-                      enable={enableSmartCrop}
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: isCandleCategory || isMugCategory ? "contain" : "cover",
-                        objectPosition: "center",
-                        display: "block",
-                        backgroundColor: isCandleCategory || isMugCategory ? "#fff" : "transparent",
-                      }}
-                    />
+                    {e.__type === "templet" ? (
+                      <TemplateSvgThumbnail
+                        template={e}
+                        fallbackSrc={src}
+                        alt={e.title || e.name || e.cardname || "product"}
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          display: "block",
+                          backgroundColor: useContainThumb ? "#fff" : "transparent",
+                        }}
+                      />
+                    ) : (
+                      <SmartImage
+                        src={src}
+                        alt={e.title || e.name || e.cardname || "product"}
+                        enable={enableSmartCrop}
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: useContainThumb ? "contain" : "cover",
+                          objectPosition: "center",
+                          display: "block",
+                          backgroundColor: useContainThumb ? "#fff" : "transparent",
+                        }}
+                      />
+                    )}
                   </Box>
                 );
               })

@@ -270,6 +270,8 @@ const TempletsCardSlider = ({ title, description }: BirthdayTypes) => {
                 <Box px={{ lg: 1, md: "2px", sm: 1, xs: 1 }}>
                   <ProductCard
                     poster={cate?.img_url}
+                    category={cate?.category ?? cate?.categoryName ?? cate?.templetCategory ?? cate?.cardcategory ?? ""}
+                    data={cate}
                     tabsSlider
                     layoutCard={cate?.polygonLayout}
                     smartCrop={shouldSmartCropCategory(

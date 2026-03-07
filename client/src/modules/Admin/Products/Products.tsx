@@ -656,6 +656,7 @@ const Products = () => {
                           "",
                         lastpageImageUrl: item.lastpageImageUrl ?? item.lastpageimageurl ?? "",
                         polygon_shape: item.polygon_shape ?? null,
+                        __type: "card",
                       } as any)
                       : ({
                         id: item.id,
@@ -671,6 +672,7 @@ const Products = () => {
                         polygon_shape: item.polygon_shape,
                         subCategory: item.subCategory ?? item.subcategory ?? null,
                         subSubCategory: item.subSubCategory ?? item.sub_subcategory ?? null,
+                        __type: "templet",
                       } as const)
                   }
                   onEdit={activeTab === "cards" ? () => onEditCard(item as CardRow) : () => onEditTemplate(item as TemplateDesign)}

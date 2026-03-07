@@ -632,8 +632,7 @@ export async function captureNodeToPng(
     cacheBust: true,
     pixelRatio: 2,
     backgroundColor: bg ?? getComputedStyle(node).backgroundColor ?? "#ffffff",
-    skipFonts: true,
-    fontEmbedCSS: "",
+    skipFonts: false,
   });
 }
 

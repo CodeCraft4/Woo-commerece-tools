@@ -15,7 +15,6 @@ import {
   type PublishMeta,
 } from "../../../../../context/CategoriesEditorContext";
 import * as htmlToImage from "html-to-image";
-import html2canvas from "html2canvas";
 import { ADMINS_DASHBOARD } from "../../../../../constant/route";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../../../constant/googleFonts";
 
@@ -147,6 +146,26 @@ const normalizeFontFamily = (value?: string | null) => {
   return first.replace(/^['"]|['"]$/g, "").trim();
 };
 
+const GENERIC_FONTS = new Set([
+  "serif",
+  "sans-serif",
+  "monospace",
+  "cursive",
+  "fantasy",
+  "system-ui",
+  "ui-serif",
+  "ui-sans-serif",
+  "ui-monospace",
+]);
+
+const addFontFamilyToSet = (bucket: Set<string>, value: unknown) => {
+  if (typeof value !== "string") return;
+  const fam = normalizeFontFamily(value);
+  if (!fam) return;
+  if (GENERIC_FONTS.has(fam.toLowerCase())) return;
+  bucket.add(fam);
+};
+
 const resolveTextFontFamily = (entry: any): string =>
   normalizeFontFamily(
     entry?.fontFamily ??
@@ -162,14 +181,7 @@ const resolveTextFontFamily = (entry: any): string =>
 
 const collectFontsFromRawStores = (rawStores: any): string[] => {
   const fonts = new Set<string>();
-  const add = (value: unknown) => {
-    if (typeof value !== "string") return;
-    const fam = normalizeFontFamily(value);
-    if (!fam) return;
-    const lower = fam.toLowerCase();
-    if (["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"].includes(lower)) return;
-    fonts.add(fam);
-  };
+  const add = (value: unknown) => addFontFamilyToSet(fonts, value);
   const pick = (entry: any) => add(resolveTextFontFamily(entry));
 
   const separatedText = Array.isArray(rawStores?.textElements) ? rawStores.textElements : [];
@@ -225,6 +237,55 @@ const collectFontsFromRawStores = (rawStores: any): string[] => {
   return Array.from(fonts);
 };
 
+const collectFontsFromPreviewNode = (node?: HTMLElement | null): string[] => {
+  if (!node) return [];
+  const fonts = new Set<string>();
+  const collectFromElement = (el: Element) => {
+    try {
+      addFontFamilyToSet(fonts, getComputedStyle(el).fontFamily);
+    } catch {
+      // ignore non-rendered elements
+    }
+    addFontFamilyToSet(fonts, (el as HTMLElement).style?.fontFamily);
+    addFontFamilyToSet(fonts, el.getAttribute("font-family"));
+    addFontFamilyToSet(fonts, el.getAttribute("fontFamily"));
+  };
+
+  collectFromElement(node);
+  node.querySelectorAll("*").forEach(collectFromElement);
+  return Array.from(fonts);
+};
+
+const TRANSPARENT_PIXEL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+
+const toDataUrlSafe = async (src: string): Promise<string> => {
+  if (!src || src.startsWith("data:")) return src;
+  try {
+    const absolute = src.startsWith("/") ? `${window.location.origin}${src}` : src;
+    const resp = await fetch(absolute, { mode: "cors" });
+    if (!resp.ok) return src;
+    const blob = await resp.blob();
+    return await blobToDataUrl(blob);
+  } catch {
+    return src;
+  }
+};
+
+const normalizeCaptureFontList = (...lists: string[][]): string[] => {
+  const fonts = new Set<string>();
+  lists.flat().forEach((f) => addFontFamilyToSet(fonts, f));
+  return Array.from(fonts);
+};
+
 const googleFontCssCache = new Map<string, string>();
 
 const getGoogleFontEmbedCSS = async (families: string[]): Promise<string> => {
@@ -263,6 +324,77 @@ const waitForFontsReady = async (families: string[]) => {
     );
   }
   await fontApi.ready?.catch(() => null);
+};
+
+const capturePreviewThumbnail = async (
+  node: HTMLElement,
+  rawStores: any,
+): Promise<string | null> => {
+  const clone = node.cloneNode(true) as HTMLElement;
+  const width = Math.max(
+    1,
+    Math.round(node.getBoundingClientRect().width || node.offsetWidth || 1),
+  );
+  const height = Math.max(
+    1,
+    Math.round(node.getBoundingClientRect().height || node.offsetHeight || 1),
+  );
+
+  clone.style.width = `${width}px`;
+  clone.style.height = `${height}px`;
+
+  const sandbox = document.createElement("div");
+  sandbox.style.position = "fixed";
+  sandbox.style.left = "-10000px";
+  sandbox.style.top = "-10000px";
+  sandbox.style.zIndex = "-1";
+  sandbox.style.pointerEvents = "none";
+  sandbox.appendChild(clone);
+  document.body.appendChild(sandbox);
+
+  try {
+    const imgs = Array.from(clone.querySelectorAll("img")) as HTMLImageElement[];
+    await Promise.all(
+      imgs.map(async (img) => {
+        const src = img.getAttribute("src") || "";
+        const safeSrc = await toDataUrlSafe(src);
+        img.setAttribute("src", safeSrc || src || TRANSPARENT_PIXEL);
+        img.setAttribute("crossorigin", "anonymous");
+      }),
+    );
+
+    const captureFonts = normalizeCaptureFontList(
+      collectFontsFromRawStores(rawStores ?? {}),
+      collectFontsFromPreviewNode(node),
+      collectFontsFromPreviewNode(clone),
+    );
+
+    if (captureFonts.length) {
+      loadGoogleFontsOnce(buildGoogleFontsUrls(captureFonts));
+    }
+    await waitForFontsReady(captureFonts);
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+    const fontEmbedCSS =
+      captureFonts.length > 0 ? await getGoogleFontEmbedCSS(captureFonts) : "";
+
+    return await htmlToImage.toPng(clone, {
+      pixelRatio: 2,
+      backgroundColor: "#ffffff",
+      cacheBust: true,
+      width,
+      height,
+      style: { transform: "none" },
+      fontEmbedCSS: fontEmbedCSS || undefined,
+      skipFonts: false,
+      imagePlaceholder: TRANSPARENT_PIXEL,
+    });
+  } catch (e) {
+    console.error("LeftBox capture failed:", e);
+    return null;
+  } finally {
+    sandbox.remove();
+  }
 };
 
 // const chunk = <T,>(arr: T[], size: number) => {
@@ -859,37 +991,13 @@ const TempletForm = () => {
 
     let captured: string | null = null;
     if (previewRef.current) {
-      const captureFonts = collectFontsFromRawStores(rawStores ?? {});
-      try {
-        if (captureFonts.length) {
-          loadGoogleFontsOnce(buildGoogleFontsUrls(captureFonts));
-        }
-        await waitForFontsReady(captureFonts);
-        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
-        const canvas = await html2canvas(previewRef.current, {
-          scale: 2,
-          backgroundColor: "#ffffff",
-          useCORS: true,
-          allowTaint: true,
-          foreignObjectRendering: true,
-          logging: false,
-        });
-        captured = canvas.toDataURL("image/png");
-      } catch (e) {
-        try {
-          const fontEmbedCSS =
-            captureFonts.length > 0 ? await getGoogleFontEmbedCSS(captureFonts) : "";
-          captured = await htmlToImage.toPng(previewRef.current, {
-            pixelRatio: 2,
-            backgroundColor: "#ffffff",
-            style: { transform: "none" },
-            fontEmbedCSS: fontEmbedCSS || undefined,
-            skipFonts: true,
-          });
-        } catch (fallbackErr) {
-          console.error("LeftBox capture failed:", fallbackErr);
-        }
-      }
+      captured = await capturePreviewThumbnail(previewRef.current, rawStores ?? {});
+    }
+    if (!captured) {
+      captured =
+        (typeof navState?.imgUrl === "string" && navState.imgUrl.trim()) ||
+        (typeof previewImage === "string" && previewImage.trim()) ||
+        null;
     }
 
     const pricingValues = getValues("pricing") ?? {};
@@ -1081,12 +1189,6 @@ const TempletForm = () => {
     return { width: canvasDims.width, height: canvasDims.height };
   }, [canvasDims.width, canvasDims.height]);
 
-  const MUGS = navState.rawStores?.category === "Mugs";
-  const BCARD = navState.rawStores?.category === "Business Cards";
-
-  console.log(MUGS);
-  console.log(BCARD);
-
   const cols = 4;
 
   return (
@@ -1173,70 +1275,114 @@ const TempletForm = () => {
                   );
                 }
 
-                const asSlideId = (v: any) => {
-                  if (typeof v === "number" && Number.isFinite(v)) return v;
-                  if (typeof v !== "string") return null;
-                  const raw = v.trim();
-                  if (!raw) return null;
-                  const direct = Number(raw);
-                  if (Number.isFinite(direct)) return direct;
+                const slideToken = (value: any): string => {
+                  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+                  const raw = String(value ?? "").trim();
+                  if (!raw) return "";
+                  const n = Number(raw);
+                  if (Number.isFinite(n)) return String(n);
                   const lower = raw.toLowerCase();
-                  if (lower === "front") return 1;
-                  if (lower === "back") return 2;
-                  const m = raw.match(/(\d+)/);
-                  if (!m) return null;
-                  const parsed = Number(m[1]);
-                  return Number.isFinite(parsed) ? parsed : null;
+                  if (lower === "front") return "1";
+                  if (lower === "back") return "2";
+                  return lower;
                 };
 
-                const firstSlideId =
-                  asSlideId(firstSlide?.id ?? firstSlide?.slideId ?? firstSlide?.slide_id) ??
-                  0;
+                const slideAliases = (value: any): string[] => {
+                  const token = slideToken(value);
+                  if (!token) return [];
+                  const out = new Set<string>([token]);
+                  if (token === "1") {
+                    out.add("front");
+                    out.add("slide1");
+                  }
+                  if (token === "2") {
+                    out.add("back");
+                    out.add("slide2");
+                  }
+                  const m = token.match(/^slide(\d+)$/);
+                  if (m?.[1]) out.add(String(Number(m[1])));
+                  return Array.from(out);
+                };
+
+                const firstSlideRaw = firstSlide?.id ?? firstSlide?.slideId ?? firstSlide?.slide_id ?? 1;
+                const firstSlideAliasSet = new Set(slideAliases(firstSlideRaw));
+                if (firstSlideAliasSet.size === 0) firstSlideAliasSet.add("1");
+                const firstSlideToken = slideToken(firstSlideRaw) || "1";
+
                 const belongsToFirstSlide = (el: any) => {
-                  const sid = asSlideId(el?.slideId ?? el?.slide_id);
-                  if (sid == null) return true;
-                  return sid === firstSlideId;
+                  const sid = el?.slideId ?? el?.slide_id;
+                  if (sid == null || String(sid).trim() === "") return true;
+                  const aliases = slideAliases(sid);
+                  if (!aliases.length) return true;
+                  return aliases.some((a) => firstSlideAliasSet.has(a));
                 };
 
-                const snapshotElements = Array.isArray(firstSlide?.elements) ? firstSlide.elements : [];
+                const snapshotElementsRaw = Array.isArray(firstSlide?.elements) ? firstSlide.elements : [];
+                const snapshotElements = snapshotElementsRaw
+                  .filter((el: any) => {
+                    const t = String(el?.type ?? "").toLowerCase();
+                    return (
+                      t === "text" ||
+                      t === "image" ||
+                      t === "sticker" ||
+                      (!t && (el?.text != null || el?.src || el?.image || el?.url || el?.sticker))
+                    );
+                  })
+                  .map((el: any) => {
+                    const t = String(el?.type ?? "").toLowerCase();
+                    if (t) return el;
+                    if (el?.text != null) return { ...el, type: "text" };
+                    if (el?.sticker) return { ...el, type: "sticker" };
+                    return { ...el, type: "image" };
+                  });
 
-                const snapshotTextElements = snapshotElements.filter((el: any) => {
-                  const t = String(el?.type ?? "").toLowerCase();
-                  return t === "text" || (!t && el?.text != null);
-                });
-                const separatedTextElements = (Array.isArray(rawStores.textElements) ? rawStores.textElements : [])
-                  .filter((te: any) => belongsToFirstSlide(te));
-                const slideTextElements =
-                  separatedTextElements.length > 0 ? separatedTextElements : snapshotTextElements;
-
-                const snapshotGraphicElements = snapshotElements.filter((el: any) => {
-                  const t = String(el?.type ?? "").toLowerCase();
-                  return t === "image" || t === "sticker" || (!t && (el?.src || el?.image || el?.url || el?.sticker));
-                });
-                const separatedGraphicElements = [
-                  ...(Array.isArray(rawStores.imageElements) ? rawStores.imageElements : []),
-                  ...(Array.isArray(rawStores.stickerElements) ? rawStores.stickerElements : []),
+                const separatedElements = [
+                  ...(Array.isArray(rawStores.textElements) ? rawStores.textElements : []).map((el: any) => ({ ...el, type: "text" })),
+                  ...(Array.isArray(rawStores.imageElements) ? rawStores.imageElements : []).map((el: any) => ({ ...el, type: "image" })),
+                  ...(Array.isArray(rawStores.stickerElements) ? rawStores.stickerElements : []).map((el: any) => ({ ...el, type: "sticker" })),
                 ].filter((el: any) => belongsToFirstSlide(el));
-                const slideImageElements =
-                  separatedGraphicElements.length > 0 ? separatedGraphicElements : snapshotGraphicElements;
-                const orderedGraphicElements = [...slideImageElements].sort(
-                  (a: any, b: any) =>
-                    Number(a?.zIndex ?? a?.z_index ?? 1) - Number(b?.zIndex ?? b?.z_index ?? 1),
-                );
+
+                const renderElements =
+                  separatedElements.length > 0 ? separatedElements : snapshotElements;
+                const resolveLayer = (el: any) => {
+                  const explicit = Number(el?.zIndex ?? el?.z_index);
+                  if (Number.isFinite(explicit)) return explicit;
+                  const t = String(el?.type ?? "").toLowerCase();
+                  return t === "text" ? 2 : 1;
+                };
+                const orderedElements = [...renderElements]
+                  .map((el: any, orderIndex: number) => ({ el, orderIndex }))
+                  .sort((a, b) => {
+                    const la = resolveLayer(a.el);
+                    const lb = resolveLayer(b.el);
+                    if (la !== lb) return la - lb;
+                    return a.orderIndex - b.orderIndex;
+                  })
+                  .map((entry) => entry.el);
 
                 const slideBgMap = rawStores?.slideBg ?? {};
                 const firstSlideLabel = String(firstSlide?.label ?? "").trim();
                 const firstSlideLabelKey = firstSlideLabel.toLowerCase().replace(/\s+/g, "");
-                const slideBg =
-                  slideBgMap?.[firstSlideId] ??
-                  slideBgMap?.[String(firstSlideId)] ??
-                  slideBgMap?.[`slide${firstSlideId}`] ??
-                  slideBgMap?.[`Slide${firstSlideId}`] ??
-                  (firstSlideLabel ? slideBgMap?.[firstSlideLabel] : null) ??
-                  (firstSlideLabelKey ? slideBgMap?.[firstSlideLabelKey] : null) ??
-                  (firstSlideLabelKey === "front" ? slideBgMap?.front ?? slideBgMap?.slide1 : null) ??
-                  (firstSlideLabelKey === "back" ? slideBgMap?.back ?? slideBgMap?.slide2 : null) ??
-                  null;
+                const slideBgKeys = [
+                  firstSlideRaw,
+                  String(firstSlideRaw ?? ""),
+                  firstSlideToken,
+                  `slide${firstSlideToken}`,
+                  `Slide${firstSlideToken}`,
+                  firstSlideLabel,
+                  firstSlideLabelKey,
+                  firstSlideLabelKey === "front" ? "front" : "",
+                  firstSlideLabelKey === "front" ? "slide1" : "",
+                  firstSlideLabelKey === "back" ? "back" : "",
+                  firstSlideLabelKey === "back" ? "slide2" : "",
+                ].filter(Boolean);
+                let slideBg: any = null;
+                for (const k of slideBgKeys) {
+                  if (slideBgMap?.[k] != null) {
+                    slideBg = slideBgMap[k];
+                    break;
+                  }
+                }
 
                 // canvas کا سائز جو ایڈیٹر سے آیا ہے
                 const canvasW = canvasDims.width;
@@ -1258,8 +1404,15 @@ const TempletForm = () => {
                   let w = toNum(el?.width ?? el?.w, 0);
                   let h = toNum(el?.height ?? el?.h, 0);
 
-                  const rel = (n: number) => n > 0 && n <= 1;
-                  if (rel(x) || rel(y) || rel(w) || rel(h)) {
+                  const isUnit = (n: number) => n >= 0 && n <= 1.000001;
+                  const looksRelative =
+                    isUnit(x) &&
+                    isUnit(y) &&
+                    w > 0 &&
+                    w <= 1.000001 &&
+                    h > 0 &&
+                    h <= 1.000001;
+                  if (looksRelative) {
                     x = x * canvasW;
                     y = y * canvasH;
                     w = w * canvasW;
@@ -1303,32 +1456,31 @@ const TempletForm = () => {
                         />
                       )}
 
-                      {/* Images */}
-                      {orderedGraphicElements.map((img: any) => {
-                        const { x, y, w, h } = normalizePos(img);
-                        const kind = String(img?.type ?? "").toLowerCase();
-                        const isSticker = kind === "sticker" || (!kind && !!img?.sticker);
-                        return (
-                          <Box
-                            key={img.id}
-                            component="img"
-                            src={img.src ?? img.sticker ?? img.image ?? img.url ?? img.imageUrl}
-                            sx={{
-                              position: "absolute",
-                              left: `${x * scale}px`,
-                              top: `${y * scale}px`,
-                              width: `${w * scale}px`,
-                              height: `${h * scale}px`,
-                              objectFit: isSticker ? "contain" : "cover",
-                              backgroundColor: "transparent",
-                              zIndex: Number(img?.zIndex ?? img?.z_index ?? 1),
-                            }}
-                          />
-                        );
-                      })}
+                      {orderedElements.map((node: any, idx: number) => {
+                        const type = String(node?.type ?? "").toLowerCase();
+                        if (type !== "text") {
+                          const { x, y, w, h } = normalizePos(node);
+                          const isSticker = type === "sticker" || (!type && !!node?.sticker);
+                          return (
+                            <Box
+                              key={`${type || "image"}-${node?.id ?? idx}`}
+                              component="img"
+                              src={node?.src ?? node?.sticker ?? node?.image ?? node?.url ?? node?.imageUrl}
+                              sx={{
+                                position: "absolute",
+                                left: `${x * scale}px`,
+                                top: `${y * scale}px`,
+                                width: `${w * scale}px`,
+                                height: `${h * scale}px`,
+                                objectFit: isSticker ? "contain" : "cover",
+                                backgroundColor: "transparent",
+                                zIndex: resolveLayer(node),
+                              }}
+                            />
+                          );
+                        }
 
-                      {/* Text */}
-                      {slideTextElements.map((txt: any) => {
+                        const txt = node;
                         const { x, y, w, h } = normalizePos(txt);
                         const align = (String(txt?.align ?? "center").toLowerCase() as
                           | "left"
@@ -1352,7 +1504,7 @@ const TempletForm = () => {
 
                         return (
                           <Box
-                            key={txt.id}
+                            key={`text-${txt?.id ?? idx}`}
                             sx={{
                               position: "absolute",
                               left: `${x * scale}px`,
@@ -1365,6 +1517,7 @@ const TempletForm = () => {
                               overflow: "visible",
                               userSelect: "none",
                               pointerEvents: "none",
+                              zIndex: resolveLayer(txt),
                             }}
                           >
                             <Box

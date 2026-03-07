@@ -273,7 +273,16 @@ const normalizeEditableText = (value: string) =>
   value
     .replace(/\r/g, "")
     .replace(/\u00A0/g, " ")
+    .replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, "")
     .replace(/\n$/, "");
+
+const syncEditableNodeText = (node: HTMLDivElement | null, value: string) => {
+  if (!node) return;
+  const safe = value ?? "";
+  const current = normalizeEditableText(node.innerText ?? "");
+  if (current === safe) return;
+  node.innerText = safe;
+};
 
 const resolveTextFontFamily = (entry: any): string =>
   asStr(
@@ -342,6 +351,7 @@ export default function TempletEditor() {
     slideItemRefs.current[i] = el;
   };
   const activeSlideRef = useRef<HTMLDivElement | null>(null);
+  const editableTextRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const { productId } = useParams<{ productId: string }>();
   const { state } = useLocation() as { state?: { templetDesign?: any } };
@@ -1382,6 +1392,13 @@ export default function TempletEditor() {
                                 <Box
                                   className="no-drag"
                                   contentEditable
+                                  dir="ltr"
+                                  ref={(node: HTMLDivElement | null) => {
+                                    editableTextRefs.current[el.id] = node;
+                                    const isFocused =
+                                      typeof document !== "undefined" && document.activeElement === node;
+                                    if (!isFocused) syncEditableNodeText(node, t.text);
+                                  }}
                                   suppressContentEditableWarning
                                   onInput={(e) => {
                                     const next = normalizeEditableText(
@@ -1391,10 +1408,15 @@ export default function TempletEditor() {
                                   }}
                                   onFocus={(e) => {
                                     e.stopPropagation();
+                                    syncEditableNodeText(e.currentTarget as HTMLDivElement, t.text);
                                     setEditingTextId(el.id);
                                   }}
                                   onBlur={(e) => {
                                     e.stopPropagation();
+                                    const next = normalizeEditableText(
+                                      (e.currentTarget as HTMLDivElement).innerText ?? ""
+                                    );
+                                    if (next !== t.text) onTextChange(i, el.id, next);
                                     setEditingTextId((curr) => (curr === el.id ? null : curr));
                                   }}
                                   onMouseDown={(e) => e.stopPropagation()}
@@ -1413,6 +1435,8 @@ export default function TempletEditor() {
                                     whiteSpace: "pre-wrap",
                                     overflowWrap: "break-word",
                                     wordBreak: "break-word",
+                                    direction: "ltr",
+                                    unicodeBidi: "plaintext",
                                     fontWeight: t.bold ? 700 : 400,
                                     fontStyle: t.italic ? "italic" : "normal",
                                     fontSize: t.fontSize,
@@ -1427,9 +1451,7 @@ export default function TempletEditor() {
                                     cursor: "text",
                                     userSelect: "text",
                                   }}
-                                >
-                                  {t.text}
-                                </Box>
+                                />
                               ) : hasCurve ? (
                                 <Box
                                   component="svg"
@@ -1447,6 +1469,8 @@ export default function TempletEditor() {
                                     fontStyle={t.italic ? "italic" : "normal"}
                                     textAnchor={textAnchor}
                                     dominantBaseline="middle"
+                                    direction="ltr"
+                                    unicodeBidi="plaintext"
                                   >
                                     <textPath href={`#${curveId}`} startOffset={startOffset}>
                                       {t.text}
@@ -1471,6 +1495,8 @@ export default function TempletEditor() {
                                     lineHeight: textLineHeight,
                                     whiteSpace: "pre-wrap",
                                     overflow: "visible",
+                                    direction: "ltr",
+                                    unicodeBidi: "plaintext",
                                     userSelect: "none",
                                   }}
                                 >
