@@ -62,13 +62,28 @@ async function getSlidesPayload() {
   }
 }
 
-const buildPdfFileName = (category?: string, ext: "pdf" | "png" = "pdf") => {
-  const trimmed = String(category ?? "").trim();
+const singularizeCategory = (name?: string) => {
+  const trimmed = String(name ?? "").trim();
+  if (!trimmed) return "";
   const lower = trimmed.toLowerCase();
-  let label = trimmed;
-  if (lower && !lower.endsWith("ss") && lower.endsWith("s")) {
-    label = trimmed.slice(0, -1);
-  }
+  if (lower.endsWith("ss")) return trimmed;
+  if (lower.endsWith("s")) return trimmed.slice(0, -1);
+  return trimmed;
+};
+
+const toTitleCase = (value?: string) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const buildEmailSubject = (category?: string) => {
+  const label = toTitleCase(singularizeCategory(category) || "Design");
+  return `Your DIY Personalisation ${label} PDF`;
+};
+
+const buildPdfFileName = (category?: string, ext: "pdf" | "png" = "pdf") => {
+  const label = singularizeCategory(category);
   const clean = label
     .replace(/[^a-z0-9]+/gi, " ")
     .replace(/\s+/g, " ")
@@ -467,6 +482,8 @@ export default function PremiumSuccess() {
           slides,
           cardSize,
           category: categoryName,
+          emailSubject: buildEmailSubject(categoryName),
+          email_subject: buildEmailSubject(categoryName),
           fileName: buildPdfFileName(categoryName, outputFormat),
           ...(isTransparentPdf ? { outputFormat } : {}),
           ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap

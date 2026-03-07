@@ -102,6 +102,17 @@ const buildPdfFileName = (category?: string, ext: "pdf" | "png" = "pdf") => {
   return `personalised ${clean || "design"} ${ext}`;
 };
 
+const toTitleCase = (value?: string) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const buildEmailSubject = (category?: string) => {
+  const label = toTitleCase(singularizeCategory(category) || "Design");
+  return `Your DIY Personalisation ${label} PDF`;
+};
+
 const getItemAccessPlan = (p: any): "free" | "bundle" | "pro" => {
   const v = lc(p?.accessplan ?? p?.accessPlan ?? p?.plan ?? p?.plan_code ?? p?.code);
   if (v === "pro" || v === "premium") return "pro";
@@ -1201,6 +1212,8 @@ const Subscription = () => {
           slides,
           cardSize,
           category: categoryName,
+          emailSubject: buildEmailSubject(categoryName),
+          email_subject: buildEmailSubject(categoryName),
           fileName: buildPdfFileName(categoryName, outputFormat),
           ...(isTransparentPdf ? { outputFormat } : {}),
           ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap
