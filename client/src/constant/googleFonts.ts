@@ -92,6 +92,16 @@ const WEIGHT_HINTS: Record<string, number[]> = {
   Kalam: [300, 400, 700],
 };
 
+const loadedGoogleFontUrls = new Set<string>();
+
+const hashUrl = (url: string): string => {
+  let h = 0;
+  for (let i = 0; i < url.length; i += 1) {
+    h = (h * 31 + url.charCodeAt(i)) >>> 0;
+  }
+  return h.toString(36);
+};
+
 /** Build a CSS URL from families with optional weights. */
 function buildUrl(families: string[]): string {
   const q = families
@@ -158,13 +168,23 @@ export function loadGoogleFontsOnce(urls: string[]): void {
 
   // Stylesheets
   for (const url of urls) {
-    const id = "gf-css-" + btoa(url).slice(0, 12);
-    if (document.getElementById(id)) continue;
+    if (!url) continue;
+    if (loadedGoogleFontUrls.has(url)) continue;
+    const id = "gf-css-" + hashUrl(url);
+    const existingByData = document.querySelector(
+      `link[data-gf-url="${encodeURIComponent(url)}"]`
+    );
+    if (document.getElementById(id) || existingByData) {
+      loadedGoogleFontUrls.add(url);
+      continue;
+    }
     const link = document.createElement("link");
     link.id = id;
     link.rel = "stylesheet";
     link.href = url;
+    link.setAttribute("data-gf-url", encodeURIComponent(url));
     document.head.appendChild(link);
+    loadedGoogleFontUrls.add(url);
   }
 }
 

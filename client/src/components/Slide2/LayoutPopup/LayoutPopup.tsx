@@ -13,6 +13,8 @@ const LayoutPopup = ({ onClose, activeIndex }: LayoutPopupProps) => {
   const {
     setShowOneTextRightSideBox,
     setMultipleTextValue,
+    setTextAlign,
+    setVerticalAlign,
     selectedLayout,
     setSelectedLayout,
   } = useSlide2();
@@ -26,11 +28,15 @@ const LayoutPopup = ({ onClose, activeIndex }: LayoutPopupProps) => {
 
   const handleOneTextLayout = () => {
     setSelectedLayout("oneText");
+    setTextAlign("start");
+    setVerticalAlign("top");
     setShowOneTextRightSideBox(true);
     setMultipleTextValue(false); // hide others
   };
 
   const handleMultipleTextLayout = () => {
+    setTextAlign("start");
+    setVerticalAlign("top");
     setSelectedLayout((prev) => {
       if (prev === "multipleText") {
         // 🔁 Force reactivation if user clicks again after removing all texts

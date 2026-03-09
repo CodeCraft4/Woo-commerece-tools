@@ -144,7 +144,7 @@ const normalizeMultiTexts = (arr: any[]) =>
     fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
     fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
     textAlign: t?.textAlign ?? "center",
-    verticalAlign: t?.verticalAlign ?? "center",
+    verticalAlign: t?.verticalAlign ?? "top",
     lineHeight: t?.lineHeight ?? 1.5,
     letterSpacing: t?.letterSpacing ?? 0,
   }));
@@ -810,7 +810,7 @@ const SpreadRightSide = ({
             fontColor: "#000000",
             fontFamily: "Roboto",
             textAlign: "center",
-            verticalAlign: "center",
+            verticalAlign: "top",
             rotation: 0,
             lineHeight: 1.5,
             letterSpacing: 0
@@ -1952,15 +1952,17 @@ const SpreadRightSide = ({
                     sx={{
                       flex: 1,
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "var(--card-slide-h, 675px)",
-                      width: "var(--card-slide-w, 470px)",
+                      alignItems: "stretch",
+                      justifyContent: "flex-start",
+                      height: "100%",
+                      width: "100%",
                       border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                       position: "absolute",
                       bgcolor: "#6183cc36",
                       p: 1,
-                      top: 10,
+                      top: 0,
+                      left: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <IconButton
@@ -2015,7 +2017,9 @@ const SpreadRightSide = ({
                         InputProps={{
                           disableUnderline: true,
                           sx: {
-                            "& .MuiInputBase-input": {
+                            height: "100%",
+                            alignItems: "flex-start",
+                            "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                               fontSize: fontSize3,
                               fontWeight: fontWeight3,
                               color: fontColor3,
@@ -2024,10 +2028,14 @@ const SpreadRightSide = ({
                               transform: `rotate(${rotation3}deg)`,
                               lineHeight: lineHeight3,
                               letterSpacing: letterSpacing3,
-                              height: 200,
+                              minHeight: "100% !important",
+                              height: "100% !important",
+                              boxSizing: "border-box",
+                              overflowY: "auto",
                             },
                           },
                         }}
+                        sx={{ width: "100%", height: "100%" }}
                         autoFocus
                         multiline
                         fullWidth
@@ -3244,15 +3252,17 @@ const SpreadRightSide = ({
                     sx={{
                       flex: 1,
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "var(--card-slide-h, 675px)",
-                      width: "var(--card-slide-w, 470px)",
+                      alignItems: "stretch",
+                      justifyContent: "flex-start",
+                      height: "100%",
+                      width: "100%",
                       border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                       position: "absolute",
                       bgcolor: "#6183cc36",
                       p: 1,
-                      top: 10,
+                      top: 0,
+                      left: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <IconButton
@@ -3307,7 +3317,9 @@ const SpreadRightSide = ({
                         InputProps={{
                           disableUnderline: true,
                           sx: {
-                            "& .MuiInputBase-input": {
+                            height: "100%",
+                            alignItems: "flex-start",
+                            "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                               fontSize: fontSize3,
                               fontWeight: fontWeight3,
                               color: fontColor3,
@@ -3316,10 +3328,14 @@ const SpreadRightSide = ({
                               transform: `rotate(${rotation3}deg)`,
                               lineHeight: lineHeight3,
                               letterSpacing: letterSpacing3,
-                              height: 200,
+                              minHeight: "100% !important",
+                              height: "100% !important",
+                              boxSizing: "border-box",
+                              overflowY: "auto",
                             },
                           },
                         }}
+                        sx={{ width: "100%", height: "100%" }}
                         autoFocus
                         multiline
                         fullWidth

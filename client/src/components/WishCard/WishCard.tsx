@@ -694,7 +694,7 @@ const WishCard = (props: wishCardType) => {
           position: "relative",
           height: '100%',
           "--card-slide-w": `${BASE_SLIDE_W}px`,
-          "--card-slide-h": `${BASE_SLIDE_H}px`,
+          "--card-slide-h": `${canvasH}px`,
           "--card-toolbar-w": toolbarSideWidth,
           "--card-toolbar-gap": `${TOOLBAR_GAP}px`,
           // p: 1
@@ -1436,10 +1436,24 @@ const editingButtonStyle = {
   alignItems: "center",
   fontSize: "13px",
   minWidth: "56px",
+  minHeight: "40px",
+  px: 0.5,
+  py: 0.5,
   flexShrink: 0,
   color: "#212121",
+  "& .MuiSvgIcon-root": {
+    fontSize: "26px",
+  },
   "&:hover": {
     color: "#3a7bd5",
+  },
+  "@media (max-height: 760px)": {
+    fontSize: "11px",
+    minHeight: "34px",
+    py: 0.25,
+    "& .MuiSvgIcon-root": {
+      fontSize: "22px",
+    },
   },
 };
 
@@ -1449,16 +1463,21 @@ const toolbarContainerStyle = {
   top: "50%",
   transform: "translateY(-50%)",
   width: "var(--card-toolbar-w, 60px)",
+  height: "calc(var(--card-slide-h, 700px) - 16px)",
   maxHeight: "calc(var(--card-slide-h, 700px) - 16px)",
   bgcolor: "white",
   borderRadius: "6px",
-  p: 1,
+  p: 0.75,
   display: "flex",
   flexDirection: "column",
-  gap: "12px",
+  gap: "8px",
   boxShadow: 3,
   overflowY: "auto",
   zIndex: 20,
+  "@media (max-height: 760px)": {
+    p: 0.5,
+    gap: "6px",
+  },
   "&::-webkit-scrollbar": {
     width: "5px",
   },

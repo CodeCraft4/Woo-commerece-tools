@@ -174,12 +174,21 @@ const CategoriesEditor = () => {
   const hydratedRef = useRef(false);
 
   useEffect(() => {
-    const rs = (location.state as any)?.rawStores;
-    if (!rs || hydratedRef.current) return;
+    const st = location.state as any;
+    const rs = st?.rawStores;
+    if (hydratedRef.current) return;
+    if (!rs) {
+      const fallbackCategory = String(st?.product?.cardcategory ?? "").trim();
+      if (fallbackCategory) {
+        hydratedRef.current = true;
+        setCategory(fallbackCategory);
+      }
+      return;
+    }
     hydratedRef.current = true;
 
     let snapshotSlides = parseSnapshotSlides(
-      (location.state as any)?.snapshotSlides ?? (rs as any)?.snapshotSlides
+      st?.snapshotSlides ?? (rs as any)?.snapshotSlides
     );
     if (
       snapshotSlides.length === 0 &&
@@ -952,6 +961,20 @@ const CategoriesEditor = () => {
   const navigate = useNavigate();
 
   const goNextWithRawStores = () => {
+    const snapshotSlides = slides.map((s, idx) => {
+      const label = config.slideLabels?.[idx] ?? `Slide ${idx + 1}`;
+      const texts = textElements
+        .filter((el) => el.slideId === s.id)
+        .map((el) => ({ ...el, type: "text" as const }));
+      const images = imageElements
+        .filter((el) => el.slideId === s.id)
+        .map((el) => ({ ...el, type: "image" as const }));
+      const stickers = stickerElements
+        .filter((el) => el.slideId === s.id)
+        .map((el) => ({ ...el, type: "sticker" as const }));
+      return { id: s.id, label, elements: [...texts, ...images, ...stickers] };
+    });
+
     const configWithFit = {
       ...config,
       fitCanvas: {
@@ -964,18 +987,22 @@ const CategoriesEditor = () => {
       category,
       config: configWithFit,
       slides,
+      snapshotSlides,
       textElements,
       imageElements,
       stickerElements,
       slideBg,
     };
 
-    const navState: any = { rawStores };
+    const navState: any = { rawStores, snapshotSlides };
 
     const st = location.state as any;
     if (st?.mode) navState.mode = st.mode;
     if (st?.id) navState.id = st.id;
-    if (st?.product) navState.product = st.product;
+    navState.product = {
+      ...(st?.product ?? {}),
+      cardcategory: category,
+    };
 
     navigate(ADMINS_DASHBOARD.ADD_NEW_TEMPLETS_CARDS, { state: navState });
   };

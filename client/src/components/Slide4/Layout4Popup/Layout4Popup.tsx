@@ -13,6 +13,8 @@ const Layout4Popup = ({ onClose, activeIndex }: Layout4PopupProps) => {
   const {
     setShowOneTextRightSideBox4,
     setMultipleTextValue4,
+    setTextAlign4,
+    setVerticalAlign4,
     selectedLayout4,
     setSelectedLayout4,
   } = useSlide4();
@@ -26,12 +28,16 @@ const Layout4Popup = ({ onClose, activeIndex }: Layout4PopupProps) => {
 
   const handleOneTextLayout = () => {
     setSelectedLayout4("oneText");
+    setTextAlign4("start");
+    setVerticalAlign4("top");
     setShowOneTextRightSideBox4(true);
     setMultipleTextValue4(false);
   };
 
   const handleMultipleTextLayout = () => {
     setSelectedLayout4("multipleText");
+    setTextAlign4("start");
+    setVerticalAlign4("top");
     setShowOneTextRightSideBox4(false);
     setMultipleTextValue4(true);
   };

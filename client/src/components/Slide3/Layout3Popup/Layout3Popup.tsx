@@ -13,6 +13,8 @@ const Layout3Popup = ({ onClose, activeIndex }: Layout3PopupProps) => {
   const {
     setShowOneTextRightSideBox3,
     setMultipleTextValue3,
+    setTextAlign3,
+    setVerticalAlign3,
     selectedLayout3,
     setSelectedLayout3,
   } = useSlide3();
@@ -26,12 +28,16 @@ const Layout3Popup = ({ onClose, activeIndex }: Layout3PopupProps) => {
 
   const handleOneTextLayout = () => {
     setSelectedLayout3("oneText");
+    setTextAlign3("start");
+    setVerticalAlign3("top");
     setShowOneTextRightSideBox3(true);
     setMultipleTextValue3(false);
   };
 
   const handleMultipleTextLayout = () => {
     setSelectedLayout3("multipleText");
+    setTextAlign3("start");
+    setVerticalAlign3("top");
     setShowOneTextRightSideBox3(false);
     setMultipleTextValue3(true);
   };

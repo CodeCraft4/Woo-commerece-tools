@@ -58,7 +58,7 @@ const normalizeMultiTexts = (arr: any[]) =>
     fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
     fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
     textAlign: t?.textAlign ?? "center",
-    verticalAlign: t?.verticalAlign ?? "center",
+    verticalAlign: t?.verticalAlign ?? "top",
     lineHeight: t?.lineHeight ?? 1.5,
     letterSpacing: t?.letterSpacing ?? 0,
   }));
@@ -531,7 +531,7 @@ const SlideSpread = ({
             fontColor: "#000000",
             fontFamily: "Roboto",
             textAlign: "center",
-            verticalAlign: "center",
+            verticalAlign: "top",
             rotation: 0,
             lineHeight: 1.5,
             letterSpacing: 0
@@ -1664,15 +1664,17 @@ const SlideSpread = ({
                   sx={{
                     flex: 1,
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: { md: "675px", sm: "575px", xs: "575px" },
-                    width: { md: "470px", sm: "370px", xs: "90%" },
+                    alignItems: "stretch",
+                    justifyContent: "flex-start",
+                    height: "100%",
+                    width: "100%",
                     border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                     position: "absolute",
                     bgcolor: "#6183cc36",
                     p: 1,
-                    top: 10,
+                    top: 0,
+                    left: 0,
+                    boxSizing: "border-box",
                   }}
                 >
                   <IconButton
@@ -1727,7 +1729,9 @@ const SlideSpread = ({
                       InputProps={{
                         disableUnderline: true,
                         sx: {
-                          "& .MuiInputBase-input": {
+                          height: "100%",
+                          alignItems: "flex-start",
+                          "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                             fontSize: fontSize,
                             fontWeight: fontWeight,
                             color: fontColor,
@@ -1736,10 +1740,14 @@ const SlideSpread = ({
                             transform: `rotate(${rotation}deg)`,
                             lineHeight: lineHeight2,
                             letterSpacing: letterSpacing2,
-                            height: 200,
+                            minHeight: "100% !important",
+                            height: "100% !important",
+                            boxSizing: "border-box",
+                            overflowY: "auto",
                           },
                         },
                       }}
+                      sx={{ width: "100%", height: "100%" }}
                       autoFocus
                       multiline
                       fullWidth
@@ -2999,14 +3007,17 @@ const SlideSpread = ({
                   sx={{
                     flex: 1,
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: { md: "675px", sm: "575px", xs: '575px' },
-                    width: { md: "470px", sm: "370px", xs: "100%" },
+                    alignItems: "stretch",
+                    justifyContent: "flex-start",
+                    height: "100%",
+                    width: "100%",
                     border: hideTextOutline ? "none" : "3px dashed #3a7bd5",
                     bgcolor: "#6183cc36",
-                    position: "relative",
+                    position: "absolute",
                     p: 1,
+                    top: 0,
+                    left: 0,
+                    boxSizing: "border-box",
                   }}
                 >
                   <IconButton
@@ -3045,6 +3056,12 @@ const SlideSpread = ({
                           : verticalAlign === "center"
                             ? "center"
                             : "flex-end",
+                      alignItems:
+                        textAlign === "start"
+                          ? "flex-start"
+                          : textAlign === "center"
+                            ? "center"
+                            : "flex-end",
                     }}
                   >
                     <TextField
@@ -3054,7 +3071,9 @@ const SlideSpread = ({
                       InputProps={{
                         disableUnderline: true,
                         sx: {
-                          "& .MuiInputBase-input": {
+                          height: "100%",
+                          alignItems: "flex-start",
+                          "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                             fontSize: fontSize,
                             fontWeight: fontWeight,
                             color: fontColor,
@@ -3062,10 +3081,15 @@ const SlideSpread = ({
                             textAlign: textAlign,
                             transform: `rotate(${rotation}deg)`,
                             lineHeight: lineHeight2,
-                            letterSpacing: letterSpacing2
+                            letterSpacing: letterSpacing2,
+                            minHeight: "100% !important",
+                            height: "100% !important",
+                            boxSizing: "border-box",
+                            overflowY: "auto",
                           },
                         },
                       }}
+                      sx={{ width: "100%", height: "100%" }}
                       autoFocus
                       multiline
                       fullWidth

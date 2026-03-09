@@ -24,7 +24,8 @@ type Props = {
   sx?: SxProps<Theme>;
 };
 
-const LIVE_FONT_CATEGORIES = /(mug|bag|sticker|wall\s*art)/i;
+const LIVE_FONT_CATEGORIES =
+  /(mug|bag|candle|candles|invite|invites|clothing|apparel|sticker|stickers|stciker|stcikers|wall\s*art)/i;
 const GENERIC_FONTS = new Set([
   "serif",
   "sans-serif",
@@ -210,6 +211,7 @@ const fallbackImageSrc = (t?: TemplateLike | null) =>
 const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: Props) => {
   const categoryName = String(template?.category ?? "");
   const shouldRenderLive = LIVE_FONT_CATEGORIES.test(categoryName);
+  const isMugCategory = /mug/i.test(categoryName);
   const id = template?.id != null ? String(template.id) : "";
 
   const localSlides = parseMaybeJson(template?.slides);
@@ -375,16 +377,58 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
     const rotation = toNum(el?.rotation, 0);
     const curve = Math.max(-200, Math.min(200, toNum(el?.curve, 0)));
     const hasCurve = Math.abs(curve) > 0.5;
+    const fontSize = Math.max(1, toNum(el?.fontSize ?? el?.font_size, 20));
+    const fontWeight = el?.bold ? 700 : 400;
+    const fontStyle = el?.italic ? "italic" : "normal";
+    const fontFamily = resolveElementFont(el) || "Arial";
     const style = {
-      fontFamily: resolveElementFont(el) || "Arial",
-      fontSize: Math.max(1, toNum(el?.fontSize ?? el?.font_size, 20)),
-      fontWeight: el?.bold ? 700 : 400,
-      fontStyle: el?.italic ? "italic" : "normal",
+      fontFamily,
+      fontSize,
+      fontWeight,
+      fontStyle,
       fill: String(el?.color ?? "#111111"),
     } as const;
     const transform = rotation ? `rotate(${rotation} ${tx} ${ty})` : undefined;
 
     if (!hasCurve) {
+      if (isMugCategory) {
+        const justify = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+        const lineHeight = Math.max(1, toNum(el?.lineHeight ?? el?.line_height, 1.16));
+        nodes.push(
+          <foreignObject
+            key={`text-fo-${idx}`}
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            transform={transform}
+          >
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: justify,
+                textAlign: align,
+                fontFamily,
+                fontSize,
+                fontWeight,
+                fontStyle,
+                color: String(el?.color ?? "#111111"),
+                whiteSpace: "pre-wrap",
+                overflowWrap: "break-word",
+                wordBreak: "break-word",
+                lineHeight: String(lineHeight),
+              }}
+            >
+              {text}
+            </div>
+          </foreignObject>,
+        );
+        return;
+      }
+
       nodes.push(
         <text
           key={`text-${idx}`}

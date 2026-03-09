@@ -16,6 +16,23 @@ import TemplateSvgThumbnail from "../../../components/TemplateSvgThumbnail/Templ
 const VIEW_ALL = "View All Filters";
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
 const toAbs = (p: string) => (p.startsWith("/") ? p : `/${p}`);
+const canonicalCategory = (value: unknown) => {
+  const v = lc(value);
+  if (!v) return "";
+  if (/(clothing|clothes|apparel)/i.test(v)) return "clothing";
+  if (/invite/i.test(v)) return "invites";
+  if (/(sticker|stciker)/i.test(v)) return "stickers";
+  if (/mug/i.test(v)) return "mugs";
+  if (/candle/i.test(v)) return "candles";
+  if (/business\s*cards?/i.test(v)) return "business cards";
+  if (/business\s*leaflets?/i.test(v)) return "business leaflets";
+  if (/photo\s*art/i.test(v)) return "photo art";
+  if (/wall\s*art/i.test(v)) return "wall art";
+  if (/notebooks?/i.test(v)) return "notebooks";
+  if (/coasters?/i.test(v)) return "coasters";
+  if (/(tote\s*bag|bags?)/i.test(v)) return "bags";
+  return v;
+};
 
 
 type LocationState = {
@@ -37,7 +54,13 @@ const getTempletImage = (item: any) =>
   item?.img_url ?? item?.imageUrl ?? item?.imageurl ?? item?.poster ?? "";
 
 const getCardTabName = (card: any) => card?.cardcategory ?? card?.cardCategory ?? "";
-const getTempletTabName = (t: any) => t?.category ?? t?.categoryName ?? t?.templetCategory ?? "";
+const getTempletTabName = (t: any) =>
+  t?.category ??
+  t?.categoryName ??
+  t?.templetCategory ??
+  t?.cardcategory ??
+  t?.cardCategory ??
+  "";
 
 const getAccessPlan = (x: any): "free" | "bundle" | "pro" => {
   const v = lc(x?.accessplan ?? x?.accessPlan ?? x?.plan ?? x?.plan_code ?? x?.code);
@@ -212,15 +235,15 @@ const ViewAllCard = () => {
   const filteredCards = useMemo(() => {
     const list = Array.isArray(cardData) ? cardData : [];
     if (activeTab.name === VIEW_ALL) return list;
-    const wantTab = lc(activeTab.name);
-    return list.filter((card) => lc(getCardTabName(card)) === wantTab);
+    const wantTab = canonicalCategory(activeTab.name);
+    return list.filter((card) => canonicalCategory(getCardTabName(card)) === wantTab);
   }, [cardData, activeTab.name]);
 
   const filteredTemplets = useMemo(() => {
     const list = Array.isArray(templetCardData) ? templetCardData : [];
     if (activeTab.name === VIEW_ALL) return list;
-    const wantTab = lc(activeTab.name);
-    return list.filter((t) => lc(getTempletTabName(t)) === wantTab);
+    const wantTab = canonicalCategory(activeTab.name);
+    return list.filter((t) => canonicalCategory(getTempletTabName(t)) === wantTab);
   }, [templetCardData, activeTab.name]);
 
   const filteredData = useMemo(() => {

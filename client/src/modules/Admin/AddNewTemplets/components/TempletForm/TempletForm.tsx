@@ -533,6 +533,7 @@ const TempletForm = () => {
   const templateId: string | undefined = navState?.id ?? undefined;
   const prevImg: string | undefined = navState?.imgUrl ?? undefined;
   const isEditMode = mode === "edit" || !!templateId;
+  const hasIncomingRawStores = !!navState?.rawStores;
 
   const [rawStoresState, setRawStoresState] = useState<any>(null);
   const [editProduct, setEditProduct] = useState<EditProductLike | undefined>(
@@ -557,11 +558,13 @@ const TempletForm = () => {
         : rs;
 
     setRawStoresState(normalized);
+    didPrefillRef.current = false;
   }, [navState?.rawStores]);
 
 
   useEffect(() => {
-    if (!isEditMode || !templateId) return;
+    // If we returned from editor with fresh state, do not override with stale DB row.
+    if (!isEditMode || !templateId || hasIncomingRawStores) return;
     let mounted = true;
 
     const load = async () => {
@@ -649,7 +652,7 @@ const TempletForm = () => {
     return () => {
       mounted = false;
     };
-  }, [isEditMode, templateId]);
+  }, [isEditMode, templateId, hasIncomingRawStores]);
 
   useEffect(() => {
     if (!rawStoresState) return;
@@ -774,11 +777,16 @@ const TempletForm = () => {
 
   // ✅ Prefill ONLY ONCE (prevents category snapping back)
   useEffect(() => {
-  if (!product) return;
+  const baseProduct = product ?? ({} as EditProductLike);
+  const resolvedCategory = String(
+    baseProduct.cardcategory ?? (rawStoresState as any)?.category ?? "",
+  ).trim();
+  const hasAnyPrefillSource = !!product || !!rawStoresState;
+  if (!hasAnyPrefillSource) return;
   if (didPrefillRef.current) return;
   didPrefillRef.current = true;
-  
-    const productConfig = getPricingConfig(product.cardcategory);
+
+    const productConfig = getPricingConfig(resolvedCategory);
     const productSizes = productConfig.sizes;
     const hasA5 = productSizes.some((s) => s.key === "A5");
     const hasA3 = productSizes.some((s) => s.key === "A3");
@@ -787,8 +795,8 @@ const TempletForm = () => {
     const incomingPricing: PricingMap = {};
     const incomingSalePricing: PricingMap = {};
 
-    Object.assign(incomingPricing, readPricingMap((product as any).pricing));
-    Object.assign(incomingSalePricing, readPricingMap((product as any).salePricing));
+    Object.assign(incomingPricing, readPricingMap((baseProduct as any).pricing));
+    Object.assign(incomingSalePricing, readPricingMap((baseProduct as any).salePricing));
 
     // raw_stores fallback (if present)
     const rawPricing = readPricingMap((rawStoresState as any)?.pricing);
@@ -801,78 +809,78 @@ const TempletForm = () => {
       if (isBlank(incomingSalePricing[k]) && !isBlank(v)) incomingSalePricing[k] = v;
     }
 
-    if (firstKey && !incomingPricing[firstKey] && product.actualprice != null) {
-      incomingPricing[firstKey] = String(product.actualprice);
+    if (firstKey && !incomingPricing[firstKey] && baseProduct.actualprice != null) {
+      incomingPricing[firstKey] = String(baseProduct.actualprice);
     }
     if (
       firstKey &&
       !incomingSalePricing[firstKey] &&
-      product.saleprice != null
+      baseProduct.saleprice != null
     ) {
-      incomingSalePricing[firstKey] = String(product.saleprice);
+      incomingSalePricing[firstKey] = String(baseProduct.saleprice);
     }
 
     // DB fallback
-    if (isBlank(incomingPricing.A4) && product.a4price != null)
-      incomingPricing.A4 = String(product.a4price);
-    if (isBlank(incomingPricing.US_LETTER) && product.usletter != null)
-      incomingPricing.US_LETTER = String(product.usletter);
-    if (isBlank(incomingPricing.A3) && product.a3price != null)
-      incomingPricing.A3 = String(product.a3price);
-    if (isBlank(incomingPricing.HALF_US_LETTER) && product.halfusletter != null)
-      incomingPricing.HALF_US_LETTER = String(product.halfusletter);
-    if (isBlank(incomingPricing.US_TABLOID) && product.ustabloid != null)
-      incomingPricing.US_TABLOID = String(product.ustabloid);
+    if (isBlank(incomingPricing.A4) && baseProduct.a4price != null)
+      incomingPricing.A4 = String(baseProduct.a4price);
+    if (isBlank(incomingPricing.US_LETTER) && baseProduct.usletter != null)
+      incomingPricing.US_LETTER = String(baseProduct.usletter);
+    if (isBlank(incomingPricing.A3) && baseProduct.a3price != null)
+      incomingPricing.A3 = String(baseProduct.a3price);
+    if (isBlank(incomingPricing.HALF_US_LETTER) && baseProduct.halfusletter != null)
+      incomingPricing.HALF_US_LETTER = String(baseProduct.halfusletter);
+    if (isBlank(incomingPricing.US_TABLOID) && baseProduct.ustabloid != null)
+      incomingPricing.US_TABLOID = String(baseProduct.ustabloid);
 
     // legacy a5price ambiguity
-    if (isBlank(incomingPricing.A5) && hasA5 && product.a5price != null)
-      incomingPricing.A5 = String(product.a5price);
+    if (isBlank(incomingPricing.A5) && hasA5 && baseProduct.a5price != null)
+      incomingPricing.A5 = String(baseProduct.a5price);
     if (
       isBlank(incomingPricing.A3) &&
       hasA3 &&
-      product.a3price == null &&
-      product.a5price != null
+      baseProduct.a3price == null &&
+      baseProduct.a5price != null
     )
-      incomingPricing.A3 = String(product.a5price);
+      incomingPricing.A3 = String(baseProduct.a5price);
 
-    if (isBlank(incomingSalePricing.A4) && product.salea4price != null)
-      incomingSalePricing.A4 = String(product.salea4price);
-    if (isBlank(incomingSalePricing.US_LETTER) && product.saleusletter != null)
-      incomingSalePricing.US_LETTER = String(product.saleusletter);
-    if (isBlank(incomingSalePricing.A3) && product.salea3price != null)
-      incomingSalePricing.A3 = String(product.salea3price);
-    if (isBlank(incomingSalePricing.HALF_US_LETTER) && product.salehalfusletter != null)
-      incomingSalePricing.HALF_US_LETTER = String(product.salehalfusletter);
-    if (isBlank(incomingSalePricing.US_TABLOID) && product.saleustabloid != null)
-      incomingSalePricing.US_TABLOID = String(product.saleustabloid);
+    if (isBlank(incomingSalePricing.A4) && baseProduct.salea4price != null)
+      incomingSalePricing.A4 = String(baseProduct.salea4price);
+    if (isBlank(incomingSalePricing.US_LETTER) && baseProduct.saleusletter != null)
+      incomingSalePricing.US_LETTER = String(baseProduct.saleusletter);
+    if (isBlank(incomingSalePricing.A3) && baseProduct.salea3price != null)
+      incomingSalePricing.A3 = String(baseProduct.salea3price);
+    if (isBlank(incomingSalePricing.HALF_US_LETTER) && baseProduct.salehalfusletter != null)
+      incomingSalePricing.HALF_US_LETTER = String(baseProduct.salehalfusletter);
+    if (isBlank(incomingSalePricing.US_TABLOID) && baseProduct.saleustabloid != null)
+      incomingSalePricing.US_TABLOID = String(baseProduct.saleustabloid);
 
-    if (isBlank(incomingSalePricing.A5) && hasA5 && product.salea5price != null)
-      incomingSalePricing.A5 = String(product.salea5price);
+    if (isBlank(incomingSalePricing.A5) && hasA5 && baseProduct.salea5price != null)
+      incomingSalePricing.A5 = String(baseProduct.salea5price);
     if (
       isBlank(incomingSalePricing.A3) &&
       hasA3 &&
-      product.salea3price == null &&
-      product.salea5price != null
+      baseProduct.salea3price == null &&
+      baseProduct.salea5price != null
     )
-      incomingSalePricing.A3 = String(product.salea5price);
+      incomingSalePricing.A3 = String(baseProduct.salea5price);
 
     reset({
-      cardname: product.cardname ?? "",
-      cardcategory: product.cardcategory ?? "",
-      subCategory: product.subCategory ?? "",
-      subSubCategory: product.subSubCategory ?? "",
-      sku: product.sku ?? "",
-      description: product.description ?? "",
+      cardname: baseProduct.cardname ?? "",
+      cardcategory: resolvedCategory,
+      subCategory: baseProduct.subCategory ?? "",
+      subSubCategory: baseProduct.subSubCategory ?? "",
+      sku: baseProduct.sku ?? "",
+      description: baseProduct.description ?? "",
       polygon_shape: "",
 
-      actualprice: product.actualprice ?? "",
-      a4price: product.a4price ?? "",
-      a5price: product.a5price ?? "",
-      usletter: product.usletter ?? "",
-      saleprice: product.saleprice ?? "",
-      salea4price: product.salea4price ?? "",
-      salea5price: product.salea5price ?? "",
-      saleusletter: product.saleusletter ?? "",
+      actualprice: baseProduct.actualprice ?? "",
+      a4price: baseProduct.a4price ?? "",
+      a5price: baseProduct.a5price ?? "",
+      usletter: baseProduct.usletter ?? "",
+      saleprice: baseProduct.saleprice ?? "",
+      salea4price: baseProduct.salea4price ?? "",
+      salea5price: baseProduct.salea5price ?? "",
+      saleusletter: baseProduct.saleusletter ?? "",
 
       pricing: incomingPricing,
       salePricing: incomingSalePricing,
