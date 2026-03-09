@@ -140,10 +140,10 @@ const toText = (obj: any, i: number, editable: boolean, prefix = "te"): TextEl =
 const normalizeMultiTexts = (arr: any[]) =>
   (Array.isArray(arr) ? arr : []).map((t) => ({
     ...t,
-    fontSize1: t?.fontSize1 ?? t?.fontSize ?? 16,
-    fontWeight1: t?.fontWeight1 ?? t?.fontWeight ?? 400,
-    fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
-    fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
+    fontSize4: t?.fontSize4 ?? t?.fontSize1 ?? t?.fontSize ?? 16,
+    fontWeight4: t?.fontWeight4 ?? t?.fontWeight1 ?? t?.fontWeight ?? 400,
+    fontColor4: t?.fontColor4 ?? t?.fontColor1 ?? t?.fontColor ?? "#000000",
+    fontFamily4: t?.fontFamily4 ?? t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
     textAlign: t?.textAlign ?? "center",
     verticalAlign: t?.verticalAlign ?? "top",
     lineHeight: t?.lineHeight ?? 1.5,
@@ -2247,7 +2247,12 @@ const AdminSlide4Canvas = ({
                 disableUnderline: true,
                 sx: {
                   height: "100%",
-                  alignItems: "flex-start",
+                  alignItems:
+                    verticalAlign4 === "top"
+                      ? "flex-start"
+                      : verticalAlign4 === "center"
+                        ? "center"
+                        : "flex-end",
                   "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                     fontSize: fontSize4,
                     fontWeight: fontWeight4,
@@ -2257,8 +2262,9 @@ const AdminSlide4Canvas = ({
                     transform: `rotate(${rotation4}deg)`,
                     lineHeight: lineHeight4,
                     letterSpacing: letterSpacing4,
-                    minHeight: "100% !important",
-                    height: "100% !important",
+                    minHeight: "unset !important",
+                    height: "auto !important",
+                    maxHeight: "100%",
                     boxSizing: "border-box",
                     overflowY: "auto",
                   },
@@ -2352,10 +2358,10 @@ const AdminSlide4Canvas = ({
                         width: "100%",
                         resize: "none",
                         height: "100px",
-                        fontSize: textObj.fontSize1,
-                        fontWeight: textObj.fontWeight1,
-                        color: textObj.fontColor1,
-                        fontFamily: textObj.fontFamily1,
+                        fontSize: textObj.fontSize4 ?? textObj.fontSize1 ?? textObj.fontSize,
+                        fontWeight: textObj.fontWeight4 ?? textObj.fontWeight1 ?? textObj.fontWeight,
+                        color: textObj.fontColor4 ?? textObj.fontColor1 ?? textObj.fontColor,
+                        fontFamily: textObj.fontFamily4 ?? textObj.fontFamily1 ?? textObj.fontFamily,
                         textAlign: textObj.textAlign,
                         lineHeight: textObj.lineHeight,
                         letterSpacing: textObj.letterSpacing,
@@ -2372,10 +2378,10 @@ const AdminSlide4Canvas = ({
                       );
                     }
                     setEditingIndex4(index);
-                    setFontSize4(textObj.fontSize1);
-                    setFontFamily4(textObj.fontFamily1);
-                    setFontWeight4(textObj.fontWeight1);
-                    setFontColor4(textObj.fontColor1);
+                    setFontSize4(textObj.fontSize4 ?? textObj.fontSize1 ?? textObj.fontSize ?? 16);
+                    setFontFamily4(textObj.fontFamily4 ?? textObj.fontFamily1 ?? textObj.fontFamily ?? "Roboto");
+                    setFontWeight4(textObj.fontWeight4 ?? textObj.fontWeight1 ?? textObj.fontWeight ?? 400);
+                    setFontColor4(textObj.fontColor4 ?? textObj.fontColor1 ?? textObj.fontColor ?? "#000000");
                     setTextAlign4(textObj.textAlign);
                     setVerticalAlign4(textObj.verticalAlign);
                   }}
@@ -2383,10 +2389,10 @@ const AdminSlide4Canvas = ({
                 >
                   <Typography
                     sx={{
-                      fontSize: textObj.fontSize1,
-                      fontWeight: textObj.fontWeight1,
-                      color: textObj.fontColor1,
-                      fontFamily: textObj.fontFamily1,
+                      fontSize: textObj.fontSize4 ?? textObj.fontSize1 ?? textObj.fontSize,
+                      fontWeight: textObj.fontWeight4 ?? textObj.fontWeight1 ?? textObj.fontWeight,
+                      color: textObj.fontColor4 ?? textObj.fontColor1 ?? textObj.fontColor,
+                      fontFamily: textObj.fontFamily4 ?? textObj.fontFamily1 ?? textObj.fontFamily,
                       textAlign: textObj.textAlign,
                       lineHeight: textObj.lineHeight,
                       letterSpacing: textObj.letterSpacing,

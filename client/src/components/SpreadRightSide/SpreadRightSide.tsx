@@ -139,10 +139,10 @@ const toText = (obj: any, i: number, editable: boolean, prefix = "te"): TextEl =
 const normalizeMultiTexts = (arr: any[]) =>
   (Array.isArray(arr) ? arr : []).map((t) => ({
     ...t,
-    fontSize1: t?.fontSize1 ?? t?.fontSize ?? 16,
-    fontWeight1: t?.fontWeight1 ?? t?.fontWeight ?? 400,
-    fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
-    fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
+    fontSize3: t?.fontSize3 ?? t?.fontSize1 ?? t?.fontSize ?? 16,
+    fontWeight3: t?.fontWeight3 ?? t?.fontWeight1 ?? t?.fontWeight ?? 400,
+    fontColor3: t?.fontColor3 ?? t?.fontColor1 ?? t?.fontColor ?? "#000000",
+    fontFamily3: t?.fontFamily3 ?? t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
     textAlign: t?.textAlign ?? "center",
     verticalAlign: t?.verticalAlign ?? "top",
     lineHeight: t?.lineHeight ?? 1.5,
@@ -2018,7 +2018,12 @@ const SpreadRightSide = ({
                           disableUnderline: true,
                           sx: {
                             height: "100%",
-                            alignItems: "flex-start",
+                            alignItems:
+                              verticalAlign3 === "top"
+                                ? "flex-start"
+                                : verticalAlign3 === "center"
+                                  ? "center"
+                                  : "flex-end",
                             "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                               fontSize: fontSize3,
                               fontWeight: fontWeight3,
@@ -2028,8 +2033,9 @@ const SpreadRightSide = ({
                               transform: `rotate(${rotation3}deg)`,
                               lineHeight: lineHeight3,
                               letterSpacing: letterSpacing3,
-                              minHeight: "100% !important",
-                              height: "100% !important",
+                              minHeight: "unset !important",
+                              height: "auto !important",
+                              maxHeight: "100%",
                               boxSizing: "border-box",
                               overflowY: "auto",
                             },
@@ -2135,10 +2141,10 @@ const SpreadRightSide = ({
                                   width: "100%",
                                   resize: "none",
                                   height: "100px",
-                                  fontSize: textObj.fontSize1,
-                                  fontWeight: textObj.fontWeight1,
-                                  color: textObj.fontColor1,
-                                  fontFamily: textObj.fontFamily1,
+                                  fontSize: textObj.fontSize3 ?? textObj.fontSize1 ?? textObj.fontSize,
+                                  fontWeight: textObj.fontWeight3 ?? textObj.fontWeight1 ?? textObj.fontWeight,
+                                  color: textObj.fontColor3 ?? textObj.fontColor1 ?? textObj.fontColor,
+                                  fontFamily: textObj.fontFamily3 ?? textObj.fontFamily1 ?? textObj.fontFamily,
                                   textAlign: textObj.textAlign,
                                   lineHeight: textObj.lineHeight,
                                   letterSpacing: textObj.letterSpacing,
@@ -2163,10 +2169,10 @@ const SpreadRightSide = ({
                                 );
                               }
                               setEditingIndex3(index);
-                              setFontSize3(textObj.fontSize1);
-                              setFontFamily3(textObj.fontFamily1);
-                              setFontWeight3(textObj.fontWeight1);
-                              setFontColor3(textObj.fontColor1);
+                              setFontSize3(textObj.fontSize3 ?? textObj.fontSize1 ?? textObj.fontSize ?? 16);
+                              setFontFamily3(textObj.fontFamily3 ?? textObj.fontFamily1 ?? textObj.fontFamily ?? "Roboto");
+                              setFontWeight3(textObj.fontWeight3 ?? textObj.fontWeight1 ?? textObj.fontWeight ?? 400);
+                              setFontColor3(textObj.fontColor3 ?? textObj.fontColor1 ?? textObj.fontColor ?? "#000000");
                               setTextAlign3(textObj.textAlign);
                               setVerticalAlign3(textObj.verticalAlign);
                             }}
@@ -2174,10 +2180,10 @@ const SpreadRightSide = ({
                           >
                             <Typography
                               sx={{
-                                fontSize: textObj.fontSize1,
-                                fontWeight: textObj.fontWeight1,
-                                color: textObj.fontColor1,
-                                fontFamily: textObj.fontFamily1,
+                                fontSize: textObj.fontSize3 ?? textObj.fontSize1 ?? textObj.fontSize,
+                                fontWeight: textObj.fontWeight3 ?? textObj.fontWeight1 ?? textObj.fontWeight,
+                                color: textObj.fontColor3 ?? textObj.fontColor1 ?? textObj.fontColor,
+                                fontFamily: textObj.fontFamily3 ?? textObj.fontFamily1 ?? textObj.fontFamily,
                                 textAlign: textObj.textAlign,
                                 lineHeight: textObj.lineHeight,
                                 letterSpacing: textObj.letterSpacing,
@@ -3318,7 +3324,12 @@ const SpreadRightSide = ({
                           disableUnderline: true,
                           sx: {
                             height: "100%",
-                            alignItems: "flex-start",
+                            alignItems:
+                              verticalAlign3 === "top"
+                                ? "flex-start"
+                                : verticalAlign3 === "center"
+                                  ? "center"
+                                  : "flex-end",
                             "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                               fontSize: fontSize3,
                               fontWeight: fontWeight3,
@@ -3328,8 +3339,9 @@ const SpreadRightSide = ({
                               transform: `rotate(${rotation3}deg)`,
                               lineHeight: lineHeight3,
                               letterSpacing: letterSpacing3,
-                              minHeight: "100% !important",
-                              height: "100% !important",
+                              minHeight: "unset !important",
+                              height: "auto !important",
+                              maxHeight: "100%",
                               boxSizing: "border-box",
                               overflowY: "auto",
                             },
@@ -3428,10 +3440,10 @@ const SpreadRightSide = ({
                                   width: "100%",
                                   resize: "none",
                                   height: "100px",
-                                  fontSize: textObj.fontSize3,
-                                  fontWeight: textObj.fontWeight3,
-                                  color: textObj.fontColor3,
-                                  fontFamily: textObj.fontFamily3,
+                                  fontSize: textObj.fontSize3 ?? textObj.fontSize1 ?? textObj.fontSize,
+                                  fontWeight: textObj.fontWeight3 ?? textObj.fontWeight1 ?? textObj.fontWeight,
+                                  color: textObj.fontColor3 ?? textObj.fontColor1 ?? textObj.fontColor,
+                                  fontFamily: textObj.fontFamily3 ?? textObj.fontFamily1 ?? textObj.fontFamily,
                                   textAlign: textAlign3,
                                   lineHeight: textObj.lineHeight,
                                   letterSpacing: textObj.letterSpacing
@@ -3458,10 +3470,10 @@ const SpreadRightSide = ({
 
                               // ✅ Then select new box
                               setEditingIndex3(index);
-                              setFontSize3(textObj.fontSize3);
-                              setFontFamily3(textObj.fontFamily3);
-                              setFontWeight3(textObj.fontWeight3);
-                              setFontColor3(textObj.fontColor3);
+                              setFontSize3(textObj.fontSize3 ?? textObj.fontSize1 ?? textObj.fontSize ?? 16);
+                              setFontFamily3(textObj.fontFamily3 ?? textObj.fontFamily1 ?? textObj.fontFamily ?? "Roboto");
+                              setFontWeight3(textObj.fontWeight3 ?? textObj.fontWeight1 ?? textObj.fontWeight ?? 400);
+                              setFontColor3(textObj.fontColor3 ?? textObj.fontColor1 ?? textObj.fontColor ?? "#000000");
                               setTextAlign3(textObj.textAlign);
                               setVerticalAlign3(textObj.verticalAlign);
                             }}
@@ -3473,10 +3485,10 @@ const SpreadRightSide = ({
                           >
                             <Typography
                               sx={{
-                                fontSize: textObj.fontSize3,
-                                fontWeight: textObj.fontWeight3,
-                                color: textObj.fontColor3,
-                                fontFamily: textObj.fontFamily3,
+                                fontSize: textObj.fontSize3 ?? textObj.fontSize1 ?? textObj.fontSize,
+                                fontWeight: textObj.fontWeight3 ?? textObj.fontWeight1 ?? textObj.fontWeight,
+                                color: textObj.fontColor3 ?? textObj.fontColor1 ?? textObj.fontColor,
+                                fontFamily: textObj.fontFamily3 ?? textObj.fontFamily1 ?? textObj.fontFamily,
                                 textAlign: textObj.textAlign,
                                 lineHeight: textObj.lineHeight,
                                 letterSpacing: textObj.letterSpacing,

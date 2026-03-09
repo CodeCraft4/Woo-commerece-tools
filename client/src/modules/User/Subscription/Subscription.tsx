@@ -109,8 +109,8 @@ const toTitleCase = (value?: string) =>
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
 const buildEmailSubject = (category?: string) => {
-  const label = toTitleCase(singularizeCategory(category) || "Design");
-  return `Your DIY Personalisation ${label} PDF`;
+  const label = toTitleCase(String(category ?? "").trim() || "PNG");
+  return `Your personalised ${label} file(s) are attached.`;
 };
 
 const getItemAccessPlan = (p: any): "free" | "bundle" | "pro" => {

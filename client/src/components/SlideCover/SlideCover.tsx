@@ -2313,7 +2313,12 @@ const SlideCover = ({
                         disableUnderline: true,
                         sx: {
                           height: "100%",
-                          alignItems: "flex-start",
+                          alignItems:
+                            verticalAlign1 === "top"
+                              ? "flex-start"
+                              : verticalAlign1 === "center"
+                                ? "center"
+                                : "flex-end",
                           "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                             fontSize: fontSize1,
                             fontWeight: fontWeight1,
@@ -2323,8 +2328,9 @@ const SlideCover = ({
                             transform: `rotate(${rotation1}deg)`,
                             lineHeight: lineHeight1,
                             letterSpacing: letterSpacing1,
-                            minHeight: "100% !important",
-                            height: "100% !important",
+                            minHeight: "unset !important",
+                            height: "auto !important",
+                            maxHeight: "100%",
                             boxSizing: "border-box",
                             overflowY: "auto",
                           },
@@ -2430,10 +2436,10 @@ const SlideCover = ({
                                 width: "100%",
                                 resize: "none",
                                 height: "100px",
-                                fontSize: textObj.fontSize1,
-                                fontWeight: textObj.fontWeight1,
-                                color: textObj.fontColor1,
-                                fontFamily: textObj.fontFamily1,
+                                fontSize: textObj.fontSize1 ?? textObj.fontSize,
+                                fontWeight: textObj.fontWeight1 ?? textObj.fontWeight,
+                                color: textObj.fontColor1 ?? textObj.fontColor,
+                                fontFamily: textObj.fontFamily1 ?? textObj.fontFamily,
                                 textAlign: textObj.textAlign,
                                 lineHeight: textObj.lineHeight,
                                 letterSpacing: textObj.letterSpacing,
@@ -2454,10 +2460,10 @@ const SlideCover = ({
                               );
                             }
                             setEditingIndex1(index);
-                            setFontSize1(textObj.fontSize1);
-                            setFontFamily1(textObj.fontFamily1);
-                            setFontWeight1(textObj.fontWeight1);
-                            setFontColor1(textObj.fontColor1);
+                            setFontSize1(textObj.fontSize1 ?? textObj.fontSize ?? 16);
+                            setFontFamily1(textObj.fontFamily1 ?? textObj.fontFamily ?? "Roboto");
+                            setFontWeight1(textObj.fontWeight1 ?? textObj.fontWeight ?? 400);
+                            setFontColor1(textObj.fontColor1 ?? textObj.fontColor ?? "#000000");
                             setTextAlign1(textObj.textAlign);
                             setVerticalAlign1(textObj.verticalAlign);
                           }}
@@ -2465,10 +2471,10 @@ const SlideCover = ({
                         >
                           <Typography
                             sx={{
-                              fontSize: textObj.fontSize1,
-                              fontWeight: textObj.fontWeight1,
-                              color: textObj.fontColor1,
-                              fontFamily: textObj.fontFamily1,
+                              fontSize: textObj.fontSize1 ?? textObj.fontSize,
+                              fontWeight: textObj.fontWeight1 ?? textObj.fontWeight,
+                              color: textObj.fontColor1 ?? textObj.fontColor,
+                              fontFamily: textObj.fontFamily1 ?? textObj.fontFamily,
                               textAlign: textObj.textAlign,
                               lineHeight: textObj.lineHeight,
                               letterSpacing: textObj.letterSpacing,

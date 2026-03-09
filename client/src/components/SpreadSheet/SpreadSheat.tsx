@@ -1730,7 +1730,12 @@ const SlideSpread = ({
                         disableUnderline: true,
                         sx: {
                           height: "100%",
-                          alignItems: "flex-start",
+                          alignItems:
+                            verticalAlign === "top"
+                              ? "flex-start"
+                              : verticalAlign === "center"
+                                ? "center"
+                                : "flex-end",
                           "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                             fontSize: fontSize,
                             fontWeight: fontWeight,
@@ -1740,8 +1745,9 @@ const SlideSpread = ({
                             transform: `rotate(${rotation}deg)`,
                             lineHeight: lineHeight2,
                             letterSpacing: letterSpacing2,
-                            minHeight: "100% !important",
-                            height: "100% !important",
+                            minHeight: "unset !important",
+                            height: "auto !important",
+                            maxHeight: "100%",
                             boxSizing: "border-box",
                             overflowY: "auto",
                           },
@@ -3072,7 +3078,12 @@ const SlideSpread = ({
                         disableUnderline: true,
                         sx: {
                           height: "100%",
-                          alignItems: "flex-start",
+                          alignItems:
+                            verticalAlign === "top"
+                              ? "flex-start"
+                              : verticalAlign === "center"
+                                ? "center"
+                                : "flex-end",
                           "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                             fontSize: fontSize,
                             fontWeight: fontWeight,
@@ -3082,8 +3093,9 @@ const SlideSpread = ({
                             transform: `rotate(${rotation}deg)`,
                             lineHeight: lineHeight2,
                             letterSpacing: letterSpacing2,
-                            minHeight: "100% !important",
-                            height: "100% !important",
+                            minHeight: "unset !important",
+                            height: "auto !important",
+                            maxHeight: "100%",
                             boxSizing: "border-box",
                             overflowY: "auto",
                           },
