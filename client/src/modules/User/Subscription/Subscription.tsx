@@ -486,6 +486,17 @@ const Subscription = () => {
             const align = el.align ?? "center";
             const justify =
               align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+            const rotation = toNum(el?.rotation, 0);
+            const curve = Math.max(-200, Math.min(200, toNum(el?.curve, 0)));
+            const hasCurve = Math.abs(curve) > 0.5;
+            const safeW = Math.max(1, toNum(el?.width, 1));
+            const safeH = Math.max(1, toNum(el?.height, 1));
+            const curvePx = (curve / 100) * (safeH / 2);
+            const midY = safeH / 2;
+            const textAnchor = align === "left" ? "start" : align === "right" ? "end" : "middle";
+            const startOffset = align === "left" ? "0%" : align === "right" ? "100%" : "50%";
+            const curveId = `sub-curve-${slide?.id ?? "s"}-${el?.id ?? "t"}`;
+            const lineHeight = Math.max(1, toNum(el?.lineHeight ?? el?.line_height, 1.16));
             return (
               <Box
                 key={el.id}
@@ -495,15 +506,51 @@ const Subscription = () => {
                   alignItems: "center",
                   justifyContent: justify,
                   textAlign: align,
+                  transform: rotation ? `rotate(${rotation}deg)` : "none",
+                  transformOrigin: "center",
                   fontWeight: el.bold ? 700 : 400,
                   fontStyle: el.italic ? "italic" : "normal",
                   fontSize: el.fontSize,
                   fontFamily: resolveTextFontFamily(el) || "Arial",
                   color: el.color,
                   whiteSpace: "pre-wrap",
+                  overflowWrap: "break-word",
+                  wordBreak: "break-word",
+                  lineHeight: String(lineHeight),
+                  overflow: "visible",
                 }}
               >
-                {el.text}
+                {hasCurve ? (
+                  <Box
+                    component="svg"
+                    viewBox={`0 0 ${safeW} ${safeH}`}
+                    sx={{ width: "100%", height: "100%", overflow: "visible", display: "block" }}
+                  >
+                    <defs>
+                      <path
+                        id={curveId}
+                        d={`M 0 ${midY} Q ${safeW / 2} ${midY - curvePx} ${safeW} ${midY}`}
+                      />
+                    </defs>
+                    <text
+                      fill={String(el?.color ?? "#111111")}
+                      fontFamily={resolveTextFontFamily(el) || "Arial"}
+                      fontSize={toNum(el?.fontSize, 20)}
+                      fontWeight={el?.bold ? 700 : 400}
+                      fontStyle={el?.italic ? "italic" : "normal"}
+                      textAnchor={textAnchor}
+                      dominantBaseline="middle"
+                      direction="ltr"
+                      unicodeBidi="plaintext"
+                    >
+                      <textPath href={`#${curveId}`} startOffset={startOffset}>
+                        {String(el?.text ?? "")}
+                      </textPath>
+                    </text>
+                  </Box>
+                ) : (
+                  String(el?.text ?? "")
+                )}
               </Box>
             );
           }

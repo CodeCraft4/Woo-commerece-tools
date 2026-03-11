@@ -65,6 +65,14 @@ type Props = {
     draft?: DraftFullRow | null;
 };
 
+const templateEditorStorageKey = (productId: string | number) =>
+  `templet_editor_state:${String(productId).trim()}`;
+
+const buildTemplateSlidesFromDraft = (draft?: DraftFullRow | null) => {
+  if (!draft) return [];
+  return [draft.slide1, draft.slide2, draft.slide3, draft.slide4].filter(Boolean);
+};
+
 const DraftPopup = ({ open, onClose, draft }: Props) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -112,10 +120,54 @@ const DraftPopup = ({ open, onClose, draft }: Props) => {
     resetSlide3State();
     resetSlide4State();
 
-    // ✅ 4) set current draft id
+    const templateLayout =
+      draft?.layout && typeof draft.layout === "object" && draft.layout.__editorType === "template"
+        ? draft.layout
+        : null;
+
+    if (templateLayout?.productId) {
+      const productId = String(templateLayout.productId).trim();
+      const category = String(templateLayout.category ?? draft.category ?? "general").trim() || "general";
+      const adminDesign = templateLayout.adminDesign ?? null;
+      const userSlides =
+        Array.isArray(templateLayout.userSlides) && templateLayout.userSlides.length > 0
+          ? templateLayout.userSlides
+          : buildTemplateSlidesFromDraft(draft);
+      const activeSlide =
+        Number.isFinite(Number(templateLayout.activeSlide)) ? Number(templateLayout.activeSlide) : 0;
+
+      try {
+        localStorage.setItem(`template:draft:id:${productId}`, draft.card_id);
+        if (adminDesign && userSlides.length) {
+          localStorage.setItem(
+            templateEditorStorageKey(productId),
+            JSON.stringify({
+              adminDesign,
+              userSlides,
+              activeSlide,
+              selectedElId: templateLayout.selectedElId ?? null,
+              savedAt: Date.now(),
+            })
+          );
+        }
+      } catch {}
+
+      setTimeout(() => {
+        navigate(`${USER_ROUTES.TEMPLET_EDITORS}/${encodeURIComponent(category)}/${productId}`, {
+          state: {
+            templetDesign: templateLayout.templetDesign ?? undefined,
+          },
+        });
+        setLoading(false);
+        onClose();
+      }, 3000);
+      return;
+    }
+
+    // ✅ 4) set current draft id (card editor drafts)
     setDraftCardId(draft.card_id);
 
-    // ✅ 5) 3 seconds loading then navigate
+    // ✅ 5) 3 seconds loading then navigate (card editor drafts)
     setTimeout(() => {
       navigate(`${USER_ROUTES.HOME}/${draft.card_id}`, {
         state: {

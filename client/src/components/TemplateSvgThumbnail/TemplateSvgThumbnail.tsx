@@ -25,7 +25,7 @@ type Props = {
 };
 
 const LIVE_FONT_CATEGORIES =
-  /(mug|bag|candle|candles|invite|invites|clothing|apparel|sticker|stickers|stciker|stcikers|wall\s*art)/i;
+  /(mug|bag|candle|candles|invite|invites|Invites|clothing|apparel|sticker|stickers|stciker|stcikers|notebook|notebooks|wall\s*art)/i;
 const GENERIC_FONTS = new Set([
   "serif",
   "sans-serif",
@@ -212,13 +212,19 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
   const categoryName = String(template?.category ?? "");
   const shouldRenderLive = LIVE_FONT_CATEGORIES.test(categoryName);
   const isMugCategory = /mug/i.test(categoryName);
+  const isInviteCategory = /invite/i.test(categoryName);
   const id = template?.id != null ? String(template.id) : "";
 
   const localSlides = parseMaybeJson(template?.slides);
   const localRawStores = parseMaybeJson(template?.raw_stores ?? template?.rawStores);
+  const hasLocalRawSlides =
+    Array.isArray(localRawStores?.slides) && localRawStores.slides.length > 0;
+  const hasLocalRawTextElements =
+    Array.isArray(localRawStores?.textElements) && localRawStores.textElements.length > 0;
   const hasLocalSlideData =
-    (Array.isArray(localSlides) && localSlides.length > 0) ||
-    (Array.isArray(localRawStores?.slides) && localRawStores.slides.length > 0);
+    isInviteCategory
+      ? hasLocalRawSlides || hasLocalRawTextElements
+      : (Array.isArray(localSlides) && localSlides.length > 0) || hasLocalRawSlides;
 
   const { data: remoteSlides } = useQuery({
     queryKey: ["template-svg-thumb", id],
@@ -231,23 +237,39 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
   });
 
   const slidesSource = useMemo(() => {
-    if (Array.isArray(localSlides) && localSlides.length > 0) return localSlides;
     const remoteParsed = parseMaybeJson(remoteSlides?.slides);
-    if (Array.isArray(remoteParsed) && remoteParsed.length > 0) return remoteParsed;
     const rsLocal = parseMaybeJson(template?.raw_stores ?? template?.rawStores);
-    if (Array.isArray(rsLocal?.slides) && rsLocal.slides.length > 0) return rsLocal.slides;
     const rsRemote = parseMaybeJson(remoteSlides?.raw_stores);
+
+    if (isInviteCategory) {
+      if (Array.isArray(remoteParsed) && remoteParsed.length > 0) return remoteParsed;
+      if (Array.isArray(rsRemote?.slides) && rsRemote.slides.length > 0) return rsRemote.slides;
+      if (Array.isArray(localSlides) && localSlides.length > 0) return localSlides;
+      if (Array.isArray(rsLocal?.slides) && rsLocal.slides.length > 0) return rsLocal.slides;
+      return [];
+    }
+
+    if (Array.isArray(localSlides) && localSlides.length > 0) return localSlides;
+    if (Array.isArray(remoteParsed) && remoteParsed.length > 0) return remoteParsed;
+    if (Array.isArray(rsLocal?.slides) && rsLocal.slides.length > 0) return rsLocal.slides;
     if (Array.isArray(rsRemote?.slides) && rsRemote.slides.length > 0) return rsRemote.slides;
     return [];
-  }, [localSlides, remoteSlides?.slides, remoteSlides?.raw_stores, template?.raw_stores, template?.rawStores]);
+  }, [isInviteCategory, localSlides, remoteSlides?.slides, remoteSlides?.raw_stores, template?.raw_stores, template?.rawStores]);
 
   const rawStores = useMemo(() => {
-    const local = parseMaybeJson(template?.raw_stores ?? template?.rawStores);
-    if (local && typeof local === "object") return local;
     const remote = parseMaybeJson(remoteSlides?.raw_stores);
+    const local = parseMaybeJson(template?.raw_stores ?? template?.rawStores);
+
+    if (isInviteCategory) {
+      if (remote && typeof remote === "object") return remote;
+      if (local && typeof local === "object") return local;
+      return {};
+    }
+
+    if (local && typeof local === "object") return local;
     if (remote && typeof remote === "object") return remote;
     return {};
-  }, [template?.raw_stores, template?.rawStores, remoteSlides?.raw_stores]);
+  }, [isInviteCategory, template?.raw_stores, template?.rawStores, remoteSlides?.raw_stores]);
 
   const firstSlide = slidesSource?.[0];
 
@@ -380,6 +402,7 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
     const fontSize = Math.max(1, toNum(el?.fontSize ?? el?.font_size, 20));
     const fontWeight = el?.bold ? 700 : 400;
     const fontStyle = el?.italic ? "italic" : "normal";
+    const lineHeight = Math.max(1, toNum(el?.lineHeight ?? el?.line_height, 1.16));
     const fontFamily = resolveElementFont(el) || "Arial";
     const style = {
       fontFamily,
@@ -391,9 +414,45 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
     const transform = rotation ? `rotate(${rotation} ${tx} ${ty})` : undefined;
 
     if (!hasCurve) {
+      if (isInviteCategory) {
+        const justify = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+        nodes.push(
+          <foreignObject
+            key={`text-invite-fo-${idx}`}
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            transform={transform}
+          >
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: justify,
+                textAlign: align,
+                fontFamily,
+                fontSize,
+                fontWeight: el?.bold ? "bold" : "normal",
+                fontStyle,
+                color: String(el?.color ?? "#111111"),
+                whiteSpace: "pre-wrap",
+                overflowWrap: "break-word",
+                wordBreak: "break-word",
+                lineHeight: String(lineHeight),
+              }}
+            >
+              {text}
+            </div>
+          </foreignObject>,
+        );
+        return;
+      }
+
       if (isMugCategory) {
         const justify = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
-        const lineHeight = Math.max(1, toNum(el?.lineHeight ?? el?.line_height, 1.16));
         nodes.push(
           <foreignObject
             key={`text-fo-${idx}`}

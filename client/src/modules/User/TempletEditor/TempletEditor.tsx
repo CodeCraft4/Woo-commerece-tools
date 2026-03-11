@@ -16,6 +16,7 @@ import * as htmlToImage from "html-to-image";
 import { Rnd } from "react-rnd";
 
 import LandingButton from "../../../components/LandingButton/LandingButton";
+import ImageCropModal from "../../../components/ImageCropModal/ImageCropModal";
 import { USER_ROUTES } from "../../../constant/route";
 import { fetchTempletDesignById } from "../../../source/source";
 import { COLORS } from "../../../constant/color";
@@ -25,6 +26,8 @@ import { safeGetStorage, safeSetLocalStorage } from "../../../lib/storage";
 import AlignmentGuides from "../../../components/AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../../hooks/useAlignGuides";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
+import { useAuth } from "../../../context/AuthContext";
+import { supabase } from "../../../supabase/supabase";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -87,6 +90,9 @@ const asStr = (v: any, d = "") => (typeof v === "string" ? v : d);
 const asBool = (v: any, d = false) => (typeof v === "boolean" ? v : d);
 const A = <T,>(v: any): T[] => (Array.isArray(v) ? v : []);
 const uuid = () => globalThis.crypto?.randomUUID?.() ?? `id_${Math.random().toString(36).slice(2)}`;
+const isUuid = (v: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+const makeUuid = () => globalThis.crypto?.randomUUID?.() ?? uuid();
 
 const resolveCategoryKey = (category?: string): CategoryKey | null => {
   const c = String(category ?? "").trim().toLowerCase();
@@ -322,6 +328,9 @@ const collectFontsFromSlides = (slides: Slide[]) => {
   return Array.from(fonts);
 };
 
+const templateDraftIdKey = (productId?: string) =>
+  `template:draft:id:${String(productId ?? "state").trim() || "state"}`;
+
 /* ------------ MAIN ------------ */
 export default function TempletEditor() {
   const theme = useTheme();
@@ -335,9 +344,16 @@ export default function TempletEditor() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedElId, setSelectedElId] = useState<string | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [cropTarget, setCropTarget] = useState<{
+    slideIndex: number;
+    imageId: string;
+    src: string;
+    aspect: number;
+  } | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [sidePadPx, setSidePadPx] = useState(0);
+  const { user } = useAuth();
 
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -608,10 +624,93 @@ export default function TempletEditor() {
     discardEditorState();
   };
 
-  const handleSaveDraftAndExit = () => {
+  const getOrCreateTemplateDraftId = () => {
+    const key = templateDraftIdKey(productId);
+    try {
+      const existing = localStorage.getItem(key);
+      if (existing && isUuid(existing)) return existing;
+      const created = makeUuid();
+      localStorage.setItem(key, created);
+      return created;
+    } catch {
+      return makeUuid();
+    }
+  };
+
+  const saveDraftToDb = async () => {
+    if (!user?.id) throw new Error("Please login first");
+    if (!adminDesign || !userSlides?.length) throw new Error("Nothing to save");
+
+    const draftId = getOrCreateTemplateDraftId();
+    const frontNode = slideRefs.current[0] ?? activeSlideRef.current ?? null;
+    const coverScreenshot = frontNode
+      ? await capturePngFromNode(frontNode, {
+          width: artboardWidth,
+          height: artboardHeight,
+          background: "#ffffff",
+          quality: previewCapture.quality,
+          pixelRatio: previewCapture.pixelRatio,
+        })
+      : null;
+
+    const selectedSize = localStorage.getItem("selectedSize") ?? "a4";
+    const selectedVariant = safeJsonParse<{ price?: number }>(localStorage.getItem("selectedVariant"));
+    const selectedPrices = safeJsonParse<any>(localStorage.getItem("selectedPrices"));
+    const displayPrice = typeof selectedVariant?.price === "number" ? selectedVariant.price : null;
+
+    const templateMeta = (state as any)?.templetDesign ?? {};
+    const title =
+      templateMeta?.cardname ?? templateMeta?.cardName ?? templateMeta?.title ?? adminDesign?.category ?? "Untitled";
+    const category = adminDesign?.category ?? templateMeta?.category ?? "";
+    const description = templateMeta?.description ?? "";
+
+    const layoutPayload = {
+      __editorType: "template",
+      productId: productId ?? null,
+      category,
+      templetDesign: templateMeta ?? null,
+      adminDesign,
+      userSlides,
+      activeSlide,
+      selectedElId,
+      cover_screenshot: coverScreenshot ?? null,
+    };
+
+    const { error } = await supabase.from("draft").upsert(
+      {
+        user_id: user.id,
+        card_id: draftId,
+        cover_screenshot: coverScreenshot ?? null,
+        title,
+        category,
+        description,
+        layout: layoutPayload,
+        slide1: userSlides[0] ?? null,
+        slide2: userSlides[1] ?? null,
+        slide3: userSlides[2] ?? null,
+        slide4: userSlides[3] ?? null,
+        selected_size: selectedSize,
+        prices: selectedPrices ?? null,
+        display_price: displayPrice,
+        is_on_sale: false,
+      },
+      { onConflict: "user_id,card_id" }
+    );
+
+    if (error) throw error;
+  };
+
+  const handleSaveDraftAndExit = async () => {
     persistEditorState();
-    setShowExitModal(false);
-    navigate(-1);
+    try {
+      await saveDraftToDb();
+      toast.success("Draft saved ✅");
+      setShowExitModal(false);
+      navigate(-1);
+    } catch (e: any) {
+      console.error("Template draft save failed:", e);
+      toast.error(e?.message ?? "Failed to save draft");
+    }
   };
 
 
@@ -906,6 +1005,14 @@ export default function TempletEditor() {
   };
 
   const fileInputsRef = useRef<Record<string, HTMLInputElement | null>>({});
+  const imagePickerClickTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    return () => {
+      if (imagePickerClickTimerRef.current !== null) {
+        window.clearTimeout(imagePickerClickTimerRef.current);
+      }
+    };
+  }, []);
   const setImageInputRef = (id: string) => (el: HTMLInputElement | null) => {
     fileInputsRef.current[id] = el;
   };
@@ -924,6 +1031,16 @@ export default function TempletEditor() {
       return copy;
     });
   };
+
+  const openCropForImage = useCallback((slideIndex: number, image: ImageEl) => {
+    if (!image?.id || !image?.src || image.editable === false) return;
+    setCropTarget({
+      slideIndex,
+      imageId: image.id,
+      src: image.src,
+      aspect: Math.max(0.1, Number(image.width || 1) / Math.max(1, Number(image.height || 1))),
+    });
+  }, []);
 
   const isMugCategory = (cat?: string) => /mug/i.test(String(cat ?? ""));
   const isBagCategory = (cat?: string) => /bag|tote/i.test(String(cat ?? ""));
@@ -1289,8 +1406,25 @@ export default function TempletEditor() {
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  if (!isActive) return;
                                   setSelectedElId(el.id);
-                                  fileInputsRef.current[el.id]?.click();
+                                  if (imagePickerClickTimerRef.current !== null) {
+                                    window.clearTimeout(imagePickerClickTimerRef.current);
+                                  }
+                                  imagePickerClickTimerRef.current = window.setTimeout(() => {
+                                    fileInputsRef.current[el.id]?.click();
+                                    imagePickerClickTimerRef.current = null;
+                                  }, 220);
+                                }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!isActive || el.editable === false) return;
+                                  if (imagePickerClickTimerRef.current !== null) {
+                                    window.clearTimeout(imagePickerClickTimerRef.current);
+                                    imagePickerClickTimerRef.current = null;
+                                  }
+                                  setSelectedElId(el.id);
+                                  openCropForImage(i, img);
                                 }}
                               >
                                 <Collections sx={{ color: "#fff" }} />
@@ -1583,6 +1717,21 @@ export default function TempletEditor() {
           <ArrowForwardIos />
         </IconButton>
       </Box>
+
+      <ImageCropModal
+        open={!!cropTarget}
+        imageSrc={cropTarget?.src ?? ""}
+        aspect={cropTarget?.aspect ?? 1}
+        onClose={() => setCropTarget(null)}
+        onApply={(croppedImageSrc) => {
+          if (!cropTarget) {
+            setCropTarget(null);
+            return;
+          }
+          updateElement(cropTarget.slideIndex, cropTarget.imageId, { src: croppedImageSrc });
+          setCropTarget(null);
+        }}
+      />
 
       {/* Exit Draft Modal */}
       <Modal open={showExitModal} onClose={() => setShowExitModal(false)}>

@@ -45,6 +45,26 @@ type DraftSliderProps = {
   isUserProfile?: boolean;
 };
 
+const getDraftPreviewSrc = (draft: DraftFullRow) => {
+  const direct = String(draft?.cover_screenshot ?? "").trim();
+  if (direct) return direct;
+
+  const fromLayout = String(draft?.layout?.cover_screenshot ?? "").trim();
+  if (fromLayout) return fromLayout;
+
+  const slide1 = draft?.slide1 ?? null;
+  const firstImage = Array.isArray(slide1?.elements)
+    ? slide1.elements.find(
+        (el: any) =>
+          el?.type === "image" &&
+          typeof el?.src === "string" &&
+          (el.src.startsWith("data:image/") || el.src.startsWith("http"))
+      )
+    : null;
+
+  return String(firstImage?.src ?? "").trim();
+};
+
 export default function DraftSlider({ autoOpenCardId, isUserProfile }: DraftSliderProps) {
   const queryClient = useQueryClient();
   const { user, loading } = useAuth();
@@ -211,6 +231,7 @@ export default function DraftSlider({ autoOpenCardId, isUserProfile }: DraftSlid
 
       <Box sx={{ display: "flex", gap: 2, overflowX: "auto", mt: 2, pb: 1 }}>
         {data.map((d) => {
+          const previewSrc = getDraftPreviewSrc(d);
           const isDeletingThis =
             deleteMutation.isPending && deleteMutation.variables === d.card_id;
 
@@ -232,11 +253,11 @@ export default function DraftSlider({ autoOpenCardId, isUserProfile }: DraftSlid
             >
               <Box
                 component="img"
-                src={d.cover_screenshot ?? ""}
+                src={previewSrc}
                 sx={{
                   width: "100%",
                   height: 280,
-                  objectFit: "fill",
+                  objectFit: "contain",
                   bgcolor: "#fafafa",
                   transition: "transform .25s ease",
                   display: "block",

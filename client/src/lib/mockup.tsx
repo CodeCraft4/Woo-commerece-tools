@@ -100,7 +100,7 @@ const CATEGORY_MOCKUPS: Array<{
     },
     // Clothing mockup
     {
-      match: (category) => normalizeCategory(category).includes("clothing"),
+      match: (category) => /clothing|clothes|apparel/i.test(normalizeCategory(category)),
       cfg: {
         mockupSrc: "/assets/mockup/Tshirt-mockup.jpg",
         cardAspectRatio: "1 / 1.2",

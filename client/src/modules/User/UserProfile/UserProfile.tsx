@@ -133,7 +133,7 @@ const UserProfile = () => {
           <Tab
             icon={<StyleOutlined />}
             iconPosition="start"
-            label="Draft Card"
+            label="Drafts"
             {...a11yProps(2)}
             sx={tabBaseSx}
           />

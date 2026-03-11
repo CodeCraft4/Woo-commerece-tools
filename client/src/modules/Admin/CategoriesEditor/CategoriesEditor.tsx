@@ -21,6 +21,7 @@ import { ADMINS_GOOGLE_FONTS, CATEGORY_CONFIG, SHAPES, STICKERS_DATA, type Categ
 import PopupWrapper from "../../../components/PopupWrapper/PopupWrapper";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import AlignmentGuides from "../../../components/AlignmentGuides/AlignmentGuides";
+import ImageCropModal from "../../../components/ImageCropModal/ImageCropModal";
 import { useAlignGuides } from "../../../hooks/useAlignGuides";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllCategoriesFromDB } from "../../../source/source";
@@ -243,6 +244,11 @@ const CategoriesEditor = () => {
   const [mirrorBySlide, setMirrorBySlide] = useState<Record<number, boolean>>({});
   const thumbRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [cropTarget, setCropTarget] = useState<{
+    imageId: string;
+    src: string;
+    aspect: number;
+  } | null>(null);
 
 
 
@@ -474,6 +480,15 @@ const CategoriesEditor = () => {
   const updateImage = (id: string, patch: Partial<CtxImageEl>) => {
     setImageElements(prev => prev.map(e => (e.id === id ? { ...e, ...patch } : e)));
   };
+
+  const openCropForImage = useCallback((img: CtxImageEl) => {
+    if (!img?.id || !img?.src || img.editable === false) return;
+    setCropTarget({
+      imageId: img.id,
+      src: String(img.src),
+      aspect: Math.max(0.1, Number(img.width || 1) / Math.max(1, Number(img.height || 1))),
+    });
+  }, []);
 
   const deleteElement = (id: string) => {
     let removed = false;
@@ -1384,7 +1399,16 @@ const CategoriesEditor = () => {
                           setSelectedTextId(null);
                         }}
                       >
-                        <Box sx={{ width: "100%", height: "100%", position: "relative" }}>
+                        <Box
+                          sx={{ width: "100%", height: "100%", position: "relative" }}
+                          onDoubleClick={(e) => {
+                            if (isInactive) return;
+                            e.stopPropagation();
+                            setSelectedImageId(el.id);
+                            setSelectedTextId(null);
+                            openCropForImage(el as CtxImageEl);
+                          }}
+                        >
                           <img
                             src={el.src} alt=""
                             style={{
@@ -1872,6 +1896,20 @@ const CategoriesEditor = () => {
           </IconButton>
         </Box>
       </Box>
+      <ImageCropModal
+        open={!!cropTarget}
+        imageSrc={cropTarget?.src ?? ""}
+        aspect={cropTarget?.aspect ?? 1}
+        onClose={() => setCropTarget(null)}
+        onApply={(croppedImageSrc) => {
+          if (!cropTarget?.imageId) {
+            setCropTarget(null);
+            return;
+          }
+          updateImage(cropTarget.imageId, { src: croppedImageSrc });
+          setCropTarget(null);
+        }}
+      />
     </DashboardLayout>
   );
 };

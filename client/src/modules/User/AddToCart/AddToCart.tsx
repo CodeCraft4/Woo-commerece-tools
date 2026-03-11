@@ -72,7 +72,7 @@ const normalizeCartType = (t: any): "card" | "templet" => {
 };
 
 const isPngCategoryForZip = (category?: string) =>
-  /mug|clothes|clothing|apparel|tote|bag|notebook|sticker/i.test(
+  /mug|clothes|clothing|apparel|tote|bag|notebook|sticker|coaster/i.test(
     String(category ?? "")
   );
 

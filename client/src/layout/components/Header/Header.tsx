@@ -525,7 +525,7 @@ export default function Header(props: Props) {
                           <ListItemIcon>
                             <Drafts fontSize="small" />
                           </ListItemIcon>
-                          <Typography>Draft Card</Typography>
+                          <Typography>Drafts</Typography>
                         </MenuItem>
                         <MenuItem
                           onClick={() => {
