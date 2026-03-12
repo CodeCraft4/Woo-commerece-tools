@@ -49,6 +49,10 @@ type TextEl = BaseEl & {
   color: string;
   fontSize: number;
   fontFamily: string;
+  fontWeight?: string | number;
+  fontStyle?: string;
+  textDecoration?: string;
+  lineHeight?: number;
   align?: "left" | "center" | "right";
   rotation?: number;
   curve?: number;
@@ -87,7 +91,6 @@ const asNum = (v: any, d = 0) => {
   return d;
 };
 const asStr = (v: any, d = "") => (typeof v === "string" ? v : d);
-const asBool = (v: any, d = false) => (typeof v === "boolean" ? v : d);
 const A = <T,>(v: any): T[] => (Array.isArray(v) ? v : []);
 const uuid = () => globalThis.crypto?.randomUUID?.() ?? `id_${Math.random().toString(36).slice(2)}`;
 const isUuid = (v: string) =>
@@ -294,14 +297,86 @@ const resolveTextFontFamily = (entry: any): string =>
   asStr(
     entry?.fontFamily ??
       entry?.font_family ??
+      entry?.["font-family"] ??
       entry?.fontFamily1 ??
       entry?.fontFamily2 ??
       entry?.fontFamily3 ??
       entry?.fontFamily4 ??
       entry?.style?.fontFamily ??
       entry?.style?.font_family ??
+      entry?.style?.["font-family"] ??
       "inherit",
     "inherit",
+  );
+
+const firstDefinedValue = (...values: any[]) => {
+  for (const value of values) {
+    if (value === 0 || value === false) return value;
+    if (typeof value === "string") {
+      if (value.trim()) return value;
+      continue;
+    }
+    if (value != null) return value;
+  }
+  return undefined;
+};
+
+const resolveTextWeight = (entry: any): string | number => {
+  const raw = firstDefinedValue(
+    entry?.fontWeight,
+    entry?.font_weight,
+    entry?.["font-weight"],
+    entry?.style?.fontWeight,
+    entry?.style?.font_weight,
+    entry?.style?.["font-weight"],
+  );
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return entry?.bold ? 700 : 400;
+    const asWeight = Number(trimmed);
+    if (Number.isFinite(asWeight) && asWeight > 0) return asWeight;
+    return trimmed;
+  }
+  return entry?.bold ? 700 : 400;
+};
+
+const resolveTextStyle = (entry: any): string => {
+  const raw = firstDefinedValue(
+    entry?.fontStyle,
+    entry?.font_style,
+    entry?.["font-style"],
+    entry?.style?.fontStyle,
+    entry?.style?.font_style,
+    entry?.style?.["font-style"],
+  );
+  if (typeof raw === "string") return raw.trim() || (entry?.italic ? "italic" : "normal");
+  return entry?.italic ? "italic" : "normal";
+};
+
+const resolveTextDecoration = (entry: any): string => {
+  const raw = firstDefinedValue(
+    entry?.textDecoration,
+    entry?.text_decoration,
+    entry?.["text-decoration"],
+    entry?.style?.textDecoration,
+    entry?.style?.text_decoration,
+    entry?.style?.["text-decoration"],
+  );
+  if (typeof raw === "string") return raw.trim() || "none";
+  if (entry?.underline) return "underline";
+  return "none";
+};
+
+const resolveTextColor = (entry: any): string =>
+  String(
+    firstDefinedValue(
+      entry?.color,
+      entry?.fill,
+      entry?.style?.color,
+      entry?.style?.fill,
+      "#000",
+    ),
   );
 
 const normalizeFontFamily = (value?: string | null) => {
@@ -476,20 +551,74 @@ export default function TempletEditor() {
 
     const coerceText = (e: any): TextEl => {
       const r = normalize01(e, storedW, storedH); // coordinates پہلے سے multiplied ہیں
+      const fontWeight = resolveTextWeight(e);
+      const fontStyle = resolveTextStyle(e);
+      const textDecoration = resolveTextDecoration(e);
+      const color = resolveTextColor(e);
+      const fontSize = asNum(
+        firstDefinedValue(
+          e?.fontSize,
+          e?.font_size,
+          e?.["font-size"],
+          e?.style?.fontSize,
+          e?.style?.font_size,
+          e?.style?.["font-size"],
+        ),
+        16,
+      );
+      const lineHeight = asNum(
+        firstDefinedValue(
+          e?.lineHeight,
+          e?.line_height,
+          e?.["line-height"],
+          e?.style?.lineHeight,
+          e?.style?.line_height,
+          e?.style?.["line-height"],
+          1.2,
+        ),
+        1.2,
+      );
+      const resolvedAlign = String(
+        firstDefinedValue(e?.align, e?.textAlign, e?.style?.textAlign, "center"),
+      ).toLowerCase();
+      const align =
+        resolvedAlign === "left"
+          ? "left"
+          : resolvedAlign === "right"
+          ? "right"
+          : "center";
+      const rotation = asNum(
+        firstDefinedValue(e?.rotation, e?.rotate, e?.style?.rotation, e?.style?.rotate),
+        0,
+      );
+      const curve = asNum(
+        firstDefinedValue(e?.curve, e?.arc, e?.style?.curve, e?.style?.arc),
+        0,
+      );
+      const normalizedFontStyle = String(fontStyle).toLowerCase();
+      const weightNum =
+        typeof fontWeight === "string" ? Number(fontWeight) : Number(fontWeight ?? 400);
+      const derivedBold = Number.isFinite(weightNum) ? weightNum >= 600 : e?.bold === true;
+      const derivedItalic =
+        normalizedFontStyle.includes("italic") || normalizedFontStyle.includes("oblique");
       return {
         type: "text",
         id: asStr(e?.id) || uuid(),
         slideId: resolveSlideId(e?.slideId ?? e?.slide_id, 0),
         ...r,
         text: asStr(e?.text ?? e?.value),
-        bold: asBool(e?.bold, false),
-        italic: asBool(e?.italic, false),
-        color: asStr(e?.color ?? "#000"),
-        fontSize: asNum(e?.fontSize ?? e?.font_size, 16), // ← یہ لائن شامل کرو
+        bold: typeof e?.bold === "boolean" ? e.bold : derivedBold,
+        italic: typeof e?.italic === "boolean" ? e.italic : derivedItalic,
+        color,
+        fontSize,
         fontFamily: resolveTextFontFamily(e),
-        align: (asStr(e?.align, "center") as any) ?? "center",
-        rotation: asNum(e?.rotation ?? e?.rotate, 0),
-        curve: asNum(e?.curve ?? e?.arc, 0),
+        fontWeight,
+        fontStyle,
+        textDecoration,
+        lineHeight,
+        align,
+        rotation,
+        curve,
         zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
         editable: e?.editable !== false,
       };
@@ -1462,6 +1591,14 @@ export default function TempletEditor() {
                       const textAnchor = align === "left" ? "start" : align === "right" ? "end" : "middle";
                       const startOffset = align === "left" ? "0%" : align === "right" ? "100%" : "50%";
                       const textTransform = rotation ? `rotate(${rotation}deg)` : "none";
+                      const fontWeight =
+                        t.fontWeight != null ? t.fontWeight : t.bold ? 700 : 400;
+                      const fontStyle =
+                        t.fontStyle != null ? t.fontStyle : t.italic ? "italic" : "normal";
+                      const textDecoration = t.textDecoration ?? "none";
+                      const fontFamily = t.fontFamily || "inherit";
+                      const lineHeight = asNum((t as any).lineHeight, textLineHeight);
+                      const textColor = t.color ?? "#000";
                       const isEditing = isActive && editingTextId === el.id;
                       const textRndProps = {
                         ...commonRnd,
@@ -1525,7 +1662,7 @@ export default function TempletEditor() {
                               {t.editable !== false && isActive && (selectedElId === el.id || editingTextId === el.id) ? (
                                 <Box
                                   className="no-drag"
-                                  contentEditable
+                                  contentEditable={"plaintext-only" as any}
                                   dir="ltr"
                                   ref={(node: HTMLDivElement | null) => {
                                     editableTextRefs.current[el.id] = node;
@@ -1571,12 +1708,13 @@ export default function TempletEditor() {
                                     wordBreak: "break-word",
                                     direction: "ltr",
                                     unicodeBidi: "plaintext",
-                                    fontWeight: t.bold ? 700 : 400,
-                                    fontStyle: t.italic ? "italic" : "normal",
+                                    fontWeight,
+                                    fontStyle,
                                     fontSize: t.fontSize,
-                                    fontFamily: t.fontFamily,
-                                    color: t.color,
-                                    lineHeight: textLineHeight,
+                                    fontFamily,
+                                    color: textColor,
+                                    textDecoration,
+                                    lineHeight,
                                     backgroundColor: "transparent",
                                     outline: "none",
                                     border: "none",
@@ -1596,17 +1734,29 @@ export default function TempletEditor() {
                                     <path id={curveId} d={curvePath} />
                                   </defs>
                                   <text
-                                    fill={t.color}
-                                    fontFamily={t.fontFamily}
+                                    fill={textColor}
+                                    fontFamily={fontFamily}
                                     fontSize={t.fontSize}
-                                    fontWeight={t.bold ? 700 : 400}
-                                    fontStyle={t.italic ? "italic" : "normal"}
+                                    fontWeight={fontWeight}
+                                    fontStyle={fontStyle}
+                                    textDecoration={textDecoration}
                                     textAnchor={textAnchor}
                                     dominantBaseline="middle"
                                     direction="ltr"
                                     unicodeBidi="plaintext"
                                   >
-                                    <textPath href={`#${curveId}`} startOffset={startOffset}>
+                                    <textPath
+                                      href={`#${curveId}`}
+                                      startOffset={startOffset}
+                                      style={{
+                                        fill: textColor,
+                                        fontFamily,
+                                        fontSize: t.fontSize,
+                                        fontWeight,
+                                        fontStyle,
+                                        textDecoration,
+                                      }}
+                                    >
                                       {t.text}
                                     </textPath>
                                   </text>
@@ -1620,13 +1770,14 @@ export default function TempletEditor() {
                                     alignItems: "center",
                                     alignContent: "center",
                                     justifyContent: justify,
-                                    fontWeight: t.bold ? 700 : 400,
-                                    fontStyle: t.italic ? "italic" : "normal",
+                                    fontWeight,
+                                    fontStyle,
                                     fontSize: t.fontSize,
-                                    fontFamily: t.fontFamily,
-                                    color: t.color,
+                                    fontFamily,
+                                    color: textColor,
                                     textAlign: align as any,
-                                    lineHeight: textLineHeight,
+                                    textDecoration,
+                                    lineHeight,
                                     whiteSpace: "pre-wrap",
                                     overflow: "visible",
                                     direction: "ltr",

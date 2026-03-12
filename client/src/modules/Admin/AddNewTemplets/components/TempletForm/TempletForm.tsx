@@ -170,14 +170,117 @@ const resolveTextFontFamily = (entry: any): string =>
   normalizeFontFamily(
     entry?.fontFamily ??
       entry?.font_family ??
+      entry?.["font-family"] ??
       entry?.fontFamily1 ??
       entry?.fontFamily2 ??
       entry?.fontFamily3 ??
       entry?.fontFamily4 ??
       entry?.style?.fontFamily ??
       entry?.style?.font_family ??
+      entry?.style?.["font-family"] ??
       "",
   );
+
+const firstDefinedValue = (...values: any[]) => {
+  for (const value of values) {
+    if (value === 0 || value === false) return value;
+    if (typeof value === "string") {
+      if (value.trim()) return value;
+      continue;
+    }
+    if (value != null) return value;
+  }
+  return undefined;
+};
+
+const resolveTextFontWeight = (entry: any): string | number => {
+  const raw = firstDefinedValue(
+    entry?.fontWeight,
+    entry?.font_weight,
+    entry?.["font-weight"],
+    entry?.style?.fontWeight,
+    entry?.style?.font_weight,
+    entry?.style?.["font-weight"],
+  );
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return entry?.bold ? 700 : 400;
+    const asNum = Number(trimmed);
+    if (Number.isFinite(asNum) && asNum > 0) return asNum;
+    return trimmed;
+  }
+  return entry?.bold ? 700 : 400;
+};
+
+const resolveTextFontStyle = (entry: any): string => {
+  const raw = firstDefinedValue(
+    entry?.fontStyle,
+    entry?.font_style,
+    entry?.["font-style"],
+    entry?.style?.fontStyle,
+    entry?.style?.font_style,
+    entry?.style?.["font-style"],
+  );
+  if (typeof raw === "string") return raw.trim() || (entry?.italic ? "italic" : "normal");
+  return entry?.italic ? "italic" : "normal";
+};
+
+const resolveTextDecoration = (entry: any): string => {
+  const raw = firstDefinedValue(
+    entry?.textDecoration,
+    entry?.text_decoration,
+    entry?.["text-decoration"],
+    entry?.style?.textDecoration,
+    entry?.style?.text_decoration,
+    entry?.style?.["text-decoration"],
+  );
+  if (typeof raw === "string") return raw.trim() || "none";
+  if (entry?.underline) return "underline";
+  return "none";
+};
+
+const resolveTextColor = (entry: any): string =>
+  String(
+    firstDefinedValue(
+      entry?.color,
+      entry?.fill,
+      entry?.style?.color,
+      entry?.style?.fill,
+      "#111111",
+    ),
+  );
+
+const resolveTextAlign = (entry: any): "left" | "center" | "right" => {
+  const raw = String(
+    firstDefinedValue(entry?.align, entry?.textAlign, entry?.style?.textAlign, "center"),
+  ).toLowerCase();
+  if (raw === "left") return "left";
+  if (raw === "right") return "right";
+  return "center";
+};
+
+const resolveTextRotation = (entry: any): number => {
+  const raw = firstDefinedValue(
+    entry?.rotation,
+    entry?.rotate,
+    entry?.style?.rotation,
+    entry?.style?.rotate,
+  );
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const resolveTextCurve = (entry: any): number => {
+  const raw = firstDefinedValue(
+    entry?.curve,
+    entry?.arc,
+    entry?.style?.curve,
+    entry?.style?.arc,
+  );
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+};
 
 const collectFontsFromRawStores = (rawStores: any): string[] => {
   const fonts = new Set<string>();
@@ -1490,14 +1593,11 @@ const TempletForm = () => {
 
                         const txt = node;
                         const { x, y, w, h } = normalizePos(txt);
-                        const align = (String(txt?.align ?? "center").toLowerCase() as
-                          | "left"
-                          | "center"
-                          | "right");
+                        const align = resolveTextAlign(txt);
                         const justify =
                           align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
-                        const rotation = Number(txt?.rotation ?? 0) || 0;
-                        const curve = Number(txt?.curve ?? 0) || 0;
+                        const rotation = resolveTextRotation(txt);
+                        const curve = resolveTextCurve(txt);
                         const curveVal = Math.max(-200, Math.min(200, curve));
                         const hasCurve = Math.abs(curveVal) > 0.5;
                         const safeW = Math.max(1, w);
@@ -1505,10 +1605,37 @@ const TempletForm = () => {
                         const curvePx = (curveVal / 100) * (safeH / 2);
                         const midY = safeH / 2;
                         const curvePath = `M 0 ${midY} Q ${safeW / 2} ${midY - curvePx} ${safeW} ${midY}`;
-                        const curveId = `curve-${txt.id}`;
+                        const curveId = `curve-${txt.id ?? idx}`;
                         const textAnchor = align === "left" ? "start" : align === "right" ? "end" : "middle";
                         const startOffset = align === "left" ? "0%" : align === "right" ? "100%" : "50%";
                         const textTransform = rotation ? `rotate(${rotation}deg)` : "none";
+                        const fontFamily = resolveTextFontFamily(txt) || "Arial";
+                        const fontWeight = resolveTextFontWeight(txt);
+                        const fontStyle = resolveTextFontStyle(txt);
+                        const textDecoration = resolveTextDecoration(txt);
+                        const fill = resolveTextColor(txt);
+                        const fontSize = toNum(
+                          firstDefinedValue(
+                            txt?.fontSize,
+                            txt?.font_size,
+                            txt?.["font-size"],
+                            txt?.style?.fontSize,
+                            txt?.style?.font_size,
+                            txt?.style?.["font-size"],
+                          ),
+                          20,
+                        );
+                        const lineHeight = Number(
+                          firstDefinedValue(
+                            txt?.lineHeight,
+                            txt?.line_height,
+                            txt?.["line-height"],
+                            txt?.style?.lineHeight,
+                            txt?.style?.line_height,
+                            txt?.style?.["line-height"],
+                            1.2,
+                          ),
+                        ) || 1.2;
 
                         return (
                           <Box
@@ -1550,15 +1677,27 @@ const TempletForm = () => {
                                     <path id={curveId} d={curvePath} />
                                   </defs>
                                   <text
-                                    fill={txt.color ?? "#111111"}
-                                    fontFamily={resolveTextFontFamily(txt) || "Arial"}
-                                    fontSize={toNum(txt.fontSize ?? txt.font_size, 20)}
-                                    fontWeight={txt.bold ? 700 : 400}
-                                    fontStyle={txt.italic ? "italic" : "normal"}
+                                    fill={fill}
+                                    fontFamily={fontFamily}
+                                    fontSize={fontSize}
+                                    fontWeight={fontWeight}
+                                    fontStyle={fontStyle}
+                                    textDecoration={textDecoration}
                                     textAnchor={textAnchor}
                                     dominantBaseline="middle"
                                   >
-                                    <textPath href={`#${curveId}`} startOffset={startOffset}>
+                                    <textPath
+                                      href={`#${curveId}`}
+                                      startOffset={startOffset}
+                                      style={{
+                                        fill,
+                                        fontFamily,
+                                        fontSize,
+                                        fontWeight,
+                                        fontStyle,
+                                        textDecoration,
+                                      }}
+                                    >
                                       {txt.text ?? txt.value}
                                     </textPath>
                                   </text>
@@ -1571,15 +1710,17 @@ const TempletForm = () => {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: justify,
-                                    fontWeight: txt.bold ? 700 : 400,
-                                    fontStyle: txt.italic ? "italic" : "normal",
-                                    fontSize: toNum(txt.fontSize ?? txt.font_size, 20),
-                                    fontFamily: resolveTextFontFamily(txt) || "Arial",
-                                    color: txt.color ?? "#111111",
+                                    fontWeight,
+                                    fontStyle,
+                                    fontSize,
+                                    fontFamily,
+                                    color: fill,
+                                    textDecoration,
                                     textAlign: align,
                                     whiteSpace: "pre-wrap",
                                     overflowWrap: "break-word",
                                     wordBreak: "break-word",
+                                    lineHeight,
                                     overflow: "visible",
                                   }}
                                 >

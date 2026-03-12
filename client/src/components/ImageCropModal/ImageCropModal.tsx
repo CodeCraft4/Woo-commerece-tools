@@ -83,25 +83,46 @@ const buildDefaultCropRect = (imageRect: Rect, aspect?: number): Rect => {
   };
 };
 
-const getCroppedImage = async (src: string, area: Rect) => {
+const getCroppedImage = async (src: string, area: Rect, targetAspect?: number) => {
   const image = await createImage(src);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return src;
 
-  canvas.width = Math.max(1, Math.round(area.width));
-  canvas.height = Math.max(1, Math.round(area.height));
+  const cropW = Math.max(1, Math.round(area.width));
+  const cropH = Math.max(1, Math.round(area.height));
+  const cropAspect = cropW / cropH;
+  const safeTargetAspect =
+    Number.isFinite(targetAspect) && Number(targetAspect) > 0
+      ? Number(targetAspect)
+      : cropAspect;
+
+  let outW = cropW;
+  let outH = cropH;
+  if (Math.abs(cropAspect - safeTargetAspect) > 0.001) {
+    if (cropAspect > safeTargetAspect) {
+      outH = Math.max(1, Math.round(cropW / safeTargetAspect));
+    } else {
+      outW = Math.max(1, Math.round(cropH * safeTargetAspect));
+    }
+  }
+
+  canvas.width = outW;
+  canvas.height = outH;
+
+  const dx = Math.round((outW - cropW) / 2);
+  const dy = Math.round((outH - cropH) / 2);
 
   ctx.drawImage(
     image,
     Math.round(area.x),
     Math.round(area.y),
-    Math.round(area.width),
-    Math.round(area.height),
-    0,
-    0,
-    canvas.width,
-    canvas.height,
+    cropW,
+    cropH,
+    dx,
+    dy,
+    cropW,
+    cropH,
   );
 
   try {
@@ -249,17 +270,21 @@ const ImageCropModal = ({ open, imageSrc, aspect = 1, onClose, onApply }: Props)
 
     setSaving(true);
     try {
-      const cropped = await getCroppedImage(normalizedSrc, {
+      const cropped = await getCroppedImage(
+        normalizedSrc,
+        {
         x: cropX,
         y: cropY,
         width: cropW,
         height: cropH,
-      });
+        },
+        aspect,
+      );
       onApply(cropped);
     } finally {
       setSaving(false);
     }
-  }, [resolvedCropRect, imageRect, imageNatural, normalizedSrc, onApply]);
+  }, [resolvedCropRect, imageRect, imageNatural, normalizedSrc, onApply, aspect]);
 
   const points = [
     { x: "0%", y: "0%" },
@@ -377,7 +402,25 @@ const ImageCropModal = ({ open, imageSrc, aspect = 1, onClose, onApply }: Props)
                     };
                     setCropRect(clampToImageRect(next));
                   }}
+                  onDrag={(_, d) => {
+                    const next = {
+                      x: d.x,
+                      y: d.y,
+                      width: resolvedCropRect.width,
+                      height: resolvedCropRect.height,
+                    };
+                    setCropRect(clampToImageRect(next));
+                  }}
                   onResizeStop={(_, __, ref, ___, position) => {
+                    const next = {
+                      x: position.x,
+                      y: position.y,
+                      width: parseFloat(ref.style.width) || MIN_CROP_SIZE,
+                      height: parseFloat(ref.style.height) || MIN_CROP_SIZE,
+                    };
+                    setCropRect(clampToImageRect(next));
+                  }}
+                  onResize={(_, __, ref, ___, position) => {
                     const next = {
                       x: position.x,
                       y: position.y,

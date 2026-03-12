@@ -1189,7 +1189,6 @@ const Subscription = () => {
               background: "transparent",
               outputFormat: "png",
               fillMode: "sequence",
-              mirrorPage: true,
             })
           : isMugWrap
           ? await buildFixedGridSlides(processedMugSlides, {

@@ -33,6 +33,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
 import { getCanvasMultiplier, uuid } from "../../../lib/lib";
+import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
 
 /* ----------------- Utils ----------------- */
 const readFileAsDataUrl = (file: File): Promise<string> =>
@@ -227,8 +228,13 @@ const CategoriesEditor = () => {
   // ====== Local UI-only state ======
   const [fontSizeInput, setFontSizeInput] = useState<string>("20");
   const [showStickerPopup, setShowStickerPopup] = useState(false);
+  const [inlineEditingTextId, setInlineEditingTextId] = useState<string | null>(null);
   const isMobile = useMediaQuery("(max-width:600px)");
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    loadGoogleFontsOnce(buildGoogleFontsUrls(ADMINS_GOOGLE_FONTS));
+  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -385,6 +391,11 @@ const CategoriesEditor = () => {
   );
   const selectedRotation = Number(selectedText?.rotation ?? 0) || 0;
   const selectedCurve = Number(selectedText?.curve ?? 0) || 0;
+
+  useEffect(() => {
+    if (!inlineEditingTextId) return;
+    if (selectedTextId !== inlineEditingTextId) setInlineEditingTextId(null);
+  }, [selectedTextId, inlineEditingTextId]);
 
   /* ---- Font size sync/control ---- */
   useEffect(() => {
@@ -1494,6 +1505,8 @@ const CategoriesEditor = () => {
                     textAlignVal === "left" ? "start" : textAlignVal === "right" ? "end" : "middle";
                   const startOffset =
                     textAlignVal === "left" ? "0%" : textAlignVal === "right" ? "100%" : "50%";
+                  const isInlineEditing =
+                    selectedTextId === el.id && inlineEditingTextId === el.id && !isInactive;
                   const transformParts: string[] = [];
                   if (mirrorOn) transformParts.push("scaleX(-1)");
                   if (rotation) transformParts.push(`rotate(${rotation}deg)`);
@@ -1507,6 +1520,13 @@ const CategoriesEditor = () => {
                         e.stopPropagation();
                         setSelectedTextId(el.id);
                         setSelectedImageId(null);
+                      }}
+                      onDoubleClick={(e: any) => {
+                        if (isInactive) return;
+                        e.stopPropagation();
+                        setSelectedTextId(el.id);
+                        setSelectedImageId(null);
+                        setInlineEditingTextId(el.id);
                       }}
                     >
                       <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: justify, p: 1, position: "relative", overflow: "visible" }}>
@@ -1550,7 +1570,7 @@ const CategoriesEditor = () => {
                           </Box>
                         )}
 
-                        {selectedTextId === el.id && !isInactive ? (
+                        {isInlineEditing ? (
                           <>
                             <Box
                               sx={{
@@ -1629,7 +1649,16 @@ const CategoriesEditor = () => {
                                     textAnchor={textAnchor}
                                     dominantBaseline="middle"
                                   >
-                                    <textPath href={`#${curveId}`} startOffset={startOffset}>
+                                    <textPath
+                                      href={`#${curveId}`}
+                                      startOffset={startOffset}
+                                      style={{
+                                        fontFamily: el.fontFamily ?? "Arial",
+                                        fontSize: Number(el.fontSize ?? 20),
+                                        fontWeight: el.bold ? 700 : 400,
+                                        fontStyle: el.italic ? "italic" : "normal",
+                                      }}
+                                    >
                                       {el.text}
                                     </textPath>
                                   </text>
@@ -1661,7 +1690,15 @@ const CategoriesEditor = () => {
                             </Box>
                             {!isInactive && (
                               <Box sx={{ position: "absolute", top: -15, right: -8, pointerEvents: "auto" }}>
-                                <IconButton className="no-drag" onClick={(e) => { e.stopPropagation(); setSelectedTextId(el.id); setSelectedImageId(null); }}>
+                                <IconButton
+                                  className="no-drag"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedTextId(el.id);
+                                    setSelectedImageId(null);
+                                    setInlineEditingTextId(el.id);
+                                  }}
+                                >
                                   <Edit color="info" />
                                 </IconButton>
                               </Box>

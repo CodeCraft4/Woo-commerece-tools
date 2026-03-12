@@ -68,13 +68,96 @@ const resolveElementFont = (el: any) =>
   normalizeFontFamily(
     el?.fontFamily ??
       el?.font_family ??
+      el?.["font-family"] ??
       el?.fontFamily1 ??
       el?.fontFamily2 ??
       el?.fontFamily3 ??
       el?.fontFamily4 ??
       el?.style?.fontFamily ??
       el?.style?.font_family ??
+      el?.style?.["font-family"] ??
       "",
+  );
+
+const firstDefinedValue = (...values: any[]) => {
+  for (const value of values) {
+    if (value === 0 || value === false) return value;
+    if (typeof value === "string") {
+      if (value.trim()) return value;
+      continue;
+    }
+    if (value != null) return value;
+  }
+  return undefined;
+};
+
+const resolveElementFontWeight = (el: any): string | number => {
+  const raw = firstDefinedValue(
+    el?.fontWeight,
+    el?.font_weight,
+    el?.["font-weight"],
+    el?.style?.fontWeight,
+    el?.style?.font_weight,
+    el?.style?.["font-weight"],
+  );
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return el?.bold ? 700 : 400;
+    const asNum = Number(trimmed);
+    if (Number.isFinite(asNum) && asNum > 0) return asNum;
+    return trimmed;
+  }
+  return el?.bold ? 700 : 400;
+};
+
+const resolveElementFontStyle = (el: any): string => {
+  const raw = firstDefinedValue(
+    el?.fontStyle,
+    el?.font_style,
+    el?.["font-style"],
+    el?.style?.fontStyle,
+    el?.style?.font_style,
+    el?.style?.["font-style"],
+  );
+  if (typeof raw === "string") return raw.trim() || (el?.italic ? "italic" : "normal");
+  return el?.italic ? "italic" : "normal";
+};
+
+const resolveElementTextDecoration = (el: any): string => {
+  const raw = firstDefinedValue(
+    el?.textDecoration,
+    el?.text_decoration,
+    el?.["text-decoration"],
+    el?.style?.textDecoration,
+    el?.style?.text_decoration,
+    el?.style?.["text-decoration"],
+  );
+  if (typeof raw === "string") return raw.trim() || "none";
+  if (el?.underline) return "underline";
+  return "none";
+};
+
+const resolveElementColor = (el: any): string =>
+  String(
+    firstDefinedValue(
+      el?.color,
+      el?.fill,
+      el?.style?.color,
+      el?.style?.fill,
+      "#111111",
+    ),
+  );
+
+const resolveElementRotation = (el: any): number =>
+  toNum(
+    firstDefinedValue(
+      el?.rotation,
+      el?.rotate,
+      el?.style?.rotation,
+      el?.style?.rotate,
+    ),
+    0,
   );
 
 const normalizeElementType = (el: any) => {
@@ -391,25 +474,62 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
     const text = String(el?.text ?? el?.value ?? "");
     if (!text) return;
 
-    const alignRaw = String(el?.align ?? "center").toLowerCase();
+    const alignRaw = String(
+      firstDefinedValue(el?.align, el?.textAlign, el?.style?.textAlign, "center"),
+    ).toLowerCase();
     const align = alignRaw === "left" ? "left" : alignRaw === "right" ? "right" : "center";
     const textAnchor = align === "left" ? "start" : align === "right" ? "end" : "middle";
     const tx = align === "left" ? x : align === "right" ? x + w : x + w / 2;
     const ty = y + h / 2;
-    const rotation = toNum(el?.rotation, 0);
-    const curve = Math.max(-200, Math.min(200, toNum(el?.curve, 0)));
+    const rotation = resolveElementRotation(el);
+    const curve = Math.max(
+      -200,
+      Math.min(
+        200,
+        toNum(firstDefinedValue(el?.curve, el?.arc, el?.style?.curve, el?.style?.arc), 0),
+      ),
+    );
     const hasCurve = Math.abs(curve) > 0.5;
-    const fontSize = Math.max(1, toNum(el?.fontSize ?? el?.font_size, 20));
-    const fontWeight = el?.bold ? 700 : 400;
-    const fontStyle = el?.italic ? "italic" : "normal";
-    const lineHeight = Math.max(1, toNum(el?.lineHeight ?? el?.line_height, 1.16));
+    const fontSize = Math.max(
+      1,
+      toNum(
+        firstDefinedValue(
+          el?.fontSize,
+          el?.font_size,
+          el?.["font-size"],
+          el?.style?.fontSize,
+          el?.style?.font_size,
+          el?.style?.["font-size"],
+        ),
+        20,
+      ),
+    );
+    const fontWeight = resolveElementFontWeight(el);
+    const fontStyle = resolveElementFontStyle(el);
+    const textDecoration = resolveElementTextDecoration(el);
+    const fill = resolveElementColor(el);
+    const lineHeight = Math.max(
+      1,
+      toNum(
+        firstDefinedValue(
+          el?.lineHeight,
+          el?.line_height,
+          el?.["line-height"],
+          el?.style?.lineHeight,
+          el?.style?.line_height,
+          el?.style?.["line-height"],
+        ),
+        1.16,
+      ),
+    );
     const fontFamily = resolveElementFont(el) || "Arial";
     const style = {
       fontFamily,
       fontSize,
       fontWeight,
       fontStyle,
-      fill: String(el?.color ?? "#111111"),
+      textDecoration,
+      fill,
     } as const;
     const transform = rotation ? `rotate(${rotation} ${tx} ${ty})` : undefined;
 
@@ -435,9 +555,9 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
                 textAlign: align,
                 fontFamily,
                 fontSize,
-                fontWeight: el?.bold ? "bold" : "normal",
+                fontWeight,
                 fontStyle,
-                color: String(el?.color ?? "#111111"),
+                color: fill,
                 whiteSpace: "pre-wrap",
                 overflowWrap: "break-word",
                 wordBreak: "break-word",
@@ -474,7 +594,7 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
                 fontSize,
                 fontWeight,
                 fontStyle,
-                color: String(el?.color ?? "#111111"),
+                color: fill,
                 whiteSpace: "pre-wrap",
                 overflowWrap: "break-word",
                 wordBreak: "break-word",
@@ -515,19 +635,38 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
       />,
     );
     const startOffset = align === "left" ? "0%" : align === "right" ? "100%" : "50%";
-    nodes.push(
+    const curveText = (
       <text
         key={`curve-text-${idx}`}
         textAnchor={textAnchor}
         dominantBaseline="middle"
-        transform={transform}
         style={style}
       >
-        <textPath href={`#${pathId}`} startOffset={startOffset}>
+        <textPath
+          href={`#${pathId}`}
+          startOffset={startOffset}
+          style={{
+            fontFamily,
+            fontSize,
+            fontWeight,
+            fontStyle,
+            textDecoration,
+            fill,
+          }}
+        >
           {text}
         </textPath>
-      </text>,
+      </text>
     );
+    if (transform) {
+      nodes.push(
+        <g key={`curve-group-${idx}`} transform={transform}>
+          {curveText}
+        </g>,
+      );
+      return;
+    }
+    nodes.push(curveText);
   });
 
   return (
