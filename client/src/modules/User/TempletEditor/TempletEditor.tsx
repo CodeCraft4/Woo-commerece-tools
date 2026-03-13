@@ -28,6 +28,10 @@ import { useAlignGuides } from "../../../hooks/useAlignGuides";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
 import { useAuth } from "../../../context/AuthContext";
 import { supabase } from "../../../supabase/supabase";
+import {
+  getTemplateDisplayFactor,
+  scaleTemplateElementBy,
+} from "../../../lib/templateEditorScale";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -469,6 +473,7 @@ export default function TempletEditor() {
       asNum(src?.config?.fitCanvas?.height, 0) ||
       asNum(src?.canvas?.px?.h, 0) ||
       800;
+    const displayFactor = getTemplateDisplayFactor(src, 1);
 
     const k = resolveCategoryKey(category);
     const mmWidth = k ? CATEGORY_CONFIG[k].mmWidth : dbMmWidth;
@@ -550,36 +555,42 @@ export default function TempletEditor() {
     }
 
     const coerceText = (e: any): TextEl => {
-      const r = normalize01(e, storedW, storedH); // coordinates پہلے سے multiplied ہیں
-      const fontWeight = resolveTextWeight(e);
-      const fontStyle = resolveTextStyle(e);
-      const textDecoration = resolveTextDecoration(e);
-      const color = resolveTextColor(e);
+      const displayEl = scaleTemplateElementBy(e, displayFactor);
+      const r = normalize01(displayEl, storedW, storedH);
+      const fontWeight = resolveTextWeight(displayEl);
+      const fontStyle = resolveTextStyle(displayEl);
+      const textDecoration = resolveTextDecoration(displayEl);
+      const color = resolveTextColor(displayEl);
       const fontSize = asNum(
         firstDefinedValue(
-          e?.fontSize,
-          e?.font_size,
-          e?.["font-size"],
-          e?.style?.fontSize,
-          e?.style?.font_size,
-          e?.style?.["font-size"],
+          displayEl?.fontSize,
+          displayEl?.font_size,
+          displayEl?.["font-size"],
+          displayEl?.style?.fontSize,
+          displayEl?.style?.font_size,
+          displayEl?.style?.["font-size"],
         ),
         16,
       );
       const lineHeight = asNum(
         firstDefinedValue(
-          e?.lineHeight,
-          e?.line_height,
-          e?.["line-height"],
-          e?.style?.lineHeight,
-          e?.style?.line_height,
-          e?.style?.["line-height"],
+          displayEl?.lineHeight,
+          displayEl?.line_height,
+          displayEl?.["line-height"],
+          displayEl?.style?.lineHeight,
+          displayEl?.style?.line_height,
+          displayEl?.style?.["line-height"],
           1.2,
         ),
         1.2,
       );
       const resolvedAlign = String(
-        firstDefinedValue(e?.align, e?.textAlign, e?.style?.textAlign, "center"),
+        firstDefinedValue(
+          displayEl?.align,
+          displayEl?.textAlign,
+          displayEl?.style?.textAlign,
+          "center",
+        ),
       ).toLowerCase();
       const align =
         resolvedAlign === "left"
@@ -588,30 +599,41 @@ export default function TempletEditor() {
           ? "right"
           : "center";
       const rotation = asNum(
-        firstDefinedValue(e?.rotation, e?.rotate, e?.style?.rotation, e?.style?.rotate),
+        firstDefinedValue(
+          displayEl?.rotation,
+          displayEl?.rotate,
+          displayEl?.style?.rotation,
+          displayEl?.style?.rotate,
+        ),
         0,
       );
       const curve = asNum(
-        firstDefinedValue(e?.curve, e?.arc, e?.style?.curve, e?.style?.arc),
+        firstDefinedValue(
+          displayEl?.curve,
+          displayEl?.arc,
+          displayEl?.style?.curve,
+          displayEl?.style?.arc,
+        ),
         0,
       );
       const normalizedFontStyle = String(fontStyle).toLowerCase();
       const weightNum =
         typeof fontWeight === "string" ? Number(fontWeight) : Number(fontWeight ?? 400);
-      const derivedBold = Number.isFinite(weightNum) ? weightNum >= 600 : e?.bold === true;
+      const derivedBold =
+        Number.isFinite(weightNum) ? weightNum >= 600 : displayEl?.bold === true;
       const derivedItalic =
         normalizedFontStyle.includes("italic") || normalizedFontStyle.includes("oblique");
       return {
         type: "text",
-        id: asStr(e?.id) || uuid(),
-        slideId: resolveSlideId(e?.slideId ?? e?.slide_id, 0),
+        id: asStr(displayEl?.id) || uuid(),
+        slideId: resolveSlideId(displayEl?.slideId ?? displayEl?.slide_id, 0),
         ...r,
-        text: asStr(e?.text ?? e?.value),
-        bold: typeof e?.bold === "boolean" ? e.bold : derivedBold,
-        italic: typeof e?.italic === "boolean" ? e.italic : derivedItalic,
+        text: asStr(displayEl?.text ?? displayEl?.value),
+        bold: typeof displayEl?.bold === "boolean" ? displayEl.bold : derivedBold,
+        italic: typeof displayEl?.italic === "boolean" ? displayEl.italic : derivedItalic,
         color,
         fontSize,
-        fontFamily: resolveTextFontFamily(e),
+        fontFamily: resolveTextFontFamily(displayEl),
         fontWeight,
         fontStyle,
         textDecoration,
@@ -619,15 +641,16 @@ export default function TempletEditor() {
         align,
         rotation,
         curve,
-        zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
-        editable: e?.editable !== false,
+        zIndex: asNum(displayEl?.zIndex ?? displayEl?.z_index, 1),
+        editable: displayEl?.editable !== false,
       };
     };
 
     const isLeafletTemplate = /business\s*leaflets?/i.test(category);
     const coerceImage = (e: any): ImageEl => {
-      const r = normalize01(e, storedW, storedH);
-      const id = asStr(e?.id) || uuid();
+      const displayEl = scaleTemplateElementBy(e, displayFactor);
+      const r = normalize01(displayEl, storedW, storedH);
+      const id = asStr(displayEl?.id) || uuid();
       const tol = 8;
       const bgLike =
         id.startsWith("bg-") ||
@@ -640,27 +663,30 @@ export default function TempletEditor() {
       return {
         type: "image",
         id,
-        slideId: resolveSlideId(e?.slideId ?? e?.slide_id, 0),
+        slideId: resolveSlideId(displayEl?.slideId ?? displayEl?.slide_id, 0),
         x: bgLike ? 0 : r.x,
         y: bgLike ? 0 : r.y,
         width: bgLike ? storedW : r.width,
         height: bgLike ? storedH : r.height,
-        src: sanitizeSrc(asStr(e?.src ?? e?.url ?? e?.imageUrl ?? e?.image)),
-        zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
-        editable: bgLike ? e?.editable === true : e?.editable !== false,
+        src: sanitizeSrc(
+          asStr(displayEl?.src ?? displayEl?.url ?? displayEl?.imageUrl ?? displayEl?.image),
+        ),
+        zIndex: asNum(displayEl?.zIndex ?? displayEl?.z_index, 1),
+        editable: bgLike ? displayEl?.editable === true : displayEl?.editable !== false,
       };
     };
 
     const coerceSticker = (e: any): StickerEl => {
-      const r = normalize01(e, storedW, storedH);
+      const displayEl = scaleTemplateElementBy(e, displayFactor);
+      const r = normalize01(displayEl, storedW, storedH);
       return {
         type: "sticker",
-        id: asStr(e?.id) || uuid(),
-        slideId: resolveSlideId(e?.slideId ?? e?.slide_id, 0),
+        id: asStr(displayEl?.id) || uuid(),
+        slideId: resolveSlideId(displayEl?.slideId ?? displayEl?.slide_id, 0),
         ...r,
-        src: sanitizeSrc(asStr(e?.src ?? e?.url)),
-        zIndex: asNum(e?.zIndex ?? e?.z_index, 1),
-        editable: e?.editable !== false,
+        src: sanitizeSrc(asStr(displayEl?.src ?? displayEl?.url)),
+        zIndex: asNum(displayEl?.zIndex ?? displayEl?.z_index, 1),
+        editable: displayEl?.editable !== false,
       };
     };
 

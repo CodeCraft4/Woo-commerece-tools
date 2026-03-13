@@ -33,6 +33,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../constant/route";
 import { getCanvasMultiplier, uuid } from "../../../lib/lib";
+import { prepareTemplateRawStoresForEditor } from "../../../lib/templateEditorScale";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
 
 /* ----------------- Utils ----------------- */
@@ -189,28 +190,47 @@ const CategoriesEditor = () => {
     }
     hydratedRef.current = true;
 
+    const incomingCategory = String(
+      rs?.category ?? st?.product?.cardcategory ?? category,
+    ).trim();
+    const editorReadyStores = prepareTemplateRawStoresForEditor(
+      rs,
+      getCanvasMultiplier(incomingCategory || category),
+    );
+
     let snapshotSlides = parseSnapshotSlides(
-      st?.snapshotSlides ?? (rs as any)?.snapshotSlides
+      st?.snapshotSlides ?? (editorReadyStores as any)?.snapshotSlides,
     );
     if (
       snapshotSlides.length === 0 &&
-      Array.isArray(rs.slides) &&
-      rs.slides.some((s: any) => Array.isArray(s?.elements) && s.elements.length)
+      Array.isArray(editorReadyStores?.slides) &&
+      editorReadyStores.slides.some((s: any) => Array.isArray(s?.elements) && s.elements.length)
     ) {
-      snapshotSlides = rs.slides;
+      snapshotSlides = editorReadyStores.slides;
     }
 
-    // ✅ Restore stores
-    if (rs.category) setCategory(rs.category);
-    if (Array.isArray(rs.slides) && rs.slides.length) setSlides(rs.slides);
-    if (Array.isArray(rs.textElements)) setTextElements(rs.textElements);
-    if (Array.isArray(rs.imageElements)) setImageElements(rs.imageElements);
-    if (Array.isArray(rs.stickerElements)) setStickerElements(rs.stickerElements);
-    if (rs.slideBg) setSlideBg(rs.slideBg);
+    if (editorReadyStores?.category) setCategory(editorReadyStores.category);
+    if (Array.isArray(editorReadyStores?.slides) && editorReadyStores.slides.length) {
+      setSlides(editorReadyStores.slides);
+    }
+    if (Array.isArray(editorReadyStores?.textElements)) {
+      setTextElements(editorReadyStores.textElements);
+    }
+    if (Array.isArray(editorReadyStores?.imageElements)) {
+      setImageElements(editorReadyStores.imageElements);
+    }
+    if (Array.isArray(editorReadyStores?.stickerElements)) {
+      setStickerElements(editorReadyStores.stickerElements);
+    }
+    if (editorReadyStores?.slideBg) setSlideBg(editorReadyStores.slideBg);
 
-    const hasText = Array.isArray(rs.textElements) && rs.textElements.length > 0;
-    const hasImg = Array.isArray(rs.imageElements) && rs.imageElements.length > 0;
-    const hasStk = Array.isArray(rs.stickerElements) && rs.stickerElements.length > 0;
+    const hasText =
+      Array.isArray(editorReadyStores?.textElements) && editorReadyStores.textElements.length > 0;
+    const hasImg =
+      Array.isArray(editorReadyStores?.imageElements) && editorReadyStores.imageElements.length > 0;
+    const hasStk =
+      Array.isArray(editorReadyStores?.stickerElements) &&
+      editorReadyStores.stickerElements.length > 0;
 
     if (!hasText && !hasImg && !hasStk && snapshotSlides.length) {
       const { texts, images, stickers } = buildElementsFromSnapshot(snapshotSlides);
@@ -219,11 +239,19 @@ const CategoriesEditor = () => {
       if (stickers.length) setStickerElements(stickers);
     }
 
-    // ✅ start from slide1
     setSelectedSlide(0);
     setSelectedTextId(null);
     setSelectedImageId(null);
-  }, [location.state, setCategory, setSlides, setTextElements, setImageElements, setStickerElements, setSlideBg]);
+  }, [
+    location.state,
+    category,
+    setCategory,
+    setSlides,
+    setTextElements,
+    setImageElements,
+    setStickerElements,
+    setSlideBg,
+  ]);
 
   // ====== Local UI-only state ======
   const [fontSizeInput, setFontSizeInput] = useState<string>("20");

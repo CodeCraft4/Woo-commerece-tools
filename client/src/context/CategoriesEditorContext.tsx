@@ -5,6 +5,7 @@ import { CATEGORY_CONFIG, type CategoryKey } from "../constant/data";
 import { supabaseAdmin } from "../supabase/supabase";
 import toast from "react-hot-toast";
 import { getCanvasMultiplier } from "../lib/lib";
+import { prepareTemplateRawStoresForStorage } from "../lib/templateEditorScale";
 
 /* ---------- Types ---------- */
 export type Slide = { id: number };
@@ -397,19 +398,34 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
     try {
       const combined = serializeWithElements(); // { editorCategory, size_mm, slides }
       const rawStores = serialize(); // editor raw stores
+      const multiplier = getCanvasMultiplier(rawStores.category);
+      const storedRawStores = prepareTemplateRawStoresForStorage(rawStores, multiplier);
+      const storedSlidesPayload = prepareTemplateRawStoresForStorage(
+        { slides: combined.slides },
+        multiplier,
+      ) as { slides?: SnapshotSlide[] } | null;
+      const storedSlides = Array.isArray(storedSlidesPayload?.slides)
+        ? storedSlidesPayload.slides
+        : combined.slides;
 
       const normImageElements = await Promise.all(
-        rawStores.imageElements.map(async (el) => ({ ...el, src: await urlToDataUrl(el.src) }))
+        (storedRawStores?.imageElements ?? rawStores.imageElements).map(async (el: any) => ({
+          ...el,
+          src: await urlToDataUrl(el.src),
+        }))
       );
       const normStickerElements = await Promise.all(
-        rawStores.stickerElements.map(async (el) => ({ ...el, sticker: await urlToDataUrl(el.sticker) }))
+        (storedRawStores?.stickerElements ?? rawStores.stickerElements).map(async (el: any) => ({
+          ...el,
+          sticker: await urlToDataUrl(el.sticker),
+        }))
       );
 
       const idToImgBase64 = new Map(normImageElements.map((e) => [e.id, e.src]));
       const idToStickerBase64 = new Map(normStickerElements.map((e) => [e.id, e.sticker]));
 
       const normSlides = await Promise.all(
-        combined.slides.map(async (s) => {
+        storedSlides.map(async (s) => {
           const elements = await Promise.all(
             s.elements.map(async (el: any) => {
               if (el.type === "image") {
@@ -429,11 +445,8 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
       const imgUrl = meta?.imgUrl ?? null;
 
-      // âœ… Store product cardCategory into DB column "category"
+      // Store product cardCategory into DB column "category"
       const dbCategory = meta?.cardcategory?.trim() || null;
-
-      // âœ… store "canvas size" safely INSIDE raw_stores (json) to avoid DB schema changes
-      const multiplier = getCanvasMultiplier(rawStores.category);
 
       // REAL product size (never change)
       const productMm = {
@@ -478,24 +491,24 @@ export const CategoriesEditorProvider = ({ children }: { children: React.ReactNo
 
         // json storage (safe place for everything)
         raw_stores: {
-          ...rawStores,
+          ...storedRawStores,
           config: configWithMultiplier,
-          // keep original arrays normalized
+          // keep image/sticker sources persisted safely while coords stay in product space
           imageElements: normImageElements,
           stickerElements: normStickerElements,
-          slideBg: rawStores.slideBg,
+          slideBg: storedRawStores.slideBg ?? rawStores.slideBg,
           // preserve pricing maps in JSON (safe even without DB columns)
-          pricing: meta?.pricing ?? (rawStores as any)?.pricing ?? null,
-          salePricing: meta?.salePricing ?? (rawStores as any)?.salePricing ?? null,
+          pricing: meta?.pricing ?? (storedRawStores as any)?.pricing ?? null,
+          salePricing: meta?.salePricing ?? (storedRawStores as any)?.salePricing ?? null,
 
-          // âœ… do NOT lose editor template type
+          // do not lose editor template type
           editorCategory: rawStores.category, // editor category label
 
-          // âœ… size used by your renderers
+          // display canvas can stay scaled while saved coords remain print-accurate
           canvas: {
-            productMm,   // real size (printing)
-            mm: canvasMm, // editor size
-            px: canvasPx, // customer render
+            productMm, // real size (printing)
+            mm: canvasMm, // display/editor size
+            px: canvasPx, // display size
             multiplier,
           },
         },

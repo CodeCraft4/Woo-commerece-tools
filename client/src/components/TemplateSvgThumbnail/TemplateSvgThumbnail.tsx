@@ -4,6 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import SmartImage from "../SmartImage/SmartImage";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../constant/googleFonts";
 import { supabase } from "../../supabase/supabase";
+import {
+  getTemplateDisplayFactor,
+  scaleTemplateElementBy,
+} from "../../lib/templateEditorScale";
 
 type TemplateLike = {
   id?: string | number;
@@ -353,6 +357,7 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
     if (remote && typeof remote === "object") return remote;
     return {};
   }, [isInviteCategory, template?.raw_stores, template?.rawStores, remoteSlides?.raw_stores]);
+  const displayFactor = useMemo(() => getTemplateDisplayFactor(rawStores, 1), [rawStores]);
 
   const firstSlide = slidesSource?.[0];
 
@@ -389,8 +394,17 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
     }).filter(Boolean);
 
     const renderElements = separated.length > 0 ? separated : normalizeSnapshot;
-    return sortByVisualLayer(renderElements);
-  }, [firstSlide?.elements, firstSlide?.id, rawStores?.textElements, rawStores?.imageElements, rawStores?.stickerElements]);
+    return sortByVisualLayer(
+      renderElements.map((el: any) => scaleTemplateElementBy(el, displayFactor)),
+    );
+  }, [
+    displayFactor,
+    firstSlide?.elements,
+    firstSlide?.id,
+    rawStores?.textElements,
+    rawStores?.imageElements,
+    rawStores?.stickerElements,
+  ]);
 
   const canvas = useMemo(
     () => detectCanvas(rawStores, firstSlideElements),

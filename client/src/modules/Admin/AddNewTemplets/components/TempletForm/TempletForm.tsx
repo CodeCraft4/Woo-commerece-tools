@@ -17,6 +17,10 @@ import {
 import * as htmlToImage from "html-to-image";
 import { ADMINS_DASHBOARD } from "../../../../../constant/route";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../../../constant/googleFonts";
+import {
+  getTemplateDisplayFactor,
+  scaleTemplateElementBy,
+} from "../../../../../lib/templateEditorScale";
 
 type SizeKey =
   | "A5"
@@ -558,7 +562,7 @@ const getPricingConfig = (categoryName?: string): CategoryPricingConfig => {
       title: "Prices by Size",
       sizes: [
         { ...SIZES.A4, helper: "6 labels per A4 sheet (70mm × 70mm)" },
-        { ...SIZES.US_TABLOID, helper: "6 labels per sheet (70mm × 70mm)" },
+        { ...SIZES.US_LETTER, helper: "6 labels per sheet (70mm × 70mm)" },
       ],
     };
 
@@ -1455,6 +1459,7 @@ const TempletForm = () => {
 
                 const renderElements =
                   separatedElements.length > 0 ? separatedElements : snapshotElements;
+                const displayFactor = getTemplateDisplayFactor(rawStores, 1);
                 const resolveLayer = (el: any) => {
                   const explicit = Number(el?.zIndex ?? el?.z_index);
                   if (Number.isFinite(explicit)) return explicit;
@@ -1462,6 +1467,7 @@ const TempletForm = () => {
                   return t === "text" ? 2 : 1;
                 };
                 const orderedElements = [...renderElements]
+                  .map((el: any) => scaleTemplateElementBy(el, displayFactor))
                   .map((el: any, orderIndex: number) => ({ el, orderIndex }))
                   .sort((a, b) => {
                     const la = resolveLayer(a.el);

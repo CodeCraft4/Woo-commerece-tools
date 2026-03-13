@@ -204,6 +204,7 @@ export const preservePdfItems = (prev: any[], next: any[]) => {
 // canvasMultiplier.ts
 export const FOUR_X_CATEGORIES: Record<any, number> = {
   "Business Cards": 5.5,
+  "Candles": 6,
   "Coasters": 4.5,
   "Mugs": 4,
 };

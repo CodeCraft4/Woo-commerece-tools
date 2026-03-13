@@ -24,7 +24,7 @@ const PreviewBookCard = () => {
   const navigate = useNavigate()
 
 
-  const isMobile = useMediaQuery("(max-width:480px)");
+  const isMobile = useMediaQuery("(max-width:500px)");
   const previewAreaRef = useRef<HTMLDivElement | null>(null);
   const [previewArea, setPreviewArea] = useState({ w: 0, h: 0 });
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
