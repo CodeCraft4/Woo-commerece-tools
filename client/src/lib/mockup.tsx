@@ -28,7 +28,7 @@ const CATEGORY_MOCKUPS: Array<{
 }> = [
     // Bags mockup
     {
-      match: (category) => normalizeCategory(category).includes("bags"),
+      match: (category) => /(tote\s*bag|bags?)/i.test(normalizeCategory(category)),
       cfg: {
         mockupSrc: "/assets/mockup/bag-mockup.png",
         cardAspectRatio: "1 / 1.2",
@@ -65,7 +65,7 @@ const CATEGORY_MOCKUPS: Array<{
   },
   // Candle mockup
   {
-    match: (category) => normalizeCategory(category).includes("candles"),
+    match: (category) => /candle/i.test(normalizeCategory(category)),
     cfg: {
       mockupSrc: "/assets/mockup/candle-mockup.jpeg",
       cardAspectRatio: "1 / 1.2",

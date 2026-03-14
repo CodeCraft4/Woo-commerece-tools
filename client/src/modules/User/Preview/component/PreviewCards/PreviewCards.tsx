@@ -9,19 +9,15 @@ import Slide3 from "../Slide3/Slide3";
 import Slide4 from "../Slide4/Slide4";
 import { useNavigate } from "react-router-dom";
 import { USER_ROUTES } from "../../../../../constant/route";
-import { toJpeg } from "html-to-image";
 import LandingButton from "../../../../../components/LandingButton/LandingButton";
-import toast from "react-hot-toast";
-import { safeSetLocalStorage, safeSetSessionStorage } from "../../../../../lib/storage";
-import { saveSlidesToIdb } from "../../../../../lib/idbSlides";
+import { clearSlidesFromIdb } from "../../../../../lib/idbSlides";
 
 const PreviewBookCard = () => {
   // currentLocation is 1..(numOfPapers+1) for the flip-book
   const [currentLocation, setCurrentLocation] = useState(1);
   // single index for mobile 1..4
   const [mobileIndex, setMobileIndex] = useState(1);
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
 
   const isMobile = useMediaQuery("(max-width:500px)");
@@ -81,70 +77,11 @@ const PreviewBookCard = () => {
   const isPrevDisabled = isMobile ? mobileIndex === 1 : currentLocation === 1;
   const isNextDisabled = isMobile ? mobileIndex === slides.length : currentLocation === maxLocation;
 
-
-  const captureRefs = {
-    s1: useRef<HTMLDivElement | null>(null),
-    s2: useRef<HTMLDivElement | null>(null),
-    s3: useRef<HTMLDivElement | null>(null),
-    s4: useRef<HTMLDivElement | null>(null),
-  };
-
   useEffect(() => {
     try {
       sessionStorage.setItem("card_preview_downloaded", "0");
     } catch {}
   }, []);
-
-  const captureSlides = async () => {
-    setLoading(true);
-    try {
-      const results: any = {};
-
-      // Ensure web fonts are loaded before capture to preserve text styling.
-      if ((document as any)?.fonts?.ready) {
-        await (document as any).fonts.ready;
-      }
-
-      for (let key of ["s1", "s2", "s3", "s4"]) {
-        const node = captureRefs[key as keyof typeof captureRefs].current;
-        if (!node) continue;
-
-        const dataUrl = await toJpeg(node, {
-          cacheBust: true,
-          pixelRatio: 2,
-          quality: 0.9,
-          skipFonts: false,
-          backgroundColor: "#ffffff",
-        });
-
-        results[key.replace("s", "slide")] = dataUrl;
-      }
-
-      if (!Object.keys(results).length) {
-        throw new Error("Unable to capture card slides. Please try again.");
-      }
-
-      return results;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const persistSlides = async (slidesCaptured: Record<string, string>) => {
-    const payload = JSON.stringify(slidesCaptured);
-
-    safeSetSessionStorage("slides", payload);
-
-    // Keep localStorage minimal to avoid quota issues.
-    const minimal = slidesCaptured?.slide1 ? JSON.stringify({ slide1: slidesCaptured.slide1 }) : "{}";
-    safeSetLocalStorage("slides_backup", minimal, { clearOnFail: ["slides_backup"] });
-
-    try {
-      await saveSlidesToIdb(slidesCaptured);
-    } catch {
-      // ignore; session/local already cover fallback
-    }
-  };
 
   const BASE_PAGE = { w: 500, h: 700 };
   const BASE_BOOK = { w: 1000, h: 700 };
@@ -159,18 +96,21 @@ const PreviewBookCard = () => {
       <Box sx={{ display: "flex", gap: 3, justifyContent: 'flex-end', alignItems: 'flex-end', m: 'auto', p: 2, mt: -9 }}>
         <LandingButton
           title="Download"
-          loading={loading}
-          onClick={async () => {
+          onClick={() => {
             try {
-              const slidesCaptured = await captureSlides();
-              await persistSlides(slidesCaptured);
-              try {
-                sessionStorage.setItem("card_preview_downloaded", "1");
-              } catch {}
-              navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesCaptured } });
-            } catch (err: any) {
-              toast.error(err?.message || "Failed to prepare download preview");
-            }
+              sessionStorage.removeItem("slides");
+              sessionStorage.removeItem("slides_preview_only");
+              sessionStorage.removeItem("rawSlidesCount");
+              localStorage.removeItem("slides_backup");
+              delete (globalThis as any).__slidesCache;
+              sessionStorage.setItem("slides_preview_only", "1");
+              sessionStorage.setItem("rawSlidesCount", "4");
+              sessionStorage.setItem("card_preview_downloaded", "1");
+            } catch {}
+            try {
+              void clearSlidesFromIdb();
+            } catch {}
+            navigate(USER_ROUTES.SUBSCRIPTION, { state: { previewOnly: true } });
           }}
         />
       </Box>
@@ -318,28 +258,6 @@ const PreviewBookCard = () => {
           </IconButton>
         </Box>
         <GlobalWatermark />
-      </Box>
-
-      <Box
-        sx={{
-          position: "fixed",
-          left: -10000,
-          top: -10000,
-          pointerEvents: "none",
-        }}
-      >
-        <Box sx={{ width: BASE_PAGE.w, height: BASE_PAGE.h }}>
-          <Slide1 ref={captureRefs.s1} />
-        </Box>
-        <Box sx={{ width: BASE_PAGE.w, height: BASE_PAGE.h }}>
-          <Slide2 ref={captureRefs.s2} />
-        </Box>
-        <Box sx={{ width: BASE_PAGE.w, height: BASE_PAGE.h }}>
-          <Slide3 ref={captureRefs.s3} />
-        </Box>
-        <Box sx={{ width: BASE_PAGE.w, height: BASE_PAGE.h }}>
-          <Slide4 ref={captureRefs.s4} />
-        </Box>
       </Box>
     </>
 

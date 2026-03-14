@@ -5,7 +5,6 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage";
-import { saveSlidesToIdb } from "../../../lib/idbSlides";
 import { toJpeg, toPng } from "html-to-image";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
 
@@ -77,6 +76,7 @@ async function toJpegDataUrl(
     img.onerror = () => resolve(inputDataUrl);
   });
 }
+void toJpegDataUrl;
 
 const normalizeFontFamily = (value?: string | null) => {
   const raw = String(value ?? "").trim();
@@ -91,14 +91,84 @@ const resolveTextFontFamily = (entry: any) =>
   normalizeFontFamily(
     entry?.fontFamily ??
       entry?.font_family ??
+      entry?.["font-family"] ??
       entry?.fontFamily1 ??
       entry?.fontFamily2 ??
       entry?.fontFamily3 ??
       entry?.fontFamily4 ??
       entry?.style?.fontFamily ??
       entry?.style?.font_family ??
+      entry?.style?.["font-family"] ??
       "",
   );
+
+const firstDefinedValue = (...values: any[]) => {
+  for (const value of values) {
+    if (value === 0 || value === false) return value;
+    if (typeof value === "string") {
+      if (value.trim()) return value;
+      continue;
+    }
+    if (value != null) return value;
+  }
+  return undefined;
+};
+
+const resolveTextWeight = (entry: any): string | number => {
+  const raw = firstDefinedValue(
+    entry?.fontWeight,
+    entry?.font_weight,
+    entry?.["font-weight"],
+    entry?.style?.fontWeight,
+    entry?.style?.font_weight,
+    entry?.style?.["font-weight"],
+  );
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return entry?.bold ? 700 : 400;
+    const weight = Number(trimmed);
+    if (Number.isFinite(weight) && weight > 0) return weight;
+    return trimmed;
+  }
+  return entry?.bold ? 700 : 400;
+};
+
+const resolveTextStyle = (entry: any): string => {
+  const raw = firstDefinedValue(
+    entry?.fontStyle,
+    entry?.font_style,
+    entry?.["font-style"],
+    entry?.style?.fontStyle,
+    entry?.style?.font_style,
+    entry?.style?.["font-style"],
+  );
+  if (typeof raw === "string") return raw.trim() || (entry?.italic ? "italic" : "normal");
+  return entry?.italic ? "italic" : "normal";
+};
+
+const resolveTextDecoration = (entry: any): string => {
+  const raw = firstDefinedValue(
+    entry?.textDecoration,
+    entry?.text_decoration,
+    entry?.["text-decoration"],
+    entry?.style?.textDecoration,
+    entry?.style?.text_decoration,
+    entry?.style?.["text-decoration"],
+  );
+  if (typeof raw === "string") return raw.trim() || "none";
+  if (entry?.underline) return "underline";
+  return "none";
+};
+
+const resolveTextColor = (entry: any): string =>
+  String(firstDefinedValue(entry?.color, entry?.fill, entry?.style?.color, entry?.style?.fill, "#111111"));
+
+const resolveTextRotation = (entry: any): number =>
+  Number(firstDefinedValue(entry?.rotation, entry?.rotate, entry?.style?.rotation, entry?.style?.rotate, 0)) || 0;
+
+const resolveTextCurve = (entry: any): number =>
+  Number(firstDefinedValue(entry?.curve, entry?.arc, entry?.style?.curve, entry?.style?.arc, 0)) || 0;
 
 const collectFontsFromSlides = (slides: Slide[]) => {
   const fonts = new Set<string>();
@@ -114,6 +184,13 @@ const collectFontsFromSlides = (slides: Slide[]) => {
   });
   return Array.from(fonts);
 };
+
+const waitForNextPaint = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
 
 
 const CategoriesWisePreview: React.FC = () => {
@@ -188,14 +265,20 @@ const CategoriesWisePreview: React.FC = () => {
   }, [state]);
 
   const [active, setActive] = useState(start);
+  const [captureSupportEnabled, setCaptureSupportEnabled] = useState(false);
+  const visibleSlidesForFonts = useMemo(() => {
+    const current = slides[active];
+    return current ? [current] : slides.slice(0, 1);
+  }, [active, slides]);
 
   // Ensure template fonts are loaded so text positioning matches admin editor
   useEffect(() => {
-    if (!slides?.length) return;
-    const fonts = collectFontsFromSlides(slides);
+    const fontSlides = captureSupportEnabled ? slides : visibleSlidesForFonts;
+    if (!fontSlides.length) return;
+    const fonts = collectFontsFromSlides(fontSlides);
     if (!fonts.length) return;
     loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
-  }, [slides]);
+  }, [captureSupportEnabled, slides, visibleSlidesForFonts]);
 
   // book animation
   const [flipDir, setFlipDir] = useState<"next" | "prev">("next");
@@ -287,9 +370,9 @@ const CategoriesWisePreview: React.FC = () => {
             const align = el.align ?? "center";
             const justify =
               align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
-            const rotation = Number(el?.rotation ?? 0);
+            const rotation = resolveTextRotation(el);
             const safeRotation = Number.isFinite(rotation) ? rotation : 0;
-            const curveRaw = Number(el?.curve ?? 0);
+            const curveRaw = resolveTextCurve(el);
             const curve = Number.isFinite(curveRaw)
               ? Math.max(-200, Math.min(200, curveRaw))
               : 0;
@@ -302,6 +385,11 @@ const CategoriesWisePreview: React.FC = () => {
             const startOffset = align === "left" ? "0%" : align === "right" ? "100%" : "50%";
             const curveId = `preview-curve-${slide?.id ?? "s"}-${el?.id ?? "t"}`;
             const lineHeight = Math.max(1, Number(el?.lineHeight ?? el?.line_height ?? 1.16));
+            const fontFamily = resolveTextFontFamily(el) || "Arial";
+            const fontWeight = resolveTextWeight(el);
+            const fontStyle = resolveTextStyle(el);
+            const textDecoration = resolveTextDecoration(el);
+            const textColor = resolveTextColor(el);
             return (
               <Box
                 key={el.id}
@@ -313,11 +401,12 @@ const CategoriesWisePreview: React.FC = () => {
                   textAlign: align,
                   transform: safeRotation ? `rotate(${safeRotation}deg)` : "none",
                   transformOrigin: "center",
-                  fontWeight: el.bold ? 700 : 400,
-                  fontStyle: el.italic ? "italic" : "normal",
+                  fontWeight,
+                  fontStyle,
                   fontSize: el.fontSize,
-                  fontFamily: resolveTextFontFamily(el) || "Arial",
-                  color: el.color,
+                  fontFamily,
+                  color: textColor,
+                  textDecoration,
                   whiteSpace: "pre-wrap",
                   overflowWrap: "break-word",
                   wordBreak: "break-word",
@@ -338,17 +427,29 @@ const CategoriesWisePreview: React.FC = () => {
                       />
                     </defs>
                     <text
-                      fill={String(el?.color ?? "#111111")}
-                      fontFamily={resolveTextFontFamily(el) || "Arial"}
+                      fill={textColor}
+                      fontFamily={fontFamily}
                       fontSize={Number(el?.fontSize ?? 20)}
-                      fontWeight={el?.bold ? 700 : 400}
-                      fontStyle={el?.italic ? "italic" : "normal"}
+                      fontWeight={fontWeight}
+                      fontStyle={fontStyle}
+                      textDecoration={textDecoration}
                       textAnchor={textAnchor}
                       dominantBaseline="middle"
                       direction="ltr"
                       unicodeBidi="plaintext"
                     >
-                      <textPath href={`#${curveId}`} startOffset={startOffset}>
+                      <textPath
+                        href={`#${curveId}`}
+                        startOffset={startOffset}
+                        style={{
+                          fill: textColor,
+                          fontFamily,
+                          fontSize: Number(el?.fontSize ?? 20),
+                          fontWeight,
+                          fontStyle,
+                          textDecoration,
+                        }}
+                      >
                         {String(el?.text ?? "")}
                       </textPath>
                     </text>
@@ -373,6 +474,28 @@ const CategoriesWisePreview: React.FC = () => {
   const prefetchedSlidesRef = useRef<string[] | null>(null);
   const prefetchPromiseRef = useRef<Promise<string[]> | null>(null);
   const prefetchOnce = useRef(false);
+  const shouldPrefetchCapturedSlides = slides.length > 0 && slides.length <= 4;
+
+  useEffect(() => {
+    slideNodeRefs.current = {};
+    setCaptureSupportEnabled(false);
+  }, [captureKey]);
+
+  const ensureCaptureSupportReady = useCallback(async () => {
+    if (!slides.length) return;
+    if (!captureSupportEnabled) {
+      setCaptureSupportEnabled(true);
+    }
+    await waitForNextPaint();
+    if (Object.keys(slideNodeRefs.current).length < slides.length) {
+      await waitForNextPaint();
+    }
+    if ((document as any)?.fonts?.ready) {
+      try {
+        await (document as any).fonts.ready;
+      } catch {}
+    }
+  }, [captureSupportEnabled, slides.length]);
 
   const goNext = () => {
     if (active >= slideCount - 1 || flipping) return;
@@ -424,6 +547,9 @@ const CategoriesWisePreview: React.FC = () => {
         });
         out.push(jpg);
       }
+      if (i < slides.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
     }
     return out;
   };
@@ -455,6 +581,7 @@ const CategoriesWisePreview: React.FC = () => {
       skipFonts: false,
     });
   };
+  void captureSingleSlideFromDom;
 
   const readCapturedFromStorage = () => {
     try {
@@ -470,115 +597,46 @@ const CategoriesWisePreview: React.FC = () => {
     try {
       setDownloading(true);
 
-      let previewOnly = false;
-      let list: string[] = [];
-      if (isTransparentCaptureCategory) {
-        const stored = readCapturedFromStorage();
-        if (stored.length) {
-          list = stored;
-        } else if (prefetchedSlidesRef.current?.length) {
-          list = prefetchedSlidesRef.current;
-        } else if (prefetchPromiseRef.current) {
-          list = await prefetchPromiseRef.current;
-        } else {
-          list = await captureSlidesFromDom("png", 2400);
-        }
-        if (!list.length && slides.length) {
-          list = await captureSlidesFromDom("png", 2400);
-        }
-        const fullReady = slides.length ? list.length >= slides.length : list.length > 0;
-        if (!fullReady) {
-          previewOnly = true;
-          const preview = await captureSingleSlideFromDom(0, "png", 1200);
-          if (preview) list = [preview];
-        }
-      } else {
-        const stored = readCapturedFromStorage();
-        const quickList = (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
-        if (stored.length) {
-          list = stored;
-        } else if (quickList.length) {
-          list = quickList;
-        } else if (prefetchedSlidesRef.current?.length) {
-          list = prefetchedSlidesRef.current;
-        } else if (prefetchPromiseRef.current) {
-          list = await prefetchPromiseRef.current;
-        } else {
-          list = [];
-        }
-        if (!list.length && slides.length) {
-          list = await captureSlidesFromDom("jpeg", 1600);
-        }
-        const fullReady = slides.length ? list.length >= slides.length : list.length > 0;
-        if (!fullReady) {
-          previewOnly = true;
-          const preview = await captureSingleSlideFromDom(0, "jpeg", 1200);
-          if (preview) list = [preview];
-        }
-      }
-
-      // ✅ Convert to JPEG only if needed (avoid double work)
-      const out: string[] = [];
-      if (isTransparentCaptureCategory) {
-        out.push(...list);
-      } else {
-        const needsConvert = list.some(
-          (u) => !String(u || "").startsWith("data:image/jpeg")
-        );
-        if (!needsConvert) {
-          out.push(...list);
-        } else {
-          const converted = await Promise.all(
-            list.map((u) =>
-              String(u || "").startsWith("data:image/jpeg")
-                ? Promise.resolve(u)
-                : toJpegDataUrl(u, 0.78, 1600)
-            )
-          );
-          out.push(...converted);
-        }
-      }
-
-      // ✅ store one-by-one (slide1, slide2, slide3...)
-      const slidesObj = Object.fromEntries(out.map((u, idx) => [`slide${idx + 1}`, u]));
+      const stored = readCapturedFromStorage();
+      const quickList: string[] = stored.length
+        ? stored
+        : (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+      const previewOnly = slides.length ? quickList.length < slides.length : quickList.length === 0;
+      const slidesObj = Object.fromEntries(
+        quickList.map((u: string, idx: number) => [`slide${idx + 1}`, u]),
+      );
 
       (globalThis as any).__slidesCache = slidesObj;
       (globalThis as any).__rawSlidesCache = slides;
       (globalThis as any).__previewConfigCache = config ?? null;
       try {
+        sessionStorage.setItem("templ_preview_key", captureKey);
+        sessionStorage.setItem("templ_preview_slides", JSON.stringify(slides));
         sessionStorage.setItem("slides_preview_only", previewOnly ? "1" : "0");
-        sessionStorage.setItem("rawSlidesCount", String(slides.length || out.length || 1));
+        sessionStorage.setItem("rawSlidesCount", String(slides.length || quickList.length || 1));
         if (config) {
           safeSetSessionStorage("templ_preview_config", JSON.stringify(config));
         }
-      } catch {}
-
-      // ✅ pass slides to subscription via route-state
-      navigate(USER_ROUTES.SUBSCRIPTION, { state: { slides: slidesObj, previewOnly } });
-
-      // ✅ persist storage after navigation to avoid blocking UI
-      const persist = () => {
-        try {
-          const payload = JSON.stringify(slidesObj);
-          safeSetSessionStorage("slides", payload);
-        } catch {}
-
-        try {
+        if (quickList.length) {
+          safeSetSessionStorage("slides", JSON.stringify(slidesObj));
+        } else {
+          sessionStorage.removeItem("slides");
+        }
+        if (quickList.length) {
           const minimal = slidesObj?.slide1 ? JSON.stringify({ slide1: slidesObj.slide1 }) : "{}";
           safeSetLocalStorage("slides_backup", minimal, { clearOnFail: ["slides_backup"] });
-        } catch {}
+        } else {
+          localStorage.removeItem("slides_backup");
+        }
+      } catch {}
 
-        try {
-          void saveSlidesToIdb(slidesObj);
-        } catch {}
-      };
-
-      const idle = globalThis as any;
-      if (typeof idle.requestIdleCallback === "function") {
-        idle.requestIdleCallback(persist, { timeout: 1200 });
-      } else {
-        setTimeout(persist, 0);
-      }
+      navigate(USER_ROUTES.SUBSCRIPTION, {
+        state: {
+          slides: quickList.length ? slidesObj : undefined,
+          previewOnly,
+          previewKey: captureKey,
+        },
+      });
     } catch (e) {
       console.error("Download capture failed:", e);
     } finally {
@@ -595,7 +653,7 @@ const CategoriesWisePreview: React.FC = () => {
 
   useEffect(() => {
     if (prefetchOnce.current) return;
-    if (hasCaptured || !slides.length) return;
+    if (hasCaptured || !slides.length || !shouldPrefetchCapturedSlides) return;
     prefetchOnce.current = true;
 
     let cancelled = false;
@@ -611,6 +669,7 @@ const CategoriesWisePreview: React.FC = () => {
             await (document as any).fonts.ready;
           } catch {}
         }
+        await ensureCaptureSupportReady();
         const format = isTransparentCaptureCategory ? "png" : "jpeg";
         const maxDim = isTransparentCaptureCategory ? 2400 : 1600;
         const list = await captureSlidesFromDom(format, maxDim);
@@ -645,7 +704,7 @@ const CategoriesWisePreview: React.FC = () => {
         clearTimeout(idleId);
       }
     };
-  }, [captureKey, hasCaptured, slides.length, isTransparentCaptureCategory]);
+  }, [captureKey, captureSlidesFromDom, ensureCaptureSupportReady, hasCaptured, isTransparentCaptureCategory, shouldPrefetchCapturedSlides, slides.length]);
 
   /**
    * ✅ Dynamic box sizing (same as before)
@@ -886,7 +945,7 @@ const CategoriesWisePreview: React.FC = () => {
       </Box>
 
       {/* Offscreen slides for download capture (when no pre-captured images) */}
-      {!hasCaptured && slides.length > 0 && (
+      {captureSupportEnabled && !hasCaptured && slides.length > 0 && (
         <Box sx={{ position: "fixed", left: -10000, top: 0, opacity: 0, pointerEvents: "none" }}>
           {slides.map((sl, i) => (
             <Box
