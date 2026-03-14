@@ -283,12 +283,24 @@ const KEY_FALLBACK: Record<string, string> = {
   COASTER_95: "coaster_95",
 };
 
-const readActualPrice = (tables: PriceTables | null, key: any) => {
+const readActualPrice = (tables: PriceTables | null, key: any, categoryName?: string) => {
   const actual = tables?.actual ?? {};
   const raw1 = actual?.[key]; // current key
   const raw2 = actual?.[String(key).toUpperCase?.() ?? ""]; // uppercase attempt
   const raw3 = actual?.[KEY_FALLBACK[String(key).toUpperCase()] ?? ""]; // mapped lowercase
-  return toNum(raw1 ?? raw2 ?? raw3, 0);
+  const direct = raw1 ?? raw2 ?? raw3;
+  if (direct != null && String(direct).trim() !== "") return toNum(direct, 0);
+
+  if (lc(categoryName).includes("candle")) {
+    if (String(key).toLowerCase() === "us_letter") {
+      return toNum(actual?.us_tabloid ?? actual?.US_TABLOID, 0);
+    }
+    if (String(key).toLowerCase() === "us_tabloid") {
+      return toNum(actual?.us_letter ?? actual?.US_LETTER, 0);
+    }
+  }
+
+  return 0;
 };
 
 async function getAccessToken() {
@@ -603,7 +615,10 @@ const Subscription = () => {
         const parsed = JSON.parse(rawV) as SelectedVariant;
         if (parsed?.key) {
           setVariant(parsed);
-          setSelectedPlan(parsed.key);
+          const normalizedKey =
+            KEY_FALLBACK[String(parsed.key).toUpperCase()] ??
+            String(parsed.key).trim().toLowerCase();
+          setSelectedPlan(normalizedKey as SizeKey);
         }
       }
     } catch { }
@@ -677,12 +692,20 @@ const Subscription = () => {
   }, [isMugsCategory, slidesObj]);
 
   // ✅ EXACT sizes (no filter)
-  const sizeDefs = useMemo(() => getSizeDefsForCategory(categoryName), [categoryName]);
+  const sizeDefs = useMemo(() => {
+    const defs = getSizeDefsForCategory(categoryName);
+    if (!lc(categoryName).includes("candle")) return defs;
+    return defs.map((opt) =>
+      String(opt.key).toLowerCase() === "us_tabloid"
+        ? { ...opt, key: "us_letter", title: "US Letter" }
+        : opt,
+    );
+  }, [categoryName]);
 
   // ✅ Build plans from EXACT sizeDefs (no sale)
   const plans = useMemo(() => {
     return sizeDefs.map((opt) => {
-      const price = readActualPrice(priceTables, opt.key);
+      const price = readActualPrice(priceTables, opt.key, categoryName);
       return {
         id: opt.key,
         title: opt.title,

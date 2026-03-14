@@ -181,19 +181,25 @@ type ActualMap = Partial<Record<SizeKeyConfig, number>>;
 const buildActualPrices = (cate?: any, categoryName?: string, isTempletDesign?: boolean): ActualMap => {
   const actual: any = {};
   const { pricing: layoutPricing } = parseLayoutPricing(cate?.polygonlayout);
+  const isCandleCategory = /candle/i.test(String(categoryName ?? ""));
   const layoutTabloid =
     layoutPricing?.US_TABLOID ??
     layoutPricing?.us_tabloid ??
     layoutPricing?.ustabloid ??
     null;
+  const candleLetterFallback = toNum(cate?.ustabloid ?? layoutTabloid, 0);
+  const candleTabloidFallback = toNum(cate?.usletter, 0);
 
   // common/legacy
   actual.A4 = toNum(cate?.a4price, 0);
-  actual.US_LETTER = toNum(cate?.usletter, 0);
+  actual.US_LETTER = toNum(cate?.usletter, isCandleCategory ? candleLetterFallback : 0);
 
   // template new columns
   actual.HALF_US_LETTER = toNum(cate?.halfusletter, 0);
-  actual.US_TABLOID = toNum(cate?.ustabloid ?? layoutTabloid, 0);
+  actual.US_TABLOID = toNum(
+    cate?.ustabloid ?? layoutTabloid,
+    isCandleCategory ? candleTabloidFallback : 0,
+  );
 
   // A5 normal
   actual.A5 = toNum(cate?.a5price, 0);

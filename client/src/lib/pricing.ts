@@ -133,7 +133,7 @@ export const getPricingConfig = (
     return {
       sizes: [
         { key: "A4", title: "A4" },
-        { key: "US_TABLOID", title: "US Tabloid" },
+        { key: "US_LETTER", title: "US Letter" },
       ],
     };
 
