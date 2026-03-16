@@ -5,7 +5,7 @@ import {
   extendSxProp,
   identifier_default,
   useDefaultProps
-} from "./chunk-462LCIET.js";
+} from "./chunk-UXHA5BL6.js";
 import {
   require_prop_types
 } from "./chunk-4CYFWBPF.js";
@@ -93,4 +93,4 @@ export {
   internal_createExtendSxProp,
   useDefaultProps2 as useDefaultProps
 };
-//# sourceMappingURL=chunk-HD6GTRER.js.map
+//# sourceMappingURL=chunk-AFKALM7N.js.map

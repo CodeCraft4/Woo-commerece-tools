@@ -1,6 +1,6 @@
 import {
   isMuiElement
-} from "./chunk-462LCIET.js";
+} from "./chunk-UXHA5BL6.js";
 
 // node_modules/@mui/material/esm/utils/isMuiElement.js
 var isMuiElement_default = isMuiElement;
@@ -8,4 +8,4 @@ var isMuiElement_default = isMuiElement;
 export {
   isMuiElement_default
 };
-//# sourceMappingURL=chunk-5XLFKJUS.js.map
+//# sourceMappingURL=chunk-U7CDQOUD.js.map

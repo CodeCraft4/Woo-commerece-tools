@@ -29,7 +29,7 @@ type Props = {
 };
 
 const LIVE_FONT_CATEGORIES =
-  /(mug|bag|candle|candles|invite|invites|Invites|clothing|apparel|sticker|stickers|stciker|stcikers|notebook|notebooks|wall\s*art)/i;
+  /(mug|bag|candle|candles|invite|invites|Invites|clothing|apparel|sticker|stickers|stciker|stcikers|notebook|notebooks|wall\s*art|business[\s-]*leaflets?)/i;
 const GENERIC_FONTS = new Set([
   "serif",
   "sans-serif",

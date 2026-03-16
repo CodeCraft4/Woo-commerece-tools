@@ -1,4 +1,4 @@
-import { Box, Container, Grid, Typography, Chip, Button } from "@mui/material";
+import { Box, Container, Grid, Typography, Chip, Button, LinearProgress } from "@mui/material";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import TableBgImg from "/assets/images/table.png";
 import LandingButton from "../../../components/LandingButton/LandingButton";
@@ -417,6 +417,11 @@ async function fetchBundleItemKeySet(): Promise<Set<string>> {
 const Subscription = () => {
   const [selectedPlan, setSelectedPlan] = useState<SizeKey>("a4" as SizeKey);
   const [loading, setLoading] = useState(false);
+  const [checkoutProgress, setCheckoutProgress] = useState({
+    active: false,
+    value: 0,
+    label: "",
+  });
 
   const [variant, setVariant] = useState<SelectedVariant | null>(null);
   const [product, setProduct] = useState<SelectedProduct | null>(null);
@@ -435,6 +440,22 @@ const Subscription = () => {
 
   const { user, plan } = useAuth();
   const navigate = useNavigate();
+
+  const setCheckoutProgressStep = useCallback((value: number, label: string) => {
+    setCheckoutProgress({
+      active: true,
+      value: Math.max(0, Math.min(100, Math.round(value))),
+      label,
+    });
+  }, []);
+
+  const clearCheckoutProgress = useCallback(() => {
+    setCheckoutProgress({
+      active: false,
+      value: 0,
+      label: "",
+    });
+  }, []);
 
   const [slidesObj, setSlidesObj] = useState<Record<string, string>>({});
   const [rawSlides, setRawSlides] = useState<RawSlide[]>([]);
@@ -1121,10 +1142,12 @@ const Subscription = () => {
 
   const startOneTimeStripeCheckout = async (p: { title: string; price: number }) => {
     setLoading(true);
+    setCheckoutProgressStep(18, "Preparing secure checkout...");
     try {
       if (!STRIPE_PK) throw new Error("Stripe key missing in env");
       const stripe = await stripePromise;
       if (!stripe) throw new Error("Stripe not available");
+      setCheckoutProgressStep(42, "Creating Stripe checkout session...");
 
       const successUrl = `${window.location.origin}${location.pathname}?paid=1&session_id={CHECKOUT_SESSION_ID}&category=${encodeURIComponent(
         categoryName
@@ -1156,12 +1179,14 @@ const Subscription = () => {
       if (!res.ok) throw new Error("checkout failed");
       const { id } = await res.json();
 
+      setCheckoutProgressStep(88, "Redirecting to Stripe...");
       toast.success("Redirecting to payment...");
       await stripe.redirectToCheckout({ sessionId: id });
     } catch (e: any) {
       toast.error(e?.message || "Payment failed!");
     } finally {
       setLoading(false);
+      clearCheckoutProgress();
     }
   };
 
@@ -1228,9 +1253,11 @@ const Subscription = () => {
   const sendPdfDirectForSubscription = useCallback(
     async (opts?: { paid?: boolean; sessionId?: string }) => {
       setLoading(true);
+      setCheckoutProgressStep(12, "Preparing your design...");
       try {
         const token = await getAccessToken();
         if (!token) throw new Error("Login session not found");
+        setCheckoutProgressStep(24, "Capturing printable preview...");
 
         const cardSize = localStorage.getItem("selectedSize") || selectedPlan;
         const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
@@ -1292,6 +1319,7 @@ const Subscription = () => {
 
         const captureFormat: "png" | "jpeg" = isTransparentPdf ? "png" : "jpeg";
         const rawSlides = await ensureSlidesPayload(captureFormat);
+        setCheckoutProgressStep(40, "Applying print layout...");
 
         const slidesAlreadyMirrored = (() => {
           try {
@@ -1519,6 +1547,7 @@ const Subscription = () => {
               },
             })
           : processedBgSlides;
+        setCheckoutProgressStep(72, "Generating your file...");
         const outputFormat = isTransparentPdf ? "png" : "pdf";
 
         const isPaidFlow = Boolean(opts?.paid && opts?.sessionId);
@@ -1564,17 +1593,22 @@ const Subscription = () => {
           throw new Error(err?.error || `Request failed (HTTP ${res.status})`);
         }
 
+        setCheckoutProgressStep(94, "Sending your file to email...");
         await res.json();
         clearPreviewStorage();
+        setCheckoutProgressStep(100, "Done");
         toast.success("File generated & emailed to you!");
       } catch (e: any) {
         toast.error(e?.message || "Could not generate file");
       } finally {
         setLoading(false);
+        clearCheckoutProgress();
       }
     },
     [
       categoryName,
+      clearCheckoutProgress,
+      setCheckoutProgressStep,
       selectedItemAccessPlan,
       isInBundleItems,
       productKey,
@@ -1596,6 +1630,7 @@ const Subscription = () => {
 
     (async () => {
       try {
+        setCheckoutProgressStep(18, "Verifying your payment...");
         const sentKey = `payment_email_sent_${sessionId}`;
         const sentState = sessionStorage.getItem(sentKey);
         if (sentState === "1" || sentState === "sending") return;
@@ -1618,6 +1653,7 @@ const Subscription = () => {
           }
         }
 
+        setCheckoutProgressStep(42, "Payment confirmed. Generating your file...");
         await sendPdfDirectForSubscription({ paid: true, sessionId });
         sessionStorage.setItem(sentKey, "1");
         navigate(location.pathname, { replace: true, state });
@@ -1625,10 +1661,18 @@ const Subscription = () => {
         const sentKey = `payment_email_sent_${sessionId}`;
         sessionStorage.removeItem(sentKey);
         toast.error(e?.message || "Payment done but file couldn't be generated");
+        clearCheckoutProgress();
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search, location.pathname, navigate, sendPdfDirectForSubscription]);
+  }, [
+    clearCheckoutProgress,
+    location.search,
+    location.pathname,
+    navigate,
+    sendPdfDirectForSubscription,
+    setCheckoutProgressStep,
+  ]);
 
   const handlePayClick = async () => {
     if (!termsAccepted) {
@@ -1788,6 +1832,20 @@ const Subscription = () => {
       height: Math.max(1, Math.round(captureHeight * safeScale)),
     };
   }, [captureHeight, captureWidth, mock, previewSurfaceSize.h, previewSurfaceSize.w, useMockupBackground]);
+
+  const liveCardMockupOverlay = useMemo(() => {
+    if (!useMockupBackground || !mock || !previewSurfaceSize.w || !previewSurfaceSize.h) return null;
+    const overlayWidth = previewSurfaceSize.w * (toPercent(mock.overlay.width) / 100);
+    const overlayHeight = previewSurfaceSize.h * (toPercent(mock.overlay.height) / 100);
+    const scaleX = overlayWidth / LEGACY_CARD_CAPTURE.w;
+    const scaleY = overlayHeight / LEGACY_CARD_CAPTURE.h;
+    return {
+      scaleX: Number.isFinite(scaleX) && scaleX > 0 ? scaleX : 1,
+      scaleY: Number.isFinite(scaleY) && scaleY > 0 ? scaleY : 1,
+      width: Math.max(1, Math.round(overlayWidth)),
+      height: Math.max(1, Math.round(overlayHeight)),
+    };
+  }, [mock, previewSurfaceSize.h, previewSurfaceSize.w, useMockupBackground]);
 
   return (
     <MainLayout>
@@ -1989,30 +2047,71 @@ const Subscription = () => {
                   </Box>
                 )
               ) : showLiveCardPreview ? (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "grid",
-                    placeItems: "center",
-                    p: 2,
-                  }}
-                >
+                useMockupBackground && liveCardMockupOverlay ? (
                   <Box
                     sx={{
-                      width: "100%",
-                      maxWidth: { md: 360, sm: 320, xs: 220 },
-                      aspectRatio: `${LEGACY_CARD_CAPTURE.w} / ${LEGACY_CARD_CAPTURE.h}`,
-                      bgcolor: "#ffffff",
-                      borderRadius: 2,
-                      boxShadow: 2,
+                      position: "absolute",
+                      top: mock?.overlay.top ?? "20%",
+                      left: mock?.overlay.left ?? "20%",
+                      width: mock?.overlay.width ?? "60%",
+                      height: mock?.overlay.height ?? "60%",
+                      opacity: mock?.overlay.opacity ?? 1,
+                      filter: mock?.overlay.filter,
+                      clipPath: mock?.overlay.clipPath,
+                      WebkitClipPath: mock?.overlay.clipPath,
+                      borderRadius: mock?.overlay.borderRadius ?? 0,
                       overflow: "hidden",
-                      position: "relative",
+                      ...(mock?.overlay.sx as any),
                     }}
                   >
-                    <Slide1 />
+                    <Box
+                      sx={{
+                        width: liveCardMockupOverlay.width,
+                        height: liveCardMockupOverlay.height,
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: LEGACY_CARD_CAPTURE.w,
+                          height: LEGACY_CARD_CAPTURE.h,
+                          position: "absolute",
+                          inset: 0,
+                          transform: `scale(${liveCardMockupOverlay.scaleX}, ${liveCardMockupOverlay.scaleY})`,
+                          transformOrigin: "top left",
+                        }}
+                      >
+                        <Slide1 />
+                      </Box>
+                    </Box>
                   </Box>
-                </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "grid",
+                      placeItems: "center",
+                      p: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: "100%",
+                        maxWidth: { md: 360, sm: 320, xs: 220 },
+                        aspectRatio: `${LEGACY_CARD_CAPTURE.w} / ${LEGACY_CARD_CAPTURE.h}`,
+                        bgcolor: "#ffffff",
+                        borderRadius: 2,
+                        boxShadow: 2,
+                        overflow: "hidden",
+                        position: "relative",
+                      }}
+                    >
+                      <Slide1 />
+                    </Box>
+                  </Box>
+                )
               ) : (
                 <Box
                   sx={{
@@ -2053,6 +2152,38 @@ const Subscription = () => {
                             : "Free users need to complete payment to receive PDF."}
                 </Typography>
               </Box>
+
+              {checkoutProgress.active && (
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    border: "1px solid rgba(0,0,0,0.12)",
+                    bgcolor: "rgba(86, 190, 204, 0.12)",
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, mb: 1 }}>
+                    <Typography sx={{ fontWeight: 700 }}>Checkout progress</Typography>
+                    <Typography sx={{ fontWeight: 700 }}>{checkoutProgress.value}%</Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={checkoutProgress.value}
+                    sx={{
+                      height: 10,
+                      borderRadius: 999,
+                      bgcolor: "rgba(0,0,0,0.08)",
+                      "& .MuiLinearProgress-bar": {
+                        borderRadius: 999,
+                        backgroundColor: COLORS.seconday,
+                      },
+                    }}
+                  />
+                  <Typography sx={{ fontSize: 13, mt: 1, opacity: 0.85 }}>
+                    {checkoutProgress.label}
+                  </Typography>
+                </Box>
+              )}
 
               {!plans.length ? (
                 <Typography sx={{ color: "text.secondary" }}>No sizes configured for this category.</Typography>

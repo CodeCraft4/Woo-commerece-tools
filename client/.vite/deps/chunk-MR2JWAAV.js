@@ -1,6 +1,6 @@
 import {
   createSvgIcon
-} from "./chunk-NIENRBEL.js";
+} from "./chunk-CKACIXOS.js";
 import {
   require_jsx_runtime
 } from "./chunk-S3GOUJ4W.js";
@@ -17,4 +17,4 @@ var Send_default = createSvgIcon((0, import_jsx_runtime.jsx)("path", {
 export {
   Send_default
 };
-//# sourceMappingURL=chunk-F54BTQXV.js.map
+//# sourceMappingURL=chunk-MR2JWAAV.js.map
