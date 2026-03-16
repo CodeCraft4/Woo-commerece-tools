@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { safeGetStorage, safeSetLocalStorage } from "../lib/storage";
 import { getDraftCardId } from "../lib/draftCardId";
-import { clearSlideStateFromIdb, getSlideStateKeys, loadSlideStateFromIdb, saveSlideStateToIdb } from "../lib/idbSlideState";
+import {
+  clearSlideStateFromIdb,
+  getSlideStateKeys,
+  getSlideStateSnapshotKeys,
+  loadSlideStateFromIdb,
+  saveSlideStateToIdb,
+} from "../lib/idbSlideState";
 const fontColors = [
   "#000000",
   "#FF0000",
@@ -644,14 +650,29 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
 
   };
 
-
+  const lastSavedStatePayloadRef = useRef("");
+  const storageFullLoggedRef = useRef(false);
 
   useEffect(() => {
-    try {
-      const saved = safeGetStorage("slide1_state");
-      if (saved) {
-        const parsed = JSON.parse(saved);
+    let cancelled = false;
+    (async () => {
+      try {
         const currentDraftId = getDraftCardId();
+        const saved = safeGetStorage("slide1_state");
+        let parsed: any = null;
+        if (saved) {
+          parsed = JSON.parse(saved);
+        } else {
+          const snapshotKeys = getSlideStateSnapshotKeys(1, currentDraftId);
+          for (const key of snapshotKeys) {
+            const snapshot = await loadSlideStateFromIdb<any>(key);
+            if (snapshot) {
+              parsed = snapshot;
+              break;
+            }
+          }
+        }
+        if (!parsed || cancelled) return;
         const savedDraftId = parsed?.draftId;
         if (currentDraftId) {
           if (!savedDraftId || savedDraftId !== currentDraftId) return;
@@ -694,6 +715,10 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.lineHeight1 !== undefined) setLineHeight1(parsed.lineHeight1);
         if (parsed.rotation1 !== undefined) setRotation1(parsed.rotation1);
 
+        try {
+          lastSavedStatePayloadRef.current = JSON.stringify(parsed);
+        } catch {}
+
         const hasHeavyLocal =
           (parsed.images1 && parsed.images1.length) ||
           (parsed.draggableImages1 && parsed.draggableImages1.length);
@@ -709,10 +734,13 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
           } catch {}
         }
 
-      }
-    } catch (error) {
+      } catch (error) {
       console.error("❌ Error restoring slide1_state:", error);
-    }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // --- 🧠 Restore heavy image data from IndexedDB (if localStorage skipped it) ---
@@ -742,7 +770,7 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [images1.length, draggableImages1.length]);
 
-  // --- 💾 Auto-save changes ---
+  // Auto-save changes
   useEffect(() => {
     const stateToSave = {
       draftId: getDraftCardId() ?? null,
@@ -771,7 +799,6 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
       lineHeight1,
       rotation1,
 
-      // + new
       bgColor1,
       bgImage1,
       bgRect1,
@@ -780,13 +807,32 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     const payload = JSON.stringify(stateToSave);
+    if (payload === lastSavedStatePayloadRef.current) return;
+    lastSavedStatePayloadRef.current = payload;
+
     const ok = safeSetLocalStorage("slide1_state", payload, {
       clearOnFail: ["slides_backup", "slide1_state"],
       fallbackToSession: true,
     });
-    if (!ok) {
-      console.error("❌ Error saving slide1_state: storage full");
+
+    if (ok) {
+      storageFullLoggedRef.current = false;
+      const [snapshotKey] = getSlideStateSnapshotKeys(1, getDraftCardId());
+      void clearSlideStateFromIdb(snapshotKey).catch(() => {});
+      return;
     }
+
+    const [snapshotKey] = getSlideStateSnapshotKeys(1, getDraftCardId());
+    void saveSlideStateToIdb(snapshotKey, stateToSave)
+      .then(() => {
+        storageFullLoggedRef.current = false;
+      })
+      .catch(() => {
+        if (!storageFullLoggedRef.current) {
+          storageFullLoggedRef.current = true;
+          console.error("Error saving slide1_state: storage full");
+        }
+      });
   }, [
     textElements1,
     selectedImg1,
@@ -811,23 +857,26 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     letterSpacing1,
     lineHeight1,
     rotation1,
-
     bgColor1,
     bgImage1,
+    bgRect1,
     selectedShapePath1,
-    layout1
+    layout1,
   ]);
 
-  // --- 🧹 Clear localStorage ---
+  // Clear localStorage
   const clearSlide1LocalData = () => {
     try {
       localStorage.removeItem("slide1_state");
       sessionStorage.removeItem("slide1_state");
-      const keys = getSlideStateKeys(1, getDraftCardId());
+      const keys = [
+        ...getSlideStateKeys(1, getDraftCardId()),
+        ...getSlideStateSnapshotKeys(1, getDraftCardId()),
+      ];
       keys.forEach((key) => {
         void clearSlideStateFromIdb(key).catch(() => {});
       });
-      console.log("🧹 Cleared Slide1 saved state");
+      console.log("Cleared Slide1 saved state");
     } catch (error) {
       console.error("Error clearing slide1_state:", error);
     }

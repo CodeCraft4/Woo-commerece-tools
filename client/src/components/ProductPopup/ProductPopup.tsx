@@ -52,6 +52,7 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     sessionStorage.removeItem("mugImage");
     sessionStorage.removeItem("cart-store-v2");
     sessionStorage.removeItem("draft:card_id");
+    sessionStorage.removeItem("card_preview_downloaded");
     clearSlidesFromIdb().catch(() => {});
 
 

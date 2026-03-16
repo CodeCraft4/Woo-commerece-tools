@@ -40,7 +40,13 @@ async function getTokenSafely() {
   const { data } = await supabase.auth.getSession();
   if (data?.session?.access_token) return data.session.access_token;
 
-  await new Promise((r) => setTimeout(r, 500));
+  try {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.data?.session?.access_token) {
+      return refreshed.data.session.access_token;
+    }
+  } catch {}
+
   const retry = await supabase.auth.getSession();
   return retry.data?.session?.access_token || null;
 }
@@ -61,6 +67,13 @@ async function getSlidesPayload() {
     return {};
   }
 }
+
+const getValidSlides = (slides?: Record<string, any> | null) =>
+  Object.fromEntries(
+    Object.entries(slides ?? {}).filter(
+      ([, value]) => typeof value === "string" && value.startsWith("data:image/"),
+    ),
+  ) as Record<string, string>;
 
 const singularizeCategory = (name?: string) => {
   const trimmed = String(name ?? "").trim();
@@ -469,8 +482,12 @@ export default function PremiumSuccess() {
       }
 
       const outputFormat = isTransparentPdf ? "png" : "pdf";
+      const validSlides = getValidSlides(slides as Record<string, string>);
+      if (!Object.keys(validSlides).length) {
+        throw new Error("No valid slides found");
+      }
 
-      const res = await fetch(`${API_BASE}/send-pdf-after-success`, {
+      const res = await fetch(`${API_BASE}/pdf/send-subscription`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -478,7 +495,10 @@ export default function PremiumSuccess() {
         },
         body: JSON.stringify({
           sessionId,
-          slides,
+          session_id: sessionId,
+          payment_session_id: sessionId,
+          paid: true,
+          slides: validSlides,
           cardSize,
           category: categoryName,
           emailSubject: buildEmailSubject(categoryName),

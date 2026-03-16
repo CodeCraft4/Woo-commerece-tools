@@ -27,6 +27,9 @@ const MIN_CROP_SIZE = 24;
 const createImage = (url: string) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
+    if (url && !url.startsWith("data:") && !url.startsWith("blob:")) {
+      image.crossOrigin = "anonymous";
+    }
     image.onload = () => resolve(image);
     image.onerror = reject;
     image.src = url;
@@ -42,6 +45,30 @@ const normalizeImageSrc = (src: string) => {
   if (!urlMatch) return value;
 
   return urlMatch[1].trim().replace(/^['"]|['"]$/g, "");
+};
+
+const blobToDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+const resolveCanvasSafeSrc = async (src: string) => {
+  const normalized = normalizeImageSrc(src);
+  if (!normalized || normalized.startsWith("data:") || normalized.startsWith("blob:")) {
+    return normalized;
+  }
+
+  try {
+    const absolute = normalized.startsWith("/") ? `${window.location.origin}${normalized}` : normalized;
+    const response = await fetch(absolute, { mode: "cors" });
+    if (!response.ok) throw new Error(`Failed to fetch crop source: ${response.status}`);
+    return await blobToDataUrl(await response.blob());
+  } catch {
+    return normalized;
+  }
 };
 
 const getContainedImageRect = (stage: Size, image: Size): Rect | null => {
@@ -84,7 +111,8 @@ const buildDefaultCropRect = (imageRect: Rect, aspect?: number): Rect => {
 };
 
 const getCroppedImage = async (src: string, area: Rect, targetAspect?: number) => {
-  const image = await createImage(src);
+  const canvasSafeSrc = await resolveCanvasSafeSrc(src);
+  const image = await createImage(canvasSafeSrc || src);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return src;

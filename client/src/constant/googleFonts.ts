@@ -93,6 +93,9 @@ const WEIGHT_HINTS: Record<string, number[]> = {
 };
 
 const loadedGoogleFontUrls = new Set<string>();
+const googleFontCssCache = new Map<string, Promise<string>>();
+const googleFontEmbedCssCache = new Map<string, Promise<string>>();
+const googleFontFileCache = new Map<string, Promise<string>>();
 
 const hashUrl = (url: string): string => {
   let h = 0;
@@ -101,6 +104,175 @@ const hashUrl = (url: string): string => {
   }
   return h.toString(36);
 };
+
+const isTrustedGoogleFontsUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "fonts.googleapis.com" &&
+      parsed.pathname.startsWith("/css2")
+    );
+  } catch {
+    return false;
+  }
+};
+
+const fetchGoogleFontCss = (url: string): Promise<string> => {
+  const cached = googleFontCssCache.get(url);
+  if (cached) return cached;
+
+  const promise = (async () => {
+    if (!isTrustedGoogleFontsUrl(url)) {
+      throw new Error("Untrusted Google Fonts URL");
+    }
+    const res = await fetch(url, {
+      credentials: "omit",
+      cache: "force-cache",
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to load Google Fonts CSS (${res.status})`);
+    }
+    return await res.text();
+  })();
+
+  googleFontCssCache.set(url, promise);
+  promise.catch(() => {
+    googleFontCssCache.delete(url);
+  });
+  return promise;
+};
+
+const blobToDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read font blob"));
+    reader.readAsDataURL(blob);
+  });
+
+const fetchGoogleFontFileAsDataUrl = (url: string): Promise<string> => {
+  const cached = googleFontFileCache.get(url);
+  if (cached) return cached;
+
+  const promise = (async () => {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" || parsed.hostname !== "fonts.gstatic.com") {
+      throw new Error("Untrusted font asset URL");
+    }
+    const res = await fetch(url, {
+      credentials: "omit",
+      cache: "force-cache",
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to load Google font file (${res.status})`);
+    }
+    const blob = await res.blob();
+    return await blobToDataUrl(blob);
+  })();
+
+  googleFontFileCache.set(url, promise);
+  promise.catch(() => {
+    googleFontFileCache.delete(url);
+  });
+  return promise;
+};
+
+const inlineGoogleFontCss = (url: string): Promise<string> => {
+  const cached = googleFontEmbedCssCache.get(url);
+  if (cached) return cached;
+
+  const promise = (async () => {
+    let cssText = await fetchGoogleFontCss(url);
+    const regex = /url\((['"]?)([^"')]+)\1\)/g;
+    const replacements = Array.from(cssText.matchAll(regex));
+    await Promise.all(
+      replacements.map(async ([fullMatch, , assetUrl]) => {
+        const absoluteUrl = assetUrl.startsWith("https://")
+          ? assetUrl
+          : new URL(assetUrl, url).href;
+        const dataUrl = await fetchGoogleFontFileAsDataUrl(absoluteUrl);
+        cssText = cssText.replace(fullMatch, `url(${dataUrl})`);
+      }),
+    );
+    return cssText;
+  })();
+
+  googleFontEmbedCssCache.set(url, promise);
+  promise.catch(() => {
+    googleFontEmbedCssCache.delete(url);
+  });
+  return promise;
+};
+
+const ensurePreconnect = () => {
+  if (typeof document === "undefined") return;
+
+  if (!document.getElementById("gf-preconnect-apis")) {
+    const a = document.createElement("link");
+    a.id = "gf-preconnect-apis";
+    a.rel = "preconnect";
+    a.href = "https://fonts.googleapis.com";
+    a.crossOrigin = "anonymous";
+    document.head.appendChild(a);
+  }
+  if (!document.getElementById("gf-preconnect-static")) {
+    const a = document.createElement("link");
+    a.id = "gf-preconnect-static";
+    a.rel = "preconnect";
+    a.href = "https://fonts.gstatic.com";
+    a.crossOrigin = "anonymous";
+    document.head.appendChild(a);
+  }
+};
+
+export async function ensureGoogleFontsLoaded(urls: string[]): Promise<void> {
+  if (typeof document === "undefined") return;
+
+  ensurePreconnect();
+
+  await Promise.all(
+    urls.map(async (url) => {
+      if (!url) return;
+      if (loadedGoogleFontUrls.has(url)) return;
+
+      const id = "gf-css-" + hashUrl(url);
+      const existingStyle = document.getElementById(id);
+      if (existingStyle) {
+        loadedGoogleFontUrls.add(url);
+        return;
+      }
+
+      try {
+        const cssText = await fetchGoogleFontCss(url);
+        const existingAfterFetch = document.getElementById(id);
+        if (existingAfterFetch) {
+          loadedGoogleFontUrls.add(url);
+          return;
+        }
+        const style = document.createElement("style");
+        style.id = id;
+        style.setAttribute("data-gf-url", encodeURIComponent(url));
+        style.textContent = cssText;
+        document.head.appendChild(style);
+        loadedGoogleFontUrls.add(url);
+      } catch {
+        const existingLink = document.querySelector(`link[data-gf-url="${encodeURIComponent(url)}"]`);
+        if (existingLink) {
+          loadedGoogleFontUrls.add(url);
+          return;
+        }
+        const link = document.createElement("link");
+        link.id = id;
+        link.rel = "stylesheet";
+        link.href = url;
+        link.setAttribute("data-gf-url", encodeURIComponent(url));
+        document.head.appendChild(link);
+        loadedGoogleFontUrls.add(url);
+      }
+    }),
+  );
+}
 
 /** Build a CSS URL from families with optional weights. */
 function buildUrl(families: string[]): string {
@@ -146,46 +318,25 @@ export function buildGoogleFontsUrls(
 
 /** Idempotently inject link tags. */
 export function loadGoogleFontsOnce(urls: string[]): void {
-  if (typeof document === "undefined") return;
+  void ensureGoogleFontsLoaded(urls);
+}
 
-  // Preconnect once
-  if (!document.getElementById("gf-preconnect-apis")) {
-    const a = document.createElement("link");
-    a.id = "gf-preconnect-apis";
-    a.rel = "preconnect";
-    a.href = "https://fonts.googleapis.com";
-    a.crossOrigin = "anonymous";
-    document.head.appendChild(a);
-  }
-  if (!document.getElementById("gf-preconnect-static")) {
-    const a = document.createElement("link");
-    a.id = "gf-preconnect-static";
-    a.rel = "preconnect";
-    a.href = "https://fonts.gstatic.com";
-    a.crossOrigin = "anonymous";
-    document.head.appendChild(a);
-  }
+export async function getGoogleFontEmbedCss(families: string[]): Promise<string> {
+  const urls = buildGoogleFontsUrls(families);
+  if (!urls.length) return "";
 
-  // Stylesheets
-  for (const url of urls) {
-    if (!url) continue;
-    if (loadedGoogleFontUrls.has(url)) continue;
-    const id = "gf-css-" + hashUrl(url);
-    const existingByData = document.querySelector(
-      `link[data-gf-url="${encodeURIComponent(url)}"]`
-    );
-    if (document.getElementById(id) || existingByData) {
-      loadedGoogleFontUrls.add(url);
-      continue;
-    }
-    const link = document.createElement("link");
-    link.id = id;
-    link.rel = "stylesheet";
-    link.href = url;
-    link.setAttribute("data-gf-url", encodeURIComponent(url));
-    document.head.appendChild(link);
-    loadedGoogleFontUrls.add(url);
-  }
+  await ensureGoogleFontsLoaded(urls);
+  const cssParts = await Promise.all(
+    urls.map(async (url) => {
+      try {
+        return await inlineGoogleFontCss(url);
+      } catch {
+        return "";
+      }
+    }),
+  );
+
+  return cssParts.filter(Boolean).join("\n");
 }
 
 /** Convenience: load a large list safely. */

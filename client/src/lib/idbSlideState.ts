@@ -31,6 +31,9 @@ export const getSlideStateKeys = (slide: number, draftId?: string | null) => {
   return draftId ? [`${base}:${draftId}`, base] : [base];
 };
 
+export const getSlideStateSnapshotKeys = (slide: number, draftId?: string | null) =>
+  getSlideStateKeys(slide, draftId).map((key) => `${key}:snapshot`);
+
 export const saveSlideStateToIdb = async (key: string, state: unknown) => {
   const db = await openDb();
   if (!db) return;

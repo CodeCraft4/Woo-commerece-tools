@@ -8,6 +8,7 @@ import { Box, Typography } from "@mui/material";
 import { ArrowBackIos } from "@mui/icons-material";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
+import { saveSlidesToIdb } from "../../../lib/idbSlides";
 import toast from "react-hot-toast";
 
 const MUG_URL = "/assets/modals/tea_cup.glb";
@@ -337,10 +338,11 @@ const TempletEditorPreview: React.FC = () => {
                 if (!mugPreview && !mugImageSrc) throw new Error("Failed to capture mug preview");
                 const slide1 = mugImageSrc || mugPreview || "";
                 const payload = { slide1 };
-                sessionStorage.setItem("slides", JSON.stringify(payload));
+                sessionStorage.removeItem("slides");
                 // Keep checkout preview normal; PDF flow will mirror for mug category.
                 sessionStorage.removeItem("slides_mirrored");
                 sessionStorage.removeItem("slides_mirrored_category");
+                void saveSlidesToIdb(payload);
                 try {
                   localStorage.setItem("slides_backup", JSON.stringify(payload));
                 } catch {}

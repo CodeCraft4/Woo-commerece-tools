@@ -39,9 +39,21 @@ import { USER_ROUTES } from "../../../constant/route";
 import MainLayout from "../../../layout/MainLayout";
 import { COLORS } from "../../../constant/color";
 import { removeWhiteBg } from "../../../lib/lib";
-import { clearSlidesFromIdb, loadSlidesFromIdb, saveSlidesToIdb } from "../../../lib/idbSlides";
+import {
+  clearSlidesFromIdb,
+  clearSlidesFromIdbByPrefix,
+  loadSlidesFromIdb,
+  loadSlidesFromIdbByKey,
+  saveSlidesToIdb,
+  saveSlidesToIdbByKey,
+} from "../../../lib/idbSlides";
 import { API_BASE } from "../../../lib/apiBase";
-import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
+import {
+  buildGoogleFontsUrls,
+  ensureGoogleFontsLoaded,
+  getGoogleFontEmbedCss,
+  loadGoogleFontsOnce,
+} from "../../../constant/googleFonts";
 import Slide1 from "../Preview/component/Slide1/Slide1";
 import Slide2 from "../Preview/component/Slide2/Slide2";
 import Slide3 from "../Preview/component/Slide3/Slide3";
@@ -52,6 +64,7 @@ const STRIPE_PK =
   import.meta.env.VITE_STRIPE_PK ||
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : Promise.resolve(null);
+const PREPARED_SLIDES_PREFIX = "prepared:";
 
 // ------------------ Types ------------------
 type SelectedVariant = {
@@ -242,6 +255,33 @@ const collectFontsFromRawSlides = (slides: RawSlide[]) => {
   return Array.from(fonts);
 };
 
+const GENERIC_FONT_FAMILIES = new Set([
+  "serif",
+  "sans-serif",
+  "monospace",
+  "cursive",
+  "fantasy",
+  "system-ui",
+]);
+
+const collectFontsFromNode = (node: HTMLElement | null) => {
+  if (!node) return [];
+  const fonts = new Set<string>();
+  const walk = (el: HTMLElement) => {
+    const fontFamily = getComputedStyle(el).fontFamily || "";
+    fontFamily.split(",").forEach((value) => {
+      const family = normalizeFontFamily(value);
+      if (!family || GENERIC_FONT_FAMILIES.has(family.toLowerCase())) return;
+      fonts.add(family);
+    });
+    Array.from(el.children).forEach((child) => {
+      if (child instanceof HTMLElement) walk(child);
+    });
+  };
+  walk(node);
+  return Array.from(fonts);
+};
+
 export const isProductInBundle = (
   product: { id?: string | number; type?: string } | null,
   bundleKeySet: Set<string>
@@ -351,6 +391,16 @@ const toPercent = (v?: string) => {
   const n = Number(String(v ?? "").replace("%", "").trim());
   return Number.isFinite(n) ? n : 0;
 };
+
+const getValidSlides = (slides?: Record<string, any> | null) =>
+  Object.fromEntries(
+    Object.entries(slides ?? {}).filter(
+      ([, value]) => typeof value === "string" && value.startsWith("data:image/"),
+    ),
+  ) as Record<string, string>;
+
+const buildPreparedSlidesKey = (productKey?: string, category?: string, cardSize?: string) =>
+  `${PREPARED_SLIDES_PREFIX}${lc(productKey)}:${lc(category)}:${lc(cardSize)}`;
 
 const waitForNextPaint = () =>
   new Promise<void>((resolve) => {
@@ -475,21 +525,27 @@ const Subscription = () => {
       return false;
     }
   }, [state?.previewOnly]);
-  const isLegacyCardProduct = useMemo(
-    () => normalizeItemType(product?.type) === "card",
-    [product?.type],
-  );
+  const isLegacyCardProduct = useMemo(() => {
+    const normalizedType = normalizeItemType(product?.type);
+    if (normalizedType === "card") return true;
+    if (normalizedType) return false;
+    try {
+      return sessionStorage.getItem("card_preview_downloaded") === "1";
+    } catch {
+      return false;
+    }
+  }, [product?.type]);
 
   useEffect(() => {
     let mounted = true;
 
     const loadSlides = async () => {
       try {
-      const globalSlides = (globalThis as any).__slidesCache;
-      if (globalSlides && Object.keys(globalSlides).length) {
-        if (mounted) setSlidesObj(globalSlides);
-        return;
-      }
+        const globalSlides = (globalThis as any).__slidesCache;
+        if (globalSlides && Object.keys(globalSlides).length) {
+          if (mounted) setSlidesObj(globalSlides);
+          return;
+        }
       } catch {}
 
       if (state?.slides) {
@@ -584,6 +640,7 @@ const Subscription = () => {
     legacyCardNodeRefs.current[i] = el;
   };
   const [previewSurfaceSize, setPreviewSurfaceSize] = useState({ w: 0, h: 0 });
+  const captureFontEmbedCssCacheRef = useRef<Map<string, Promise<string>>>(new Map());
 
   useEffect(() => {
     slideNodeRefs.current = {};
@@ -604,6 +661,25 @@ const Subscription = () => {
     return () => obs.disconnect();
   }, []);
 
+  const resolveCaptureFontEmbedCss = useCallback(async (fonts: string[]) => {
+    const normalizedFonts = Array.from(
+      new Set(
+        fonts
+          .map((font) => normalizeFontFamily(font))
+          .filter((font) => font && !GENERIC_FONT_FAMILIES.has(font.toLowerCase())),
+      ),
+    ).sort();
+    if (!normalizedFonts.length) return "";
+
+    const cacheKey = normalizedFonts.join("|");
+    const cached = captureFontEmbedCssCacheRef.current.get(cacheKey);
+    if (cached) return await cached;
+
+    const promise = getGoogleFontEmbedCss(normalizedFonts).catch(() => "");
+    captureFontEmbedCssCacheRef.current.set(cacheKey, promise);
+    return await promise;
+  }, []);
+
   const ensureCaptureSupportReady = useCallback(async () => {
     if (!rawSlides.length && !isLegacyCardProduct) return;
     if (rawSlides.length && !captureSupportEnabled) {
@@ -622,12 +698,18 @@ const Subscription = () => {
     if (!rawNodesReady || !legacyNodesReady) {
       await waitForNextPaint();
     }
+    if (rawSlides.length) {
+      const fonts = collectFontsFromRawSlides(rawSlides);
+      if (fonts.length) {
+        await ensureGoogleFontsLoaded(buildGoogleFontsUrls(fonts));
+      }
+    }
     if ((document as any)?.fonts?.ready) {
       try {
         await (document as any).fonts.ready;
       } catch {}
     }
-  }, [captureSupportEnabled, isLegacyCardProduct, legacyCardCaptureEnabled, rawSlides.length]);
+  }, [captureSupportEnabled, isLegacyCardProduct, legacyCardCaptureEnabled, rawSlides]);
 
   const renderSlide = useCallback((slide?: RawSlide, opts?: { stripBackground?: boolean; transparentCanvas?: boolean }) => {
     if (!slide) return null;
@@ -796,6 +878,7 @@ const Subscription = () => {
   const captureSlidesFromDom = useCallback(
     async (format: "jpeg" | "png", maxDim = 1600) => {
       const out: string[] = [];
+      const fontEmbedCSS = await resolveCaptureFontEmbedCss(collectFontsFromRawSlides(rawSlides));
       for (let i = 0; i < rawSlides.length; i++) {
         const node = slideNodeRefs.current[i];
         if (!node) continue;
@@ -808,7 +891,8 @@ const Subscription = () => {
             pixelRatio,
             backgroundColor: "transparent",
             cacheBust: false,
-            skipFonts: false,
+            skipFonts: !fontEmbedCSS,
+            fontEmbedCSS: fontEmbedCSS || undefined,
           });
           out.push(png);
         } else {
@@ -817,7 +901,8 @@ const Subscription = () => {
             pixelRatio,
             backgroundColor: "#ffffff",
             cacheBust: false,
-            skipFonts: false,
+            skipFonts: !fontEmbedCSS,
+            fontEmbedCSS: fontEmbedCSS || undefined,
           });
           out.push(jpg);
         }
@@ -827,12 +912,18 @@ const Subscription = () => {
       }
       return out;
     },
-    [rawSlides.length]
+    [rawSlides, resolveCaptureFontEmbedCss]
   );
 
   const captureLegacyCardSlidesFromDom = useCallback(
     async (maxDim = 1600) => {
       const out: string[] = [];
+      const legacyFonts = Array.from(
+        new Set(
+          Array.from({ length: 4 }, (_, i) => collectFontsFromNode(legacyCardNodeRefs.current[i])).flat(),
+        ),
+      );
+      const fontEmbedCSS = await resolveCaptureFontEmbedCss(legacyFonts);
       for (let i = 0; i < 4; i++) {
         const node = legacyCardNodeRefs.current[i];
         if (!node) continue;
@@ -845,7 +936,8 @@ const Subscription = () => {
           pixelRatio,
           backgroundColor: "#ffffff",
           cacheBust: false,
-          skipFonts: false,
+          skipFonts: !fontEmbedCSS,
+          fontEmbedCSS: fontEmbedCSS || undefined,
         });
         out.push(jpg);
         if (i < 3) {
@@ -854,8 +946,41 @@ const Subscription = () => {
       }
       return out;
     },
-    [],
+    [resolveCaptureFontEmbedCss],
   );
+
+  const storeSlidesPayload = useCallback((next: Record<string, string>) => {
+    setSlidesObj(next);
+    (globalThis as any).__slidesCache = next;
+    try {
+      sessionStorage.setItem("slides_preview_only", "0");
+      sessionStorage.setItem("rawSlidesCount", String(Object.keys(next).length));
+    } catch {}
+
+    try {
+      sessionStorage.removeItem("slides");
+    } catch {}
+
+    try {
+      void saveSlidesToIdb(next);
+    } catch {}
+  }, []);
+
+  const readCapturedSlidesFromStorage = useCallback(() => {
+    try {
+      const stored = sessionStorage.getItem("capturedSlides");
+      if (!stored) return [] as string[];
+      const capturedKey = sessionStorage.getItem("capturedSlidesKey") || "";
+      const previewKey = sessionStorage.getItem("templ_preview_key") || "";
+      if (capturedKey && previewKey && capturedKey !== previewKey) return [] as string[];
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed)
+        ? parsed.filter((u) => typeof u === "string" && u.startsWith("data:image/"))
+        : [];
+    } catch {
+      return [] as string[];
+    }
+  }, []);
 
   // ✅ read local selections
   useEffect(() => {
@@ -1053,6 +1178,87 @@ const Subscription = () => {
 
   const isInBundleItems = useMemo(() => isProductInBundle(product, bundleKeySet), [product, bundleKeySet]);
 
+  const getCheckoutPreparation = useCallback(
+    (cardSize?: string | null) => {
+      const effectiveCardSize =
+        String(cardSize ?? "").trim() || localStorage.getItem("selectedSize") || selectedPlan;
+      const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(effectiveCardSize);
+      const isInviteTwoUp =
+        /invite/i.test(String(categoryName ?? "")) && isInviteTwoUpSize(effectiveCardSize);
+      const isLeafletTwoUp =
+        isBusinessLeafletsCategory(categoryName) && isLeafletTwoUpSize(effectiveCardSize);
+      const isTenUpBusinessCards =
+        isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(effectiveCardSize);
+      const isCandlesGrid = isCandlesCategory(categoryName);
+      const isCoastersGrid = isCoastersCategory(categoryName);
+      const isNotebookTwoUp =
+        isNotebooksCategory(categoryName) && isNotebookTwoUpSize(effectiveCardSize);
+      const isMugWrap = isMugsCategory && isMugWrapSize(effectiveCardSize);
+      const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
+      const isBagCategory = /bag|tote/i.test(String(categoryName ?? ""));
+      const isClothingCategory = /clothing|clothes|apparel/i.test(String(categoryName ?? ""));
+      const isBagOrClothingForPdf = isBagCategory || isClothingCategory;
+      const isNotebookCategory = isNotebooksCategory(categoryName);
+      const clothingBgRemoveOpts = {
+        threshold: 28,
+        alphaThreshold: 6,
+        minBrightness: 160,
+        satThreshold: 32,
+        whiteOnly: false,
+        requireWhiteBg: false,
+        softness: 18,
+        mode: "edge" as const,
+      };
+      const bagBgRemoveOpts = {
+        threshold: 18,
+        alphaThreshold: 8,
+        minBrightness: 245,
+        satThreshold: 10,
+        whiteMinChannel: 240,
+        whiteOnly: true,
+        requireWhiteBg: true,
+      };
+      const bgRemoveOpts =
+        !isCandlesGrid &&
+        !isCoastersGrid &&
+        !isMugWrap &&
+        (isBagOrClothingForPdf || isNotebookCategory)
+          ? isClothingCategory
+            ? clothingBgRemoveOpts
+            : bagBgRemoveOpts
+          : !isCandlesGrid && !isCoastersGrid && !isMugWrap && isStickerForPdf
+          ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
+          : null;
+      const isTransparentPdf =
+        isStickerForPdf ||
+        isBagOrClothingForPdf ||
+        isCoastersGrid ||
+        isMugWrap ||
+        isNotebookCategory;
+
+      return {
+        cardSize: effectiveCardSize,
+        isTwoUpLandscape,
+        isInviteTwoUp,
+        isLeafletTwoUp,
+        isTenUpBusinessCards,
+        isCandlesGrid,
+        isCoastersGrid,
+        isNotebookTwoUp,
+        isMugWrap,
+        bgRemoveOpts,
+        isTransparentPdf,
+        captureFormat: (isTransparentPdf ? "png" : "jpeg") as "png" | "jpeg",
+        outputFormat: (isTransparentPdf ? "png" : "pdf") as "png" | "pdf",
+        pageOrientation:
+          isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap
+            ? "landscape"
+            : undefined,
+      };
+    },
+    [categoryName, isMugsCategory, selectedPlan],
+  );
+
   const isBundleAndMatched = planCode === "bundle" && isInBundleItems;
 
   // ✅ PRO-ONLY CARD RULE (keep as-is)
@@ -1107,6 +1313,7 @@ const Subscription = () => {
       sessionStorage.removeItem("templ_preview_config");
       sessionStorage.removeItem("slides_mirrored");
       sessionStorage.removeItem("slides_mirrored_category");
+      sessionStorage.removeItem("card_preview_downloaded");
     } catch {}
 
     try {
@@ -1115,10 +1322,12 @@ const Subscription = () => {
 
     try {
       void clearSlidesFromIdb();
+      void clearSlidesFromIdbByPrefix(PREPARED_SLIDES_PREFIX);
     } catch {}
 
     try {
       delete (globalThis as any).__slidesCache;
+      delete (globalThis as any).__preparedSlidesCache;
       delete (globalThis as any).__rawSlidesCache;
       delete (globalThis as any).__previewConfigCache;
     } catch {}
@@ -1145,8 +1354,17 @@ const Subscription = () => {
     setCheckoutProgressStep(18, "Preparing secure checkout...");
     try {
       if (!STRIPE_PK) throw new Error("Stripe key missing in env");
-      const stripe = await stripePromise;
+      const prep = getCheckoutPreparation(selectedPlan);
+      const [stripe, preparedSlides] = await Promise.all([
+        stripePromise,
+        ensureSlidesPayload(prep.captureFormat),
+      ]);
       if (!stripe) throw new Error("Stripe not available");
+      const validPreparedSlides = getValidSlides(preparedSlides);
+      if (!Object.keys(validPreparedSlides).length) {
+        throw new Error("Could not prepare your design for checkout");
+      }
+
       setCheckoutProgressStep(42, "Creating Stripe checkout session...");
 
       const successUrl = `${window.location.origin}${location.pathname}?paid=1&session_id={CHECKOUT_SESSION_ID}&category=${encodeURIComponent(
@@ -1213,6 +1431,18 @@ const Subscription = () => {
 
       if (hasEnough && hasPng && !isPreviewOnly) return current;
 
+      const capturedList = readCapturedSlidesFromStorage();
+      const capturedEnough = expectedCount
+        ? capturedList.length >= expectedCount
+        : capturedList.length > 0;
+      const capturedHasPng =
+        !needPng || capturedList.every((u) => String(u || "").startsWith("data:image/png"));
+      if (capturedEnough && capturedHasPng) {
+        const next = Object.fromEntries(capturedList.map((u, idx) => [`slide${idx + 1}`, u]));
+        storeSlidesPayload(next);
+        return next;
+      }
+
       if (!rawSlides.length && !isLegacyCardProduct) return current;
 
       await ensureCaptureSupportReady();
@@ -1222,21 +1452,7 @@ const Subscription = () => {
       if (!list.length) return current;
 
       const next = Object.fromEntries(list.map((u, idx) => [`slide${idx + 1}`, u]));
-      setSlidesObj(next);
-      (globalThis as any).__slidesCache = next;
-      try {
-        sessionStorage.setItem("slides_preview_only", "0");
-        sessionStorage.setItem("rawSlidesCount", String(list.length));
-      } catch {}
-
-      try {
-        sessionStorage.setItem("slides", JSON.stringify(next));
-      } catch {}
-
-      try {
-        void saveSlidesToIdb(next);
-      } catch {}
-
+      storeSlidesPayload(next);
       return next;
     },
     [
@@ -1246,346 +1462,485 @@ const Subscription = () => {
       getSlidesPayload,
       isLegacyCardProduct,
       isPreviewOnly,
+      readCapturedSlidesFromStorage,
       rawSlides.length,
+      storeSlidesPayload,
     ]
   );
+
+  const getPreparedSlidesCacheKey = useCallback(
+    (cardSize?: string | null) => buildPreparedSlidesKey(productKey || "state", categoryName, cardSize || selectedPlan),
+    [categoryName, productKey, selectedPlan],
+  );
+
+  const loadPreparedSlidesPayload = useCallback(
+    async (cardSize?: string | null) => {
+      const key = getPreparedSlidesCacheKey(cardSize);
+      try {
+        const cache = (globalThis as any).__preparedSlidesCache;
+        const cached = cache?.[key];
+        const valid = getValidSlides(cached);
+        if (Object.keys(valid).length) return valid;
+      } catch {}
+
+      try {
+        const fromIdb = await loadSlidesFromIdbByKey(key);
+        const valid = getValidSlides(fromIdb);
+        if (!Object.keys(valid).length) return null;
+        const cache = (globalThis as any).__preparedSlidesCache ?? {};
+        cache[key] = valid;
+        (globalThis as any).__preparedSlidesCache = cache;
+        return valid;
+      } catch {
+        return null;
+      }
+    },
+    [getPreparedSlidesCacheKey],
+  );
+
+  const storePreparedSlidesPayload = useCallback(
+    (cardSize: string | null | undefined, slides: Record<string, string>) => {
+      const valid = getValidSlides(slides);
+      if (!Object.keys(valid).length) return;
+      const key = getPreparedSlidesCacheKey(cardSize);
+      try {
+        const cache = (globalThis as any).__preparedSlidesCache ?? {};
+        cache[key] = valid;
+        (globalThis as any).__preparedSlidesCache = cache;
+      } catch {}
+
+      try {
+        void saveSlidesToIdbByKey(key, valid);
+      } catch {}
+    },
+    [getPreparedSlidesCacheKey],
+  );
+
+  const prepareDeliverySlides = useCallback(
+    async (
+      cardSize?: string | null,
+      onProgress?: (value: number, label: string) => void,
+    ) => {
+      const prep = getCheckoutPreparation(cardSize);
+      const cached = await loadPreparedSlidesPayload(prep.cardSize);
+      if (cached && Object.keys(cached).length) {
+        return {
+          slides: cached,
+          outputFormat: prep.outputFormat,
+          pageOrientation: prep.pageOrientation,
+        };
+      }
+
+      const rawSlides = await ensureSlidesPayload(prep.captureFormat);
+      onProgress?.(40, "Applying print layout...");
+
+      const slidesAlreadyMirrored = (() => {
+        try {
+          return sessionStorage.getItem("slides_mirrored") === "1";
+        } catch {
+          return false;
+        }
+      })();
+      const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored;
+      const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
+      if (slidesAlreadyMirrored) {
+        try {
+          sessionStorage.removeItem("slides_mirrored");
+          sessionStorage.removeItem("slides_mirrored_category");
+        } catch {}
+      }
+
+      const processedCandleSlides = prep.isCandlesGrid
+        ? await (async () => {
+            const entries = await Promise.all(
+              Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                const src = typeof v === "string" ? v : "";
+                if (!src) return [k, v] as const;
+                const cleaned = await removeWhiteBg(src, {
+                  threshold: 24,
+                  alphaThreshold: 8,
+                  minBrightness: 235,
+                  satThreshold: 16,
+                  mode: "all",
+                });
+                return [k, cleaned] as const;
+              }),
+            );
+            return Object.fromEntries(entries);
+          })()
+        : baseSlides;
+
+      const processedCoasterSlides = prep.isCoastersGrid
+        ? await (async () => {
+            const entries = await Promise.all(
+              Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                const src = typeof v === "string" ? v : "";
+                if (!src) return [k, v] as const;
+                const cleaned = await removeWhiteBg(src, {
+                  threshold: 24,
+                  alphaThreshold: 8,
+                  minBrightness: 235,
+                  satThreshold: 16,
+                  mode: "edge",
+                  whiteOnly: true,
+                  requireWhiteBg: true,
+                });
+                return [k, cleaned] as const;
+              }),
+            );
+            return Object.fromEntries(entries);
+          })()
+        : baseSlides;
+
+      const coasterSlides = prep.isCoastersGrid
+        ? (() => {
+            const keys = Object.keys(processedCoasterSlides)
+              .filter((k) => processedCoasterSlides[k])
+              .sort();
+            const limited = keys.slice(0, 2);
+            return Object.fromEntries(limited.map((k) => [k, processedCoasterSlides[k]]));
+          })()
+        : processedCoasterSlides;
+
+      const processedMugSlides = prep.isMugWrap
+        ? await (async () => {
+            const entries = await Promise.all(
+              Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                const src = typeof v === "string" ? v : "";
+                if (!src) return [k, v] as const;
+                const cleaned = await removeWhiteBg(src, {
+                  threshold: 18,
+                  alphaThreshold: 8,
+                  minBrightness: 245,
+                  satThreshold: 10,
+                  whiteMinChannel: 240,
+                  whiteOnly: true,
+                  requireWhiteBg: true,
+                  mode: "edge",
+                });
+                return [k, cleaned] as const;
+              }),
+            );
+            return Object.fromEntries(entries);
+          })()
+        : baseSlides;
+
+      const bgRemoveOpts = prep.bgRemoveOpts;
+      const processedBgSlides = bgRemoveOpts
+        ? await (async () => {
+            const entries = await Promise.all(
+              Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
+                const src = typeof v === "string" ? v : "";
+                if (!src) return [k, v] as const;
+                const cleaned = await removeWhiteBg(src, bgRemoveOpts);
+                return [k, cleaned] as const;
+              }),
+            );
+            return Object.fromEntries(entries);
+          })()
+        : baseSlides;
+
+      const notebookSlides = (() => {
+        if (!prep.isNotebookTwoUp) return baseSlides;
+        const sourceSlides = processedBgSlides;
+        const keys = Object.keys(sourceSlides).filter((k) => sourceSlides[k]);
+        if (keys.length >= 2) return sourceSlides;
+        if (keys.length === 1) {
+          const k = keys[0];
+          return { [k]: sourceSlides[k], [`${k}-copy`]: sourceSlides[k] };
+        }
+        return sourceSlides;
+      })();
+
+      const leafletSlides = (() => {
+        if (!prep.isLeafletTwoUp) return baseSlides;
+        const keys = Object.keys(baseSlides).filter((k) => baseSlides[k]).sort();
+        if (keys.length === 0) return baseSlides;
+        if (keys.length === 1) {
+          const k = keys[0];
+          return { slide1: baseSlides[k], slide2: baseSlides[k] };
+        }
+        const frontKey = keys[0];
+        const backKey = keys[1];
+        return {
+          slide1: baseSlides[frontKey],
+          slide2: baseSlides[frontKey],
+          slide3: baseSlides[backKey],
+          slide4: baseSlides[backKey],
+        };
+      })();
+
+      const slides = prep.isTenUpBusinessCards
+        ? await buildTenUpSlides(baseSlides, {
+            columns: 2,
+            rows: 5,
+            gapPx: 10,
+            marginPx: 0,
+            orientation: "portrait",
+            fit: "cover",
+            pageMm: getPageMmForSize(prep.cardSize),
+          })
+        : prep.isCandlesGrid
+        ? await buildFixedGridSlides(processedCandleSlides, {
+            columns: 2,
+            rows: 3,
+            labelMm: { w: 70, h: 70 },
+            gapMm: 0,
+            distribute: true,
+            fit: "contain",
+            pageMm: getPageMmForSize(prep.cardSize),
+            fillMode: "sequence",
+          })
+        : prep.isCoastersGrid
+        ? await buildFixedGridSlides(coasterSlides, {
+            columns: 2,
+            rows: 1,
+            labelMm: { w: 89, h: 89 },
+            gapMm: 0,
+            distribute: false,
+            fit: "contain",
+            pageMm: { w: 229, h: 89 },
+            background: "transparent",
+            outputFormat: "png",
+            fillMode: "sequence",
+          })
+        : prep.isMugWrap
+        ? await buildFixedGridSlides(processedMugSlides, {
+            columns: 1,
+            rows: 1,
+            labelMm: getMugWrapPageMm(prep.cardSize),
+            gapMm: 0,
+            distribute: false,
+            fit: "cover",
+            pageMm: getMugWrapPageMm(prep.cardSize),
+            background: "transparent",
+            outputFormat: "png",
+          })
+        : prep.isInviteTwoUp
+        ? await buildFixedGridSlides(baseSlides, {
+            columns: 2,
+            rows: 1,
+            labelMm: getPageMmForSize(prep.cardSize),
+            gapMm: 0,
+            distribute: false,
+            fit: "contain",
+            pageMm: getInviteTwoUpPageMm(prep.cardSize),
+          })
+        : prep.isNotebookTwoUp
+        ? await buildTwoUpSlides(notebookSlides, {
+            gapPx: 0,
+            orientation: "landscape",
+            fit: "contain",
+            pairStrategy: "sequential",
+            swapPairs: false,
+            pageMm: getNotebookTwoUpPageMm(prep.cardSize),
+            background: "transparent",
+            outputFormat: "png",
+          })
+        : prep.isLeafletTwoUp
+        ? await buildTwoUpSlides(leafletSlides, {
+            gapPx: 0,
+            orientation: "landscape",
+            fit: "cover",
+            pairStrategy: "sequential",
+            swapPairs: false,
+            pageMm: getLeafletTwoUpPageMm(prep.cardSize),
+          })
+        : prep.isTwoUpLandscape
+        ? await buildTwoUpSlides(baseSlides, {
+            gapPx: 0,
+            orientation: "landscape",
+            fit: "cover",
+            pairStrategy: "outer-inner",
+            swapPairs: true,
+            pageMm: getPageMmForSize(prep.cardSize),
+            pageTitle: ({ pageIndex }) => {
+              if (pageIndex === 1) return "";
+              if (pageIndex === 2) return "";
+              return null;
+            },
+          })
+        : processedBgSlides;
+
+      const validSlides = getValidSlides(slides as Record<string, string>);
+      if (!Object.keys(validSlides).length) {
+        throw new Error("No valid slides found");
+      }
+
+      storePreparedSlidesPayload(prep.cardSize, validSlides);
+      return {
+        slides: validSlides,
+        outputFormat: prep.outputFormat,
+        pageOrientation: prep.pageOrientation,
+      };
+    },
+    [
+      categoryName,
+      ensureSlidesPayload,
+      getCheckoutPreparation,
+      loadPreparedSlidesPayload,
+      storePreparedSlidesPayload,
+    ],
+  );
+
+  const prefetchCaptureFormat = useMemo<"png" | "jpeg">(() => {
+    const isTransparentCapture =
+      /sticker|bag|tote|clothing|clothes|apparel|notebook/i.test(String(categoryName ?? "")) ||
+      isCoastersCategory(categoryName) ||
+      isMugsCategory;
+    return isTransparentCapture ? "png" : "jpeg";
+  }, [categoryName, isMugsCategory]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let frameId: number | null = null;
+
+    const run = async () => {
+      try {
+        const current = await getSlidesPayload();
+        const currentKeys = Object.keys(current || {}).filter((k) => current[k]);
+        const expectedCount = rawSlides.length ? rawSlides.length : isLegacyCardProduct ? 4 : 0;
+        const hasEnough = expectedCount ? currentKeys.length >= expectedCount : currentKeys.length > 0;
+        const hasPng =
+          prefetchCaptureFormat !== "png" ||
+          currentKeys.every((k) => String(current[k] || "").startsWith("data:image/png"));
+        if (hasEnough && hasPng && !isPreviewOnly) return;
+
+        const capturedList = readCapturedSlidesFromStorage();
+        const capturedEnough = expectedCount
+          ? capturedList.length >= expectedCount
+          : capturedList.length > 0;
+        const capturedHasPng =
+          prefetchCaptureFormat !== "png" ||
+          capturedList.every((u) => String(u || "").startsWith("data:image/png"));
+        if (capturedEnough && capturedHasPng) {
+          if (!cancelled) {
+            const next = Object.fromEntries(capturedList.map((u, idx) => [`slide${idx + 1}`, u]));
+            storeSlidesPayload(next);
+          }
+          return;
+        }
+
+        if (!rawSlides.length && !isLegacyCardProduct) return;
+
+        await ensureCaptureSupportReady();
+        const list = rawSlides.length
+          ? await captureSlidesFromDom(prefetchCaptureFormat, prefetchCaptureFormat === "png" ? 2400 : 1600)
+          : await captureLegacyCardSlidesFromDom(1600);
+        if (cancelled || !list.length) return;
+        const next = Object.fromEntries(list.map((u, idx) => [`slide${idx + 1}`, u]));
+        storeSlidesPayload(next);
+      } catch {}
+    };
+
+    frameId = window.requestAnimationFrame(() => {
+      if (!cancelled) {
+        void run();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (frameId != null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [
+    captureLegacyCardSlidesFromDom,
+    captureSlidesFromDom,
+    ensureCaptureSupportReady,
+    getSlidesPayload,
+    isLegacyCardProduct,
+    isPreviewOnly,
+    prefetchCaptureFormat,
+    rawSlides,
+    readCapturedSlidesFromStorage,
+    storeSlidesPayload,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let frameId: number | null = null;
+
+    const run = async () => {
+      try {
+        if (!rawSlides.length && !isLegacyCardProduct) return;
+        const current = await getSlidesPayload();
+        const validCurrent = getValidSlides(current);
+        if (!Object.keys(validCurrent).length) return;
+        const prep = getCheckoutPreparation(selectedPlan);
+        const cached = await loadPreparedSlidesPayload(prep.cardSize);
+        if (cached && Object.keys(cached).length) return;
+        await prepareDeliverySlides(prep.cardSize);
+      } catch {
+        // Best-effort warm cache only.
+      }
+    };
+
+    frameId = window.requestAnimationFrame(() => {
+      if (!cancelled) {
+        if (!cancelled) void run();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (frameId != null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [
+    getCheckoutPreparation,
+    getSlidesPayload,
+    isLegacyCardProduct,
+    loadPreparedSlidesPayload,
+    prepareDeliverySlides,
+    rawSlides.length,
+    selectedPlan,
+  ]);
 
   const sendPdfDirectForSubscription = useCallback(
     async (opts?: { paid?: boolean; sessionId?: string }) => {
       setLoading(true);
       setCheckoutProgressStep(12, "Preparing your design...");
       try {
-        const token = await getAccessToken();
-        if (!token) throw new Error("Login session not found");
+        const prep = getCheckoutPreparation(localStorage.getItem("selectedSize") || selectedPlan);
         setCheckoutProgressStep(24, "Capturing printable preview...");
-
-        const cardSize = localStorage.getItem("selectedSize") || selectedPlan;
-        const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(cardSize);
-        const isInviteTwoUp =
-          /invite/i.test(String(categoryName ?? "")) && isInviteTwoUpSize(cardSize);
-        const isLeafletTwoUp =
-          isBusinessLeafletsCategory(categoryName) && isLeafletTwoUpSize(cardSize);
-        const isTenUpBusinessCards =
-          isBusinessCardsCategory(categoryName) && isBusinessCardPrintSize(cardSize);
-        const isCandlesGrid = isCandlesCategory(categoryName);
-        const isCoastersGrid = isCoastersCategory(categoryName);
-        const isNotebookTwoUp =
-          isNotebooksCategory(categoryName) && isNotebookTwoUpSize(cardSize);
-        const isMugWrap = isMugsCategory && isMugWrapSize(cardSize);
-
-        const isStickerForPdf = /sticker/i.test(String(categoryName ?? ""));
-        const isBagCategory = /bag|tote/i.test(String(categoryName ?? ""));
-        const isClothingCategory = /clothing|clothes|apparel/i.test(
-          String(categoryName ?? "")
-        );
-        const isBagOrClothingForPdf = isBagCategory || isClothingCategory;
-        const isNotebookCategory = isNotebooksCategory(categoryName);
-        const clothingBgRemoveOpts = {
-          threshold: 28,
-          alphaThreshold: 6,
-          minBrightness: 160,
-          satThreshold: 32,
-          whiteOnly: false,
-          requireWhiteBg: false,
-          softness: 18,
-          mode: "edge" as const,
-        };
-        const bagBgRemoveOpts = {
-          threshold: 18,
-          alphaThreshold: 8,
-          minBrightness: 245,
-          satThreshold: 10,
-          whiteMinChannel: 240,
-          whiteOnly: true,
-          requireWhiteBg: true,
-        };
-        const bgRemoveOpts =
-          !isCandlesGrid &&
-          !isCoastersGrid &&
-          !isMugWrap &&
-          (isBagOrClothingForPdf || isNotebookCategory)
-            ? isClothingCategory
-              ? clothingBgRemoveOpts
-              : bagBgRemoveOpts
-            : !isCandlesGrid && !isCoastersGrid && !isMugWrap && isStickerForPdf
-            ? { threshold: 28, alphaThreshold: 8, minBrightness: 228, satThreshold: 18 }
-            : null;
-        const isTransparentPdf =
-          isStickerForPdf ||
-          isBagOrClothingForPdf ||
-          isCoastersGrid ||
-          isMugWrap ||
-          isNotebookCategory;
-
-        const captureFormat: "png" | "jpeg" = isTransparentPdf ? "png" : "jpeg";
-        const rawSlides = await ensureSlidesPayload(captureFormat);
-        setCheckoutProgressStep(40, "Applying print layout...");
-
-        const slidesAlreadyMirrored = (() => {
-          try {
-            return sessionStorage.getItem("slides_mirrored") === "1";
-          } catch {
-            return false;
-          }
-        })();
-        const mirrorPrint = isMirrorPrintCategory(categoryName) && !slidesAlreadyMirrored;
-        const baseSlides = mirrorPrint ? await mirrorSlides(rawSlides) : rawSlides;
-        if (slidesAlreadyMirrored) {
-          try {
-            sessionStorage.removeItem("slides_mirrored");
-            sessionStorage.removeItem("slides_mirrored_category");
-          } catch {}
-        }
-
-        const processedCandleSlides = isCandlesGrid
-          ? await (async () => {
-              const entries = await Promise.all(
-                Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
-                  const src = typeof v === "string" ? v : "";
-                  if (!src) return [k, v] as const;
-                  const cleaned = await removeWhiteBg(src, {
-                    threshold: 24,
-                    alphaThreshold: 8,
-                    minBrightness: 235,
-                    satThreshold: 16,
-                    mode: "all",
-                  });
-                  return [k, cleaned] as const;
-                })
-              );
-              return Object.fromEntries(entries);
-            })()
-          : baseSlides;
-
-        const processedCoasterSlides = isCoastersGrid
-          ? await (async () => {
-              const entries = await Promise.all(
-                Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
-                  const src = typeof v === "string" ? v : "";
-                  if (!src) return [k, v] as const;
-                  const cleaned = await removeWhiteBg(src, {
-                    threshold: 24,
-                    alphaThreshold: 8,
-                    minBrightness: 235,
-                    satThreshold: 16,
-                    mode: "edge",
-                    whiteOnly: true,
-                    requireWhiteBg: true,
-                  });
-                  return [k, cleaned] as const;
-                })
-              );
-              return Object.fromEntries(entries);
-            })()
-          : baseSlides;
-
-        const coasterSlides = isCoastersGrid
-          ? (() => {
-              const keys = Object.keys(processedCoasterSlides)
-                .filter((k) => processedCoasterSlides[k])
-                .sort();
-              const limited = keys.slice(0, 2);
-              return Object.fromEntries(limited.map((k) => [k, processedCoasterSlides[k]]));
-            })()
-          : processedCoasterSlides;
-
-        const processedMugSlides = isMugWrap
-          ? await (async () => {
-              const entries = await Promise.all(
-                Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
-                  const src = typeof v === "string" ? v : "";
-                  if (!src) return [k, v] as const;
-                  const cleaned = await removeWhiteBg(src, {
-                    threshold: 18,
-                    alphaThreshold: 8,
-                    minBrightness: 245,
-                    satThreshold: 10,
-                    whiteMinChannel: 240,
-                    whiteOnly: true,
-                    requireWhiteBg: true,
-                    mode: "edge",
-                  });
-                  return [k, cleaned] as const;
-                })
-              );
-              return Object.fromEntries(entries);
-            })()
-          : baseSlides;
-
-        const processedBgSlides = bgRemoveOpts
-          ? await (async () => {
-              const entries = await Promise.all(
-                Object.entries(baseSlides as Record<string, string>).map(async ([k, v]) => {
-                  const src = typeof v === "string" ? v : "";
-                  if (!src) return [k, v] as const;
-                  const cleaned = await removeWhiteBg(src, bgRemoveOpts);
-                  return [k, cleaned] as const;
-                })
-              );
-              return Object.fromEntries(entries);
-            })()
-          : baseSlides;
-
-        const notebookSlides = (() => {
-          if (!isNotebookTwoUp) return baseSlides;
-          const sourceSlides = processedBgSlides;
-          const keys = Object.keys(sourceSlides).filter((k) => sourceSlides[k]);
-          if (keys.length >= 2) return sourceSlides;
-          if (keys.length === 1) {
-            const k = keys[0];
-            return { [k]: sourceSlides[k], [`${k}-copy`]: sourceSlides[k] };
-          }
-          return sourceSlides;
-        })();
-
-        const leafletSlides = (() => {
-          if (!isLeafletTwoUp) return baseSlides;
-          const keys = Object.keys(baseSlides).filter((k) => baseSlides[k]).sort();
-          if (keys.length === 0) return baseSlides;
-          if (keys.length === 1) {
-            const k = keys[0];
-            return { slide1: baseSlides[k], slide2: baseSlides[k] };
-          }
-          const frontKey = keys[0];
-          const backKey = keys[1];
-          return {
-            slide1: baseSlides[frontKey],
-            slide2: baseSlides[frontKey],
-            slide3: baseSlides[backKey],
-            slide4: baseSlides[backKey],
-          };
-        })();
-
-        const slides = isTenUpBusinessCards
-          ? await buildTenUpSlides(baseSlides, {
-              columns: 2,
-              rows: 5,
-              gapPx: 10,
-              marginPx: 0,
-              orientation: "portrait",
-              fit: "cover",
-              pageMm: getPageMmForSize(cardSize),
-            })
-          : isCandlesGrid
-          ? await buildFixedGridSlides(processedCandleSlides, {
-              columns: 2,
-              rows: 3,
-              labelMm: { w: 70, h: 70 },
-              gapMm: 0,
-              distribute: true,
-              fit: "contain",
-              pageMm: getPageMmForSize(cardSize),
-              fillMode: "sequence",
-            })
-          : isCoastersGrid
-          ? await buildFixedGridSlides(coasterSlides, {
-              columns: 2,
-              rows: 1,
-              labelMm: { w: 89, h: 89 },
-              gapMm: 0,
-              distribute: false,
-              fit: "contain",
-              pageMm: { w: 229, h: 89 },
-              background: "transparent",
-              outputFormat: "png",
-              fillMode: "sequence",
-            })
-          : isMugWrap
-          ? await buildFixedGridSlides(processedMugSlides, {
-              columns: 1,
-              rows: 1,
-              labelMm: getMugWrapPageMm(cardSize),
-              gapMm: 0,
-              distribute: false,
-              fit: "cover",
-              pageMm: getMugWrapPageMm(cardSize),
-              background: "transparent",
-              outputFormat: "png",
-            })
-          : isInviteTwoUp
-          ? await buildFixedGridSlides(baseSlides, {
-              columns: 2,
-              rows: 1,
-              labelMm: getPageMmForSize(cardSize),
-              gapMm: 0,
-              distribute: false,
-              fit: "contain",
-              pageMm: getInviteTwoUpPageMm(cardSize),
-            })
-          : isNotebookTwoUp
-          ? await buildTwoUpSlides(notebookSlides, {
-              gapPx: 0,
-              orientation: "landscape",
-              fit: "contain",
-              pairStrategy: "sequential",
-              swapPairs: false,
-              pageMm: getNotebookTwoUpPageMm(cardSize),
-              background: "transparent",
-              outputFormat: "png",
-            })
-          : isLeafletTwoUp
-          ? await buildTwoUpSlides(leafletSlides, {
-              gapPx: 0,
-              orientation: "landscape",
-              fit: "cover",
-              pairStrategy: "sequential",
-              swapPairs: false,
-              pageMm: getLeafletTwoUpPageMm(cardSize),
-            })
-          : isTwoUpLandscape
-          ? await buildTwoUpSlides(baseSlides, {
-              gapPx: 0,
-              orientation: "landscape",
-              fit: "cover",
-              pairStrategy: "outer-inner",
-              swapPairs: true,
-              pageMm: getPageMmForSize(cardSize),
-              pageTitle: ({ pageIndex }) => {
-                if (pageIndex === 1) return "";
-                if (pageIndex === 2) return "";
-                return null;
-              },
-            })
-          : processedBgSlides;
+        const [token, prepared] = await Promise.all([
+          getAccessToken(),
+          prepareDeliverySlides(prep.cardSize, (value, label) => setCheckoutProgressStep(value, label)),
+        ]);
+        if (!token) throw new Error("Login session not found");
         setCheckoutProgressStep(72, "Generating your file...");
-        const outputFormat = isTransparentPdf ? "png" : "pdf";
-
-        const isPaidFlow = Boolean(opts?.paid && opts?.sessionId);
-        const endpoint = isPaidFlow
-          ? `${API_BASE}/send-pdf-after-success`
-          : `${API_BASE}/pdf/send-subscription`;
 
         const basePayload = {
-          slides,
-          cardSize,
+          slides: prepared.slides,
+          cardSize: prep.cardSize,
           category: categoryName,
           emailSubject: buildEmailSubject(categoryName),
           email_subject: buildEmailSubject(categoryName),
-          fileName: buildPdfFileName(categoryName, outputFormat),
-          ...(isTransparentPdf ? { outputFormat } : {}),
-          ...(isTwoUpLandscape || isLeafletTwoUp || isNotebookTwoUp || isInviteTwoUp || isMugWrap
-            ? { pageOrientation: "landscape" }
-            : {}),
+          fileName: buildPdfFileName(categoryName, prepared.outputFormat),
+          ...(prepared.outputFormat === "png" ? { outputFormat: prepared.outputFormat } : {}),
+          ...(prep.pageOrientation ? { pageOrientation: prep.pageOrientation } : {}),
         };
 
-        const paidPayload = isPaidFlow
-          ? { sessionId: opts?.sessionId }
-          : {
-              accessplan: selectedItemAccessPlan,
-              inBundleItems: isInBundleItems,
-              productKey,
-              userPlan: planCode,
-              paid: Boolean(opts?.paid),
-              payment_session_id: opts?.sessionId ?? null,
-            };
-
-        const res = await fetch(endpoint, {
+        const res = await fetch(`${API_BASE}/pdf/send-subscription`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ ...basePayload, ...paidPayload }),
+          body: JSON.stringify({
+            ...basePayload,
+            accessplan: selectedItemAccessPlan,
+            inBundleItems: isInBundleItems,
+            productKey,
+            userPlan: planCode,
+            paid: Boolean(opts?.paid),
+            payment_session_id: opts?.sessionId ?? null,
+            sessionId: opts?.sessionId ?? null,
+            session_id: opts?.sessionId ?? null,
+          }),
         });
 
         if (!res.ok) {
@@ -1614,9 +1969,8 @@ const Subscription = () => {
       productKey,
       selectedPlan,
       planCode,
-      slidesObj,
-      ensureSlidesPayload,
-      isMugsCategory,
+      getCheckoutPreparation,
+      prepareDeliverySlides,
       clearPreviewStorage,
     ]
   );
@@ -1630,10 +1984,19 @@ const Subscription = () => {
 
     (async () => {
       try {
-        setCheckoutProgressStep(18, "Verifying your payment...");
         const sentKey = `payment_email_sent_${sessionId}`;
         const sentState = sessionStorage.getItem(sentKey);
-        if (sentState === "1" || sentState === "sending") return;
+        if (sentState === "1") {
+          clearCheckoutProgress();
+          navigate(location.pathname, { replace: true, state });
+          return;
+        }
+        if (sentState === "sending") {
+          setCheckoutProgressStep(42, "Finalizing your file delivery...");
+          return;
+        }
+
+        setCheckoutProgressStep(18, "Verifying your payment...");
         sessionStorage.setItem(sentKey, "sending");
 
         const token = await getAccessToken();

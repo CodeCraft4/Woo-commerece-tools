@@ -5,8 +5,14 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage";
+import { saveSlidesToIdb } from "../../../lib/idbSlides";
 import { toJpeg, toPng } from "html-to-image";
-import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
+import {
+  buildGoogleFontsUrls,
+  ensureGoogleFontsLoaded,
+  getGoogleFontEmbedCss,
+  loadGoogleFontsOnce,
+} from "../../../constant/googleFonts";
 
 /* ---------- Types ---------- */
 type Slide = { id: number; label: string; elements: any[] };
@@ -184,6 +190,15 @@ const collectFontsFromSlides = (slides: Slide[]) => {
   });
   return Array.from(fonts);
 };
+
+const GENERIC_FONT_FAMILIES = new Set([
+  "serif",
+  "sans-serif",
+  "monospace",
+  "cursive",
+  "fantasy",
+  "system-ui",
+]);
 
 const waitForNextPaint = () =>
   new Promise<void>((resolve) => {
@@ -474,12 +489,32 @@ const CategoriesWisePreview: React.FC = () => {
   const prefetchedSlidesRef = useRef<string[] | null>(null);
   const prefetchPromiseRef = useRef<Promise<string[]> | null>(null);
   const prefetchOnce = useRef(false);
+  const captureFontEmbedCssCacheRef = useRef<Map<string, Promise<string>>>(new Map());
   const shouldPrefetchCapturedSlides = slides.length > 0 && slides.length <= 4;
 
   useEffect(() => {
     slideNodeRefs.current = {};
     setCaptureSupportEnabled(false);
   }, [captureKey]);
+
+  const resolveCaptureFontEmbedCss = useCallback(async (slidesToCapture: Slide[]) => {
+    const normalizedFonts = Array.from(
+      new Set(
+        collectFontsFromSlides(slidesToCapture)
+          .map((font) => normalizeFontFamily(font))
+          .filter((font) => font && !GENERIC_FONT_FAMILIES.has(font.toLowerCase())),
+      ),
+    ).sort();
+    if (!normalizedFonts.length) return "";
+
+    const cacheKey = normalizedFonts.join("|");
+    const cached = captureFontEmbedCssCacheRef.current.get(cacheKey);
+    if (cached) return await cached;
+
+    const promise = getGoogleFontEmbedCss(normalizedFonts).catch(() => "");
+    captureFontEmbedCssCacheRef.current.set(cacheKey, promise);
+    return await promise;
+  }, []);
 
   const ensureCaptureSupportReady = useCallback(async () => {
     if (!slides.length) return;
@@ -490,12 +525,16 @@ const CategoriesWisePreview: React.FC = () => {
     if (Object.keys(slideNodeRefs.current).length < slides.length) {
       await waitForNextPaint();
     }
+    const fonts = collectFontsFromSlides(slides);
+    if (fonts.length) {
+      await ensureGoogleFontsLoaded(buildGoogleFontsUrls(fonts));
+    }
     if ((document as any)?.fonts?.ready) {
       try {
         await (document as any).fonts.ready;
       } catch {}
     }
-  }, [captureSupportEnabled, slides.length]);
+  }, [captureSupportEnabled, slides]);
 
   const goNext = () => {
     if (active >= slideCount - 1 || flipping) return;
@@ -522,6 +561,7 @@ const CategoriesWisePreview: React.FC = () => {
 
   const captureSlidesFromDom = async (format: "jpeg" | "png", maxDim = 1600) => {
     const out: string[] = [];
+    const fontEmbedCSS = await resolveCaptureFontEmbedCss(slides);
     for (let i = 0; i < slides.length; i++) {
       const node = slideNodeRefs.current[i];
       if (!node) continue;
@@ -534,7 +574,8 @@ const CategoriesWisePreview: React.FC = () => {
           pixelRatio,
           backgroundColor: "transparent",
           cacheBust: false,
-          skipFonts: false,
+          skipFonts: !fontEmbedCSS,
+          fontEmbedCSS: fontEmbedCSS || undefined,
         });
         out.push(png);
       } else {
@@ -543,7 +584,8 @@ const CategoriesWisePreview: React.FC = () => {
           pixelRatio,
           backgroundColor: "#ffffff",
           cacheBust: false,
-          skipFonts: false,
+          skipFonts: !fontEmbedCSS,
+          fontEmbedCSS: fontEmbedCSS || undefined,
         });
         out.push(jpg);
       }
@@ -561,6 +603,7 @@ const CategoriesWisePreview: React.FC = () => {
   ) => {
     const node = slideNodeRefs.current[index];
     if (!node) return "";
+    const fontEmbedCSS = await resolveCaptureFontEmbedCss([slides[index]].filter(Boolean) as Slide[]);
     const rect = node.getBoundingClientRect();
     const maxSide = Math.max(rect.width || 0, rect.height || 0);
     const ratio = maxSide ? maxDim / maxSide : 1.5;
@@ -570,7 +613,8 @@ const CategoriesWisePreview: React.FC = () => {
         pixelRatio,
         backgroundColor: "transparent",
         cacheBust: false,
-        skipFonts: false,
+        skipFonts: !fontEmbedCSS,
+        fontEmbedCSS: fontEmbedCSS || undefined,
       });
     }
     return await toJpeg(node, {
@@ -578,12 +622,16 @@ const CategoriesWisePreview: React.FC = () => {
       pixelRatio,
       backgroundColor: "#ffffff",
       cacheBust: false,
-      skipFonts: false,
+      skipFonts: !fontEmbedCSS,
+      fontEmbedCSS: fontEmbedCSS || undefined,
     });
   };
   void captureSingleSlideFromDom;
 
   const readCapturedFromStorage = () => {
+    if (prefetchedSlidesRef.current?.length) {
+      return prefetchedSlidesRef.current;
+    }
     try {
       const storedKey = sessionStorage.getItem("capturedSlidesKey");
       if (!storedKey || storedKey !== captureKey) return [];
@@ -618,7 +666,8 @@ const CategoriesWisePreview: React.FC = () => {
           safeSetSessionStorage("templ_preview_config", JSON.stringify(config));
         }
         if (quickList.length) {
-          safeSetSessionStorage("slides", JSON.stringify(slidesObj));
+          sessionStorage.removeItem("slides");
+          void saveSlidesToIdb(slidesObj);
         } else {
           sessionStorage.removeItem("slides");
         }
@@ -675,33 +724,26 @@ const CategoriesWisePreview: React.FC = () => {
         const list = await captureSlidesFromDom(format, maxDim);
         if (cancelled || !list.length) return [];
         prefetchedSlidesRef.current = list;
-        sessionStorage.setItem("capturedSlides", JSON.stringify(list));
-        sessionStorage.setItem("capturedSlidesKey", captureKey);
         return list;
       } catch {}
       return [];
     };
 
-    let idleId: any = null;
-    const idle = globalThis as any;
+    let frameId: number | null = null;
     const startPrefetch = () => {
       if (prefetchPromiseRef.current) return;
       const p = run();
       prefetchPromiseRef.current = p;
       p.catch(() => {});
     };
-    if (typeof idle.requestIdleCallback === "function") {
-      idleId = idle.requestIdleCallback(startPrefetch, { timeout: 600 });
-    } else {
-      idleId = setTimeout(startPrefetch, 80);
-    }
+    frameId = window.requestAnimationFrame(() => {
+      if (!cancelled) startPrefetch();
+    });
 
     return () => {
       cancelled = true;
-      if (typeof idle.cancelIdleCallback === "function" && idleId != null) {
-        idle.cancelIdleCallback(idleId);
-      } else if (idleId != null) {
-        clearTimeout(idleId);
+      if (frameId != null) {
+        cancelAnimationFrame(frameId);
       }
     };
   }, [captureKey, captureSlidesFromDom, ensureCaptureSupportReady, hasCaptured, isTransparentCaptureCategory, shouldPrefetchCapturedSlides, slides.length]);
