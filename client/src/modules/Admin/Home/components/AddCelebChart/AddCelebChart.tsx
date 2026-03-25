@@ -3,17 +3,25 @@ import PiChart from "./PiChart";
 import { useEffect, useState } from "react";
 import { fetchOrderCount } from "../../../../../source/source";
 
-const AddCelebChart = () => {
+type Props = {
+  orderCount?: number;
+};
+
+const AddCelebChart = ({ orderCount: orderCountProp }: Props) => {
 
   const [orderCount, setOrderCount] = useState(0);
 
   useEffect(() => {
+    if (typeof orderCountProp === "number") {
+      setOrderCount(orderCountProp);
+      return;
+    }
     const loadOrders = async () => {
       const count: any = await fetchOrderCount();
       setOrderCount(count);
     };
     loadOrders();
-  }, []);
+  }, [orderCountProp]);
 
   return (
     <Card

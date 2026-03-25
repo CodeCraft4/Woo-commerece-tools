@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { supabase } from "../supabase/supabase";
+import { useAdmin } from "./AdminContext";
 
 export type NotificationType = "user" | "topic" | "order" | "blog";
 
@@ -104,6 +105,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const chanRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const { isAdmin, loading: adminLoading } = useAdmin();
 
   const addOrReplace = (item: NotificationItem) => {
     setNotifications((prev) => {
@@ -120,12 +122,15 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   const loadInitial = async () => {
     try {
       setLoading(true);
-      // Assumes each table has created_at column; adjust select columns to your schema.
       const queries = [
-        supabase.from("Users").select("*").order("created_at", { ascending: false }).limit(50),
-        supabase.from("topic_messages").select("*").order("created_at", { ascending: false }).limit(50),
-        supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(50),
-        supabase.from("blogs").select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("Users").select("id,name,email,created_at").order("created_at", { ascending: false }).limit(50),
+        supabase
+          .from("topic_messages")
+          .select("id,topic,message,content,created_at")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase.from("orders").select("id,status,created_at").order("created_at", { ascending: false }).limit(50),
+        supabase.from("blogs").select("id,title,summary,created_at").order("created_at", { ascending: false }).limit(50),
       ] as const;
 
       const [u, t, o, b] = await Promise.all(queries);
@@ -189,8 +194,21 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   };
 
   useEffect(() => {
-    loadInitial();
+    if (adminLoading) return;
+
+    if (!isAdmin) {
+      setNotifications([]);
+      setLoading(false);
+      if (chanRef.current) {
+        supabase.removeChannel(chanRef.current);
+        chanRef.current = null;
+      }
+      return;
+    }
+
+    void loadInitial();
     setupRealtime();
+
     return () => {
       if (chanRef.current) {
         supabase.removeChannel(chanRef.current);
@@ -198,7 +216,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAdmin, adminLoading]);
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 

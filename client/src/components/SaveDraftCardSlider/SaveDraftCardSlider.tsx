@@ -87,9 +87,9 @@ export default function DraftSlider({ autoOpenCardId, isUserProfile }: DraftSlid
     queryKey,
     queryFn: () => fetchMyDrafts(user!.id),
     enabled: !!user && !loading,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 2,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const openDraftModal = (d: DraftFullRow) => {

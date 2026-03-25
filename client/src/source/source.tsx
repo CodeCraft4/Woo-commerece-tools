@@ -58,7 +58,9 @@ export const fetchCardById = async (id: string) => {
 
 // Fetch all Categories from Subapase.
 export const fetchAllCategoriesFromDB = async () => {
-  const { data, error } = await supabase.from("categories").select("*");
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id,name,image_base64,subcategories,sub_subcategories,created_at");
   if (error) throw new Error(error.message);
 
   const MUG_DEFAULT_SUBS = ["Initials/Name", "Slogans"];
@@ -126,7 +128,38 @@ export const fetchCardCount = async () => {
 export const fetchAllUsersFromDB = async (): Promise<any[]> => {
   const { data, error } = await supabase
     .from("Users")
-    .select("*")
+    .select(
+      [
+        "id",
+        "name",
+        "full_name",
+        "display_name",
+        "email",
+        "created_at",
+        "createdAt",
+        "profileUrl",
+        "avatar_url",
+        "photo_url",
+        "image",
+        "image_base64",
+        "user_metadata",
+        "identity_data",
+        "raw_user_meta_data",
+        "provider",
+        "auth_provider",
+        "plan",
+        "subscription_plan",
+        "code",
+        "isPremium",
+        "premium_expires_at",
+        "isBundle",
+        "hasBundle",
+        "bundle_expires_at",
+        "bundleExpiresAt",
+        "bundle_expiry",
+        "bundle_expire_at",
+      ].join(",")
+    )
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data || []);
@@ -142,7 +175,7 @@ export const deleteUserById = async (id: number | string) => {
 export const fetchAllOrders = async () => {
   const { data, error } = await supabase
     .from("orders")
-    .select("*")
+    .select("id,session_id,user_name,user_email,created_at,card_size,status,amount")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -184,7 +217,7 @@ export async function fetchMyOrders() {
 export const fetchAllBlogs = async () => {
   const { data, error } = await supabase
     .from("blogs")
-    .select("*")
+    .select("id,title,image_base64,created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -205,7 +238,7 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
     const numericId = Number(param);
     const { data, error } = await supabase
       .from("blogs")
-      .select("*")
+      .select("id,slug,title,content_html")
       .eq("id", numericId)
       .single();
 
@@ -217,7 +250,7 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
   {
     const { data, error } = await supabase
       .from("blogs")
-      .select("*")
+      .select("id,slug,title,content_html")
       .eq("id", param)
       .single();
 
@@ -228,7 +261,7 @@ export async function fetchBlogByParam(param: string): Promise<any | null> {
   {
     const { data, error } = await supabase
       .from("blogs")
-      .select("*")
+      .select("id,slug,title,content_html")
       .eq("slug", param)
       .single();
 
@@ -362,7 +395,7 @@ export const fetchTempletRawStoresById = async (id: string | number) => {
 export const fetchDraftByCardId = async (cardId: string) => {
   const { data, error } = await supabase
     .from("draft")
-    .select("*")
+    .select("card_id,cover_screenshot,title,category,description,layout,slide1,slide2,slide3,slide4,selected_size,prices,display_price,is_on_sale,updated_at,user_id")
     .eq("card_id", cardId)
     .maybeSingle();
 
@@ -450,7 +483,7 @@ export async function fetchBlogById(id: string): Promise<any> {
 
   const { data, error } = await supabase
     .from('blogs')
-    .select('*')
+    .select('id,title,content_html,meta')
     .eq('id', id)
     .single();
 
@@ -493,7 +526,7 @@ export async function deleteTutorial(id: string): Promise<void> {
 export async function fetchAllTutorials(): Promise<any[]> {
   const { data, error } = await supabase
     .from('tutorials')
-    .select('*')
+    .select('id,title,youtube_url,thumbnail_base64,created_at')
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message || 'Failed to fetch tutorials');
   return (data ?? []) as any[];

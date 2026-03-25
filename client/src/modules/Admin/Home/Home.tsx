@@ -13,11 +13,13 @@ import TableList from "../../../components/TableList/TableList";
 const DashboardHome = () => {
 
   const [orders, setOrders] = useState([]);
+  const [orderCount, setOrderCount] = useState(0);
 
   useEffect(() => {
     const loadOrders = async () => {
       try {
         const result = await fetchAllOrders();
+        setOrderCount(Array.isArray(result) ? result.length : 0);
 
         const formatted: any = result.map((item) => ({
           id: item.id,
@@ -53,11 +55,11 @@ const DashboardHome = () => {
         }}
       >
         <TotalProductChart />
-        <OrderChart />
+        <OrderChart orderCount={orderCount} />
         <VisitorMiniChart />
         <Box sx={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           <UsersChart />
-          <AddCelebChart />
+          <AddCelebChart orderCount={orderCount} />
         </Box>
         {/* <SimpleAreaChart /> */}
       </Box>

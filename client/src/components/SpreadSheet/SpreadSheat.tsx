@@ -2340,8 +2340,7 @@ const SlideSpread = ({
                       return (
                         <ScaledRnd
                           key={textElement.id}
-                          cancel=".no-drag"
-                          dragHandleClassName="drag-area"
+                          cancel={textElement.isEditing ? ".no-drag, .text-edit" : ".no-drag"}
                           enableUserSelectHack={false}
                           enableResizing={{
                             bottomRight: true,
@@ -2406,7 +2405,7 @@ const SlideSpread = ({
                             // Desktop: select on click
                             setSelectedTextId(textElement.id);
                           }}
-                          onClick={() => {
+                          onDoubleClick={() => {
                             // Desktop: edit on double-click
                             setSelectedTextId(textElement.id);
                             updateTextElement(textElement.id, { isEditing: true });
@@ -2534,7 +2533,7 @@ const SlideSpread = ({
                               <TextField
                                 variant="standard"
                                 value={textElement.value}
-                                className="no-drag"
+                                className="text-edit"
                                 placeholder="Add Text"
                                 multiline
                                 fullWidth
@@ -2827,6 +2826,7 @@ const SlideSpread = ({
                 .map(({ id, src, x, y, width, height, zIndex, rotation = 0, filter }: any) => {
                   const isMobile =
                     typeof window !== "undefined" && window.innerWidth < 768;
+                  const isSelected = selectedShapeImageId2 === id;
 
                   return (
                     <ScaledRnd
@@ -2878,7 +2878,9 @@ const SlideSpread = ({
                         boxSizing: "border-box",
                         borderRadius: 8,
                         touchAction: "none",
+                        outline: isSelected ? "2px solid #1976d2" : "none",
                       }}
+                      onClick={() => setSelectedShapeImageId2(id)}
                       enableResizing={{ bottomRight: true }}
                       resizeHandleStyles={{
                         bottomRight: {
@@ -2910,6 +2912,14 @@ const SlideSpread = ({
                             height: "100%",
                             transform: `rotate(${rotation}deg)`,
                             transformOrigin: "center center",
+                            outline: isSelected ? "1px solid #cf57ffff" : "none",
+                            borderRadius: isSelected ? 1 : 0,
+                            pointerEvents: "auto",
+                          }}
+                          onMouseDown={() => setSelectedShapeImageId2(id)}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            setSelectedShapeImageId2(id);
                           }}
                         >
                           <img

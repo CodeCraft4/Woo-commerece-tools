@@ -512,6 +512,22 @@ const Subscription = () => {
   const [previewConfig, setPreviewConfig] = useState<PreviewConfig | null>(null);
   const [captureSupportEnabled, setCaptureSupportEnabled] = useState(false);
   const [legacyCardCaptureEnabled, setLegacyCardCaptureEnabled] = useState(false);
+  const processingPaidSessionRef = useRef<string | null>(null);
+
+  const clearPaidQueryParams = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    let changed = false;
+    ["paid", "session_id", "category"].forEach((k) => {
+      if (params.has(k)) {
+        params.delete(k);
+        changed = true;
+      }
+    });
+    if (!changed) return;
+    const clean = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+    window.history.replaceState({}, "", clean);
+  }, []);
   const isPreviewOnly = useMemo(() => {
     if (state?.previewOnly) {
       try {
@@ -1952,7 +1968,9 @@ const Subscription = () => {
         await res.json();
         clearPreviewStorage();
         setCheckoutProgressStep(100, "Done");
-        toast.success("File generated & emailed to you!");
+        toast.success("File generated & emailed to you!", {
+          id: opts?.sessionId ? `file-generated-${opts.sessionId}` : "file-generated-direct",
+        });
       } catch (e: any) {
         toast.error(e?.message || "Could not generate file");
       } finally {
@@ -1981,14 +1999,16 @@ const Subscription = () => {
     const paid = sp.get("paid") === "1";
     const sessionId = sp.get("session_id") || "";
     if (!paid || !sessionId) return;
+    if (processingPaidSessionRef.current === sessionId) return;
 
     (async () => {
       try {
+        processingPaidSessionRef.current = sessionId;
         const sentKey = `payment_email_sent_${sessionId}`;
         const sentState = sessionStorage.getItem(sentKey);
         if (sentState === "1") {
           clearCheckoutProgress();
-          navigate(location.pathname, { replace: true, state });
+          clearPaidQueryParams();
           return;
         }
         if (sentState === "sending") {
@@ -2019,20 +2039,20 @@ const Subscription = () => {
         setCheckoutProgressStep(42, "Payment confirmed. Generating your file...");
         await sendPdfDirectForSubscription({ paid: true, sessionId });
         sessionStorage.setItem(sentKey, "1");
-        navigate(location.pathname, { replace: true, state });
+        clearPaidQueryParams();
       } catch (e: any) {
         const sentKey = `payment_email_sent_${sessionId}`;
         sessionStorage.removeItem(sentKey);
         toast.error(e?.message || "Payment done but file couldn't be generated");
         clearCheckoutProgress();
+        processingPaidSessionRef.current = null;
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     clearCheckoutProgress,
+    clearPaidQueryParams,
     location.search,
-    location.pathname,
-    navigate,
     sendPdfDirectForSubscription,
     setCheckoutProgressStep,
   ]);

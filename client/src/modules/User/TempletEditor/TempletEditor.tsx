@@ -447,6 +447,9 @@ export default function TempletEditor() {
   };
   const activeSlideRef = useRef<HTMLDivElement | null>(null);
   const editableTextRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const textTouchStartRef = useRef<Record<string, number>>({});
+  const textLastTapRef = useRef<Record<string, number>>({});
+  const lastTouchTsRef = useRef(0);
 
   const { productId } = useParams<{ productId: string }>();
   const { state } = useLocation() as { state?: { templetDesign?: any } };
@@ -1525,6 +1528,12 @@ export default function TempletEditor() {
                         <Rnd key={el.id} {...commonRnd}>
                           <Box
                             sx={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              lastTouchTsRef.current = Date.now();
+                              if (!isActive) return;
+                              setSelectedElId(el.id);
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (!isActive) return;
@@ -1643,9 +1652,23 @@ export default function TempletEditor() {
                           }}
                           onTouchStart={(e: any) => {
                             e.stopPropagation();
+                            lastTouchTsRef.current = Date.now();
+                            textTouchStartRef.current[el.id] = Date.now();
                             if (!isActive) return;
                             setSelectedElId(el.id);
-                            if (t.editable !== false) setEditingTextId(el.id);
+                          }}
+                          onTouchEnd={(e: any) => {
+                            e.stopPropagation();
+                            if (!isActive) return;
+                            const now = Date.now();
+                            const touchStart = textTouchStartRef.current[el.id] ?? now;
+                            const lastTap = textLastTapRef.current[el.id] ?? 0;
+                            const touchDuration = now - touchStart;
+                            const sinceLastTap = now - lastTap;
+                            if (touchDuration < 220 && sinceLastTap < 320 && t.editable !== false) {
+                              setEditingTextId(el.id);
+                            }
+                            textLastTapRef.current[el.id] = now;
                           }}
                         >
                           <Box
@@ -1663,7 +1686,8 @@ export default function TempletEditor() {
                               e.stopPropagation();
                               if (!isActive) return;
                               setSelectedElId(el.id);
-                              if (t.editable !== false && isTablet) setEditingTextId(el.id);
+                              const fromRecentTouch = Date.now() - lastTouchTsRef.current < 700;
+                              if (t.editable !== false && isTablet && !fromRecentTouch) setEditingTextId(el.id);
                             }}
                             onDoubleClick={(e) => {
                               e.stopPropagation();
@@ -1830,6 +1854,12 @@ export default function TempletEditor() {
                             src={st.src}
                             alt=""
                             sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              lastTouchTsRef.current = Date.now();
+                              if (!isActive) return;
+                              setSelectedElId(el.id);
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (!isActive) return;

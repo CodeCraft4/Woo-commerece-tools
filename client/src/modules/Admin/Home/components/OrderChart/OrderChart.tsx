@@ -52,17 +52,25 @@ const MinimalGradientAreaChart = ({
 );
 
 // --- Order Chart (Purple/Violet Gradient Card) ---
-const OrderChart = () => {
+type Props = {
+  orderCount?: number;
+};
+
+const OrderChart = ({ orderCount: orderCountProp }: Props) => {
 
   const [orderCount, setOrderCount] = useState(0);
 
   useEffect(() => {
+    if (typeof orderCountProp === "number") {
+      setOrderCount(orderCountProp);
+      return;
+    }
     const loadOrders = async () => {
       const count: any = await fetchOrderCount();
       setOrderCount(count);
     };
     loadOrders();
-  }, []);
+  }, [orderCountProp]);
 
   return (
     <Box sx={{ flex: "1 1 300px", width: '100%' }}>
