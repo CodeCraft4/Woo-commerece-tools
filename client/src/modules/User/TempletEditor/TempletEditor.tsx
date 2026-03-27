@@ -1300,29 +1300,17 @@ export default function TempletEditor() {
     };
 
     try {
-      // ✅ For mugs: capture only ONE slide (fast) to build texture
-      if (isMugCategory(adminDesign.category)) {
-        const node = slideRefs.current[0] ?? slideRefs.current[activeSlide];
-        const one = node
-          ? await capturePngFromNode(node, {
-              width: artboardWidth,
-              height: artboardHeight,
-              background: "#ffffff",
-              quality: previewCapture.quality,
-              pixelRatio: previewCapture.pixelRatio,
-            })
-          : null;
-
-        navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
-          state: { ...navStateBase, mugImage: one || null },
-        });
-        return;
-      }
-
-      // ✅ For other templates: no pre-capture. Navigate immediately with raw slides.
       try {
         sessionStorage.setItem("templ_preview_slides", JSON.stringify(userSlides));
       } catch {}
+
+      // ✅ For mugs: use raw slide data in preview to avoid Safari dropping image layers
+      if (isMugCategory(adminDesign.category)) {
+        navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
+          state: navStateBase,
+        });
+        return;
+      }
 
       navigate(`${USER_ROUTES.CATEGORIES_EDITORS_PREVIEW}/${productId ?? "state"}`, {
         state: navStateBase,

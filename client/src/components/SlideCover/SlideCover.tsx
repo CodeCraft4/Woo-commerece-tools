@@ -1625,7 +1625,26 @@ const SlideCover = ({
                         cursor: textElement.isEditing ? "text" : "move",
                       }}
                       onTouchStart={() => { touchStartTime = Date.now(); }}
+                      onPointerDown={(e: any) => {
+                        if (e?.pointerType !== "touch") return;
+                        touchStartTime = Date.now();
+                      }}
                       onTouchEnd={() => {
+                        const now = Date.now();
+                        const timeSince = now - lastTap;
+                        const touchDuration = now - touchStartTime;
+                        if (touchDuration < 200) {
+                          if (timeSince < 300) {
+                            setSelectedTextId1(textElement.id);
+                            updateTextElement1(textElement.id, { isEditing: true });
+                          } else {
+                            setSelectedTextId1(textElement.id);
+                          }
+                        }
+                        lastTap = now;
+                      }}
+                      onPointerUp={(e: any) => {
+                        if (e?.pointerType !== "touch") return;
                         const now = Date.now();
                         const timeSince = now - lastTap;
                         const touchDuration = now - touchStartTime;
@@ -2052,6 +2071,15 @@ const SlideCover = ({
                             cursor: isLocked ? "default" : "move",
                           }}
                           onMouseDown={() => setSelectedShapeImageId1(id)}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            setSelectedShapeImageId1(id);
+                          }}
+                          onPointerDown={(e: any) => {
+                            if (e?.pointerType !== "touch") return;
+                            e.stopPropagation();
+                            setSelectedShapeImageId1(id);
+                          }}
                         >
                           <img
                             src={src}

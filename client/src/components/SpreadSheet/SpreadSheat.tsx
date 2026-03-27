@@ -1058,7 +1058,26 @@ const SlideSpread = ({
                         }
                       }}
                       onTouchStart={() => { touchStartTime = Date.now(); }}
+                      onPointerDown={(e: any) => {
+                        if (e?.pointerType !== "touch") return;
+                        touchStartTime = Date.now();
+                      }}
                       onTouchEnd={() => {
+                        const now = Date.now();
+                        const timeSince = now - lastTap;
+                        const touchDuration = now - touchStartTime;
+                        if (touchDuration < 200) {
+                          if (timeSince < 300) {
+                            setSelectedTextId(textElement.id);
+                            updateTextElement(textElement.id, { isEditing: true });
+                          } else {
+                            setSelectedTextId(textElement.id);
+                          }
+                        }
+                        lastTap = now;
+                      }}
+                      onPointerUp={(e: any) => {
+                        if (e?.pointerType !== "touch") return;
                         const now = Date.now();
                         const timeSince = now - lastTap;
                         const touchDuration = now - touchStartTime;
@@ -1469,6 +1488,15 @@ const SlideSpread = ({
                             cursor: isLocked ? "default" : "move",
                           }}
                           onMouseDown={() => setSelectedShapeImageId2(id)}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            setSelectedShapeImageId2(id);
+                          }}
+                          onPointerDown={(e: any) => {
+                            if (e?.pointerType !== "touch") return;
+                            e.stopPropagation();
+                            setSelectedShapeImageId2(id);
+                          }}
                         >
                           <img
                             src={src}
@@ -2383,7 +2411,30 @@ const SlideSpread = ({
                           onTouchStart={() => {
                             touchStartTime = Date.now();
                           }}
+                          onPointerDown={(e: any) => {
+                            if (e?.pointerType !== "touch") return;
+                            touchStartTime = Date.now();
+                          }}
                           onTouchEnd={() => {
+                            const now = Date.now();
+                            const timeSince = now - lastTap;
+                            const touchDuration = now - touchStartTime;
+
+                            if (touchDuration < 200) {
+                              if (timeSince < 300) {
+                                // Double tap = edit
+                                setSelectedTextId(textElement.id);
+                                updateTextElement(textElement.id, { isEditing: true });
+                              } else {
+                                // Single tap = select
+                                setSelectedTextId(textElement.id);
+                                updateTextElement(textElement.id, { isEditing: false });
+                              }
+                            }
+                            lastTap = now;
+                          }}
+                          onPointerUp={(e: any) => {
+                            if (e?.pointerType !== "touch") return;
                             const now = Date.now();
                             const timeSince = now - lastTap;
                             const touchDuration = now - touchStartTime;
@@ -2918,6 +2969,11 @@ const SlideSpread = ({
                           }}
                           onMouseDown={() => setSelectedShapeImageId2(id)}
                           onTouchStart={(e) => {
+                            e.stopPropagation();
+                            setSelectedShapeImageId2(id);
+                          }}
+                          onPointerDown={(e: any) => {
+                            if (e?.pointerType !== "touch") return;
                             e.stopPropagation();
                             setSelectedShapeImageId2(id);
                           }}

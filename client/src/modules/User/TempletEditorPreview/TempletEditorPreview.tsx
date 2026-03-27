@@ -10,6 +10,16 @@ import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { saveSlidesToIdb } from "../../../lib/idbSlides";
 import toast from "react-hot-toast";
+import {
+  collectTemplateSlideFonts,
+  renderTemplateSlideToCanvas,
+  type TemplateSlide,
+} from "../../../lib/templateSlideCanvas";
+import {
+  buildGoogleFontsUrls,
+  ensureGoogleFontsLoaded,
+  loadGoogleFontsOnce,
+} from "../../../constant/googleFonts";
 
 const MUG_URL = "/assets/modals/tea_cup.glb";
 
@@ -28,9 +38,28 @@ let material:
   | null = null;
 
 let currentTextureUrl: string | null = null;
+let currentTextureCanvas: HTMLCanvasElement | null = null;
 
 
 const SRGB = (THREE as any).SRGBColorSpace ?? "srgb";
+
+const createTextureFromCanvas = (canvas: HTMLCanvasElement) => {
+  const texture = new THREE.CanvasTexture(canvas);
+  if ((texture as any).encoding !== undefined) {
+    (texture as any).encoding = SRGB;
+  } else if ((texture as any).colorSpace !== undefined) {
+    (texture as any).colorSpace = SRGB;
+  }
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.repeat.x = -1;
+  texture.offset.x = 1;
+  texture.flipY = true;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+};
 
 const onWindowResize = () => {
   if (!container || !camera || !renderer) return;
@@ -77,6 +106,23 @@ const convertImageToTexture = (image: string): THREE.Texture => {
   }
 
   return texture;
+};
+
+const mirrorCanvasForMug = (source: HTMLCanvasElement) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = source.width;
+  canvas.height = source.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return source;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(source, 0, 5);
+  ctx.restore();
+  return canvas;
 };
 
 const init = () => {
@@ -197,18 +243,14 @@ const init = () => {
           material = baseMaterial;
           mesh = obj;
 
-          if (currentTextureUrl) {
-            const tex = convertImageToTexture(currentTextureUrl);
-            tex.wrapS = THREE.RepeatWrapping;
-            tex.repeat.x = -1;
-            tex.offset.x = 1;
-            tex.flipY = true;
-            tex.generateMipmaps = true;
-            tex.minFilter = THREE.LinearMipmapLinearFilter;
-            tex.magFilter = THREE.LinearFilter;
-            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-            tex.needsUpdate = true;
+          const tex = currentTextureCanvas
+            ? createTextureFromCanvas(currentTextureCanvas)
+            : currentTextureUrl
+            ? convertImageToTexture(currentTextureUrl)
+            : null;
 
+          if (tex) {
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
             baseMaterial.map = tex;
 
             if ("color" in baseMaterial && baseMaterial.color instanceof THREE.Color) {
@@ -271,9 +313,16 @@ function captureMugPreviewJpg(): string | null {
 
 const TempletEditorPreview: React.FC = () => {
   const { state } = useLocation() as {
-    state?: { slides?: any[]; mugImage?: string };
+    state?: {
+      slides?: TemplateSlide[];
+      mugImage?: string;
+      config?: { mmWidth?: number; mmHeight?: number };
+      canvasPx?: { w?: number; h?: number };
+    };
   };
   const mugImageSrc: any = state?.mugImage ?? null;
+  const [flatDesignImage, setFlatDesignImage] = useState<string | null>(mugImageSrc ?? null);
+  const previewSlides = state?.slides ?? [];
 
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -291,19 +340,70 @@ const TempletEditorPreview: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    container = containerRef.current;
-    colorSelector = colorRef.current;
+    let cancelled = false;
 
-    currentTextureUrl = mugImageSrc;
+    const boot = async () => {
+      container = containerRef.current;
+      colorSelector = colorRef.current;
 
-    init();
-    animate();
+      currentTextureUrl = mugImageSrc;
+      currentTextureCanvas = null;
 
-    const resizeHandler = () => onWindowResize();
-    window.addEventListener("resize", resizeHandler);
+      if (previewSlides.length) {
+        const fonts = collectTemplateSlideFonts(previewSlides);
+        if (fonts.length) {
+          const urls = buildGoogleFontsUrls(fonts);
+          loadGoogleFontsOnce(urls);
+          await ensureGoogleFontsLoaded(urls);
+        }
+        if ((document as any)?.fonts?.ready) {
+          try {
+            await (document as any).fonts.ready;
+          } catch {}
+        }
+
+        const baseWidth = Math.max(
+          1,
+          Number(state?.canvasPx?.w ?? state?.config?.mmWidth ?? 228),
+        );
+        const baseHeight = Math.max(
+          1,
+          Number(state?.canvasPx?.h ?? state?.config?.mmHeight ?? 88.9),
+        );
+        const flatCanvas = await renderTemplateSlideToCanvas(previewSlides[0], {
+          width: baseWidth,
+          height: baseHeight,
+          pixelRatio: 3,
+          backgroundColor: "#ffffff",
+        });
+
+        if (cancelled) return;
+        const flatDataUrl = flatCanvas.toDataURL("image/png");
+        setFlatDesignImage(flatDataUrl);
+        currentTextureCanvas = mirrorCanvasForMug(flatCanvas);
+        currentTextureUrl = flatDataUrl;
+      }
+
+      if (cancelled) return;
+      init();
+      animate();
+
+      const resizeHandler = () => onWindowResize();
+      window.addEventListener("resize", resizeHandler);
+
+      return () => {
+        window.removeEventListener("resize", resizeHandler);
+      };
+    };
+
+    let detachResize: (() => void) | undefined;
+    void boot().then((cleanup) => {
+      detachResize = cleanup;
+    });
 
     return () => {
-      window.removeEventListener("resize", resizeHandler);
+      cancelled = true;
+      detachResize?.();
       if (animationFrameId.current !== null)
         cancelAnimationFrame(animationFrameId.current);
       if (renderer) renderer.dispose();
@@ -313,8 +413,9 @@ const TempletEditorPreview: React.FC = () => {
       colorSelector = null;
       mesh = undefined;
       material = null;
+      currentTextureCanvas = null;
     };
-  }, [animate, mugImageSrc]);
+  }, [animate, mugImageSrc, previewSlides, state?.canvasPx?.h, state?.canvasPx?.w, state?.config?.mmHeight, state?.config?.mmWidth]);
 
 
   return (
@@ -335,8 +436,8 @@ const TempletEditorPreview: React.FC = () => {
 
                 // Capture current 3D preview as JPEG
                 const mugPreview = captureMugPreviewJpg();
-                if (!mugPreview && !mugImageSrc) throw new Error("Failed to capture mug preview");
-                const slide1 = mugImageSrc || mugPreview || "";
+                if (!mugPreview && !flatDesignImage) throw new Error("Failed to capture mug preview");
+                const slide1 = flatDesignImage || mugPreview || "";
                 const payload = { slide1 };
                 sessionStorage.removeItem("slides");
                 // Keep checkout preview normal; PDF flow will mirror for mug category.

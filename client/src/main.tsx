@@ -4,6 +4,16 @@ import App from "./core/App/App.tsx";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+if (
+  typeof window !== "undefined" &&
+  import.meta.env.PROD &&
+  window.location.protocol === "http:" &&
+  !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)
+) {
+  const secureUrl = `https://${window.location.host}${window.location.pathname}${window.location.search}${window.location.hash}`;
+  window.location.replace(secureUrl);
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

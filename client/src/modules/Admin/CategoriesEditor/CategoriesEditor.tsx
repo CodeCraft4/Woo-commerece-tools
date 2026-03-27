@@ -1358,7 +1358,7 @@ const CategoriesEditor = () => {
                       position: { x: viewXScaled, y: viewYScaled },
                       size: { width: widthScaled, height: heightScaled },
                       bounds: "parent" as const,
-                      dragCancel: ".no-drag",
+                      cancel: ".no-drag",
                       disableDragging: isInactive,
                       enableResizing: isInactive ? false : { bottomRight: true },
                       onDragStart: () => {
