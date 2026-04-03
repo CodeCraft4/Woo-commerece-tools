@@ -48,12 +48,21 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     KEYS.forEach((k) => localStorage.removeItem(k));
     sessionStorage.removeItem("slides");
     sessionStorage.removeItem("slides_backup");
+    sessionStorage.removeItem("templ_preview_slides");
+    sessionStorage.removeItem("templ_preview_key");
+    sessionStorage.removeItem("templ_preview_config");
+    sessionStorage.removeItem("capturedSlides");
+    sessionStorage.removeItem("capturedSlidesKey");
+    sessionStorage.removeItem("slides_preview_only");
     localStorage.removeItem("slides_backup");
     sessionStorage.removeItem("mugImage");
     sessionStorage.removeItem("cart-store-v2");
     sessionStorage.removeItem("draft:card_id");
     sessionStorage.removeItem("card_preview_downloaded");
     clearSlidesFromIdb().catch(() => {});
+    delete (globalThis as any).__slidesCache;
+    delete (globalThis as any).__rawSlidesCache;
+    delete (globalThis as any).__previewConfigCache;
 
 
     for (let i = localStorage.length - 1; i >= 0; i--) {

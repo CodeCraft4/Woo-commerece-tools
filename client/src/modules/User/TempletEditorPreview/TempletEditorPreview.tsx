@@ -27,7 +27,7 @@ import {
 
 const MUG_URL = "/assets/modals/tea_cup.glb";
 const MUG_TEXTURE_VERTICAL_OFFSET_PX = -10;
-const MUG_TEXT_VERTICAL_OFFSET_PX = -30;
+const MUG_TEXT_VERTICAL_OFFSET_PX = -20;
 
 let container: HTMLDivElement | null;
 let camera: THREE.PerspectiveCamera;
