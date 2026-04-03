@@ -3,9 +3,13 @@ import { Box } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabase/supabase";
-import { loadSlidesFromIdb } from "../../../lib/idbSlides";
 import { API_BASE } from "../../../lib/apiBase";
 import { removeWhiteBg } from "../../../lib/lib";
+import {
+  clearSlidesFromScopes,
+  loadSlidesFromScopes,
+  resolveSlidesScopeCandidates,
+} from "../../../lib/slidesScope";
 import {
   buildTenUpSlides,
   buildTwoUpSlides,
@@ -51,17 +55,18 @@ async function getTokenSafely() {
   return retry.data?.session?.access_token || null;
 }
 
-async function getSlidesPayload() {
+async function getSlidesPayload(scopes: string[]) {
   try {
-    const fromIdb = await loadSlidesFromIdb();
-    if (fromIdb && Object.keys(fromIdb).length) return fromIdb;
+    const scopedSlides = await loadSlidesFromScopes(scopes);
+    if (scopedSlides && Object.keys(scopedSlides).length) return scopedSlides;
   } catch {}
 
   try {
-    const raw =
-      sessionStorage.getItem("slides") ||
-      localStorage.getItem("slides_backup") ||
-      "{}";
+    const raw = !scopes.length
+      ? sessionStorage.getItem("slides") ||
+        localStorage.getItem("slides_backup") ||
+        "{}"
+      : "{}";
     return JSON.parse(raw);
   } catch {
     return {};
@@ -137,6 +142,14 @@ function getSelectedCategory() {
   }
 }
 
+function getSelectedProductKey() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
+    if (raw?.id && raw?.type) return `${raw.type}:${raw.id}`;
+  } catch {}
+  return "";
+}
+
 export default function PremiumSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -145,6 +158,23 @@ export default function PremiumSuccess() {
   const { open, openModal, closeModal } = useModal();
   const [status, setStatus] = useState<Status>("loading");
   const [msg, setMsg] = useState("");
+  const slidesScopeKeys = useMemo(
+    () => {
+      let storedType = "";
+      try {
+        const storedProduct = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
+        storedType = String(storedProduct?.type ?? storedProduct?.__type ?? "");
+      } catch {}
+
+      return resolveSlidesScopeCandidates({
+        includeStoredDraft: !/template|templet/i.test(storedType),
+        productKey: getSelectedProductKey(),
+        category: getSelectedCategory(),
+        cardSize: getSelectedPlan(),
+      });
+    },
+    [],
+  );
 
   const clearPreviewStorage = () => {
     try {
@@ -163,6 +193,10 @@ export default function PremiumSuccess() {
 
     try {
       localStorage.removeItem("slides_backup");
+    } catch {}
+
+    try {
+      void clearSlidesFromScopes(slidesScopeKeys);
     } catch {}
 
     try {
@@ -191,7 +225,7 @@ export default function PremiumSuccess() {
       }
       sessionStorage.setItem(sentKey, "sending");
 
-      const rawSlides = await getSlidesPayload();
+      const rawSlides = await getSlidesPayload(slidesScopeKeys);
       const cardSize = getSelectedPlan();
       const categoryName = getSelectedCategory();
       const slidesAlreadyMirrored = (() => {

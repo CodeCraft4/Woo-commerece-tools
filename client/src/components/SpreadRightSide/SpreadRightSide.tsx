@@ -22,6 +22,7 @@ import mergePreservePdf from "../../utils/mergePreservePdf";
 import { safeGetStorage } from "../../lib/storage";
 import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
+import { isIosTouchDevice } from "../../lib/platform";
 import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../hooks/useAlignGuides";
 
@@ -86,6 +87,25 @@ const CanvasScaleContext = createContext(1);
 const ScaledRnd = (props: RndProps) => {
   const scale = useContext(CanvasScaleContext);
   return <Rnd {...props} scale={props.scale ?? scale} />;
+};
+
+const focusEditableTextFromTarget = (target: EventTarget | null) => {
+  const root = target instanceof HTMLElement ? target : null;
+  if (!root) return;
+
+  requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      const input = root.querySelector("textarea, input") as
+        | HTMLTextAreaElement
+        | HTMLInputElement
+        | null;
+      if (!input) return;
+      input.focus();
+      if (typeof input.select === "function") {
+        input.select();
+      }
+    }, 0);
+  });
 };
 
 const toElement = (obj: any, i: number, editable: boolean, prefix = "bg"): ElementEl => ({
@@ -325,6 +345,7 @@ const SpreadRightSide = ({
     return false;
   }, []);
   const hideTextOutline = !isAdminEditor && isMugsCategory;
+  const isIos = useMemo(() => isIosTouchDevice(), []);
   const handleBlankClick = (e: ReactMouseEvent) => {
     if (!hideTextOutline) return;
     if (e.target !== e.currentTarget) return;
@@ -1321,7 +1342,7 @@ const SpreadRightSide = ({
                               display: "flex",
                               alignItems: vAlign,
                               justifyContent: hAlign,
-                              touchAction: "none",
+                              touchAction: textElement.isEditing ? "manipulation" : "none",
                               transition: "border 0.2s ease",
                               cursor: textElement.isEditing ? "text" : "move",
                             }}
@@ -1343,24 +1364,25 @@ const SpreadRightSide = ({
                               });
                             }}
                             onTouchStart={() => { touchStartTime = Date.now(); }}
-                            onTouchEnd={() => {
+                            onTouchEnd={(e: any) => {
                               const now = Date.now();
                               const timeSince = now - lastTap;
                               const touchDuration = now - touchStartTime;
                               if (touchDuration < 200) {
-                                if (timeSince < 300) {
-                                  setSelectedTextId3(textElement.id);
+                                const shouldEdit = isIos || timeSince < 300;
+                                setSelectedTextId3(textElement.id);
+                                if (shouldEdit) {
                                   updateTextElement(textElement.id, { isEditing: true });
-                                } else {
-                                  setSelectedTextId3(textElement.id);
+                                  focusEditableTextFromTarget(e.currentTarget);
                                 }
                               }
                               lastTap = now;
                             }}
                             onMouseDown={() => setSelectedTextId3(textElement.id)}
-                            onDoubleClick={() => {
+                            onDoubleClick={(e: any) => {
                               setSelectedTextId3(textElement.id);
                               updateTextElement(textElement.id, { isEditing: true });
+                              focusEditableTextFromTarget(e.currentTarget);
                             }}
                             onDragStop={(_, d) => {
                               const snap = align.onDrag(
@@ -1486,7 +1508,7 @@ const SpreadRightSide = ({
                                   alignItems: vAlign,
                                   justifyContent: hAlign,
                                   userSelect: "none",
-                                  touchAction: "none",
+                                  touchAction: textElement.isEditing ? "manipulation" : "none",
                                   transform: `rotate(${textElement.rotation || 0}deg)`,
                                   border: hideTextOutline
                                     ? "none"
@@ -1496,9 +1518,10 @@ const SpreadRightSide = ({
                                   zIndex: textElement.zIndex,
                                   cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
                                 }}
-                                onDoubleClick={() => {
+                                onDoubleClick={(e: any) => {
                                   setSelectedTextId3(textElement.id);
                                   updateTextElement(textElement.id, { isEditing: true });
+                                  focusEditableTextFromTarget(e.currentTarget);
                                 }}
                               >
                                 <TextField
@@ -1530,7 +1553,11 @@ const SpreadRightSide = ({
                                     },
                                   }}
                                   onChange={(e) => updateTextElement(textElement.id, { value: e.target.value })}
-                                  onFocus={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: true }); }}
+                                  onFocus={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedTextId3(textElement.id);
+                                    updateTextElement(textElement.id, { isEditing: true });
+                                  }}
                                   onBlur={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: false }); }}
                                   sx={{
                                     "& .MuiInputBase-input": { overflowY: "auto", textAlign: textElement.textAlign || "center" },
@@ -2649,24 +2676,25 @@ const SpreadRightSide = ({
                           }
                         }}
                         onTouchStart={() => { touchStartTime = Date.now(); }}
-                        onTouchEnd={() => {
+                        onTouchEnd={(e: any) => {
                           const now = Date.now();
                           const timeSince = now - lastTap;
                           const touchDuration = now - touchStartTime;
                           if (touchDuration < 200) {
-                            if (timeSince < 300) {
-                              setSelectedTextId3(textElement.id);
+                            const shouldEdit = isIos || timeSince < 300;
+                            setSelectedTextId3(textElement.id);
+                            if (shouldEdit) {
                               updateTextElement(textElement.id, { isEditing: true });
-                            } else {
-                              setSelectedTextId3(textElement.id);
+                              focusEditableTextFromTarget(e.currentTarget);
                             }
                           }
                           lastTap = now;
                         }}
                         onMouseDown={() => setSelectedTextId3(textElement.id)}
-                        onDoubleClick={() => {
+                        onDoubleClick={(e: any) => {
                           setSelectedTextId3(textElement.id);
                           updateTextElement(textElement.id, { isEditing: true });
+                          focusEditableTextFromTarget(e.currentTarget);
                         }}
                         onDragStop={(_, d) => {
                           const snap = align.onDrag(
@@ -2772,7 +2800,7 @@ const SpreadRightSide = ({
                               alignItems: vAlign,
                               justifyContent: hAlign,
                               userSelect: "none",
-                              touchAction: "none",
+                              touchAction: textElement.isEditing ? "manipulation" : "none",
                               transform: `rotate(${textElement.rotation || 0}deg)`,
                               border: hideTextOutline
                                 ? "none"
@@ -2782,9 +2810,10 @@ const SpreadRightSide = ({
                               zIndex: textElement.zIndex,
                               cursor: textElement.isEditing ? "text" : "move",
                             }}
-                            onDoubleClick={() => {
+                            onDoubleClick={(e: any) => {
                               setSelectedTextId3(textElement.id);
                               updateTextElement(textElement.id, { isEditing: true });
+                              focusEditableTextFromTarget(e.currentTarget);
                             }}
                           >
                             <TextField
@@ -2816,7 +2845,11 @@ const SpreadRightSide = ({
                                 },
                               }}
                               onChange={(e) => updateTextElement(textElement.id, { value: e.target.value })}
-                              onFocus={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: true }); }}
+                              onFocus={(e) => {
+                                e.stopPropagation();
+                                setSelectedTextId3(textElement.id);
+                                updateTextElement(textElement.id, { isEditing: true });
+                              }}
                               onBlur={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: false }); }}
                               sx={{
                                 "& .MuiInputBase-input": { overflowY: "auto", textAlign: textElement.textAlign || "center" },

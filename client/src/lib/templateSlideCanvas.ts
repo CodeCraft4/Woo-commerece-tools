@@ -71,6 +71,24 @@ const normalizeFontFamily = (value?: string | null) => {
   return first.replace(/^['"]|['"]$/g, "").trim();
 };
 
+const formatCanvasFontFamily = (value?: string | null) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "Arial";
+
+  return raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const unquoted = part.replace(/^['"]|['"]$/g, "").trim();
+      const lower = unquoted.toLowerCase();
+      if (GENERIC_FONT_FAMILIES.has(lower)) return lower;
+      if (/^[-a-z0-9]+$/i.test(unquoted)) return unquoted;
+      return `"${unquoted.replace(/"/g, '\\"')}"`;
+    })
+    .join(", ");
+};
+
 const resolveImageSrc = (src: string) => {
   if (!src) return "";
   if (src.startsWith("data:") || src.startsWith("blob:")) return src;
@@ -89,35 +107,51 @@ const blobToDataUrl = (blob: Blob) =>
     fr.readAsDataURL(blob);
   });
 
+const loadHtmlImage = (src: string, crossOrigin?: "anonymous") =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    if (crossOrigin) img.crossOrigin = crossOrigin;
+    img.decoding = "async";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = src;
+  });
+
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   const resolved = resolveImageSrc(src);
   if (!resolved) return Promise.reject(new Error("Missing image src"));
   const cached = imageCache.get(resolved);
   if (cached) return cached;
 
-  const promise = new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.decoding = "async";
-    img.onload = () => resolve(img);
-    img.onerror = async () => {
-      try {
-        const resp = await fetch(resolved, { mode: "cors" });
-        const blob = await resp.blob();
-        const dataUrl = await blobToDataUrl(blob);
-        const retry = new Image();
-        retry.decoding = "async";
-        retry.onload = () => resolve(retry);
-        retry.onerror = () => reject(new Error(`Failed to load image: ${resolved}`));
-        retry.src = dataUrl;
-      } catch {
-        reject(new Error(`Failed to load image: ${resolved}`));
-      }
-    };
-    img.src = resolved;
-  });
+  const promise = (async () => {
+    try {
+      // Preferred: CORS-enabled load keeps the canvas exportable.
+      return await loadHtmlImage(resolved, "anonymous");
+    } catch {}
+
+    try {
+      // Safari fallback: allow non-CORS images to render to the preview texture.
+      // This may taint canvas exports, handled by caller fallback.
+      return await loadHtmlImage(resolved);
+    } catch {}
+
+    try {
+      // Last fallback: fetch and inline as data URL when CORS fetch is permitted.
+      const resp = await fetch(resolved, { mode: "cors" });
+      if (!resp.ok) throw new Error(`Failed to fetch image: ${resolved}`);
+      const blob = await resp.blob();
+      const dataUrl = await blobToDataUrl(blob);
+      return await loadHtmlImage(dataUrl);
+    } catch {
+      throw new Error(`Failed to load image: ${resolved}`);
+    }
+  })();
 
   imageCache.set(resolved, promise);
+  void promise.catch(() => {
+    // Avoid permanently caching transient load failures.
+    if (imageCache.get(resolved) === promise) imageCache.delete(resolved);
+  });
   return promise;
 };
 
@@ -291,6 +325,24 @@ const drawTextUnderline = (
   ctx.stroke();
 };
 
+const getTextLineMetrics = (
+  ctx: CanvasRenderingContext2D,
+  line: string,
+  fontSize: number,
+) => {
+  const sample = line || "Mg";
+  const metrics = ctx.measureText(sample);
+  const ascent = Math.max(
+    0,
+    toNum((metrics as any).actualBoundingBoxAscent, fontSize * 0.8),
+  );
+  const descent = Math.max(
+    0,
+    toNum((metrics as any).actualBoundingBoxDescent, fontSize * 0.2),
+  );
+  return { ascent, descent };
+};
+
 const drawCurvedText = (
   ctx: CanvasRenderingContext2D,
   text: TemplateTextEl,
@@ -360,7 +412,7 @@ const drawTextElement = (
   if (rotation) ctx.rotate(rotation);
   ctx.translate(-width / 2, -height / 2);
   ctx.fillStyle = textColor;
-  ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+  ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${formatCanvasFontFamily(fontFamily)}`;
   ctx.textBaseline = "alphabetic";
   ctx.textAlign = align as CanvasTextAlign;
 
@@ -371,18 +423,28 @@ const drawTextElement = (
     return;
   }
 
+  const lineMetrics = lines.map((line) => getTextLineMetrics(ctx, line, fontSize));
   const totalHeight = lines.length * lineHeight;
-  const baselineStart = Math.max(fontSize, (height - totalHeight) / 2 + fontSize);
+  const blockTop = Math.max(0, (height - totalHeight) / 2);
   const anchorX = align === "left" ? 0 : align === "right" ? width : width / 2;
 
   lines.forEach((line, index) => {
-    const y = baselineStart + index * lineHeight;
+    const metrics = lineMetrics[index];
+    const lineTop = blockTop + index * lineHeight;
+    const glyphHeight = metrics.ascent + metrics.descent;
+    const glyphTop = lineTop + Math.max(0, (lineHeight - glyphHeight) / 2);
+    const y = glyphTop + metrics.ascent;
     ctx.fillText(line, anchorX, y);
     if (line && textDecoration.includes("underline")) {
       const measured = ctx.measureText(line).width;
       const underlineX =
         align === "left" ? anchorX : align === "right" ? anchorX - measured : anchorX - measured / 2;
-      drawTextUnderline(ctx, underlineX, y + Math.max(1, fontSize * 0.08), measured);
+      drawTextUnderline(
+        ctx,
+        underlineX,
+        y + Math.max(1, metrics.descent * 0.45),
+        measured,
+      );
     }
   });
 

@@ -5,7 +5,8 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage";
-import { saveSlidesToIdb } from "../../../lib/idbSlides";
+import { saveSlidesToScopes } from "../../../lib/slidesScope";
+import { saveSubscriptionPreviewPayload } from "../../../lib/subscriptionPreview";
 import { toJpeg, toPng } from "html-to-image";
 import {
   buildGoogleFontsUrls,
@@ -250,6 +251,10 @@ const CategoriesWisePreview: React.FC = () => {
     const pid = productId ?? "state";
     return `${pid}::${String(category ?? "")}::${slides.length}::${ids}`;
   }, [category, slides, productId]);
+  const slidesScopeKeys = useMemo(
+    () => [`preview:${captureKey}`],
+    [captureKey],
+  );
 
   // Change to (sessionStorage se fallback bhi add kar sakte ho)
   const captured = useMemo(() => {
@@ -667,7 +672,7 @@ const CategoriesWisePreview: React.FC = () => {
         }
         if (quickList.length) {
           sessionStorage.removeItem("slides");
-          void saveSlidesToIdb(slidesObj);
+          void saveSlidesToScopes(slidesScopeKeys, slidesObj);
         } else {
           sessionStorage.removeItem("slides");
         }
@@ -678,6 +683,8 @@ const CategoriesWisePreview: React.FC = () => {
           localStorage.removeItem("slides_backup");
         }
       } catch {}
+
+      saveSubscriptionPreviewPayload(slidesObj, captureKey);
 
       navigate(USER_ROUTES.SUBSCRIPTION, {
         state: {

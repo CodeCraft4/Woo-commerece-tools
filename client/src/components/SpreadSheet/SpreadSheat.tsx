@@ -23,6 +23,7 @@ import { normalizeSlide } from "../SlideCover/SlideCover";
 import { safeGetStorage } from "../../lib/storage";
 import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
+import { isIosTouchDevice } from "../../lib/platform";
 import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../hooks/useAlignGuides";
 
@@ -31,6 +32,25 @@ const CanvasScaleContext = createContext(1);
 const ScaledRnd = (props: RndProps) => {
   const scale = useContext(CanvasScaleContext);
   return <Rnd {...props} scale={props.scale ?? scale} />;
+};
+
+const focusEditableTextFromTarget = (target: EventTarget | null) => {
+  const root = target instanceof HTMLElement ? target : null;
+  if (!root) return;
+
+  requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      const input = root.querySelector("textarea, input") as
+        | HTMLTextAreaElement
+        | HTMLInputElement
+        | null;
+      if (!input) return;
+      input.focus();
+      if (typeof input.select === "function") {
+        input.select();
+      }
+    }, 0);
+  });
 };
 
 
@@ -114,6 +134,7 @@ const SlideSpread = ({
     return false;
   }, []);
   const hideTextOutline = !isAdminEditor && isMugsCategory;
+  const isIos = useMemo(() => isIosTouchDevice(), []);
   const handleBlankClick = (e: ReactMouseEvent) => {
     if (!hideTextOutline) return;
     if (e.target !== e.currentTarget) return;
@@ -1062,16 +1083,16 @@ const SlideSpread = ({
                         if (e?.pointerType !== "touch") return;
                         touchStartTime = Date.now();
                       }}
-                      onTouchEnd={() => {
+                      onTouchEnd={(e: any) => {
                         const now = Date.now();
                         const timeSince = now - lastTap;
                         const touchDuration = now - touchStartTime;
                         if (touchDuration < 200) {
-                          if (timeSince < 300) {
-                            setSelectedTextId(textElement.id);
+                          const shouldEdit = isIos || timeSince < 300;
+                          setSelectedTextId(textElement.id);
+                          if (shouldEdit) {
                             updateTextElement(textElement.id, { isEditing: true });
-                          } else {
-                            setSelectedTextId(textElement.id);
+                            focusEditableTextFromTarget(e.currentTarget);
                           }
                         }
                         lastTap = now;
@@ -1082,19 +1103,20 @@ const SlideSpread = ({
                         const timeSince = now - lastTap;
                         const touchDuration = now - touchStartTime;
                         if (touchDuration < 200) {
-                          if (timeSince < 300) {
-                            setSelectedTextId(textElement.id);
+                          const shouldEdit = isIos || timeSince < 300;
+                          setSelectedTextId(textElement.id);
+                          if (shouldEdit) {
                             updateTextElement(textElement.id, { isEditing: true });
-                          } else {
-                            setSelectedTextId(textElement.id);
+                            focusEditableTextFromTarget(e.currentTarget);
                           }
                         }
                         lastTap = now;
                       }}
                       onMouseDown={() => setSelectedTextId(textElement.id)}
-                      onDoubleClick={() => {
+                      onDoubleClick={(e: any) => {
                         setSelectedTextId(textElement.id);
                         updateTextElement(textElement.id, { isEditing: true });
+                        focusEditableTextFromTarget(e.currentTarget);
                       }}
                       onDragStop={(_, d) => {
                         const snap = align.onDrag(
@@ -1220,7 +1242,7 @@ const SlideSpread = ({
                             alignItems: vAlign,
                             justifyContent: hAlign,
                             userSelect: "none",
-                            touchAction: "none",
+                            touchAction: textElement.isEditing ? "manipulation" : "none",
                             transform: `rotate(${textElement.rotation || 0}deg)`,
                             border: hideTextOutline
                               ? "none"
@@ -1230,9 +1252,10 @@ const SlideSpread = ({
                             zIndex: textElement.zIndex,
                             cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
                           }}
-                          onDoubleClick={() => {
+                          onDoubleClick={(e: any) => {
                             setSelectedTextId(textElement.id);
                             updateTextElement(textElement.id, { isEditing: true });
+                            focusEditableTextFromTarget(e.currentTarget);
                           }}
                         >
                           <TextField
@@ -1264,7 +1287,11 @@ const SlideSpread = ({
                               },
                             }}
                             onChange={(e) => updateTextElement(textElement.id, { value: e.target.value })}
-                            onFocus={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: true }); }}
+                            onFocus={(e) => {
+                              e.stopPropagation();
+                              setSelectedTextId(textElement.id);
+                              updateTextElement(textElement.id, { isEditing: true });
+                            }}
                             onBlur={(e) => { e.stopPropagation(); updateTextElement(textElement.id, { isEditing: false }); }}
                             sx={{
                               "& .MuiInputBase-input": { overflowY: "auto", textAlign: textElement.textAlign || "center" },
@@ -2415,19 +2442,18 @@ const SlideSpread = ({
                             if (e?.pointerType !== "touch") return;
                             touchStartTime = Date.now();
                           }}
-                          onTouchEnd={() => {
+                          onTouchEnd={(e: any) => {
                             const now = Date.now();
                             const timeSince = now - lastTap;
                             const touchDuration = now - touchStartTime;
 
                             if (touchDuration < 200) {
-                              if (timeSince < 300) {
-                                // Double tap = edit
-                                setSelectedTextId(textElement.id);
+                              const shouldEdit = isIos || timeSince < 300;
+                              setSelectedTextId(textElement.id);
+                              if (shouldEdit) {
                                 updateTextElement(textElement.id, { isEditing: true });
+                                focusEditableTextFromTarget(e.currentTarget);
                               } else {
-                                // Single tap = select
-                                setSelectedTextId(textElement.id);
                                 updateTextElement(textElement.id, { isEditing: false });
                               }
                             }
@@ -2440,13 +2466,12 @@ const SlideSpread = ({
                             const touchDuration = now - touchStartTime;
 
                             if (touchDuration < 200) {
-                              if (timeSince < 300) {
-                                // Double tap = edit
-                                setSelectedTextId(textElement.id);
+                              const shouldEdit = isIos || timeSince < 300;
+                              setSelectedTextId(textElement.id);
+                              if (shouldEdit) {
                                 updateTextElement(textElement.id, { isEditing: true });
+                                focusEditableTextFromTarget(e.currentTarget);
                               } else {
-                                // Single tap = select
-                                setSelectedTextId(textElement.id);
                                 updateTextElement(textElement.id, { isEditing: false });
                               }
                             }
@@ -2456,10 +2481,11 @@ const SlideSpread = ({
                             // Desktop: select on click
                             setSelectedTextId(textElement.id);
                           }}
-                          onDoubleClick={() => {
+                          onDoubleClick={(e: any) => {
                             // Desktop: edit on double-click
                             setSelectedTextId(textElement.id);
                             updateTextElement(textElement.id, { isEditing: true });
+                            focusEditableTextFromTarget(e.currentTarget);
                           }}
                           onDragStop={(_, d) => {
                             const snap = align.onDrag(
@@ -2570,7 +2596,7 @@ const SlideSpread = ({
                                 justifyContent: hAlign,
                                 cursor: textElement.isEditing ? "text" : "move",
                                 userSelect: "none",
-                                touchAction: "none",
+                                touchAction: textElement.isEditing ? "manipulation" : "none",
                                 transform: `rotate(${textElement.rotation || 0}deg)`,
                                 border: hideTextOutline
                                   ? "none"
@@ -2617,6 +2643,7 @@ const SlideSpread = ({
                                 }
                                 onFocus={(e) => {
                                   e.stopPropagation();
+                                  setSelectedTextId(textElement.id);
                                   updateTextElement(textElement.id, { isEditing: true });
                                 }}
                                 onBlur={(e) => {

@@ -32,6 +32,7 @@ import {
   getTemplateDisplayFactor,
   scaleTemplateElementBy,
 } from "../../../lib/templateEditorScale";
+import { isIosTouchDevice } from "../../../lib/platform";
 
 /* --------- Types --------- */
 type BaseEl = {
@@ -297,6 +298,51 @@ const syncEditableNodeText = (node: HTMLDivElement | null, value: string) => {
   node.innerText = safe;
 };
 
+const focusContentEditableNode = (node: HTMLDivElement | null) => {
+  if (!node) return;
+
+  requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      try {
+        node.focus();
+      } catch {
+        return;
+      }
+
+      if (typeof window.getSelection !== "function" || typeof document.createRange !== "function") {
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (!selection) return;
+
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }, 0);
+  });
+};
+
+const insertPlainTextAtCursor = (text: string) => {
+  if (typeof window.getSelection !== "function" || typeof document.createRange !== "function") {
+    return false;
+  }
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+  const textNode = document.createTextNode(text);
+  range.insertNode(textNode);
+  range.setStartAfter(textNode);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  return true;
+};
+
 const resolveTextFontFamily = (entry: any): string =>
   asStr(
     entry?.fontFamily ??
@@ -414,6 +460,12 @@ const templateDraftIdKey = (productId?: string) =>
 export default function TempletEditor() {
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const isIos = useMemo(() => isIosTouchDevice(), []);
+  const isSafari = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent || "";
+    return /Safari/i.test(ua) && !/Chrome|CriOS|Chromium|FxiOS|Firefox|EdgiOS|EdgA|OPiOS|OPR|Android/i.test(ua);
+  }, []);
 
   const [loading, setLoading] = useState(true);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -449,6 +501,7 @@ export default function TempletEditor() {
   const editableTextRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const textTouchStartRef = useRef<Record<string, number>>({});
   const textLastTapRef = useRef<Record<string, number>>({});
+  const textTapHandledRef = useRef<Record<string, number>>({});
   const lastTouchTsRef = useRef(0);
 
   const { productId } = useParams<{ productId: string }>();
@@ -1175,6 +1228,45 @@ export default function TempletEditor() {
     fileInputsRef.current[id] = el;
   };
 
+  const focusEditableTextById = useCallback((elId: string) => {
+    focusContentEditableNode(editableTextRefs.current[elId] ?? null);
+  }, []);
+
+  const enterTextEditMode = useCallback(
+    (elId: string) => {
+      setSelectedElId(elId);
+      setEditingTextId(elId);
+      focusEditableTextById(elId);
+    },
+    [focusEditableTextById]
+  );
+
+  const handleTextTouchCommit = useCallback(
+    (elId: string, editable: boolean, wasSelected: boolean) => {
+      const now = Date.now();
+      const lastHandled = textTapHandledRef.current[elId] ?? 0;
+      if (now - lastHandled < 40) return;
+      textTapHandledRef.current[elId] = now;
+
+      const touchStart = textTouchStartRef.current[elId] ?? now;
+      const lastTap = textLastTapRef.current[elId] ?? 0;
+      const touchDuration = now - touchStart;
+      const sinceLastTap = now - lastTap;
+
+      setSelectedElId(elId);
+
+      if (editable && touchDuration < 260) {
+        const shouldEdit = isIos ? wasSelected || sinceLastTap < 420 : sinceLastTap < 320;
+        if (shouldEdit) {
+          enterTextEditMode(elId);
+        }
+      }
+
+      textLastTapRef.current[elId] = now;
+    },
+    [enterTextEditMode, isIos]
+  );
+
   const onImagePicked = async (slideIndex: number, elId: string, file: File | null) => {
     if (!file) return;
     const dataUrl = await fileToDataUrl(file);
@@ -1199,6 +1291,11 @@ export default function TempletEditor() {
       aspect: Math.max(0.1, Number(image.width || 1) / Math.max(1, Number(image.height || 1))),
     });
   }, []);
+
+  useEffect(() => {
+    if (!isIos || !editingTextId) return;
+    focusEditableTextById(editingTextId);
+  }, [editingTextId, focusEditableTextById, isIos]);
 
   const isMugCategory = (cat?: string) => /mug/i.test(String(cat ?? ""));
   const isBagCategory = (cat?: string) => /bag|tote/i.test(String(cat ?? ""));
@@ -1259,24 +1356,38 @@ export default function TempletEditor() {
       const h = Math.max(1, Math.round(opts?.height ?? rect.height));
 
       // PNG capture — quality full, fonts skip nahi karo
-      return await htmlToImage.toJpeg(node, {
-        quality: opts?.quality ?? previewCapture.quality,
+      const commonOpts = {
         pixelRatio: opts?.pixelRatio ?? previewCapture.pixelRatio,
-        backgroundColor: "#ffffff", // JPG needs background
+        backgroundColor: "#ffffff",
         filter: (n: Node) => {
           return !(n instanceof Element && n.classList?.contains("capture-exclude"));
         },
-        cacheBust: false,
+        cacheBust: true,
         skipFonts: false,
         width: w,
         height: h,
         style: { transform: "none" },
+      };
+
+      if (isSafari || isIos) {
+        try {
+          return await htmlToImage.toPng(node, commonOpts);
+        } catch {
+          return await htmlToImage.toJpeg(node, {
+            ...commonOpts,
+            quality: opts?.quality ?? previewCapture.quality,
+          });
+        }
+      }
+
+      return await htmlToImage.toJpeg(node, {
+        ...commonOpts,
+        quality: opts?.quality ?? previewCapture.quality,
       });
 
 
     } catch (e) {
       console.error("capturePngFromNode failed:", e);
-      alert(e);   // temporary
       return null;
     }
 
@@ -1306,8 +1417,27 @@ export default function TempletEditor() {
 
       // ✅ For mugs: use raw slide data in preview to avoid Safari dropping image layers
       if (isMugCategory(adminDesign.category)) {
+        const node = slideRefs.current[0] ?? slideRefs.current[activeSlide];
+        const mugImage =
+          (isSafari || isIos) && node
+            ? await capturePngFromNode(node, {
+                width: artboardWidth,
+                height: artboardHeight,
+                background: "#ffffff",
+                quality: previewCapture.quality,
+                pixelRatio: previewCapture.pixelRatio,
+              })
+            : null;
+        try {
+          if (mugImage) {
+            sessionStorage.setItem("templ_preview_mug_image", mugImage);
+          } else {
+            sessionStorage.removeItem("templ_preview_mug_image");
+          }
+        } catch {}
+
         navigate(`${USER_ROUTES.TEMPLET_EDITORS_PREVIEW}/${category}/${productId ?? "state"}`, {
-          state: navStateBase,
+          state: { ...navStateBase, mugImage: mugImage || null },
         });
         return;
       }
@@ -1512,6 +1642,7 @@ export default function TempletEditor() {
                       const isLeaflet = isLeafletCategory(adminDesign?.category);
                       const isBg = String(el.id).startsWith("bg-") || isFullBleedImage(el);
                       const objectFit = isLeaflet && !isBg ? "contain" : "cover";
+                      const showTouchOverlay = isIos && isSelected;
                       return (
                         <Rnd key={el.id} {...commonRnd}>
                           <Box
@@ -1551,13 +1682,16 @@ export default function TempletEditor() {
                                   display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
-                                  opacity: 0,
+                                  opacity: showTouchOverlay ? 1 : 0,
                                   transition: "opacity .15s ease",
                                   "&:hover": { opacity: 1, background: "rgba(0,0,0,0.18)" },
                                   cursor: "pointer",
+                                  touchAction: "manipulation",
+                                  background: showTouchOverlay ? "rgba(0,0,0,0.18)" : "transparent",
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  if (isIos) return;
                                   if (!isActive) return;
                                   setSelectedElId(el.id);
                                   if (imagePickerClickTimerRef.current !== null) {
@@ -1567,6 +1701,13 @@ export default function TempletEditor() {
                                     fileInputsRef.current[el.id]?.click();
                                     imagePickerClickTimerRef.current = null;
                                   }, 220);
+                                }}
+                                onTouchEnd={(e) => {
+                                  e.stopPropagation();
+                                  if (!isIos) return;
+                                  if (!isActive) return;
+                                  setSelectedElId(el.id);
+                                  fileInputsRef.current[el.id]?.click();
                                 }}
                                 onDoubleClick={(e) => {
                                   e.stopPropagation();
@@ -1627,6 +1768,10 @@ export default function TempletEditor() {
                         ...commonRnd,
                         disableDragging: !canMove || isEditing,
                         enableResizing: !isEditing && canMove ? { bottomRight: true } : false,
+                        style: {
+                          ...commonRnd.style,
+                          touchAction: isEditing ? "manipulation" : "none",
+                        },
                       };
 
                       return (
@@ -1648,15 +1793,19 @@ export default function TempletEditor() {
                           onTouchEnd={(e: any) => {
                             e.stopPropagation();
                             if (!isActive) return;
-                            const now = Date.now();
-                            const touchStart = textTouchStartRef.current[el.id] ?? now;
-                            const lastTap = textLastTapRef.current[el.id] ?? 0;
-                            const touchDuration = now - touchStart;
-                            const sinceLastTap = now - lastTap;
-                            if (touchDuration < 220 && sinceLastTap < 320 && t.editable !== false) {
-                              setEditingTextId(el.id);
-                            }
-                            textLastTapRef.current[el.id] = now;
+                            handleTextTouchCommit(el.id, t.editable !== false, isSelected || isEditing);
+                          }}
+                          onPointerDown={(e: any) => {
+                            if (e?.pointerType !== "touch") return;
+                            lastTouchTsRef.current = Date.now();
+                            textTouchStartRef.current[el.id] = Date.now();
+                            if (!isActive) return;
+                            setSelectedElId(el.id);
+                          }}
+                          onPointerUp={(e: any) => {
+                            if (e?.pointerType !== "touch") return;
+                            if (!isActive) return;
+                            handleTextTouchCommit(el.id, t.editable !== false, isSelected || isEditing);
                           }}
                         >
                           <Box
@@ -1680,7 +1829,7 @@ export default function TempletEditor() {
                             onDoubleClick={(e) => {
                               e.stopPropagation();
                               if (!isActive) return;
-                              if (t.editable !== false) setEditingTextId(el.id);
+                              if (t.editable !== false) enterTextEditMode(el.id);
                               setSelectedElId(el.id);
                             }}
                           >
@@ -1700,7 +1849,7 @@ export default function TempletEditor() {
                               {t.editable !== false && isActive && (selectedElId === el.id || editingTextId === el.id) ? (
                                 <Box
                                   className="no-drag"
-                                  contentEditable={"plaintext-only" as any}
+                                  contentEditable={isIos ? true : ("plaintext-only" as any)}
                                   dir="ltr"
                                   ref={(node: HTMLDivElement | null) => {
                                     editableTextRefs.current[el.id] = node;
@@ -1713,6 +1862,20 @@ export default function TempletEditor() {
                                     const next = normalizeEditableText(
                                       (e.currentTarget as HTMLDivElement).innerText ?? ""
                                     );
+                                    if (next !== t.text) onTextChange(i, el.id, next);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (!isIos || e.key !== "Enter") return;
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const host = e.currentTarget as HTMLDivElement;
+                                    const inserted = insertPlainTextAtCursor("\n");
+                                    if (!inserted) {
+                                      const current = host.innerText ?? "";
+                                      host.innerText = `${current}\n`;
+                                      focusContentEditableNode(host);
+                                    }
+                                    const next = normalizeEditableText(host.innerText ?? "");
                                     if (next !== t.text) onTextChange(i, el.id, next);
                                   }}
                                   onFocus={(e) => {
@@ -1730,6 +1893,11 @@ export default function TempletEditor() {
                                   }}
                                   onMouseDown={(e) => e.stopPropagation()}
                                   onClick={(e) => e.stopPropagation()}
+                                  onTouchEnd={(e) => {
+                                    e.stopPropagation();
+                                    if (!isIos) return;
+                                    enterTextEditMode(el.id);
+                                  }}
                                   sx={{
                                     width: "100%",
                                     height: "100%",
@@ -1760,6 +1928,10 @@ export default function TempletEditor() {
                                     m: 0,
                                     cursor: "text",
                                     userSelect: "text",
+                                    WebkitUserSelect: "text",
+                                    WebkitUserModify: isIos ? ("read-write-plaintext-only" as any) : undefined,
+                                    WebkitTouchCallout: "default",
+                                    touchAction: "manipulation",
                                   }}
                                 />
                               ) : hasCurve ? (

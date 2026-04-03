@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -6,9 +6,12 @@ import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
 import { ArrowBackIos } from "@mui/icons-material";
+import { toPng } from "html-to-image";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
-import { saveSlidesToIdb } from "../../../lib/idbSlides";
+import { resolveSlidesScopeCandidates, saveSlidesToScopes } from "../../../lib/slidesScope";
+import { isIosTouchDevice } from "../../../lib/platform";
+import { saveSubscriptionPreviewPayload } from "../../../lib/subscriptionPreview";
 import toast from "react-hot-toast";
 import {
   collectTemplateSlideFonts,
@@ -18,10 +21,13 @@ import {
 import {
   buildGoogleFontsUrls,
   ensureGoogleFontsLoaded,
+  getGoogleFontEmbedCss,
   loadGoogleFontsOnce,
 } from "../../../constant/googleFonts";
 
 const MUG_URL = "/assets/modals/tea_cup.glb";
+const MUG_TEXTURE_VERTICAL_OFFSET_PX = -10;
+const MUG_TEXT_VERTICAL_OFFSET_PX = -30;
 
 let container: HTMLDivElement | null;
 let camera: THREE.PerspectiveCamera;
@@ -40,6 +46,8 @@ let material:
 let currentTextureUrl: string | null = null;
 let currentTextureCanvas: HTMLCanvasElement | null = null;
 
+const PREVIEW_SLIDES_STORAGE_KEY = "templ_preview_slides";
+const PREVIEW_MUG_IMAGE_STORAGE_KEY = "templ_preview_mug_image";
 
 const SRGB = (THREE as any).SRGBColorSpace ?? "srgb";
 
@@ -85,8 +93,7 @@ const convertImageToTexture = (image: string): THREE.Texture => {
     ctx.save();
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    // Move design up by 10px for better mug alignment
-    ctx.drawImage(img, 0, 5);
+    ctx.drawImage(img, 0, MUG_TEXTURE_VERTICAL_OFFSET_PX);
     ctx.restore();
 
     (tex as any).image = canvas;
@@ -120,7 +127,7 @@ const mirrorCanvasForMug = (source: HTMLCanvasElement) => {
   ctx.save();
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
-  ctx.drawImage(source, 0, 5);
+  ctx.drawImage(source, 0, MUG_TEXTURE_VERTICAL_OFFSET_PX);
   ctx.restore();
   return canvas;
 };
@@ -310,6 +317,323 @@ function captureMugPreviewJpg(): string | null {
   return canvas.toDataURL("image/jpeg", 0.95);
 }
 
+const normalizeFontFamily = (value?: string | null) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const quoted = raw.match(/['"]([^'"]+)['"]/);
+  if (quoted?.[1]) return quoted[1].trim();
+  const first = raw.split(",")[0]?.trim() ?? "";
+  return first.replace(/^['"]|['"]$/g, "").trim();
+};
+
+const firstDefinedValue = (...values: any[]) => {
+  for (const value of values) {
+    if (value === 0 || value === false) return value;
+    if (typeof value === "string") {
+      if (value.trim()) return value;
+      continue;
+    }
+    if (value != null) return value;
+  }
+  return undefined;
+};
+
+const resolveTextFontFamily = (entry: any) =>
+  normalizeFontFamily(
+    entry?.fontFamily ??
+      entry?.font_family ??
+      entry?.["font-family"] ??
+      entry?.fontFamily1 ??
+      entry?.fontFamily2 ??
+      entry?.fontFamily3 ??
+      entry?.fontFamily4 ??
+      entry?.style?.fontFamily ??
+      entry?.style?.font_family ??
+      entry?.style?.["font-family"] ??
+      "",
+  );
+
+const resolveTextWeight = (entry: any): string | number => {
+  const raw = firstDefinedValue(
+    entry?.fontWeight,
+    entry?.font_weight,
+    entry?.["font-weight"],
+    entry?.style?.fontWeight,
+    entry?.style?.font_weight,
+    entry?.style?.["font-weight"],
+  );
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return entry?.bold ? 700 : 400;
+    const weight = Number(trimmed);
+    if (Number.isFinite(weight) && weight > 0) return weight;
+    return trimmed;
+  }
+  return entry?.bold ? 700 : 400;
+};
+
+const resolveTextStyle = (entry: any): string => {
+  const raw = firstDefinedValue(
+    entry?.fontStyle,
+    entry?.font_style,
+    entry?.["font-style"],
+    entry?.style?.fontStyle,
+    entry?.style?.font_style,
+    entry?.style?.["font-style"],
+  );
+  if (typeof raw === "string") return raw.trim() || (entry?.italic ? "italic" : "normal");
+  return entry?.italic ? "italic" : "normal";
+};
+
+const resolveTextDecoration = (entry: any): string => {
+  const raw = firstDefinedValue(
+    entry?.textDecoration,
+    entry?.text_decoration,
+    entry?.["text-decoration"],
+    entry?.style?.textDecoration,
+    entry?.style?.text_decoration,
+    entry?.style?.["text-decoration"],
+  );
+  if (typeof raw === "string") return raw.trim() || "none";
+  if (entry?.underline) return "underline";
+  return "none";
+};
+
+const resolveTextColor = (entry: any): string =>
+  String(firstDefinedValue(entry?.color, entry?.fill, entry?.style?.color, entry?.style?.fill, "#111111"));
+
+const resolveTextRotation = (entry: any): number =>
+  Number(firstDefinedValue(entry?.rotation, entry?.rotate, entry?.style?.rotation, entry?.style?.rotate, 0)) || 0;
+
+const resolveTextCurve = (entry: any): number =>
+  Number(firstDefinedValue(entry?.curve, entry?.arc, entry?.style?.curve, entry?.style?.arc, 0)) || 0;
+
+const TRANSPARENT_PIXEL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+
+const toDataUrlSafe = async (src: string): Promise<string> => {
+  if (!src || src.startsWith("data:")) return src;
+  try {
+    const absolute = src.startsWith("/") ? `${window.location.origin}${src}` : src;
+    const resp = await fetch(absolute, { mode: "cors" });
+    if (!resp.ok) return src;
+    const blob = await resp.blob();
+    return await blobToDataUrl(blob);
+  } catch {
+    return src;
+  }
+};
+
+const dataUrlToCanvas = (dataUrl: string) =>
+  new Promise<HTMLCanvasElement>((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.decoding = "async";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, img.naturalWidth || img.width);
+      canvas.height = Math.max(1, img.naturalHeight || img.height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas context not available"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas);
+    };
+    img.onerror = () => reject(new Error("Failed to decode captured slide image"));
+    img.src = dataUrl;
+  });
+
+const waitForNodeAssets = async (node: HTMLElement) => {
+  const images = Array.from(node.querySelectorAll("img"));
+  await Promise.all(
+    images.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          const element = img as HTMLImageElement;
+          if (element.complete) {
+            resolve();
+            return;
+          }
+          const done = () => resolve();
+          element.addEventListener("load", done, { once: true });
+          element.addEventListener("error", done, { once: true });
+        }),
+    ),
+  );
+  if ((document as any)?.fonts?.ready) {
+    try {
+      await (document as any).fonts.ready;
+    } catch {}
+  }
+};
+
+const waitForFontsReady = async (families: string[]) => {
+  const fontApi: any = (document as any)?.fonts;
+  if (!fontApi) return;
+  if (families.length) {
+    await Promise.all(
+      families.flatMap((family) => [
+        fontApi.load(`400 24px "${family}"`).catch(() => null),
+        fontApi.load(`700 24px "${family}"`).catch(() => null),
+        fontApi.load(`italic 400 24px "${family}"`).catch(() => null),
+        fontApi.load(`italic 700 24px "${family}"`).catch(() => null),
+      ]),
+    );
+  }
+  await fontApi.ready?.catch(() => null);
+};
+
+const collectTemplateFontLoadSpecs = (slides: TemplateSlide[]) => {
+  const specs = new Set<string>();
+  (slides ?? []).forEach((slide) => {
+    (slide?.elements ?? []).forEach((element) => {
+      if (element?.type !== "text") return;
+      const text = element as any;
+      const family = resolveTextFontFamily(text);
+      if (!family) return;
+      const size = Math.max(12, Number(text?.fontSize ?? 24));
+      const weight = resolveTextWeight(text);
+      const style = resolveTextStyle(text);
+      specs.add(`${style} ${weight} ${size}px "${family.replace(/"/g, '\\"')}"`);
+    });
+  });
+  return Array.from(specs);
+};
+
+const waitForFontSpecsReady = async (fontSpecs: string[]) => {
+  const fontApi: any = (document as any)?.fonts;
+  if (!fontApi || !fontSpecs.length) return;
+  await Promise.all(fontSpecs.map((spec) => fontApi.load(spec).catch(() => null)));
+  await fontApi.ready?.catch(() => null);
+};
+
+const prepareSlideAssetsForCanvas = async (slide?: TemplateSlide | null): Promise<TemplateSlide | null> => {
+  if (!slide) return null;
+  const elements = await Promise.all(
+    (slide.elements ?? []).map(async (element) => {
+      if (element.type !== "image" && element.type !== "sticker") return element;
+      const src = String((element as any).src ?? "");
+      return {
+        ...element,
+        src: (await toDataUrlSafe(src)) || src || TRANSPARENT_PIXEL,
+      };
+    }),
+  );
+
+  return {
+    ...slide,
+    elements,
+  };
+};
+
+const captureNodeToCanvas = async (
+  node: HTMLElement,
+  opts: { width: number; height: number; pixelRatio?: number; fontFamilies?: string[] },
+) => {
+  const width = Math.max(1, Math.round(opts.width));
+  const height = Math.max(1, Math.round(opts.height));
+  const pixelRatio = Math.max(1, Number(opts.pixelRatio ?? 3));
+  const fontFamilies = Array.from(new Set((opts.fontFamilies ?? []).filter(Boolean)));
+
+  const clone = node.cloneNode(true) as HTMLElement;
+  clone.style.width = `${width}px`;
+  clone.style.height = `${height}px`;
+
+  const sandbox = document.createElement("div");
+  sandbox.style.position = "fixed";
+  sandbox.style.left = "-10000px";
+  sandbox.style.top = "-10000px";
+  sandbox.style.zIndex = "-1";
+  sandbox.style.pointerEvents = "none";
+  sandbox.appendChild(clone);
+  document.body.appendChild(sandbox);
+
+  try {
+    const imgs = Array.from(clone.querySelectorAll("img")) as HTMLImageElement[];
+    await Promise.all(
+      imgs.map(async (img) => {
+        const src = img.getAttribute("src") || "";
+        const safeSrc = await toDataUrlSafe(src);
+        img.setAttribute("src", safeSrc || src || TRANSPARENT_PIXEL);
+        img.setAttribute("crossorigin", "anonymous");
+      }),
+    );
+
+    if (fontFamilies.length) {
+      loadGoogleFontsOnce(buildGoogleFontsUrls(fontFamilies));
+    }
+    await waitForFontsReady(fontFamilies);
+    await waitForNodeAssets(clone);
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+    const fontEmbedCSS =
+      fontFamilies.length > 0 ? await getGoogleFontEmbedCss(fontFamilies).catch(() => "") : "";
+
+    const dataUrl = await toPng(clone, {
+      pixelRatio,
+      backgroundColor: "#ffffff",
+      cacheBust: true,
+      imagePlaceholder: TRANSPARENT_PIXEL,
+      width,
+      height,
+      style: { transform: "none" },
+      fontEmbedCSS: fontEmbedCSS || undefined,
+      skipFonts: false,
+    });
+
+    return await dataUrlToCanvas(dataUrl);
+  } finally {
+    sandbox.remove();
+  }
+};
+
+const readPreviewSlidesFromSessionStorage = (): TemplateSlide[] => {
+  if (typeof sessionStorage === "undefined") return [];
+  try {
+    const raw = sessionStorage.getItem(PREVIEW_SLIDES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as TemplateSlide[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const readPreviewMugImageFromSessionStorage = (): string | null => {
+  if (typeof sessionStorage === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(PREVIEW_MUG_IMAGE_STORAGE_KEY);
+    return raw && typeof raw === "string" ? raw : null;
+  } catch {
+    return null;
+  }
+};
+
+const offsetSlideTextY = (slide: TemplateSlide, offsetPx: number): TemplateSlide => {
+  if (!offsetPx) return slide;
+  return {
+    ...slide,
+    elements: (slide.elements ?? []).map((el: any) => {
+      if (el?.type !== "text") return el;
+      return {
+        ...el,
+        y: Number(el?.y ?? 0) + offsetPx,
+      };
+    }),
+  };
+};
+
 
 const TempletEditorPreview: React.FC = () => {
   const { state } = useLocation() as {
@@ -320,9 +644,52 @@ const TempletEditorPreview: React.FC = () => {
       canvasPx?: { w?: number; h?: number };
     };
   };
-  const mugImageSrc: any = state?.mugImage ?? null;
+  const flatSlideRef = useRef<HTMLDivElement | null>(null);
+  const isSafariTextureCapture = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent || "";
+    const isSafari =
+      /Safari/i.test(ua) && !/Chrome|CriOS|Chromium|FxiOS|Firefox|EdgiOS|EdgA|OPiOS|OPR|Android/i.test(ua);
+    return isSafari && isIosTouchDevice();
+  }, []);
+  const routeSlides = useMemo(() => (Array.isArray(state?.slides) ? (state?.slides as TemplateSlide[]) : []), [state?.slides]);
+  const storedSlides = useMemo(() => readPreviewSlidesFromSessionStorage(), []);
+  const previewSlides = useMemo(
+    () => (isSafariTextureCapture && storedSlides.length ? storedSlides : routeSlides.length ? routeSlides : storedSlides),
+    [isSafariTextureCapture, routeSlides, storedSlides],
+  );
+  const textureSlide = useMemo(() => {
+    const first = previewSlides[0];
+    if (!first) return null;
+    return isSafariTextureCapture
+      ? offsetSlideTextY(first, MUG_TEXT_VERTICAL_OFFSET_PX)
+      : first;
+  }, [isSafariTextureCapture, previewSlides]);
+  const routeMugImage = useMemo(
+    () => (typeof state?.mugImage === "string" && state.mugImage ? state.mugImage : null),
+    [state?.mugImage],
+  );
+  const storedMugImage = useMemo(() => readPreviewMugImageFromSessionStorage(), []);
+  const mugImageSrc = useMemo(
+    () => routeMugImage || storedMugImage || null,
+    [routeMugImage, storedMugImage],
+  );
   const [flatDesignImage, setFlatDesignImage] = useState<string | null>(mugImageSrc ?? null);
-  const previewSlides = state?.slides ?? [];
+  const shouldUseProvidedMugImage = useMemo(
+    // On Safari/iOS, prefer rendering from slide JSON when available.
+    // `mugImage` is kept as fallback when slide payload is missing.
+    () => Boolean(mugImageSrc) && isSafariTextureCapture && previewSlides.length === 0,
+    [isSafariTextureCapture, mugImageSrc, previewSlides.length],
+  );
+
+  const baseWidth = useMemo(
+    () => Math.max(1, Number(state?.canvasPx?.w ?? state?.config?.mmWidth ?? 228)),
+    [state?.canvasPx?.w, state?.config?.mmWidth],
+  );
+  const baseHeight = useMemo(
+    () => Math.max(1, Number(state?.canvasPx?.h ?? state?.config?.mmHeight ?? 88.9)),
+    [state?.canvasPx?.h, state?.config?.mmHeight],
+  );
 
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -339,6 +706,174 @@ const TempletEditorPreview: React.FC = () => {
     }
   }, []);
 
+  const renderFlatSlide = useCallback((slide?: TemplateSlide) => {
+    if (!slide) return null;
+    const ordered = [...(slide.elements || [])].sort((a, b) => {
+      const zA = Number(a?.zIndex ?? 1) + (a?.type === "text" ? 100000 : 0);
+      const zB = Number(b?.zIndex ?? 1) + (b?.type === "text" ? 100000 : 0);
+      return zA - zB;
+    });
+
+    return (
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+          bgcolor: slide.bgColor ?? "#ffffff",
+        }}
+      >
+        {ordered.map((el: any) => {
+          const baseStyle: any = {
+            position: "absolute",
+            left: el.x,
+            top: el.y,
+            width: el.width,
+            height: el.height,
+            zIndex: el.zIndex ?? 1,
+          };
+
+          if (el.type === "image") {
+            return (
+              <Box
+                key={el.id}
+                component="img"
+                src={el.src}
+                alt=""
+                crossOrigin="anonymous"
+                sx={{
+                  ...baseStyle,
+                  objectFit: "cover",
+                  objectPosition: "center",
+                  display: "block",
+                  bgcolor: "transparent",
+                }}
+              />
+            );
+          }
+
+          if (el.type === "sticker") {
+            return (
+              <Box
+                key={el.id}
+                component="img"
+                src={el.src}
+                alt=""
+                crossOrigin="anonymous"
+                sx={{
+                  ...baseStyle,
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  display: "block",
+                  bgcolor: "transparent",
+                }}
+              />
+            );
+          }
+
+          if (el.type === "text") {
+            const align = el.align ?? "center";
+            const justify =
+              align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+            const rotation = resolveTextRotation(el);
+            const safeRotation = Number.isFinite(rotation) ? rotation : 0;
+            const curveRaw = resolveTextCurve(el);
+            const curve = Number.isFinite(curveRaw)
+              ? Math.max(-200, Math.min(200, curveRaw))
+              : 0;
+            const hasCurve = Math.abs(curve) > 0.5;
+            const safeW = Math.max(1, Number(el?.width ?? 1));
+            const safeH = Math.max(1, Number(el?.height ?? 1));
+            const curvePx = (curve / 100) * (safeH / 2);
+            const midY = safeH / 2;
+            const textAnchor = align === "left" ? "start" : align === "right" ? "end" : "middle";
+            const startOffset = align === "left" ? "0%" : align === "right" ? "100%" : "50%";
+            const curveId = `mug-preview-curve-${slide?.id ?? "s"}-${el?.id ?? "t"}`;
+            const lineHeight = Math.max(1, Number(el?.lineHeight ?? el?.line_height ?? 1.16));
+            const fontFamily = resolveTextFontFamily(el) || "Arial";
+            const fontWeight = resolveTextWeight(el);
+            const fontStyle = resolveTextStyle(el);
+            const textDecoration = resolveTextDecoration(el);
+            const textColor = resolveTextColor(el);
+
+            return (
+              <Box
+                key={el.id}
+                sx={{
+                  ...baseStyle,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: justify,
+                  textAlign: align,
+                  transform: safeRotation ? `rotate(${safeRotation}deg)` : "none",
+                  transformOrigin: "center",
+                  fontWeight,
+                  fontStyle,
+                  fontSize: el.fontSize,
+                  fontFamily,
+                  color: textColor,
+                  textDecoration,
+                  whiteSpace: "pre-wrap",
+                  overflowWrap: "break-word",
+                  wordBreak: "break-word",
+                  lineHeight: String(lineHeight),
+                  overflow: "visible",
+                }}
+              >
+                {hasCurve ? (
+                  <Box
+                    component="svg"
+                    viewBox={`0 0 ${safeW} ${safeH}`}
+                    sx={{ width: "100%", height: "100%", overflow: "visible", display: "block" }}
+                  >
+                    <defs>
+                      <path
+                        id={curveId}
+                        d={`M 0 ${midY} Q ${safeW / 2} ${midY - curvePx} ${safeW} ${midY}`}
+                      />
+                    </defs>
+                    <text
+                      fill={textColor}
+                      fontFamily={fontFamily}
+                      fontSize={Number(el?.fontSize ?? 20)}
+                      fontWeight={fontWeight}
+                      fontStyle={fontStyle}
+                      textDecoration={textDecoration}
+                      textAnchor={textAnchor}
+                      dominantBaseline="middle"
+                      direction="ltr"
+                      unicodeBidi="plaintext"
+                    >
+                      <textPath
+                        href={`#${curveId}`}
+                        startOffset={startOffset}
+                        style={{
+                          fill: textColor,
+                          fontFamily,
+                          fontSize: Number(el?.fontSize ?? 20),
+                          fontWeight,
+                          fontStyle,
+                          textDecoration,
+                        }}
+                      >
+                        {String(el?.text ?? "")}
+                      </textPath>
+                    </text>
+                  </Box>
+                ) : (
+                  String(el?.text ?? "")
+                )}
+              </Box>
+            );
+          }
+
+          return null;
+        })}
+      </Box>
+    );
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -349,44 +884,97 @@ const TempletEditorPreview: React.FC = () => {
       currentTextureUrl = mugImageSrc;
       currentTextureCanvas = null;
 
-      if (previewSlides.length) {
-        const fonts = collectTemplateSlideFonts(previewSlides);
-        if (fonts.length) {
-          const urls = buildGoogleFontsUrls(fonts);
-          loadGoogleFontsOnce(urls);
-          await ensureGoogleFontsLoaded(urls);
-        }
-        if ((document as any)?.fonts?.ready) {
+      try {
+        if (shouldUseProvidedMugImage && mugImageSrc) {
           try {
-            await (document as any).fonts.ready;
-          } catch {}
+            const safeSrc = (await toDataUrlSafe(String(mugImageSrc))) || String(mugImageSrc);
+            if (cancelled) return;
+            setFlatDesignImage(safeSrc);
+            currentTextureUrl = safeSrc;
+            const sourceCanvas = await dataUrlToCanvas(safeSrc);
+            if (cancelled) return;
+            currentTextureCanvas = mirrorCanvasForMug(sourceCanvas);
+          } catch {
+            // If provided image cannot be decoded, continue with slide-based render path.
+          }
         }
 
-        const baseWidth = Math.max(
-          1,
-          Number(state?.canvasPx?.w ?? state?.config?.mmWidth ?? 228),
-        );
-        const baseHeight = Math.max(
-          1,
-          Number(state?.canvasPx?.h ?? state?.config?.mmHeight ?? 88.9),
-        );
-        const flatCanvas = await renderTemplateSlideToCanvas(previewSlides[0], {
-          width: baseWidth,
-          height: baseHeight,
-          pixelRatio: 3,
-          backgroundColor: "#ffffff",
-        });
+        if (!currentTextureCanvas && textureSlide) {
+          const slidesForTextMetrics = [textureSlide];
+          const fonts = collectTemplateSlideFonts(slidesForTextMetrics);
+          const fontSpecs = collectTemplateFontLoadSpecs(slidesForTextMetrics);
+          if (fonts.length) {
+            const urls = buildGoogleFontsUrls(fonts);
+            loadGoogleFontsOnce(urls);
+            await ensureGoogleFontsLoaded(urls);
+          }
+          await waitForFontSpecsReady(fontSpecs);
+          if ((document as any)?.fonts?.ready) {
+            try {
+              await (document as any).fonts.ready;
+            } catch {}
+          }
 
-        if (cancelled) return;
-        const flatDataUrl = flatCanvas.toDataURL("image/png");
-        setFlatDesignImage(flatDataUrl);
-        currentTextureCanvas = mirrorCanvasForMug(flatCanvas);
-        currentTextureUrl = flatDataUrl;
+          await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+          let flatCanvas: HTMLCanvasElement | null = null;
+          if (!isSafariTextureCapture) {
+            const slideNode = flatSlideRef.current;
+            if (slideNode) {
+              try {
+                flatCanvas = await captureNodeToCanvas(slideNode, {
+                  width: baseWidth,
+                  height: baseHeight,
+                  pixelRatio: 3,
+                  fontFamilies: fonts,
+                });
+              } catch (error) {
+                console.error("Mug DOM capture failed, falling back to canvas renderer:", error);
+              }
+            }
+          }
+
+          if (!flatCanvas) {
+            const preparedSlide = (await prepareSlideAssetsForCanvas(textureSlide)) ?? textureSlide;
+            flatCanvas = await renderTemplateSlideToCanvas(preparedSlide, {
+              width: baseWidth,
+              height: baseHeight,
+              pixelRatio: 3,
+              backgroundColor: "#ffffff",
+            });
+          }
+
+          if (cancelled) return;
+          currentTextureCanvas = mirrorCanvasForMug(flatCanvas);
+
+          try {
+            const flatDataUrl = flatCanvas.toDataURL("image/png");
+            setFlatDesignImage(flatDataUrl);
+            currentTextureUrl = flatDataUrl;
+          } catch {
+            // Cross-origin assets can taint the canvas on Safari.
+            // Keep canvas texture rendering alive even when exporting a data URL is blocked.
+            setFlatDesignImage((prev) => prev || mugImageSrc || null);
+            currentTextureUrl = mugImageSrc || currentTextureUrl;
+          }
+        }
+      } catch (error) {
+        // Never let preview bootstrap fail to a blank screen on Safari.
+        console.error("Mug preview bootstrap failed; using direct texture fallback:", error);
+        if (!cancelled && mugImageSrc && !currentTextureCanvas) {
+          const fallbackSrc = String(mugImageSrc);
+          setFlatDesignImage(fallbackSrc);
+          currentTextureUrl = fallbackSrc;
+        }
       }
 
       if (cancelled) return;
-      init();
-      animate();
+      try {
+        init();
+        animate();
+      } catch (error) {
+        console.error("Mug preview init failed:", error);
+      }
 
       const resizeHandler = () => onWindowResize();
       window.addEventListener("resize", resizeHandler);
@@ -415,7 +1003,7 @@ const TempletEditorPreview: React.FC = () => {
       material = null;
       currentTextureCanvas = null;
     };
-  }, [animate, mugImageSrc, previewSlides, state?.canvasPx?.h, state?.canvasPx?.w, state?.config?.mmHeight, state?.config?.mmWidth]);
+  }, [animate, baseHeight, baseWidth, isSafariTextureCapture, mugImageSrc, previewSlides, shouldUseProvidedMugImage, textureSlide]);
 
 
   return (
@@ -439,19 +1027,45 @@ const TempletEditorPreview: React.FC = () => {
                 if (!mugPreview && !flatDesignImage) throw new Error("Failed to capture mug preview");
                 const slide1 = flatDesignImage || mugPreview || "";
                 const payload = { slide1 };
+                const slidesScopeKeys = (() => {
+                  try {
+                    const storedProduct = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
+                    return resolveSlidesScopeCandidates({
+                      includeStoredDraft: false,
+                      productKey:
+                        storedProduct?.id && storedProduct?.type
+                          ? `${storedProduct.type}:${storedProduct.id}`
+                          : "",
+                      category:
+                        localStorage.getItem("selectedCategory") ||
+                        storedProduct?.category ||
+                        "",
+                      cardSize: localStorage.getItem("selectedSize") || "",
+                    });
+                  } catch {
+                    return resolveSlidesScopeCandidates({ includeStoredDraft: false });
+                  }
+                })();
                 sessionStorage.removeItem("slides");
                 // Keep checkout preview normal; PDF flow will mirror for mug category.
                 sessionStorage.removeItem("slides_mirrored");
                 sessionStorage.removeItem("slides_mirrored_category");
-                void saveSlidesToIdb(payload);
+                void saveSlidesToScopes(slidesScopeKeys, payload);
                 try {
                   localStorage.setItem("slides_backup", JSON.stringify(payload));
                 } catch {}
                 try {
                   (globalThis as any).__slidesCache = payload;
                 } catch {}
+                const previewKey = sessionStorage.getItem("templ_preview_key") || "";
+                saveSubscriptionPreviewPayload(payload, previewKey);
                 toast.success("Preview saved successfully!");
-                navigate(USER_ROUTES.SUBSCRIPTION);
+                navigate(USER_ROUTES.SUBSCRIPTION, {
+                  state: {
+                    slides: payload,
+                    previewKey,
+                  },
+                });
               } catch (err) {
                 console.error("Download failed:", err);
                 toast.error("Failed to prepare download. Try again.");
@@ -463,6 +1077,16 @@ const TempletEditorPreview: React.FC = () => {
         </Box>
       </Box>
       <div ref={containerRef} style={{ width: "100%", height: "90vh" }} />
+      {textureSlide && (
+        <Box sx={{ position: "fixed", left: -10000, top: 0, opacity: 0, pointerEvents: "none" }}>
+          <Box
+            ref={flatSlideRef}
+            sx={{ width: baseWidth, height: baseHeight, position: "relative" }}
+          >
+            {renderFlatSlide(textureSlide)}
+          </Box>
+        </Box>
+      )}
       {/* <input
         type="color"
         ref={colorRef}

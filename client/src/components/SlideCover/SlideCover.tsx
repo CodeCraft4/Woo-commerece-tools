@@ -33,6 +33,7 @@ import { safeGetStorage } from "../../lib/storage";
 import { getDraftCardId, isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
 import { pickPolygonLayout } from "../../lib/polygon";
+import { isIosTouchDevice } from "../../lib/platform";
 import { fetchCardById, fetchDraftByCardId } from "../../source/source";
 import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../hooks/useAlignGuides";
@@ -336,6 +337,25 @@ const createNewTextElement1 = (defaults: any) => ({
   locked: false,
 });
 
+const focusEditableTextFromTarget = (target: EventTarget | null) => {
+  const root = target instanceof HTMLElement ? target : null;
+  if (!root) return;
+
+  requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      const input = root.querySelector("textarea, input") as
+        | HTMLTextAreaElement
+        | HTMLInputElement
+        | null;
+      if (!input) return;
+      input.focus();
+      if (typeof input.select === "function") {
+        input.select();
+      }
+    }, 0);
+  });
+};
+
 const SlideCover = ({
   activeIndex,
   // togglePopup,
@@ -361,6 +381,7 @@ const SlideCover = ({
     return false;
   }, []);
   const hideTextOutline = !isAdminEditor && isMugsCategory;
+  const isIos = useMemo(() => isIosTouchDevice(), []);
   const handleBlankClick = (e: ReactMouseEvent) => {
     if (!hideTextOutline) return;
     if (e.target !== e.currentTarget) return;
@@ -1620,7 +1641,7 @@ const SlideCover = ({
                         display: "flex",
                         alignItems: vAlign,
                         justifyContent: hAlign,
-                        touchAction: "none",
+                        touchAction: textElement.isEditing ? "manipulation" : "none",
                         transition: "border 0.2s ease",
                         cursor: textElement.isEditing ? "text" : "move",
                       }}
@@ -1629,16 +1650,16 @@ const SlideCover = ({
                         if (e?.pointerType !== "touch") return;
                         touchStartTime = Date.now();
                       }}
-                      onTouchEnd={() => {
+                      onTouchEnd={(e: any) => {
                         const now = Date.now();
                         const timeSince = now - lastTap;
                         const touchDuration = now - touchStartTime;
                         if (touchDuration < 200) {
-                          if (timeSince < 300) {
-                            setSelectedTextId1(textElement.id);
+                          const shouldEdit = isIos || timeSince < 300;
+                          setSelectedTextId1(textElement.id);
+                          if (shouldEdit) {
                             updateTextElement1(textElement.id, { isEditing: true });
-                          } else {
-                            setSelectedTextId1(textElement.id);
+                            focusEditableTextFromTarget(e.currentTarget);
                           }
                         }
                         lastTap = now;
@@ -1649,19 +1670,20 @@ const SlideCover = ({
                         const timeSince = now - lastTap;
                         const touchDuration = now - touchStartTime;
                         if (touchDuration < 200) {
-                          if (timeSince < 300) {
-                            setSelectedTextId1(textElement.id);
+                          const shouldEdit = isIos || timeSince < 300;
+                          setSelectedTextId1(textElement.id);
+                          if (shouldEdit) {
                             updateTextElement1(textElement.id, { isEditing: true });
-                          } else {
-                            setSelectedTextId1(textElement.id);
+                            focusEditableTextFromTarget(e.currentTarget);
                           }
                         }
                         lastTap = now;
                       }}
                       onMouseDown={() => setSelectedTextId1(textElement.id)}
-                      onDoubleClick={() => {
+                      onDoubleClick={(e: any) => {
                         setSelectedTextId1(textElement.id);
                         updateTextElement1(textElement.id, { isEditing: true });
+                        focusEditableTextFromTarget(e.currentTarget);
                       }}
                       onDragStart={() => align.onDragStart()}
                       onDrag={(_, d) => {
@@ -1803,7 +1825,7 @@ const SlideCover = ({
                             alignItems: vAlign,
                             justifyContent: hAlign,
                             userSelect: "none",
-                            touchAction: "none",
+                            touchAction: textElement.isEditing ? "manipulation" : "none",
                             transform: `rotate(${textElement.rotation || 0}deg)`,
                             border: hideTextOutline
                               ? "none"
@@ -1813,9 +1835,10 @@ const SlideCover = ({
                             zIndex: textElement.zIndex,
                             cursor: textElement.isEditing ? "text" : "move", // ✅ keep move cursor
                           }}
-                          onDoubleClick={() => {
+                          onDoubleClick={(e: any) => {
                             setSelectedTextId1(textElement.id);
                             updateTextElement1(textElement.id, { isEditing: true });
+                            focusEditableTextFromTarget(e.currentTarget);
                           }}
                         >
                           <TextField
@@ -1847,7 +1870,11 @@ const SlideCover = ({
                               },
                             }}
                             onChange={(e) => updateTextElement1(textElement.id, { value: e.target.value })}
-                            onFocus={(e) => { e.stopPropagation(); updateTextElement1(textElement.id, { isEditing: true }); }}
+                            onFocus={(e) => {
+                              e.stopPropagation();
+                              setSelectedTextId1(textElement.id);
+                              updateTextElement1(textElement.id, { isEditing: true });
+                            }}
                             onBlur={(e) => { e.stopPropagation(); updateTextElement1(textElement.id, { isEditing: false }); }}
                             sx={{
                               "& .MuiInputBase-input": { overflowY: "auto", textAlign: textElement.textAlign || "center" },
