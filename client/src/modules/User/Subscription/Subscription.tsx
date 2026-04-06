@@ -56,6 +56,7 @@ import {
 } from "../../../constant/googleFonts";
 import { isIosTouchDevice } from "../../../lib/platform";
 import { renderTemplateSlideToCanvas } from "../../../lib/templateSlideCanvas";
+import { clearSubscriptionPreviewPayload, readSubscriptionPreviewPayload } from "../../../lib/subscriptionPreview";
 import Slide1 from "../Preview/component/Slide1/Slide1";
 import Slide2 from "../Preview/component/Slide2/Slide2";
 import Slide3 from "../Preview/component/Slide3/Slide3";
@@ -196,6 +197,16 @@ const readInitialPreviewConfig = (options?: {
     return storedCfg ? (JSON.parse(storedCfg) as PreviewConfig) : null;
   } catch {
     return null;
+  }
+};
+
+const resolveSubscriptionPreviewKey = (previewKey?: string | null) => {
+  const explicitKey = String(previewKey ?? "").trim();
+  if (explicitKey) return explicitKey;
+  try {
+    return String(sessionStorage.getItem("templ_preview_key") || "").trim();
+  } catch {
+    return "";
   }
 };
 
@@ -587,6 +598,10 @@ const Subscription = () => {
 
   const { user, plan } = useAuth();
   const navigate = useNavigate();
+  const subscriptionPreviewKey = useMemo(
+    () => resolveSubscriptionPreviewKey(state?.previewKey),
+    [state?.previewKey],
+  );
 
   const setCheckoutProgressStep = useCallback((value: number, label: string) => {
     setCheckoutProgress({
@@ -605,7 +620,10 @@ const Subscription = () => {
   }, []);
 
   const selectedProductSnapshot = useMemo(() => readSelectedProductSnapshot(), []);
-  const [slidesObj, setSlidesObj] = useState<Record<string, string>>({});
+  const [slidesObj, setSlidesObj] = useState<Record<string, string>>(() => getValidSlides(state?.slides));
+  const [subscriptionPreviewSlides, setSubscriptionPreviewSlides] = useState<Record<string, string>>(() =>
+    readSubscriptionPreviewPayload(resolveSubscriptionPreviewKey(state?.previewKey) || undefined),
+  );
   const [rawSlides, setRawSlides] = useState<RawSlide[]>(() =>
     readInitialRawSlides({
       previewKey: state?.previewKey,
@@ -670,11 +688,23 @@ const Subscription = () => {
       }),
     [isLegacyCardProduct, product?.id, selectedProductSnapshot?.id, state?.previewKey],
   );
+  const subscriptionPreviewSlide1 =
+    activeTemplatePreviewSession ? subscriptionPreviewSlides?.slide1 || "" : "";
+
+  useEffect(() => {
+    setSubscriptionPreviewSlides(readSubscriptionPreviewPayload(subscriptionPreviewKey || undefined));
+  }, [subscriptionPreviewKey]);
 
   useEffect(() => {
     let mounted = true;
 
     const loadSlides = async () => {
+      const routeSlides = getValidSlides(state?.slides);
+      if (Object.keys(routeSlides).length) {
+        if (mounted) setSlidesObj(routeSlides);
+        return;
+      }
+
       try {
         const globalSlides = (globalThis as any).__slidesCache;
         if (globalSlides && Object.keys(globalSlides).length) {
@@ -682,11 +712,6 @@ const Subscription = () => {
           return;
         }
       } catch {}
-
-      if (state?.slides) {
-        if (mounted) setSlidesObj(state.slides);
-        return;
-      }
 
       try {
         const fromSession = JSON.parse(sessionStorage.getItem("slides") || "{}");
@@ -767,7 +792,7 @@ const Subscription = () => {
     loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
   }, [captureSupportEnabled, rawSlides, visibleRawSlides]);
 
-  const firstSlideUrl = slidesObj?.slide1 || "";
+  const firstSlideUrl = subscriptionPreviewSlide1 || slidesObj?.slide1 || "";
   const captureWidth = Math.max(1, Math.round(Number(previewConfig?.mmWidth) || 800));
   const captureHeight = Math.max(1, Math.round(Number(previewConfig?.mmHeight) || 600));
 
@@ -1271,6 +1296,7 @@ const Subscription = () => {
 
   const mugPreview = useMemo(() => {
     if (!isMugsCategory) return "";
+    if (subscriptionPreviewSlide1) return subscriptionPreviewSlide1;
     if (slidesObj?.slide1) return slidesObj.slide1;
     try {
       const slides = JSON.parse(sessionStorage.getItem("slides") || "{}");
@@ -1278,7 +1304,7 @@ const Subscription = () => {
     } catch {
       return "";
     }
-  }, [isMugsCategory, slidesObj]);
+  }, [isMugsCategory, slidesObj, subscriptionPreviewSlide1]);
 
   // ✅ EXACT sizes (no filter)
   const sizeDefs = useMemo(() => {
@@ -1529,6 +1555,8 @@ const Subscription = () => {
       sessionStorage.removeItem("slides_mirrored_category");
       sessionStorage.removeItem("card_preview_downloaded");
     } catch {}
+
+    clearSubscriptionPreviewPayload();
 
     try {
       localStorage.removeItem("slides_backup");
@@ -2401,10 +2429,11 @@ const Subscription = () => {
   //     }
   //   })();
 
-  // Safari/iOS can produce incomplete html-to-image snapshots for template previews,
-  // so keep the live slide renderer on screen until checkout capture rebuilds the bitmap.
-  const preferLiveTemplatePreview = isIosWebKit && rawSlides.length > 0 && !isLegacyCardProduct;
-  const previewSrc = mugPreview || iosLegacyCardPreviewSrc || (preferLiveTemplatePreview ? "" : firstSlideProcessed || "");
+  // Prefer the stable preview bitmap for the subscription mockup when it already exists.
+  // Checkout capture still rebuilds from raw slide data where needed.
+  const previewSrc = mugPreview || iosLegacyCardPreviewSrc || firstSlideProcessed || "";
+  const preferLiveTemplatePreview =
+    isIosWebKit && rawSlides.length > 0 && !isLegacyCardProduct && !previewSrc;
   const showOverlayPreview = Boolean(previewSrc) && useMockupBackground;
   const showFlatPreview = Boolean(previewSrc) && !useMockupBackground;
   const showLiveTemplatePreview =

@@ -38,6 +38,8 @@ const canonicalCategory = (value: unknown) => {
 type LocationState = {
   categoryId?: string | number | null;
   categoryName?: string | null;
+  subCategory?: string | null;
+  subSubCategory?: string | null;
 };
 
 type ActiveTab = { id: string | number | null; name: string };
@@ -53,7 +55,54 @@ const getCardImage = (item: any) =>
 const getTempletImage = (item: any) =>
   item?.img_url ?? item?.imageUrl ?? item?.imageurl ?? item?.poster ?? "";
 
-const getCardTabName = (card: any) => card?.cardcategory ?? card?.cardCategory ?? "";
+const normalizeLabel = (value: unknown) =>
+  String(value ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[^a-z0-9 ]/g, "");
+
+const labelMatches = (candidate: unknown, expected: unknown) => {
+  const left = normalizeLabel(candidate);
+  const right = normalizeLabel(expected);
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+};
+
+const NON_CARD_TOP_LEVEL_CATEGORIES = new Set([
+  "bags",
+  "business cards",
+  "business leaflets",
+  "candles",
+  "clothing",
+  "coasters",
+  "invites",
+  "mugs",
+  "photo art",
+  "wall art",
+  "notebooks",
+  "stickers",
+]);
+
+const getCardMainName = (card: any) => card?.cardcategory ?? card?.cardCategory ?? "";
+const getCardSubName = (card: any) => card?.subCategory ?? card?.subcategory ?? card?.sub_category ?? "";
+const getCardSubSubName = (card: any) =>
+  card?.subSubCategory ?? card?.subsubcategory ?? card?.sub_subcategory ?? "";
+const getCardCategoryCandidates = (card: any) =>
+  [getCardMainName(card), getCardSubName(card), getCardSubSubName(card)].filter(
+    (value) => String(value ?? "").trim().length > 0,
+  );
+const isCardsFamilyCandidate = (candidate: unknown, knownCardSubcategories: string[]) => {
+  const value = String(candidate ?? "").trim();
+  if (!value) return false;
+
+  const canonical = canonicalCategory(value);
+  if (canonical === "cards") return true;
+  if (NON_CARD_TOP_LEVEL_CATEGORIES.has(canonical)) return false;
+  if (knownCardSubcategories.some((sub) => labelMatches(value, sub))) return true;
+
+  return /\bcard(s)?\b/i.test(value);
+};
 const getTempletTabName = (t: any) =>
   t?.category ??
   t?.categoryName ??
@@ -99,18 +148,44 @@ const getAccessPlan = (x: any): "free" | "bundle" | "pro" => {
 // };
 
 async function fetchCategoriesLight(): Promise<any[]> {
-  const { data, error } = await supabase.from("categories").select("id,name");
-  if (error) throw error;
-  return data ?? [];
+  const { data, error } = await supabase.from("categories").select("id,name,subcategories");
+  if (!error) return data ?? [];
+
+  const message = String(error.message ?? "").toLowerCase();
+  const isSchemaDrift =
+    message.includes("column") ||
+    message.includes("schema cache") ||
+    message.includes("does not exist");
+
+  if (!isSchemaDrift) throw error;
+
+  const fallback = await supabase.from("categories").select("*");
+  if (fallback.error) throw fallback.error;
+  return fallback.data ?? [];
 }
 
 async function fetchCardsLight(): Promise<any[]> {
   const { data, error } = await supabase
     .from("cards")
-    .select("id,cardname,imageurl,accessplan,cardcategory,created_at")
+    .select("id,cardname,imageurl,accessplan,cardcategory,cardCategory,subCategory,subcategory,subSubCategory,subsubcategory,created_at")
     .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  if (!error) return data ?? [];
+
+  const message = String(error.message ?? "").toLowerCase();
+  const isSchemaDrift =
+    message.includes("column") ||
+    message.includes("schema cache") ||
+    message.includes("does not exist");
+
+  if (!isSchemaDrift) throw error;
+
+  const fallback = await supabase
+    .from("cards")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (fallback.error) throw fallback.error;
+  return fallback.data ?? [];
 }
 
 async function fetchTemplatesLight(): Promise<any[]> {
@@ -158,6 +233,8 @@ const ViewAllCard = () => {
   const routeName = decodeURIComponent(search ?? "");
   const routeCategoryName = (state.categoryName ?? routeName ?? "").trim();
   const routeCategoryId = state.categoryId ?? null;
+  const routeSubCategory = String(state.subCategory ?? "").trim();
+  const routeSubSubCategory = String(state.subSubCategory ?? "").trim();
 
   // ✅ Title from URL (auto update when URL changes)
   const title = routeCategoryName || "All Products";
@@ -180,6 +257,16 @@ const ViewAllCard = () => {
     () => (categories ?? []).map((c: any) => ({ id: c.id, name: c.name })),
     [categories]
   );
+  const cardsCategorySubcategories = useMemo(() => {
+    const cardsCategory = (categories ?? []).find(
+      (c: any) => canonicalCategory(c?.name) === "cards",
+    );
+    return Array.isArray(cardsCategory?.subcategories)
+      ? cardsCategory.subcategories
+          .map((value: unknown) => String(value ?? "").trim())
+          .filter(Boolean)
+      : [];
+  }, [categories]);
 
   const { data: cardData = [], isLoading: cardsLoading } = useQuery({
     queryKey: ["allCards:light"],
@@ -236,8 +323,30 @@ const ViewAllCard = () => {
     const list = Array.isArray(cardData) ? cardData : [];
     if (activeTab.name === VIEW_ALL) return list;
     const wantTab = canonicalCategory(activeTab.name);
-    return list.filter((card) => canonicalCategory(getCardTabName(card)) === wantTab);
-  }, [cardData, activeTab.name]);
+    return list.filter((card) => {
+      const mainCategory = getCardMainName(card);
+      const subCategory = getCardSubName(card);
+      const subSubCategory = getCardSubSubName(card);
+      const candidates = getCardCategoryCandidates(card);
+
+      if (wantTab === "cards") {
+        if (routeSubCategory && !candidates.some((candidate) => labelMatches(candidate, routeSubCategory))) {
+          return false;
+        }
+        if (routeSubSubCategory && !candidates.some((candidate) => labelMatches(candidate, routeSubSubCategory))) {
+          return false;
+        }
+
+        return candidates.some((candidate) => isCardsFamilyCandidate(candidate, cardsCategorySubcategories));
+      }
+
+      return (
+        canonicalCategory(mainCategory) === wantTab ||
+        canonicalCategory(subCategory) === wantTab ||
+        canonicalCategory(subSubCategory) === wantTab
+      );
+    });
+  }, [cardData, activeTab.name, cardsCategorySubcategories, routeSubCategory, routeSubSubCategory]);
 
   const filteredTemplets = useMemo(() => {
     const list = Array.isArray(templetCardData) ? templetCardData : [];
