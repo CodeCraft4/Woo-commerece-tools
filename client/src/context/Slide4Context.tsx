@@ -423,6 +423,7 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [editingIndex4, setEditingIndex4] = useState<number | null>(null);
 
   const [images4, setImages4] = useState<{ id: number; src: string }[]>([]);
+  const [layout4, setLayout4] = useState<any>(null);
   const [video4, setVideo4] = useState<File[] | null>(null);
   const [audio4, setAudio4] = useState<File[] | null>(null);
   const [tips4, setTips4] = useState(false);
@@ -666,13 +667,14 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.qrPosition4) setQrPosition4(parsed.qrPosition4);
         if (parsed.qrAudioPosition4) setQrAudioPosition4(parsed.qrAudioPosition4);
         if (parsed.aimage4) setAIImage4(parsed.aimage4);
-        if (typeof parsed.isAIimage4 === "boolean") setIsAIimage4(parsed.isAIimage);
+        if (typeof parsed.isAIimage4 === "boolean") setIsAIimage4(parsed.isAIimage4);
         if (parsed.selectedAIimageUrl4)
           setSelectedAIimageUrl4(parsed.selectedAIimageUrl4);
 
         if (parsed.bgColor4 !== undefined) setBgColor4(parsed.bgColor4);
         if (parsed.bgImage4 !== undefined) setBgImage4(parsed.bgImage4);
-        if (Object.prototype.hasOwnProperty.call(parsed, "selectedShapePath3")) setSelectedShapePath4(parsed.selectedShapePath4);
+        if (Object.prototype.hasOwnProperty.call(parsed, "selectedShapePath4")) setSelectedShapePath4(parsed.selectedShapePath4);
+        if (parsed.layout4) setLayout4(parsed.layout4);
 
         if (parsed.fontSize4) setFontSize4(parsed.fontSize4);
         if (parsed.fontWeight4) setFontWeight4(parsed.fontWeight4);
@@ -763,7 +765,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
 
       bgColor4,
       bgImage4,
-      selectedShapePath4
+      selectedShapePath4,
+      layout4,
     };
 
     const payload = JSON.stringify(stateToSave);
@@ -803,7 +806,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
 
     bgColor4,
     bgImage4,
-    selectedShapePath4
+    selectedShapePath4,
+    layout4,
   ]);
 
   // --- 🧹 Clear localStorage ---
@@ -820,9 +824,6 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error clearing slide4_state:", error);
     }
   };
-
-  // Layout with uploaded images for preview
-  const [layout4, setLayout4] = useState<any>(null);
 
   return (
     <Slide4Context.Provider

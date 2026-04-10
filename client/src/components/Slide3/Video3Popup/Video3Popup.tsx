@@ -44,7 +44,7 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
   const { user } = useAuth();
   const generateId = () => Date.now() + Math.random();
 
-  // ✅ Handle multiple video files
+  // Handle multiple video files
   const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -54,7 +54,7 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
     const validFiles: any = Array.from(files).filter((file) => {
       const fileSizeMB = file.size / (1024 * 1024);
       if (fileSizeMB > 50) {
-        setFileError(`❌ ${file.name.slice(0, 20)} is too large (max 50MB).`);
+        setFileError(`Error: ${file.name.slice(0, 20)} is too large (max 50MB).`);
         return false;
       }
       return true;
@@ -64,7 +64,7 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
     setVideo3(validFiles); // store as an array
   };
 
-  // ✅ Save video URL to the user's "video" array in DB
+  // Save video URL to the user's "video" array in DB
   const saveVideoUrlToDB = async (videoData: any) => {
     if (!user?.id) return;
 
@@ -75,7 +75,7 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
       .single();
 
     if (fetchError) {
-      console.error("❌ Error fetching user data:", fetchError);
+      console.error("Error fetching user data:", fetchError);
       return;
     }
 
@@ -89,12 +89,12 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
       .eq("auth_id", user.id);
 
     if (updateError) {
-      console.error("❌ Error updating videos:", updateError);
+      console.error("Error updating videos:", updateError);
       return;
     }
   };
 
-  // ✅ Upload video to Supabase Storage
+  // Upload video to Supabase Storage
 
 
   const handleVideoUpload = async () => {
@@ -172,10 +172,10 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
     []
   );
 
-  // ✅ Fetch user videos
+  // Fetch user videos
   const fetchUserVideos = async () => {
     if (!user?.id) return;
-    console.log("🎯 Fetching videos for user:", user.id);
+    console.log("Fetching videos for user:", user.id);
 
     const { data, error } = await supabase
       .from("Users")
@@ -183,18 +183,18 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
       .eq("auth_id", user.id)
       .single();
 
-    console.log("📥 Supabase fetch result:", { data, error });
+    console.log("Supabase fetch result:", { data, error });
 
     if (error) {
-      console.error("❌ Error fetching videos:", error);
+      console.error("Error fetching videos:", error);
       return;
     }
 
     if (data?.video) {
-      console.log("✅ Fetched user videos:", data.video);
+      console.log("Fetched user videos:", data.video);
       setUserVideos(data.video);
     } else {
-      console.log("⚠️ No videos found for user.");
+      console.log("No videos found for user.");
     }
   };
 
@@ -233,7 +233,7 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
 
     if (!error) {
       setUserVideos(updated);
-      toast.success("✅ Video deleted successfully");
+      toast.success("Video deleted successfully");
     }
   };
 
@@ -401,7 +401,7 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
                   {
                     isDeleteMedia ? <Typography
                       sx={{ fontSize: "14px", fontWeight: "bold", mb: 1, color: 'red', opacity: 0.5 }}
-                    >⏱️ Your videos is deleted after one week</Typography> : <Typography
+                    >Your videos are deleted after one week</Typography> : <Typography
                       sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
                     >
                       Your Uploaded Videos:
@@ -409,7 +409,7 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
                       <hr />
                       <span style={{ fontSize: '14px', fontWeight: 500, }}>
                         Double tap your video to
-                        load your qr code onto your card
+                        load your qr code onto your card
                       </span>
                     </Typography>
                   }
@@ -453,7 +453,7 @@ const Video3Popup = ({ onClose }: Video3PopupProps) => {
                             {v.name.slice(0, 15)}
                           </Typography>
                           <Typography sx={{ fontSize: "13px", color: "#777" }}>
-                            ⏱ {v.duration || "–"} &nbsp; • &nbsp; 💾 {v.size || "–"}
+                            Duration: {v.duration || "-"} &nbsp; | &nbsp; Size: {v.size || "-"}
                           </Typography>
                         </Box>
 

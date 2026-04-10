@@ -521,7 +521,6 @@ const ImageCropModal = ({ open, imageSrc, aspect = 1, onClose, onApply }: Props)
 
                     {points.map((p, idx) => (
                       <Box
-                        // eslint-disable-next-line react/no-array-index-key
                         key={`pt-${idx}`}
                         sx={{
                           position: "absolute",

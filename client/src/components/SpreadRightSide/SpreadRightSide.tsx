@@ -2566,7 +2566,18 @@ const SpreadRightSide = ({
                       const isActive = editingIndex3 === i;        // reuse your existing editingIndex
                       return (
                         <Box key={te.id ?? i}
-                          onClick={te.isEditable ? () => setEditingIndex3(i) : undefined}
+                          onClick={te.isEditable ? (e) => {
+                            handleTextFocus(i, te);
+                            focusEditableTextFromTarget(e.currentTarget);
+                          } : undefined}
+                          onDoubleClick={te.isEditable ? (e) => {
+                            handleTextFocus(i, te);
+                            focusEditableTextFromTarget(e.currentTarget);
+                          } : undefined}
+                          onTouchEnd={te.isEditable ? (e) => {
+                            handleTextFocus(i, te);
+                            focusEditableTextFromTarget(e.currentTarget);
+                          } : undefined}
                           sx={{
                             position: "absolute", left: te.x, top: te.y, width: te.width, height: te.height,
                             zIndex: (te.zIndex ?? 1) + 1000,         // lift text above images
@@ -2584,6 +2595,7 @@ const SpreadRightSide = ({
                             variant="standard" fullWidth multiline value={te.text || ""}
                             onFocus={te.isEditable ? () => handleTextFocus(i, te) : undefined}
                             onChange={te.isEditable ? (e) => handleTextChange(e.target.value, i) : undefined}
+                            onBlur={() => setEditingIndex3(null)}
                             InputProps={{
                               readOnly: !te.isEditable || !isActive,      // ✅ only editable when selected
                               disableUnderline: true,
@@ -2598,6 +2610,7 @@ const SpreadRightSide = ({
                                 background: "transparent",
                                 lineHeight: "1.2em",
                                 cursor: te.isEditable ? (isActive ? "text" : "pointer") : "default",
+                                pointerEvents: te.isEditable && isActive ? "auto" : "none",
                               },
                             }}
                             sx={{
@@ -2676,6 +2689,10 @@ const SpreadRightSide = ({
                           }
                         }}
                         onTouchStart={() => { touchStartTime = Date.now(); }}
+                        onPointerDown={(e: any) => {
+                          if (e?.pointerType !== "touch") return;
+                          touchStartTime = Date.now();
+                        }}
                         onTouchEnd={(e: any) => {
                           const now = Date.now();
                           const timeSince = now - lastTap;
@@ -2686,6 +2703,23 @@ const SpreadRightSide = ({
                             if (shouldEdit) {
                               updateTextElement(textElement.id, { isEditing: true });
                               focusEditableTextFromTarget(e.currentTarget);
+                            }
+                          }
+                          lastTap = now;
+                        }}
+                        onPointerUp={(e: any) => {
+                          if (e?.pointerType !== "touch") return;
+                          const now = Date.now();
+                          const timeSince = now - lastTap;
+                          const touchDuration = now - touchStartTime;
+                          if (touchDuration < 200) {
+                            const shouldEdit = isIos || timeSince < 300;
+                            setSelectedTextId3(textElement.id);
+                            if (shouldEdit) {
+                              updateTextElement(textElement.id, { isEditing: true });
+                              focusEditableTextFromTarget(e.currentTarget);
+                            } else {
+                              updateTextElement(textElement.id, { isEditing: false });
                             }
                           }
                           lastTap = now;
@@ -2824,7 +2858,7 @@ const SpreadRightSide = ({
                               multiline
                               fullWidth
                               tabIndex={0}
-                              // autoFocus={textElement.id === selectedTextId1 && textElement.isEditing}
+                              autoFocus={!!textElement.isEditing}
                               InputProps={{
                                 readOnly: !textElement.isEditing,
                                 disableUnderline: true,

@@ -304,14 +304,6 @@ const CategoriesWisePreview: React.FC = () => {
   const [flipDir, setFlipDir] = useState<"next" | "prev">("next");
   const [flipping, setFlipping] = useState(false);
 
-  if (!config) {
-    return (
-      <Box sx={{ height: "92vh", display: "grid", placeItems: "center" }}>
-        <Typography>No preview data.</Typography>
-      </Box>
-    );
-  }
-
   const hasCaptured = (captured?.length || 0) > 0;
   const slideCount = Math.max(1, hasCaptured ? captured.length : slides.length);
   const [previewScale, setPreviewScale] = useState(1);
@@ -801,6 +793,14 @@ const CategoriesWisePreview: React.FC = () => {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [currentImg, computeBoxForImage]);
+
+  if (!config) {
+    return (
+      <Box sx={{ height: "92vh", display: "grid", placeItems: "center" }}>
+        <Typography>No preview data.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <>

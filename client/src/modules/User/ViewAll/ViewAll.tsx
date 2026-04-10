@@ -103,13 +103,29 @@ const isCardsFamilyCandidate = (candidate: unknown, knownCardSubcategories: stri
 
   return /\bcard(s)?\b/i.test(value);
 };
-const getTempletTabName = (t: any) =>
+const getTempletMainName = (t: any) =>
   t?.category ??
   t?.categoryName ??
   t?.templetCategory ??
   t?.cardcategory ??
   t?.cardCategory ??
   "";
+const getTempletSubName = (t: any) => t?.subCategory ?? t?.subcategory ?? t?.sub_category ?? "";
+const getTempletSubSubName = (t: any) =>
+  t?.subSubCategory ?? t?.subsubcategory ?? t?.sub_subcategory ?? "";
+const getTempletCategoryCandidates = (t: any) =>
+  [getTempletMainName(t), getTempletSubName(t), getTempletSubSubName(t)].filter(
+    (value) => String(value ?? "").trim().length > 0,
+  );
+const isTemplateCardsFamily = (t: any, knownCardSubcategories: string[]) => {
+  const mainCanonical = canonicalCategory(getTempletMainName(t));
+  if (mainCanonical === "cards") return true;
+  if (NON_CARD_TOP_LEVEL_CATEGORIES.has(mainCanonical)) return false;
+  return getTempletCategoryCandidates(t).some((candidate) =>
+    isCardsFamilyCandidate(candidate, knownCardSubcategories)
+  );
+};
+const getTempletTabName = (t: any) => getTempletMainName(t);
 
 const getAccessPlan = (x: any): "free" | "bundle" | "pro" => {
   const v = lc(x?.accessplan ?? x?.accessPlan ?? x?.plan ?? x?.plan_code ?? x?.code);
@@ -191,7 +207,7 @@ async function fetchCardsLight(): Promise<any[]> {
 async function fetchTemplatesLight(): Promise<any[]> {
   const { data, error } = await supabase
     .from("templetDesign")
-    .select("id,title,img_url,accessplan,category,created_at")
+    .select("id,title,img_url,accessplan,category,categoryName,templetCategory,subCategory,subcategory,subSubCategory,subsubcategory,created_at")
     .order("created_at", { ascending: false });
   if (!error) return data ?? [];
 
@@ -352,8 +368,20 @@ const ViewAllCard = () => {
     const list = Array.isArray(templetCardData) ? templetCardData : [];
     if (activeTab.name === VIEW_ALL) return list;
     const wantTab = canonicalCategory(activeTab.name);
+    if (wantTab === "cards") {
+      return list.filter((t) => {
+        const candidates = getTempletCategoryCandidates(t);
+        if (routeSubCategory && !candidates.some((candidate) => labelMatches(candidate, routeSubCategory))) {
+          return false;
+        }
+        if (routeSubSubCategory && !candidates.some((candidate) => labelMatches(candidate, routeSubSubCategory))) {
+          return false;
+        }
+        return isTemplateCardsFamily(t, cardsCategorySubcategories);
+      });
+    }
     return list.filter((t) => canonicalCategory(getTempletTabName(t)) === wantTab);
-  }, [templetCardData, activeTab.name]);
+  }, [templetCardData, activeTab.name, cardsCategorySubcategories, routeSubCategory, routeSubSubCategory]);
 
   const filteredData = useMemo(() => {
     const cards = filteredCards.map((x: any) => ({ ...x, __type: "card" as const }));

@@ -641,7 +641,6 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
 
     // Clear data store snapshot
     setSlide1DataStore1([]);
-    slide1DataStore1;
 
     setBgColor1(null);
     setBgImage1(null);

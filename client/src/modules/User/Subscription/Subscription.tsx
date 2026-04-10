@@ -1166,6 +1166,7 @@ const Subscription = () => {
       setIosLegacyCardPreviewSrc("");
       return;
     }
+    if (firstSlideUrl) return;
 
     let alive = true;
 
@@ -1186,7 +1187,7 @@ const Subscription = () => {
     return () => {
       alive = false;
     };
-  }, [captureLegacyCardSlidesFromDom, ensureCaptureSupportReady, isIosWebKit, isLegacyCardProduct]);
+  }, [captureLegacyCardSlidesFromDom, ensureCaptureSupportReady, firstSlideUrl, isIosWebKit, isLegacyCardProduct]);
 
   const storeSlidesPayload = useCallback((next: Record<string, string>) => {
     setSlidesObj(next);
@@ -1655,10 +1656,10 @@ const Subscription = () => {
       const current = await getSlidesPayload();
       const currentKeys = Object.keys(current || {}).filter((k) => current[k]);
       const bypassStoredIosPreviewSlides =
-        isIosWebKit && (isLegacyCardProduct || (activeTemplatePreviewSession && rawSlides.length > 0));
+        isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0;
       const expectedCount = (() => {
         if (rawSlides.length) return rawSlides.length;
-        if (isLegacyCardProduct) return 4;
+        if (isLegacyCardProduct) return currentKeys.length > 0 ? currentKeys.length : 4;
         try {
           const n = Number(sessionStorage.getItem("rawSlidesCount") || "0");
           return Number.isFinite(n) && n > 0 ? n : 0;
@@ -2041,6 +2042,8 @@ const Subscription = () => {
   }, [categoryName, isMugsCategory]);
 
   useEffect(() => {
+    const skipLegacyIosPrefetch = isIosWebKit && isLegacyCardProduct && Boolean(firstSlideUrl);
+    if (skipLegacyIosPrefetch) return;
     let cancelled = false;
     let frameId: number | null = null;
 
@@ -2048,12 +2051,20 @@ const Subscription = () => {
       try {
         const current = await getSlidesPayload();
         const currentKeys = Object.keys(current || {}).filter((k) => current[k]);
-        const expectedCount = rawSlides.length ? rawSlides.length : isLegacyCardProduct ? 4 : 0;
+        const expectedCount = rawSlides.length
+          ? rawSlides.length
+          : isLegacyCardProduct
+            ? currentKeys.length > 0
+              ? currentKeys.length
+              : 4
+            : 0;
+        const bypassStoredIosPreviewSlides =
+          isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0;
         const hasEnough = expectedCount ? currentKeys.length >= expectedCount : currentKeys.length > 0;
         const hasPng =
           prefetchCaptureFormat !== "png" ||
           currentKeys.every((k) => String(current[k] || "").startsWith("data:image/png"));
-        if (hasEnough && hasPng && !isPreviewOnly) return;
+        if (!bypassStoredIosPreviewSlides && hasEnough && hasPng && !isPreviewOnly) return;
 
         const capturedList = readCapturedSlidesFromStorage();
         const capturedEnough = expectedCount
@@ -2062,7 +2073,7 @@ const Subscription = () => {
         const capturedHasPng =
           prefetchCaptureFormat !== "png" ||
           capturedList.every((u) => String(u || "").startsWith("data:image/png"));
-        if (capturedEnough && capturedHasPng) {
+        if (!bypassStoredIosPreviewSlides && capturedEnough && capturedHasPng) {
           if (!cancelled) {
             const next = Object.fromEntries(capturedList.map((u, idx) => [`slide${idx + 1}`, u]));
             storeSlidesPayload(next);
@@ -2073,8 +2084,15 @@ const Subscription = () => {
         if (!rawSlides.length && !isLegacyCardProduct) return;
 
         await ensureCaptureSupportReady();
+        const useCanvasCaptureForTemplate =
+          isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0;
         const list = rawSlides.length
-          ? await captureSlidesFromDom(prefetchCaptureFormat, prefetchCaptureFormat === "png" ? 2400 : 1600)
+          ? useCanvasCaptureForTemplate
+            ? await captureSlidesFromCanvasRenderer(
+                prefetchCaptureFormat,
+                prefetchCaptureFormat === "png" ? 2400 : 1600
+              )
+            : await captureSlidesFromDom(prefetchCaptureFormat, prefetchCaptureFormat === "png" ? 2400 : 1600)
           : await captureLegacyCardSlidesFromDom(1600);
         if (cancelled || !list.length) return;
         const next = Object.fromEntries(list.map((u, idx) => [`slide${idx + 1}`, u]));
@@ -2096,11 +2114,15 @@ const Subscription = () => {
     };
   }, [
     captureLegacyCardSlidesFromDom,
+    captureSlidesFromCanvasRenderer,
     captureSlidesFromDom,
     ensureCaptureSupportReady,
     getSlidesPayload,
+    activeTemplatePreviewSession,
+    isIosWebKit,
     isLegacyCardProduct,
     isPreviewOnly,
+    firstSlideUrl,
     prefetchCaptureFormat,
     rawSlides,
     readCapturedSlidesFromStorage,
@@ -2347,6 +2369,7 @@ const Subscription = () => {
   );
 
   const [firstSlideProcessed, setFirstSlideProcessed] = useState(firstSlideUrl);
+  const [hydratedPreviewSrc, setHydratedPreviewSrc] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -2415,6 +2438,27 @@ const Subscription = () => {
     };
   }, [firstSlideUrl, isStickerCategory, isCandleCategory, isBagCategory, isClothingCategory]);
 
+  useEffect(() => {
+    const candidate = mugPreview || firstSlideProcessed || iosLegacyCardPreviewSrc || "";
+    if (!candidate) return;
+    if (candidate === hydratedPreviewSrc) return;
+
+    let cancelled = false;
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => {
+      if (!cancelled) setHydratedPreviewSrc(candidate);
+    };
+    img.onerror = () => {
+      if (!cancelled) setHydratedPreviewSrc(candidate);
+    };
+    img.src = candidate;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [firstSlideProcessed, hydratedPreviewSrc, iosLegacyCardPreviewSrc, mugPreview]);
+
   // const productName =
   //   product?.title ||
   //   product?.category ||
@@ -2431,11 +2475,11 @@ const Subscription = () => {
 
   // Prefer the stable preview bitmap for the subscription mockup when it already exists.
   // Checkout capture still rebuilds from raw slide data where needed.
-  const previewSrc = mugPreview || iosLegacyCardPreviewSrc || firstSlideProcessed || "";
+  const previewSrc = hydratedPreviewSrc || mugPreview || firstSlideProcessed || iosLegacyCardPreviewSrc || "";
   const preferLiveTemplatePreview =
-    isIosWebKit && rawSlides.length > 0 && !isLegacyCardProduct && !previewSrc;
-  const showOverlayPreview = Boolean(previewSrc) && useMockupBackground;
-  const showFlatPreview = Boolean(previewSrc) && !useMockupBackground;
+    activeTemplatePreviewSession && isIosWebKit && rawSlides.length > 0 && !isLegacyCardProduct && !previewSrc;
+  const showOverlayPreview = Boolean(previewSrc) && useMockupBackground && !preferLiveTemplatePreview;
+  const showFlatPreview = Boolean(previewSrc) && !useMockupBackground && !preferLiveTemplatePreview;
   const showLiveTemplatePreview =
     activeTemplatePreviewSession && rawSlides.length > 0 && (preferLiveTemplatePreview || !previewSrc);
   const showLiveCardPreview = isLegacyCardProduct && !previewSrc;
@@ -2584,6 +2628,10 @@ const Subscription = () => {
                     clipPath: mock?.overlay.clipPath,
                     WebkitClipPath: mock?.overlay.clipPath,
                     borderRadius: mock?.overlay.borderRadius ?? 0,
+                    transform: isIosWebKit ? "translateZ(0)" : undefined,
+                    WebkitTransform: isIosWebKit ? "translateZ(0)" : undefined,
+                    backfaceVisibility: isIosWebKit ? "hidden" : undefined,
+                    WebkitBackfaceVisibility: isIosWebKit ? "hidden" : undefined,
                     ...(mock?.overlay.sx as any),
                   }}
                 >
@@ -2598,11 +2646,27 @@ const Subscription = () => {
                       display: "block",
                       userSelect: "none",
                       pointerEvents: "none",
+                      transform: isIosWebKit ? "translateZ(0)" : undefined,
+                      WebkitTransform: isIosWebKit ? "translateZ(0)" : undefined,
+                      backfaceVisibility: isIosWebKit ? "hidden" : undefined,
+                      WebkitBackfaceVisibility: isIosWebKit ? "hidden" : undefined,
                     }}
                   />
                 </Box>
               ) : showFlatPreview ? (
-                <Box component="img" src={previewSrc} sx={{ width: "100%", height: "100%", objectFit: "fill" }} />
+                <Box
+                  component="img"
+                  src={previewSrc}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "fill",
+                    transform: isIosWebKit ? "translateZ(0)" : undefined,
+                    WebkitTransform: isIosWebKit ? "translateZ(0)" : undefined,
+                    backfaceVisibility: isIosWebKit ? "hidden" : undefined,
+                    WebkitBackfaceVisibility: isIosWebKit ? "hidden" : undefined,
+                  }}
+                />
               ) : showLiveTemplatePreview ? (
                 useMockupBackground ? (
                   <Box

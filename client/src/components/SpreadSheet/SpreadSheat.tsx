@@ -2308,8 +2308,18 @@ const SlideSpread = ({
                           borderRadius: "6px",
                           transition: "border .15s ease",
                         }}
-                        onClick={isEditable ? () => handleTextFocus(index, te) : undefined}
-                        onDoubleClick={isEditable ? () => handleTextFocus(index, te) : undefined}
+                        onClick={isEditable ? (e) => {
+                          handleTextFocus(index, te);
+                          focusEditableTextFromTarget(e.currentTarget);
+                        } : undefined}
+                        onDoubleClick={isEditable ? (e) => {
+                          handleTextFocus(index, te);
+                          focusEditableTextFromTarget(e.currentTarget);
+                        } : undefined}
+                        onTouchEnd={isEditable ? (e) => {
+                          handleTextFocus(index, te);
+                          focusEditableTextFromTarget(e.currentTarget);
+                        } : undefined}
                       >
                         <TextField
                           variant="standard"
@@ -2615,7 +2625,7 @@ const SlideSpread = ({
                                 multiline
                                 fullWidth
                                 tabIndex={0}
-                                autoFocus={textElement.id === selectedTextId ? true : false}
+                                autoFocus={!!textElement.isEditing}
                                 InputProps={{
                                   readOnly: !textElement.isEditing,
                                   disableUnderline: true,

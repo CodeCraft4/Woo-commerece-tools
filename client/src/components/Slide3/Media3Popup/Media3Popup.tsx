@@ -58,15 +58,15 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
       const fileSizeMB = file.size / (1024 * 1024);
       const ext = file.name.split(".").pop()?.toLowerCase();
 
-      // ✅ Check file type
+      // Check file type
       if (!ext || !allowedExtensions.includes(ext)) {
-        alert(`❌ ${file.name} is not a supported audio format.`);
+        alert(`Error: ${file.name} is not a supported audio format.`);
         return false;
       }
 
-      // ✅ Check file size (max 50MB)
+      // Check file size (max 50MB)
       if (fileSizeMB > 50) {
-        alert(`❌ ${file.name} is too large (max 50MB).`);
+        alert(`Error: ${file.name} is too large (max 50MB).`);
         return false;
       }
 
@@ -78,7 +78,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
       return;
     }
 
-    // ✅ Set valid audio files
+    // Set valid audio files
     setAudio3(validFiles);
   };
 
@@ -105,7 +105,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
 
       if (error) throw error;
     } catch (err) {
-      console.error("❌ Error saving audio:", err);
+      console.error("Error saving audio:", err);
     }
   };
 
@@ -124,7 +124,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
         const fileName = `${audioId}.${fileExt}`;
         const filePath = `audio/${fileName}`;
 
-        // 1️⃣ Upload audio file
+        // Upload audio file
         const { error: uploadError } = await supabase.storage
           .from("media")
           .upload(filePath, file, {
@@ -140,16 +140,16 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
           continue;
         }
 
-        // 2️⃣ Get public URL
+        // Get public URL
         const { data: publicData } = supabase.storage
           .from("media")
           .getPublicUrl(filePath);
 
-        // 3️⃣ Save URL to DB
+        // Save URL to DB
         await saveAudioUrlToDB(audioId, publicData.publicUrl);
         setSelectedAudioUrl3(publicData.publicUrl);
 
-        // 4️⃣ Schedule auto-delete (2 min for testing or 1 week in production)
+        // Schedule auto-delete (2 min for testing or 1 week in production)
         handleAutoDeletedAudio(
           user?.id,
           audioId,
@@ -188,7 +188,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
       .single();
 
     if (error) {
-      console.error("❌ Error fetching audios:", error);
+      console.error("Error fetching audios:", error);
       return;
     }
 
@@ -387,7 +387,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
                   {
                     isDeleteMedia ? <Typography
                       sx={{ fontSize: "14px", fontWeight: "bold", mb: 1, color: 'red', opacity: 0.5 }}
-                    >⏱️ Your videos is deleted after one week</Typography> :  <Typography
+                    >Your videos are deleted after one week</Typography> :  <Typography
                         sx={{ fontSize: "16px", fontWeight: "bold", mb: 1 }}
                       >
                         Your Uploaded Audios:
@@ -395,7 +395,7 @@ const Media3Popup = ({ onClose, mediaType }: Media3PopupProps) => {
                         <hr />
                         <span style={{ fontSize: '14px', fontWeight: 500, }}>
                           Double tap your video to
-                          load your qr code onto your card
+                          load your qr code onto your card
                         </span>
                       </Typography>
                   }

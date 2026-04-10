@@ -742,8 +742,18 @@ export const UserSlide4Preview = () => {
                   borderRadius: "6px",
                   transition: "border .15s ease",
                 }}
-                onClick={isEditable ? () => setEditingIndex(index) : undefined}
-                onDoubleClick={isEditable ? () => setEditingIndex(index) : undefined}
+                onClick={isEditable ? (e) => {
+                  handleTextFocus(index, te);
+                  focusEditableTextFromTarget(e.currentTarget);
+                } : undefined}
+                onDoubleClick={isEditable ? (e) => {
+                  handleTextFocus(index, te);
+                  focusEditableTextFromTarget(e.currentTarget);
+                } : undefined}
+                onTouchEnd={isEditable ? (e) => {
+                  handleTextFocus(index, te);
+                  focusEditableTextFromTarget(e.currentTarget);
+                } : undefined}
               >
                 <TextField
                   variant="standard"

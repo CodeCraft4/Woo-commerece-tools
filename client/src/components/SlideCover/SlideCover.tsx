@@ -1548,8 +1548,18 @@ const SlideCover = ({
                         borderRadius: "6px",
                         transition: "border .15s ease",
                       }}
-                      onClick={isEditable ? () => handleTextFocus(index, te) : undefined}
-                      onDoubleClick={isEditable ? () => handleTextFocus(index, te) : undefined}
+                      onClick={isEditable ? (e) => {
+                        handleTextFocus(index, te);
+                        focusEditableTextFromTarget(e.currentTarget);
+                      } : undefined}
+                      onDoubleClick={isEditable ? (e) => {
+                        handleTextFocus(index, te);
+                        focusEditableTextFromTarget(e.currentTarget);
+                      } : undefined}
+                      onTouchEnd={isEditable ? (e) => {
+                        handleTextFocus(index, te);
+                        focusEditableTextFromTarget(e.currentTarget);
+                      } : undefined}
                     >
                       <TextField
                         variant="standard"

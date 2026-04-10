@@ -120,10 +120,10 @@ const BirthdaySlider = ({ title, description, brandSlider }: BirthdayTypes) => {
       // card category value (handles string OR object with name)
       const rawCat =
         card?.subCategory ??
-        card?.subCategory ??
-        card?.cardname
-      // card?.cardcategory?.name ??
-      "";
+        card?.cardcategory ??
+        card?.cardCategory ??
+        card?.cardname ??
+        "";
 
       const cardCatNorm = normalize(rawCat);
 
