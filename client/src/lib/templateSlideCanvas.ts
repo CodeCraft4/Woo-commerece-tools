@@ -42,6 +42,13 @@ type RenderOptions = {
   backgroundColor?: string;
 };
 
+export type TemplateSlideCanvasRenderResult = {
+  canvas: HTMLCanvasElement;
+  expectedAssets: number;
+  drawnAssets: number;
+  failedAssets: number;
+};
+
 const GENERIC_FONT_FAMILIES = new Set([
   "serif",
   "sans-serif",
@@ -99,6 +106,17 @@ const resolveImageSrc = (src: string) => {
   return src;
 };
 
+const isDataOrBlobUrl = (src: string) => /^(data|blob):/i.test(src);
+
+const isSameOriginUrl = (src: string) => {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URL(src, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+};
+
 const blobToDataUrl = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
     const fr = new FileReader();
@@ -124,6 +142,20 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
   if (cached) return cached;
 
   const promise = (async () => {
+    if (isDataOrBlobUrl(resolved) || isSameOriginUrl(resolved)) {
+      return await loadHtmlImage(resolved);
+    }
+
+    try {
+      // Fetching first avoids Safari/WebKit promoting a failed anonymous image
+      // load into cache and then failing the non-CORS retry for the same URL.
+      const resp = await fetch(resolved, { mode: "cors" });
+      if (!resp.ok) throw new Error(`Failed to fetch image: ${resolved}`);
+      const blob = await resp.blob();
+      const dataUrl = await blobToDataUrl(blob);
+      return await loadHtmlImage(dataUrl);
+    } catch {}
+
     try {
       // Preferred: CORS-enabled load keeps the canvas exportable.
       return await loadHtmlImage(resolved, "anonymous");
@@ -135,16 +167,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       return await loadHtmlImage(resolved);
     } catch {}
 
-    try {
-      // Last fallback: fetch and inline as data URL when CORS fetch is permitted.
-      const resp = await fetch(resolved, { mode: "cors" });
-      if (!resp.ok) throw new Error(`Failed to fetch image: ${resolved}`);
-      const blob = await resp.blob();
-      const dataUrl = await blobToDataUrl(blob);
-      return await loadHtmlImage(dataUrl);
-    } catch {
-      throw new Error(`Failed to load image: ${resolved}`);
-    }
+    throw new Error(`Failed to load image: ${resolved}`);
   })();
 
   imageCache.set(resolved, promise);
@@ -465,10 +488,10 @@ export const collectTemplateSlideFonts = (slides: TemplateSlide[]) => {
   return Array.from(fonts);
 };
 
-export const renderTemplateSlideToCanvas = async (
+export const renderTemplateSlideToCanvasWithStats = async (
   slide: TemplateSlide,
   options: RenderOptions,
-) => {
+): Promise<TemplateSlideCanvasRenderResult> => {
   const pixelRatio = Math.max(1, toNum(options.pixelRatio, 1));
   const width = Math.max(1, Math.round(toNum(options.width, 1)));
   const height = Math.max(1, Math.round(toNum(options.height, 1)));
@@ -494,6 +517,10 @@ export const renderTemplateSlideToCanvas = async (
     return zA - zB;
   });
 
+  let expectedAssets = 0;
+  let drawnAssets = 0;
+  let failedAssets = 0;
+
   for (const element of ordered) {
     if (element.type === "text") {
       drawTextElement(ctx, element as TemplateTextEl);
@@ -502,6 +529,7 @@ export const renderTemplateSlideToCanvas = async (
 
     const src = String((element as TemplateImageEl | TemplateStickerEl).src ?? "");
     if (!src) continue;
+    expectedAssets += 1;
 
     try {
       const img = await loadImage(src);
@@ -522,10 +550,25 @@ export const renderTemplateSlideToCanvas = async (
       ctx.clip();
       ctx.drawImage(img, box.x, box.y, box.width, box.height);
       ctx.restore();
+      drawnAssets += 1;
     } catch {
+      failedAssets += 1;
       // Skip broken assets so the rest of the design still renders.
     }
   }
 
+  return {
+    canvas,
+    expectedAssets,
+    drawnAssets,
+    failedAssets,
+  };
+};
+
+export const renderTemplateSlideToCanvas = async (
+  slide: TemplateSlide,
+  options: RenderOptions,
+) => {
+  const { canvas } = await renderTemplateSlideToCanvasWithStats(slide, options);
   return canvas;
 };

@@ -55,7 +55,7 @@ import {
   loadGoogleFontsOnce,
 } from "../../../constant/googleFonts";
 import { isIosTouchDevice } from "../../../lib/platform";
-import { renderTemplateSlideToCanvas } from "../../../lib/templateSlideCanvas";
+import { renderTemplateSlideToCanvasWithStats } from "../../../lib/templateSlideCanvas";
 import {
   clearSubscriptionPreviewPayload,
   readSubscriptionPreviewPayload,
@@ -693,10 +693,26 @@ const Subscription = () => {
       }),
     [isLegacyCardProduct, product?.id, selectedProductSnapshot?.id, state?.previewKey],
   );
-  const subscriptionPreviewSlide1 =
-    activeTemplatePreviewSession ? subscriptionPreviewSlides?.slide1 || "" : "";
+  const preparedTemplatePreviewSlides = useMemo(
+    () =>
+      activeTemplatePreviewSession
+        ? getValidSlides({
+            ...subscriptionPreviewSlides,
+            ...slidesObj,
+          })
+        : {},
+    [activeTemplatePreviewSession, slidesObj, subscriptionPreviewSlides],
+  );
+  const hasPreparedTemplatePreviewSlides = Object.keys(preparedTemplatePreviewSlides).length > 0;
+  const subscriptionPreviewSlide1 = activeTemplatePreviewSession
+    ? preparedTemplatePreviewSlides?.slide1 || ""
+    : "";
   const shouldUseIosTemplateCanvasPreview =
-    isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0 && !isLegacyCardProduct;
+    isIosWebKit &&
+    activeTemplatePreviewSession &&
+    rawSlides.length > 0 &&
+    !isLegacyCardProduct &&
+    !hasPreparedTemplatePreviewSlides;
 
   useEffect(() => {
     setSubscriptionPreviewSlides(readSubscriptionPreviewPayload(subscriptionPreviewKey || undefined));
@@ -799,9 +815,9 @@ const Subscription = () => {
     loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
   }, [captureSupportEnabled, rawSlides, visibleRawSlides]);
 
-  const firstSlideUrl = shouldUseIosTemplateCanvasPreview
-    ? iosTemplatePreviewSrc
-    : subscriptionPreviewSlide1 || slidesObj?.slide1 || "";
+  const firstSlideUrl = activeTemplatePreviewSession
+    ? subscriptionPreviewSlide1 || (shouldUseIosTemplateCanvasPreview ? iosTemplatePreviewSrc : "")
+    : slidesObj?.slide1 || "";
   const captureWidth = Math.max(1, Math.round(Number(previewConfig?.mmWidth) || 800));
   const captureHeight = Math.max(1, Math.round(Number(previewConfig?.mmHeight) || 600));
 
@@ -1123,12 +1139,18 @@ const Subscription = () => {
 
       for (let i = 0; i < rawSlides.length; i++) {
         const preparedSlide = await prepareRawSlideForCanvas(rawSlides[i]);
-        const canvas = await renderTemplateSlideToCanvas(preparedSlide as any, {
+        const result = await renderTemplateSlideToCanvasWithStats(preparedSlide as any, {
           width: captureWidth,
           height: captureHeight,
           pixelRatio,
           backgroundColor: format === "png" ? "transparent" : "#ffffff",
         });
+        // On WebKit, image decoding can fail while text still renders. Never
+        // promote a partial bitmap over the complete live slide preview.
+        if (result.expectedAssets > 0 && result.drawnAssets < result.expectedAssets) {
+          return [];
+        }
+        const canvas = result.canvas;
         const dataUrl =
           format === "png" ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.88);
         out.push(dataUrl);
@@ -1668,10 +1690,14 @@ const Subscription = () => {
 
   const ensureSlidesPayload = useCallback(
     async (format: "jpeg" | "png") => {
-      const current = await getSlidesPayload();
+      const preparedPreviewSlides =
+        activeTemplatePreviewSession && hasPreparedTemplatePreviewSlides
+          ? preparedTemplatePreviewSlides
+          : {};
+      const current = Object.keys(preparedPreviewSlides).length
+        ? preparedPreviewSlides
+        : await getSlidesPayload();
       const currentKeys = Object.keys(current || {}).filter((k) => current[k]);
-      const bypassStoredIosPreviewSlides =
-        isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0;
       const expectedCount = (() => {
         if (rawSlides.length) return rawSlides.length;
         if (isLegacyCardProduct) return currentKeys.length > 0 ? currentKeys.length : 4;
@@ -1689,7 +1715,9 @@ const Subscription = () => {
         ? true
         : currentKeys.every((k) => String(current[k] || "").startsWith("data:image/png"));
 
-      if (!bypassStoredIosPreviewSlides && hasEnough && hasPng && !isPreviewOnly) return current;
+      if (hasEnough && (hasPng || (isIosWebKit && Object.keys(preparedPreviewSlides).length)) && !isPreviewOnly) {
+        return current;
+      }
 
       const capturedList = readCapturedSlidesFromStorage();
       const capturedEnough = expectedCount
@@ -1697,7 +1725,7 @@ const Subscription = () => {
         : capturedList.length > 0;
       const capturedHasPng =
         !needPng || capturedList.every((u) => String(u || "").startsWith("data:image/png"));
-      if (!bypassStoredIosPreviewSlides && capturedEnough && capturedHasPng) {
+      if (capturedEnough && capturedHasPng) {
         const next = Object.fromEntries(capturedList.map((u, idx) => [`slide${idx + 1}`, u]));
         storeSlidesPayload(next);
         return next;
@@ -1707,7 +1735,7 @@ const Subscription = () => {
 
       await ensureCaptureSupportReady();
       const list = rawSlides.length
-        ? bypassStoredIosPreviewSlides
+        ? isIosWebKit && activeTemplatePreviewSession
           ? await captureSlidesFromCanvasRenderer(format, needPng ? 2400 : 1600)
           : await captureSlidesFromDom(format, needPng ? 2400 : 1600)
         : await captureLegacyCardSlidesFromDom(1600);
@@ -1724,9 +1752,11 @@ const Subscription = () => {
       ensureCaptureSupportReady,
       getSlidesPayload,
       activeTemplatePreviewSession,
+      hasPreparedTemplatePreviewSlides,
       isIosWebKit,
       isLegacyCardProduct,
       isPreviewOnly,
+      preparedTemplatePreviewSlides,
       readCapturedSlidesFromStorage,
       rawSlides.length,
       storeSlidesPayload,
@@ -2058,6 +2088,11 @@ const Subscription = () => {
 
   useEffect(() => {
     const skipLegacyIosPrefetch = isIosWebKit && isLegacyCardProduct && Boolean(firstSlideUrl);
+    const skipTemplateRegeneration =
+      activeTemplatePreviewSession && (hasPreparedTemplatePreviewSlides || isIosWebKit);
+    // Subscription should consume the preview page payload. Re-capturing here can
+    // replace a correct mockup with a WebKit partial bitmap.
+    if (skipTemplateRegeneration) return;
     if (skipLegacyIosPrefetch) return;
     let cancelled = false;
     let frameId: number | null = null;
@@ -2138,6 +2173,7 @@ const Subscription = () => {
     ensureCaptureSupportReady,
     getSlidesPayload,
     activeTemplatePreviewSession,
+    hasPreparedTemplatePreviewSlides,
     isIosWebKit,
     isLegacyCardProduct,
     isPreviewOnly,
@@ -2496,10 +2532,12 @@ const Subscription = () => {
   //     }
   //   })();
 
-  // Prefer the stable preview bitmap for the subscription mockup when it already exists.
-  // Checkout capture still rebuilds from raw slide data where needed.
+  // Prefer the preview page's prepared bitmap for non-WebKit rendering. On iOS,
+  // show the live raw slide on the mockup so a text-only bitmap can never hide
+  // slide 1's background/design layers.
   const previewSrc = hydratedPreviewSrc || mugPreview || firstSlideProcessed || iosLegacyCardPreviewSrc || "";
-  const preferLiveTemplatePreview = shouldUseIosTemplateCanvasPreview && !iosTemplatePreviewSrc;
+  const preferLiveTemplatePreview =
+    isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0 && !isLegacyCardProduct;
   const showOverlayPreview = Boolean(previewSrc) && useMockupBackground && !preferLiveTemplatePreview;
   const showFlatPreview = Boolean(previewSrc) && !useMockupBackground && !preferLiveTemplatePreview;
   const showLiveTemplatePreview =

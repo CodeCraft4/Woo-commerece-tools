@@ -9,7 +9,7 @@ import { saveSlidesToScopes } from "../../../lib/slidesScope";
 import { saveSubscriptionPreviewPayload } from "../../../lib/subscriptionPreview";
 import { toJpeg, toPng } from "html-to-image";
 import { isIosTouchDevice } from "../../../lib/platform";
-import { renderTemplateSlideToCanvas } from "../../../lib/templateSlideCanvas";
+import { renderTemplateSlideToCanvasWithStats } from "../../../lib/templateSlideCanvas";
 import {
   buildGoogleFontsUrls,
   ensureGoogleFontsLoaded,
@@ -331,7 +331,7 @@ const CategoriesWisePreview: React.FC = () => {
   const [flipDir, setFlipDir] = useState<"next" | "prev">("next");
   const [flipping, setFlipping] = useState(false);
 
-  const hasCaptured = !isIosWebKit && (captured?.length || 0) > 0;
+  const hasCaptured = (captured?.length || 0) > 0;
   const slideCount = Math.max(1, hasCaptured ? captured.length : slides.length);
   const [previewScale, setPreviewScale] = useState(1);
   const baseW = Number((config as any)?.fitCanvas?.width ?? config?.mmWidth ?? 1);
@@ -687,12 +687,17 @@ const CategoriesWisePreview: React.FC = () => {
 
       for (let i = 0; i < slides.length; i++) {
         const preparedSlide = await prepareSlideForCanvas(slides[i]);
-        const canvas = await renderTemplateSlideToCanvas(preparedSlide as any, {
+        const result = await renderTemplateSlideToCanvasWithStats(preparedSlide as any, {
           width: baseW,
           height: baseH,
           pixelRatio,
           backgroundColor: format === "png" ? "transparent" : "#ffffff",
         });
+        // Keep the raw slide handoff when WebKit produces a text-only partial capture.
+        if (result.expectedAssets > 0 && result.drawnAssets < result.expectedAssets) {
+          return [];
+        }
+        const canvas = result.canvas;
         out.push(format === "png" ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.88));
         if (i < slides.length - 1) {
           await new Promise((resolve) => setTimeout(resolve, 0));
@@ -708,7 +713,6 @@ const CategoriesWisePreview: React.FC = () => {
     if (prefetchedSlidesRef.current?.length) {
       return prefetchedSlidesRef.current;
     }
-    if (isIosWebKit) return [];
     try {
       const storedKey = sessionStorage.getItem("capturedSlidesKey");
       if (!storedKey || storedKey !== captureKey) return [];
@@ -725,8 +729,6 @@ const CategoriesWisePreview: React.FC = () => {
       const stored = readCapturedFromStorage();
       let quickList: string[] = stored.length
         ? stored
-        : isIosWebKit
-        ? []
         : (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
 
       if (isIosWebKit && prefetchPromiseRef.current) {
