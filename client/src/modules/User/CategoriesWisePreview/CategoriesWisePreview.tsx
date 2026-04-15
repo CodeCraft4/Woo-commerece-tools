@@ -8,6 +8,8 @@ import { safeSetLocalStorage, safeSetSessionStorage } from "../../../lib/storage
 import { saveSlidesToScopes } from "../../../lib/slidesScope";
 import { saveSubscriptionPreviewPayload } from "../../../lib/subscriptionPreview";
 import { toJpeg, toPng } from "html-to-image";
+import { isIosTouchDevice } from "../../../lib/platform";
+import { renderTemplateSlideToCanvas } from "../../../lib/templateSlideCanvas";
 import {
   buildGoogleFontsUrls,
   ensureGoogleFontsLoaded,
@@ -35,6 +37,30 @@ type NavState = {
   // ✅ from TempletEditor (new)
   capturedSlides?: string[];
   mugImage?: string;
+};
+
+const TRANSPARENT_PIXEL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+
+const toDataUrlSafe = async (src: string): Promise<string> => {
+  if (!src || src.startsWith("data:")) return src;
+  try {
+    const absolute =
+      src.startsWith("/") && typeof window !== "undefined" ? `${window.location.origin}${src}` : src;
+    const resp = await fetch(absolute, { mode: "cors" });
+    if (!resp.ok) return src;
+    return await blobToDataUrl(await resp.blob());
+  } catch {
+    return src;
+  }
 };
 
 /* ---------- Helpers ---------- */
@@ -214,6 +240,7 @@ const CategoriesWisePreview: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:450px)");
+  const isIosWebKit = useMemo(() => isIosTouchDevice(), []);
 
   const config = state?.config;
   const category = state?.category ?? "";
@@ -304,7 +331,7 @@ const CategoriesWisePreview: React.FC = () => {
   const [flipDir, setFlipDir] = useState<"next" | "prev">("next");
   const [flipping, setFlipping] = useState(false);
 
-  const hasCaptured = (captured?.length || 0) > 0;
+  const hasCaptured = !isIosWebKit && (captured?.length || 0) > 0;
   const slideCount = Math.max(1, hasCaptured ? captured.length : slides.length);
   const [previewScale, setPreviewScale] = useState(1);
   const baseW = Number((config as any)?.fitCanvas?.width ?? config?.mmWidth ?? 1);
@@ -625,10 +652,63 @@ const CategoriesWisePreview: React.FC = () => {
   };
   void captureSingleSlideFromDom;
 
-  const readCapturedFromStorage = () => {
+  const prepareSlideForCanvas = useCallback(async (slide: Slide): Promise<Slide> => {
+    const elements = await Promise.all(
+      (slide?.elements ?? []).map(async (element: any) => {
+        if (element?.type !== "image" && element?.type !== "sticker") return element;
+        const src = String(element?.src ?? "");
+        return {
+          ...element,
+          src: (await toDataUrlSafe(src)) || src || TRANSPARENT_PIXEL,
+        };
+      }),
+    );
+
+    return { ...slide, elements };
+  }, []);
+
+  const captureSlidesFromCanvasRenderer = useCallback(
+    async (format: "jpeg" | "png", maxDim = 1600) => {
+      const out: string[] = [];
+      const fontUrls = buildGoogleFontsUrls(collectFontsFromSlides(slides));
+      if (fontUrls.length) {
+        loadGoogleFontsOnce(fontUrls);
+        await ensureGoogleFontsLoaded(fontUrls);
+      }
+      if ((document as any)?.fonts?.ready) {
+        try {
+          await (document as any).fonts.ready;
+        } catch {}
+      }
+
+      const maxSide = Math.max(baseW, baseH, 1);
+      const ratio = maxSide ? maxDim / maxSide : 1.5;
+      const pixelRatio = Math.min(format === "png" ? 3 : 2.5, Math.max(1, ratio));
+
+      for (let i = 0; i < slides.length; i++) {
+        const preparedSlide = await prepareSlideForCanvas(slides[i]);
+        const canvas = await renderTemplateSlideToCanvas(preparedSlide as any, {
+          width: baseW,
+          height: baseH,
+          pixelRatio,
+          backgroundColor: format === "png" ? "transparent" : "#ffffff",
+        });
+        out.push(format === "png" ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.88));
+        if (i < slides.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      }
+
+      return out;
+    },
+    [baseH, baseW, prepareSlideForCanvas, slides],
+  );
+
+  const readCapturedFromStorage = useCallback(() => {
     if (prefetchedSlidesRef.current?.length) {
       return prefetchedSlidesRef.current;
     }
+    if (isIosWebKit) return [];
     try {
       const storedKey = sessionStorage.getItem("capturedSlidesKey");
       if (!storedKey || storedKey !== captureKey) return [];
@@ -636,16 +716,36 @@ const CategoriesWisePreview: React.FC = () => {
       if (stored) return JSON.parse(stored) as string[];
     } catch {}
     return [];
-  };
+  }, [captureKey, isIosWebKit]);
 
   const handleDownload = async () => {
     try {
       setDownloading(true);
 
       const stored = readCapturedFromStorage();
-      const quickList: string[] = stored.length
+      let quickList: string[] = stored.length
         ? stored
+        : isIosWebKit
+        ? []
         : (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
+
+      if (isIosWebKit && prefetchPromiseRef.current) {
+        const prefetched = await prefetchPromiseRef.current.catch(() => [] as string[]);
+        if (prefetched.length) quickList = prefetched;
+      }
+
+      if (!quickList.length && slides.length) {
+        await ensureCaptureSupportReady();
+        const format = isTransparentCaptureCategory ? "png" : "jpeg";
+        const maxDim = isTransparentCaptureCategory ? 2400 : 1600;
+        quickList = isIosWebKit
+          ? await captureSlidesFromCanvasRenderer(format, maxDim)
+          : await captureSlidesFromDom(format, maxDim);
+        if (quickList.length) {
+          prefetchedSlidesRef.current = quickList;
+        }
+      }
+
       const previewOnly = slides.length ? quickList.length < slides.length : quickList.length === 0;
       const slidesObj = Object.fromEntries(
         quickList.map((u: string, idx: number) => [`slide${idx + 1}`, u]),
@@ -720,7 +820,9 @@ const CategoriesWisePreview: React.FC = () => {
         await ensureCaptureSupportReady();
         const format = isTransparentCaptureCategory ? "png" : "jpeg";
         const maxDim = isTransparentCaptureCategory ? 2400 : 1600;
-        const list = await captureSlidesFromDom(format, maxDim);
+        const list = isIosWebKit
+          ? await captureSlidesFromCanvasRenderer(format, maxDim)
+          : await captureSlidesFromDom(format, maxDim);
         if (cancelled || !list.length) return [];
         prefetchedSlidesRef.current = list;
         return list;
@@ -745,7 +847,18 @@ const CategoriesWisePreview: React.FC = () => {
         cancelAnimationFrame(frameId);
       }
     };
-  }, [captureKey, captureSlidesFromDom, ensureCaptureSupportReady, hasCaptured, isTransparentCaptureCategory, shouldPrefetchCapturedSlides, slides.length]);
+  }, [
+    captureKey,
+    captureSlidesFromCanvasRenderer,
+    captureSlidesFromDom,
+    ensureCaptureSupportReady,
+    hasCaptured,
+    isIosWebKit,
+    isTransparentCaptureCategory,
+    readCapturedFromStorage,
+    shouldPrefetchCapturedSlides,
+    slides.length,
+  ]);
 
   /**
    * ✅ Dynamic box sizing (same as before)

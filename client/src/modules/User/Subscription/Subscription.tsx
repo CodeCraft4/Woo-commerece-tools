@@ -56,7 +56,11 @@ import {
 } from "../../../constant/googleFonts";
 import { isIosTouchDevice } from "../../../lib/platform";
 import { renderTemplateSlideToCanvas } from "../../../lib/templateSlideCanvas";
-import { clearSubscriptionPreviewPayload, readSubscriptionPreviewPayload } from "../../../lib/subscriptionPreview";
+import {
+  clearSubscriptionPreviewPayload,
+  readSubscriptionPreviewPayload,
+  saveSubscriptionPreviewPayload,
+} from "../../../lib/subscriptionPreview";
 import Slide1 from "../Preview/component/Slide1/Slide1";
 import Slide2 from "../Preview/component/Slide2/Slide2";
 import Slide3 from "../Preview/component/Slide3/Slide3";
@@ -636,6 +640,7 @@ const Subscription = () => {
       productId: selectedProductSnapshot?.id,
     }),
   );
+  const [iosTemplatePreviewSrc, setIosTemplatePreviewSrc] = useState("");
   const [iosLegacyCardPreviewSrc, setIosLegacyCardPreviewSrc] = useState("");
   const [captureSupportEnabled, setCaptureSupportEnabled] = useState(false);
   const [legacyCardCaptureEnabled, setLegacyCardCaptureEnabled] = useState(false);
@@ -690,6 +695,8 @@ const Subscription = () => {
   );
   const subscriptionPreviewSlide1 =
     activeTemplatePreviewSession ? subscriptionPreviewSlides?.slide1 || "" : "";
+  const shouldUseIosTemplateCanvasPreview =
+    isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0 && !isLegacyCardProduct;
 
   useEffect(() => {
     setSubscriptionPreviewSlides(readSubscriptionPreviewPayload(subscriptionPreviewKey || undefined));
@@ -792,9 +799,17 @@ const Subscription = () => {
     loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
   }, [captureSupportEnabled, rawSlides, visibleRawSlides]);
 
-  const firstSlideUrl = subscriptionPreviewSlide1 || slidesObj?.slide1 || "";
+  const firstSlideUrl = shouldUseIosTemplateCanvasPreview
+    ? iosTemplatePreviewSrc
+    : subscriptionPreviewSlide1 || slidesObj?.slide1 || "";
   const captureWidth = Math.max(1, Math.round(Number(previewConfig?.mmWidth) || 800));
   const captureHeight = Math.max(1, Math.round(Number(previewConfig?.mmHeight) || 600));
+
+  useEffect(() => {
+    if (!shouldUseIosTemplateCanvasPreview) {
+      setIosTemplatePreviewSrc("");
+    }
+  }, [shouldUseIosTemplateCanvasPreview]);
 
   const slideNodeRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const setSlideNodeRef = (i: number) => (el: HTMLDivElement | null) => {
@@ -2096,6 +2111,10 @@ const Subscription = () => {
           : await captureLegacyCardSlidesFromDom(1600);
         if (cancelled || !list.length) return;
         const next = Object.fromEntries(list.map((u, idx) => [`slide${idx + 1}`, u]));
+        if (useCanvasCaptureForTemplate) {
+          setIosTemplatePreviewSrc(String(list[0] || ""));
+          saveSubscriptionPreviewPayload(next, subscriptionPreviewKey || undefined);
+        }
         storeSlidesPayload(next);
       } catch {}
     };
@@ -2127,6 +2146,7 @@ const Subscription = () => {
     rawSlides,
     readCapturedSlidesFromStorage,
     storeSlidesPayload,
+    subscriptionPreviewKey,
   ]);
 
   useEffect(() => {
@@ -2440,7 +2460,10 @@ const Subscription = () => {
 
   useEffect(() => {
     const candidate = mugPreview || firstSlideProcessed || iosLegacyCardPreviewSrc || "";
-    if (!candidate) return;
+    if (!candidate) {
+      if (hydratedPreviewSrc) setHydratedPreviewSrc("");
+      return;
+    }
     if (candidate === hydratedPreviewSrc) return;
 
     let cancelled = false;
@@ -2476,8 +2499,7 @@ const Subscription = () => {
   // Prefer the stable preview bitmap for the subscription mockup when it already exists.
   // Checkout capture still rebuilds from raw slide data where needed.
   const previewSrc = hydratedPreviewSrc || mugPreview || firstSlideProcessed || iosLegacyCardPreviewSrc || "";
-  const preferLiveTemplatePreview =
-    activeTemplatePreviewSession && isIosWebKit && rawSlides.length > 0 && !isLegacyCardProduct && !previewSrc;
+  const preferLiveTemplatePreview = shouldUseIosTemplateCanvasPreview && !iosTemplatePreviewSrc;
   const showOverlayPreview = Boolean(previewSrc) && useMockupBackground && !preferLiveTemplatePreview;
   const showFlatPreview = Boolean(previewSrc) && !useMockupBackground && !preferLiveTemplatePreview;
   const showLiveTemplatePreview =
