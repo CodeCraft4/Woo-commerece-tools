@@ -91,6 +91,12 @@ const normalizeFontWeight = (value: unknown, fallback = 400) => {
   return fallback;
 };
 
+const normalizeUrl = (value: any) => {
+  if (typeof value === "string") return value.trim();
+  if (value && typeof value === "object" && typeof value.url === "string") return String(value.url).trim();
+  return "";
+};
+
 const buildQrSvgDataUrl = (value: string, size: number) => {
   const safeValue = String(value ?? "").trim();
   if (!safeValue) return "";
@@ -150,7 +156,7 @@ const mapQrElements = (id: number, payload?: SlidePayloadV2 | null) => {
   const elements: TemplateSlide["elements"] = [];
 
   const addQr = (kind: "video" | "audio", box?: { url?: string | null; x?: number; y?: number; zIndex?: number; width?: number; height?: number } | null) => {
-    const url = String(box?.url ?? "").trim();
+    const url = normalizeUrl(box?.url);
     if (!url) return;
     const preset = qrPresetFor(id, kind);
     const x = toNum(box?.x, 0);
@@ -297,8 +303,9 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
     : [];
 
   const oneText = (() => {
-    if (!payload?.flags?.showOneText) return [] as any[];
     const value = String(payload?.oneText?.value ?? "").trim();
+    const shouldShow = !!payload?.flags?.showOneText || value.length > 0;
+    if (!shouldShow) return [] as any[];
     if (!value) return [] as any[];
     return [
       {
@@ -324,8 +331,9 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
   })();
 
   const multipleTexts = (() => {
-    if (!payload?.flags?.multipleText) return [] as any[];
     const rows = Array.isArray(payload?.multipleTexts) ? payload.multipleTexts : [];
+    const hasAnyContent = rows.some((entry: any) => String(firstDefined(entry?.value, entry?.text, "") ?? "").trim());
+    if (!payload?.flags?.multipleText && !hasAnyContent) return [] as any[];
     return rows
       .map((entry: any, idx: number) => {
         const value = String(firstDefined(entry?.value, entry?.text, "") ?? "").trim();

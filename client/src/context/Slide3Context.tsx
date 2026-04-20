@@ -16,6 +16,18 @@ const fontColors = [
   "#FFD700",
 ];
 
+const normalizeStoredUrl = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+  if (value && typeof value === "object" && typeof (value as any).url === "string") {
+    const trimmed = String((value as any).url).trim();
+    return trimmed ? trimmed : null;
+  }
+  return null;
+};
+
 interface Position {
   x: number;
   y: number;
@@ -628,8 +640,12 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.draggableImages3) setDraggableImages3(parsed.draggableImages3);
         if (parsed.images3) setImages3(parsed.images3);
         if (parsed.selectedImg3) setSelectedImage3(parsed.selectedImg3);
-        if (parsed.selectedVideoUrl3) setSelectedVideoUrl3(parsed.selectedVideoUrl3);
-        if (parsed.selectedAudioUrl3) setSelectedAudioUrl3(parsed.selectedAudioUrl3);
+        {
+          const videoUrl = normalizeStoredUrl(parsed.selectedVideoUrl3);
+          const audioUrl = normalizeStoredUrl(parsed.selectedAudioUrl3);
+          if (videoUrl) setSelectedVideoUrl3(videoUrl);
+          if (audioUrl) setSelectedAudioUrl3(audioUrl);
+        }
         if (parsed.selectedLayout3) setSelectedLayout3(parsed.selectedLayout3);
         if (parsed.oneTextValue3) setOneTextValue3(parsed.oneTextValue3);
         if (parsed.showOneTextRightSideBox3) setShowOneTextRightSideBox3(parsed.showOneTextRightSideBox3);

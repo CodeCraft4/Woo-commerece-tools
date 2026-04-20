@@ -16,6 +16,18 @@ const fontColors = [
   "#FFD700",
 ];
 
+const normalizeStoredUrl = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+  if (value && typeof value === "object" && typeof (value as any).url === "string") {
+    const trimmed = String((value as any).url).trim();
+    return trimmed ? trimmed : null;
+  }
+  return null;
+};
+
 interface Position {
   x: number;
   y: number;
@@ -655,8 +667,12 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.draggableImages4) setDraggableImages4(parsed.draggableImages4);
         if (parsed.images4) setImages4(parsed.images4);
         if (parsed.selectedImg4) setSelectedImage4(parsed.selectedImg4);
-        if (parsed.selectedVideoUrl4) setSelectedVideoUrl4(parsed.selectedVideoUrl4);
-        if (parsed.selectedAudioUrl4) setSelectedAudioUrl4(parsed.selectedAudioUrl4);
+        {
+          const videoUrl = normalizeStoredUrl(parsed.selectedVideoUrl4);
+          const audioUrl = normalizeStoredUrl(parsed.selectedAudioUrl4);
+          if (videoUrl) setSelectedVideoUrl4(videoUrl);
+          if (audioUrl) setSelectedAudioUrl4(audioUrl);
+        }
         if (parsed.selectedLayout4) setSelectedLayout4(parsed.selectedLayout4);
         if (parsed.oneTextValue4) setOneTextValue4(parsed.oneTextValue4);
         if (parsed.showOneTextRightSideBox4) setShowOneTextRightSideBox4(parsed.showOneTextRightSideBox4);

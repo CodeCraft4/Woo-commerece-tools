@@ -21,6 +21,18 @@ const fontColors = [
   "#FFD700",
 ];
 
+const normalizeStoredUrl = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+  if (value && typeof value === "object" && typeof (value as any).url === "string") {
+    const trimmed = String((value as any).url).trim();
+    return trimmed ? trimmed : null;
+  }
+  return null;
+};
+
 interface Position {
   x: number;
   y: number;
@@ -680,8 +692,12 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.draggableImages1) setDraggableImages1(parsed.draggableImages1);
         if (parsed.images1) setImages1(parsed.images1);
         if (parsed.selectedImg1) setSelectedImage1(parsed.selectedImg1);
-        if (parsed.selectedVideoUrl1) setSelectedVideoUrl1(parsed.selectedVideoUrl1);
-        if (parsed.selectedAudioUrl1) setSelectedAudioUrl1(parsed.selectedAudioUrl1);
+        {
+          const videoUrl = normalizeStoredUrl(parsed.selectedVideoUrl1);
+          const audioUrl = normalizeStoredUrl(parsed.selectedAudioUrl1);
+          if (videoUrl) setSelectedVideoUrl1(videoUrl);
+          if (audioUrl) setSelectedAudioUrl1(audioUrl);
+        }
         if (parsed.selectedLayout1) setSelectedLayout1(parsed.selectedLayout1);
         if (parsed.oneTextValue1) setOneTextValue1(parsed.oneTextValue1);
         if (parsed.showOneTextRightSideBox1) setShowOneTextRightSideBox1(parsed.showOneTextRightSideBox1);

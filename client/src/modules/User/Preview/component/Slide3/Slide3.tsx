@@ -6,6 +6,19 @@ type AnyEl = Record<string, any>;
 const safeClip = (cp?: string | null) => (cp && typeof cp === "string" ? cp : "none");
 const safeFilter = (f?: string | null) => (f && typeof f === "string" ? f : "none");
 const val = <T,>(v: T | undefined, d: T) => (v === undefined || v === null ? d : v);
+const normalizeUrl = (value: any) => {
+  if (typeof value === "string") return value.trim();
+  if (value && typeof value === "object" && typeof value.url === "string") return value.url.trim();
+  return "";
+};
+const safeQrSize = (box: any, fallback = 70) => {
+  const w = Number(box?.width);
+  const h = Number(box?.height);
+  if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) return Math.min(w, h);
+  if (Number.isFinite(w) && w > 0) return w;
+  if (Number.isFinite(h) && h > 0) return h;
+  return fallback;
+};
 
 type Slide3Props = {
   ref?: any
@@ -28,6 +41,7 @@ const Slide3 = (props:Slide3Props) => {
     selectedLayout3,
     selectedAudioUrl3,
     qrAudioPosition3,
+    showOneTextRightSideBox3,
     textElements3,
     selectedAIimageUrl3,
     selectedStickers3,
@@ -40,6 +54,11 @@ const Slide3 = (props:Slide3Props) => {
     bgColor3,
   } = useSlide3();
   const {ref} = props
+  const isOneTextActive = selectedLayout3 === "oneText" || showOneTextRightSideBox3;
+  const videoUrl = normalizeUrl(selectedVideoUrl3);
+  const audioUrl = normalizeUrl(selectedAudioUrl3);
+  const qrVideoUrl = normalizeUrl(qrPosition3?.url) || videoUrl;
+  const qrAudioUrl = normalizeUrl(qrAudioPosition3?.url) || audioUrl;
   return (
     <Box
     ref={ref}
@@ -190,7 +209,7 @@ const Slide3 = (props:Slide3Props) => {
         </Box>
       )}
 
-      {selectedVideoUrl3 && (
+      {videoUrl && (
         <Box
           sx={{
             position: "absolute", // use absolute like Rnd
@@ -228,15 +247,12 @@ const Slide3 = (props:Slide3Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator
-              url={qrPosition3.url || selectedVideoUrl3}
-              size={Math.min(68, 75)}
-            />
+            <QrGenerator url={qrVideoUrl} size={Math.min(68, safeQrSize(qrPosition3, 75))} />
           </Box>
 
           {/* Clickable Link */}
           <a
-            href={`${selectedVideoUrl3}`}
+            href={videoUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -253,13 +269,13 @@ const Slide3 = (props:Slide3Props) => {
                 "&:hover": { textDecoration: "underline" },
               }}
             >
-              {`${selectedVideoUrl3?.slice(0, 20)}.....`}
+              {`${videoUrl.slice(0, 20)}.....`}
             </Typography>
           </a>
         </Box>
       )}
 
-      {selectedAudioUrl3 && (
+      {audioUrl && (
         <Box
           sx={{
             position: "absolute", // use absolute like Rnd
@@ -297,15 +313,12 @@ const Slide3 = (props:Slide3Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator
-              url={qrAudioPosition3.url || selectedAudioUrl3}
-              size={Math.min(68, 75)}
-            />
+            <QrGenerator url={qrAudioUrl} size={Math.min(68, safeQrSize(qrAudioPosition3, 75))} />
           </Box>
 
           {/* Clickable Link */}
           <a
-            href={`${selectedAudioUrl3}`}
+            href={audioUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -322,7 +335,7 @@ const Slide3 = (props:Slide3Props) => {
                 "&:hover": { textDecoration: "underline" },
               }}
             >
-              {`${selectedAudioUrl3?.slice(0, 20)}.....`}
+              {`${audioUrl.slice(0, 20)}.....`}
             </Typography>
           </a>
         </Box>
@@ -402,9 +415,11 @@ const Slide3 = (props:Slide3Props) => {
         ))}
 
       {/* 📝 Single Text Layout */}
-      {selectedLayout3 === "oneText" && (
+      {isOneTextActive && (
         <Box
           sx={{
+            position: "absolute",
+            inset: 0,
             display: "flex",
             flexDirection: "column",
             justifyContent:
@@ -430,6 +445,7 @@ const Slide3 = (props:Slide3Props) => {
             textAlign: textAlign3, // ✅ still needed for multiline/inline text
             whiteSpace: "pre-wrap",
             p: 1,
+            zIndex: 9998,
           }}
         >
           {oneTextValue3}
@@ -437,7 +453,7 @@ const Slide3 = (props:Slide3Props) => {
       )}
 
       {
-        multipleTextValue3 && selectedLayout3 === "oneText" ? null : (
+        multipleTextValue3 || isOneTextActive ? null : (
           <>
             {textElements3 &&
               textElements3.map((e) => (

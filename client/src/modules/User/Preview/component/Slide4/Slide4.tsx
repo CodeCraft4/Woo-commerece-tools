@@ -6,6 +6,19 @@ type AnyEl = Record<string, any>;
 const safeClip = (cp?: string | null) => (cp && typeof cp === "string" ? cp : "none");
 const safeFilter = (f?: string | null) => (f && typeof f === "string" ? f : "none");
 const val = <T,>(v: T | undefined, d: T) => (v === undefined || v === null ? d : v);
+const normalizeUrl = (value: any) => {
+  if (typeof value === "string") return value.trim();
+  if (value && typeof value === "object" && typeof value.url === "string") return value.url.trim();
+  return "";
+};
+const safeQrSize = (box: any, fallback = 70) => {
+  const w = Number(box?.width);
+  const h = Number(box?.height);
+  if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) return Math.min(w, h);
+  if (Number.isFinite(w) && w > 0) return w;
+  if (Number.isFinite(h) && h > 0) return h;
+  return fallback;
+};
 
 type Slide4Props = {
   ref?: any
@@ -27,6 +40,7 @@ const Slide4 = (props: Slide4Props) => {
     qrPosition4,
     textAlign4,
     selectedLayout4,
+    showOneTextRightSideBox4,
     selectedAudioUrl4,
     qrAudioPosition4,
     textElements4,
@@ -40,7 +54,12 @@ const Slide4 = (props: Slide4Props) => {
     layout4,
     bgColor4,
   } = useSlide4();
+  const isOneTextActive = selectedLayout4 === "oneText" || showOneTextRightSideBox4;
   const { ref } = props
+  const videoUrl = normalizeUrl(selectedVideoUrl4);
+  const audioUrl = normalizeUrl(selectedAudioUrl4);
+  const qrVideoUrl = normalizeUrl(qrPosition4?.url) || videoUrl;
+  const qrAudioUrl = normalizeUrl(qrAudioPosition4?.url) || audioUrl;
   return (
     <Box
       ref={ref}
@@ -190,7 +209,7 @@ const Slide4 = (props: Slide4Props) => {
         </Box>
       )}
 
-      {selectedVideoUrl4 && (
+      {videoUrl && (
         <Box
           sx={{
             position: "absolute",
@@ -228,15 +247,12 @@ const Slide4 = (props: Slide4Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator
-              url={qrPosition4.url || selectedVideoUrl4}
-              size={Math.min(qrPosition4.width, qrPosition4.height)}
-            />
+            <QrGenerator url={qrVideoUrl} size={safeQrSize(qrPosition4, 70)} />
           </Box>
 
           {/* Clickable Link */}
           <a
-            href={`${selectedVideoUrl4}`}
+            href={videoUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -253,13 +269,13 @@ const Slide4 = (props: Slide4Props) => {
                 "&:hover": { textDecoration: "underline" },
               }}
             >
-              {`${selectedVideoUrl4.slice(0, 20)}.....`}
+              {`${videoUrl.slice(0, 20)}.....`}
             </Typography>
           </a>
         </Box>
       )}
 
-      {selectedAudioUrl4 && (
+      {audioUrl && (
         <Box
           sx={{
             position: "absolute", // use absolute like Rnd
@@ -297,15 +313,12 @@ const Slide4 = (props: Slide4Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator
-              url={qrAudioPosition4.url || selectedAudioUrl4}
-              size={Math.min(qrAudioPosition4.width, qrAudioPosition4.height)}
-            />
+            <QrGenerator url={qrAudioUrl} size={safeQrSize(qrAudioPosition4, 70)} />
           </Box>
 
           {/* Clickable Link */}
           <a
-            href={`${selectedAudioUrl4}`}
+            href={audioUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -322,7 +335,7 @@ const Slide4 = (props: Slide4Props) => {
                 "&:hover": { textDecoration: "underline" },
               }}
             >
-              {`${selectedAudioUrl4.slice(0, 20)}.....`}
+              {`${audioUrl.slice(0, 20)}.....`}
             </Typography>
           </a>
         </Box>
@@ -409,10 +422,11 @@ const Slide4 = (props: Slide4Props) => {
         ))}
 
       {/* 📝 Single Text Layout */}
-      {selectedLayout4 === "oneText" && (
+      {isOneTextActive && (
         <Box
           sx={{
-            // position: "absolute",
+            position: "absolute",
+            inset: 0,
             display: "flex",
             alignItems:
               verticalAlign4 === "top"
@@ -436,7 +450,8 @@ const Slide4 = (props: Slide4Props) => {
             letterSpacing: letterSpacing4,
             whiteSpace: "pre-wrap",
             width: "100%",
-            p: 1
+            p: 1,
+            zIndex: 9998,
           }}
         >
           {oneTextValue4}
@@ -444,7 +459,7 @@ const Slide4 = (props: Slide4Props) => {
       )}
 
       {
-        multipleTextValue4 || selectedLayout4 === "oneText" ? null : (
+        multipleTextValue4 || isOneTextActive ? null : (
           <>
             {textElements4 &&
               textElements4.map((e) => (

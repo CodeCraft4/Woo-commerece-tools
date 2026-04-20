@@ -7,6 +7,19 @@ type AnyEl = Record<string, any>;
 const safeClip = (cp?: string | null) => (cp && typeof cp === "string" ? cp : "none");
 const safeFilter = (f?: string | null) => (f && typeof f === "string" ? f : "none");
 const val = <T,>(v: T | undefined, d: T) => (v === undefined || v === null ? d : v);
+const normalizeUrl = (value: any) => {
+  if (typeof value === "string") return value.trim();
+  if (value && typeof value === "object" && typeof value.url === "string") return value.url.trim();
+  return "";
+};
+const safeQrSize = (box: any, fallback = 70) => {
+  const w = Number(box?.width);
+  const h = Number(box?.height);
+  if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) return Math.min(w, h);
+  if (Number.isFinite(w) && w > 0) return w;
+  if (Number.isFinite(h) && h > 0) return h;
+  return fallback;
+};
 
 type Slide2Props = {
   ref?: any
@@ -29,6 +42,7 @@ const Slide2 = (props: Slide2Props) => {
     qrPosition,
     textAlign,
     selectedLayout,
+    showOneTextRightSideBox,
     textElements,
     qrAudioPosition,
     selectedAIimageUrl2,
@@ -41,6 +55,11 @@ const Slide2 = (props: Slide2Props) => {
     bgColor2,
   } = useSlide2();
   const { ref } = props
+  const isOneTextActive = selectedLayout === "oneText" || showOneTextRightSideBox;
+  const videoUrl = normalizeUrl(selectedVideoUrl);
+  const audioUrl = normalizeUrl(selectedAudioUrl);
+  const qrVideoUrl = normalizeUrl(qrPosition?.url) || videoUrl;
+  const qrAudioUrl = normalizeUrl(qrAudioPosition?.url) || audioUrl;
 
   return (
     <Box
@@ -193,7 +212,7 @@ const Slide2 = (props: Slide2Props) => {
         </Box>
       )}
 
-      {selectedVideoUrl && (
+      {videoUrl && (
         <Box
           sx={{
             position: "absolute",
@@ -231,15 +250,12 @@ const Slide2 = (props: Slide2Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator
-              url={qrPosition.url || selectedVideoUrl}
-              size={Math.min(68, 70)}
-            />
+            <QrGenerator url={qrVideoUrl} size={Math.min(68, safeQrSize(qrPosition, 70))} />
           </Box>
 
           {/* Clickable Link */}
           <a
-            href={`${selectedVideoUrl}`}
+            href={videoUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -256,13 +272,13 @@ const Slide2 = (props: Slide2Props) => {
                 "&:hover": { textDecoration: "underline" },
               }}
             >
-              {`${selectedVideoUrl.slice(0, 20)}.....`}
+              {`${videoUrl.slice(0, 20)}.....`}
             </Typography>
           </a>
         </Box>
       )}
 
-      {selectedAudioUrl && (
+      {audioUrl && (
         <Box
           sx={{
             position: "absolute",
@@ -300,15 +316,12 @@ const Slide2 = (props: Slide2Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator
-              url={qrAudioPosition.url || selectedAudioUrl}
-              size={Math.min(68, 70)}
-            />
+            <QrGenerator url={qrAudioUrl} size={Math.min(68, safeQrSize(qrAudioPosition, 70))} />
           </Box>
 
           {/* Clickable Link */}
           <a
-            href={`${selectedAudioUrl}`}
+            href={audioUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -325,7 +338,7 @@ const Slide2 = (props: Slide2Props) => {
                 "&:hover": { textDecoration: "underline" },
               }}
             >
-              {`${selectedAudioUrl.slice(0, 20)}.....`}
+              {`${audioUrl.slice(0, 20)}.....`}
             </Typography>
           </a>
         </Box>
@@ -406,9 +419,11 @@ const Slide2 = (props: Slide2Props) => {
 
 
       {/* 📝 Single Text Layout */}
-      {selectedLayout === "oneText" && (
+      {isOneTextActive && (
         <Box
           sx={{
+            position: "absolute",
+            inset: 0,
             display: "flex",
             flexDirection: "column",
             justifyContent:
@@ -434,6 +449,7 @@ const Slide2 = (props: Slide2Props) => {
             textAlign: textAlign, // ✅ still needed for multiline/inline text
             whiteSpace: "pre-wrap",
             p: 1,
+            zIndex: 9998,
           }}
         >
           {oneTextValue}
@@ -441,7 +457,7 @@ const Slide2 = (props: Slide2Props) => {
       )}
 
       {
-        multipleTextValue || selectedLayout === "oneText" ? null : (
+        multipleTextValue || isOneTextActive ? null : (
           <>
             {textElements &&
               textElements.map((e) => (

@@ -16,6 +16,18 @@ const fontColors = [
   "#FFD700",
 ];
 
+const normalizeStoredUrl = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+  if (value && typeof value === "object" && typeof (value as any).url === "string") {
+    const trimmed = String((value as any).url).trim();
+    return trimmed ? trimmed : null;
+  }
+  return null;
+};
+
 interface Position {
   x: number;
   y: number;
@@ -650,8 +662,12 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         if (parsed.draggableImages) setDraggableImages(parsed.draggableImages);
         if (parsed.images) setImages(parsed.images);
         if (parsed.selectedImg) setSelectedImage(parsed.selectedImg);
-        if (parsed.selectedVideoUrl) setSelectedVideoUrl(parsed.selectedVideoUrl);
-        if (parsed.selectedAudioUrl) setSelectedAudioUrl(parsed.selectedAudioUrl);
+        {
+          const videoUrl = normalizeStoredUrl(parsed.selectedVideoUrl);
+          const audioUrl = normalizeStoredUrl(parsed.selectedAudioUrl);
+          if (videoUrl) setSelectedVideoUrl(videoUrl);
+          if (audioUrl) setSelectedAudioUrl(audioUrl);
+        }
         if (parsed.selectedLayout) setSelectedLayout(parsed.selectedLayout);
         if (parsed.oneTextValue) setOneTextValue(parsed.oneTextValue);
         if (parsed.showOneTextRightSideBox) setShowOneTextRightSideBox(parsed.showOneTextRightSideBox);
