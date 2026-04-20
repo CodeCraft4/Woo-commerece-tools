@@ -26,6 +26,8 @@ import {
 } from "../../../../../lib/templateSlideCanvas";
 import { buildGoogleFontsUrls, ensureGoogleFontsLoaded, loadGoogleFontsOnce } from "../../../../../constant/googleFonts";
 import { buildPolygonLayout, mergeBuckets, type SlidePayloadV2 } from "../../../../../lib/polygon";
+import { QRCodeSVG } from "qrcode.react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 type CaptureSlideKey = "slide1" | "slide2" | "slide3" | "slide4";
 
@@ -87,6 +89,107 @@ const normalizeFontWeight = (value: unknown, fallback = 400) => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim()) return value.trim();
   return fallback;
+};
+
+const buildQrSvgDataUrl = (value: string, size: number) => {
+  const safeValue = String(value ?? "").trim();
+  if (!safeValue) return "";
+  const safeSize = Math.max(48, Math.min(256, Math.round(toNum(size, 72))));
+  try {
+    const markup = renderToStaticMarkup(
+      <QRCodeSVG value={safeValue} size={safeSize} includeMargin={false} />
+    );
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+  } catch {
+    return "";
+  }
+};
+
+const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
+  if (slideId === 2) {
+    return {
+      bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      cardWidth: 350,
+      cardHeight: 200,
+      qrOffsetX: 28,
+      qrOffsetY: 33,
+      defaultQrSize: 70,
+    };
+  }
+  if (slideId === 3) {
+    return {
+      bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      cardWidth: 300,
+      cardHeight: 200,
+      qrOffsetX: 25,
+      qrOffsetY: 50,
+      defaultQrSize: 70,
+    };
+  }
+  if (slideId === 4) {
+    return {
+      bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      cardWidth: CAPTURE_SIZE.w,
+      cardHeight: kind === "audio" ? 190 : 180,
+      qrOffsetX: kind === "audio" ? 65 : 58,
+      qrOffsetY: kind === "audio" ? 57 : 49,
+      defaultQrSize: 72,
+    };
+  }
+  return {
+    bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+    cardWidth: 320,
+    cardHeight: 200,
+    qrOffsetX: 28,
+    qrOffsetY: 40,
+    defaultQrSize: 70,
+  };
+};
+
+const mapQrElements = (id: number, payload?: SlidePayloadV2 | null) => {
+  const elements: TemplateSlide["elements"] = [];
+
+  const addQr = (kind: "video" | "audio", box?: { url?: string | null; x?: number; y?: number; zIndex?: number; width?: number; height?: number } | null) => {
+    const url = String(box?.url ?? "").trim();
+    if (!url) return;
+    const preset = qrPresetFor(id, kind);
+    const x = toNum(box?.x, 0);
+    const y = toNum(box?.y, 0);
+    const zIndex = toNum(box?.zIndex, 900);
+    const qrSize = Math.max(
+      56,
+      Math.min(120, toNum(firstDefined(box?.width, box?.height, preset.defaultQrSize), preset.defaultQrSize))
+    );
+    const qrSrc = buildQrSvgDataUrl(url, qrSize);
+
+    elements.push({
+      id: `qr-${kind}-bg-${id}`,
+      type: "image",
+      src: preset.bgSrc,
+      x,
+      y,
+      width: preset.cardWidth,
+      height: preset.cardHeight,
+      zIndex,
+    });
+
+    if (qrSrc) {
+      elements.push({
+        id: `qr-${kind}-code-${id}`,
+        type: "sticker",
+        src: qrSrc,
+        x: x + preset.qrOffsetX,
+        y: y + preset.qrOffsetY,
+        width: qrSize,
+        height: qrSize,
+        zIndex: zIndex + 2,
+      });
+    }
+  };
+
+  addQr("video", payload?.qrVideo);
+  addQr("audio", payload?.qrAudio);
+  return elements;
 };
 
 const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | null): TemplateSlide => {
@@ -272,6 +375,8 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
       ]
     : [];
 
+  const qrElements = mapQrElements(id, payload);
+
   return {
     id,
     label: `slide${id}`,
@@ -285,6 +390,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
       ...freeTexts,
       ...oneText,
       ...multipleTexts,
+      ...qrElements,
       ...aiImage,
     ],
   };
