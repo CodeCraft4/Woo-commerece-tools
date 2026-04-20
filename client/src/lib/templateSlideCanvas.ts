@@ -96,6 +96,13 @@ const formatCanvasFontFamily = (value?: string | null) => {
     .join(", ");
 };
 
+const isTransparentColor = (value?: string | null) => {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!raw) return true;
+  if (raw === "transparent") return true;
+  return /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0(?:\.0+)?\s*\)$/.test(raw);
+};
+
 const resolveImageSrc = (src: string) => {
   if (!src) return "";
   if (src.startsWith("data:") || src.startsWith("blob:")) return src;
@@ -506,7 +513,9 @@ export const renderTemplateSlideToCanvasWithStats = async (
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  const background = slide?.bgColor || options.backgroundColor || "#ffffff";
+  const background = isTransparentColor(slide?.bgColor)
+    ? options.backgroundColor || "#ffffff"
+    : String(slide?.bgColor);
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);

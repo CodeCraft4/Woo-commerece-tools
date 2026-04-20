@@ -19,8 +19,13 @@ import { useSlide1 } from "../../../../../context/Slide1Context";
 import { useSlide2 } from "../../../../../context/Slide2Context";
 import { useSlide3 } from "../../../../../context/Slide3Context";
 import { useSlide4 } from "../../../../../context/Slide4Context";
-import { renderTemplateSlideToCanvasWithStats, type TemplateSlide } from "../../../../../lib/templateSlideCanvas";
+import {
+  collectTemplateSlideFonts,
+  renderTemplateSlideToCanvasWithStats,
+  type TemplateSlide,
+} from "../../../../../lib/templateSlideCanvas";
 import { buildGoogleFontsUrls, ensureGoogleFontsLoaded, loadGoogleFontsOnce } from "../../../../../constant/googleFonts";
+import { buildPolygonLayout, mergeBuckets, type SlidePayloadV2 } from "../../../../../lib/polygon";
 
 type CaptureSlideKey = "slide1" | "slide2" | "slide3" | "slide4";
 
@@ -49,78 +54,239 @@ const buildCardSlidesScopeKeys = () => {
   }
 };
 
-const normalizeFontFamily = (value?: string | null) => {
-  const raw = String(value ?? "").trim();
-  if (!raw) return "";
-  const quoted = raw.match(/['"]([^'"]+)['"]/);
-  if (quoted?.[1]) return quoted[1].trim();
-  const first = raw.split(",")[0]?.trim() ?? "";
-  return first.replace(/^['"]|['"]$/g, "").trim();
+const toNum = (value: unknown, fallback = 0) => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
 };
 
-const layoutToTemplateSlide = (id: number, layout: any, bgColor?: string | null): TemplateSlide => {
-  const imageElements = Array.isArray(layout?.elements)
-    ? layout.elements
-        .filter((el: any) => String(el?.src ?? "").trim())
-        .map((el: any) => ({
-          id: String(el?.id ?? `img-${id}-${Math.random()}`),
-          type: "image" as const,
-          src: String(el?.src ?? ""),
-          x: Number(el?.x ?? 0),
-          y: Number(el?.y ?? 0),
-          width: Number(el?.width ?? 0),
-          height: Number(el?.height ?? 0),
-          zIndex: Number(el?.zIndex ?? 1),
-        }))
-    : [];
+const firstDefined = (...values: any[]) => {
+  for (const value of values) {
+    if (value === 0 || value === false) return value;
+    if (typeof value === "string") {
+      if (value.trim()) return value;
+      continue;
+    }
+    if (value != null) return value;
+  }
+  return undefined;
+};
 
-  const stickerElements = Array.isArray(layout?.stickers)
-    ? layout.stickers
-        .filter((st: any) => String(st?.sticker ?? "").trim())
-        .map((st: any) => ({
-          id: String(st?.id ?? `st-${id}-${Math.random()}`),
-          type: "sticker" as const,
-          src: String(st?.sticker ?? ""),
-          x: Number(st?.x ?? 0),
-          y: Number(st?.y ?? 0),
-          width: Number(st?.width ?? 0),
-          height: Number(st?.height ?? 0),
-          zIndex: Number(st?.zIndex ?? 50),
-        }))
-    : [];
+const normalizeAlign = (value: unknown): "left" | "center" | "right" => {
+  const text = String(value ?? "").toLowerCase().trim();
+  if (text === "start" || text === "left") return "left";
+  if (text === "end" || text === "right") return "right";
+  return "center";
+};
 
-  const textElements = Array.isArray(layout?.textElements)
-    ? layout.textElements
-        .filter((te: any) => String(te?.text ?? "").trim().length > 0)
-        .map((te: any) => ({
-          id: String(te?.id ?? `txt-${id}-${Math.random()}`),
+const normalizeFontWeight = (value: unknown, fallback = 400) => {
+  if (typeof value === "boolean") return value ? 700 : 400;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return fallback;
+};
+
+const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | null): TemplateSlide => {
+  const rawBgColor = String(payload?.bg?.color ?? "").trim();
+  const normalizedBgColor = !rawBgColor || rawBgColor.toLowerCase() === "transparent" ? "#ffffff" : rawBgColor;
+
+  const bgFrames = mergeBuckets(payload?.layout?.bgFrames)
+    .filter((el: any) => String(el?.src ?? "").trim())
+    .map((el: any) => ({
+      id: String(el?.id ?? `bg-${id}-${Math.random()}`),
+      type: "image" as const,
+      src: String(el?.src ?? ""),
+      x: toNum(el?.x, 0),
+      y: toNum(el?.y, 0),
+      width: toNum(el?.width, 0),
+      height: toNum(el?.height, 0),
+      zIndex: toNum(el?.zIndex, 1),
+    }));
+
+  const layoutStickers = mergeBuckets(payload?.layout?.stickers)
+    .filter((el: any) => String(el?.sticker ?? "").trim())
+    .map((el: any) => ({
+      id: String(el?.id ?? `lst-${id}-${Math.random()}`),
+      type: "sticker" as const,
+      src: String(el?.sticker ?? ""),
+      x: toNum(el?.x, 0),
+      y: toNum(el?.y, 0),
+      width: toNum(el?.width, 0),
+      height: toNum(el?.height, 0),
+      zIndex: toNum(el?.zIndex, 40),
+    }));
+
+  const staticTexts = Array.isArray(payload?.layout?.staticText)
+    ? payload.layout.staticText
+        .filter((text: any) => String(text?.text ?? "").trim().length > 0)
+        .map((text: any) => ({
+          id: String(text?.id ?? `stxt-${id}-${Math.random()}`),
           type: "text" as const,
-          text: String(te?.text ?? ""),
-          x: Number(te?.x ?? 0),
-          y: Number(te?.y ?? 0),
-          width: Number(te?.width ?? 0),
-          height: Number(te?.height ?? 0),
-          zIndex: Number(te?.zIndex ?? 100),
-          color: String(te?.color ?? "#111111"),
-          fontSize: Number(te?.fontSize ?? 20),
-          fontFamily: String(te?.fontFamily ?? "Arial"),
-          fontWeight: te?.bold ? 700 : te?.fontWeight ?? 400,
-          fontStyle: te?.italic ? "italic" : "normal",
-          textDecoration: te?.underline ? "underline" : "none",
-          lineHeight: Number(te?.lineHeight ?? 1.16),
-          align:
-            te?.textAlign === "left" || te?.textAlign === "right" || te?.textAlign === "center"
-              ? te.textAlign
-              : "center",
-          rotation: Number(te?.rotation ?? 0),
+          text: String(text?.text ?? ""),
+          x: toNum(text?.x, 0),
+          y: toNum(text?.y, 0),
+          width: toNum(text?.width, 0),
+          height: toNum(text?.height, 0),
+          zIndex: toNum(text?.zIndex, 80),
+          color: String(text?.color ?? "#111111"),
+          fontSize: toNum(text?.fontSize, 20),
+          fontFamily: String(text?.fontFamily ?? "Arial"),
+          fontWeight: normalizeFontWeight(text?.fontWeight, 400),
+          fontStyle: text?.italic ? "italic" : "normal",
+          textDecoration: "none",
+          lineHeight: 1.16,
+          align: normalizeAlign(text?.textAlign),
+          rotation: toNum(text?.rotation, 0),
         }))
+    : [];
+
+  const userImages = mergeBuckets(payload?.user?.images)
+    .filter((el: any) => String(el?.src ?? "").trim())
+    .map((el: any) => ({
+      id: String(el?.id ?? `uimg-${id}-${Math.random()}`),
+      type: "image" as const,
+      src: String(el?.src ?? ""),
+      x: toNum(el?.x, 0),
+      y: toNum(el?.y, 0),
+      width: toNum(el?.width, 0),
+      height: toNum(el?.height, 0),
+      zIndex: toNum(el?.zIndex, 120),
+    }));
+
+  const userStickers = mergeBuckets(payload?.user?.stickers)
+    .filter((el: any) => String(el?.sticker ?? "").trim())
+    .map((el: any) => ({
+      id: String(el?.id ?? `ust-${id}-${Math.random()}`),
+      type: "sticker" as const,
+      src: String(el?.sticker ?? ""),
+      x: toNum(el?.x, 0),
+      y: toNum(el?.y, 0),
+      width: toNum(el?.width, 0),
+      height: toNum(el?.height, 0),
+      zIndex: toNum(el?.zIndex, 160),
+    }));
+
+  const freeTexts = Array.isArray(payload?.user?.freeTexts)
+    ? payload.user.freeTexts
+        .filter((text: any) => String(text?.value ?? "").trim().length > 0)
+        .map((text: any) => ({
+          id: String(text?.id ?? `utxt-${id}-${Math.random()}`),
+          type: "text" as const,
+          text: String(text?.value ?? ""),
+          x: toNum(text?.position?.x, 0),
+          y: toNum(text?.position?.y, 0),
+          width: toNum(text?.size?.width, 0),
+          height: toNum(text?.size?.height, 0),
+          zIndex: toNum(text?.zIndex, 220),
+          color: String(text?.fontColor ?? "#111111"),
+          fontSize: toNum(text?.fontSize, 20),
+          fontFamily: String(text?.fontFamily ?? "Arial"),
+          fontWeight: normalizeFontWeight(text?.fontWeight, 400),
+          fontStyle: "normal",
+          textDecoration: "none",
+          lineHeight: toNum(text?.lineHeight, 1.16),
+          align: normalizeAlign(text?.textAlign),
+          rotation: toNum(text?.rotation, 0),
+        }))
+    : [];
+
+  const oneText = (() => {
+    if (!payload?.flags?.showOneText) return [] as any[];
+    const value = String(payload?.oneText?.value ?? "").trim();
+    if (!value) return [] as any[];
+    return [
+      {
+        id: `one-${id}`,
+        type: "text" as const,
+        text: value,
+        x: 8,
+        y: 8,
+        width: CAPTURE_SIZE.w - 16,
+        height: CAPTURE_SIZE.h - 16,
+        zIndex: 280,
+        color: String(payload?.oneText?.fontColor ?? "#111111"),
+        fontSize: toNum(payload?.oneText?.fontSize, 22),
+        fontFamily: String(payload?.oneText?.fontFamily ?? "Arial"),
+        fontWeight: normalizeFontWeight(payload?.oneText?.fontWeight, 400),
+        fontStyle: "normal",
+        textDecoration: "none",
+        lineHeight: toNum(payload?.oneText?.lineHeight, 1.16),
+        align: normalizeAlign(payload?.oneText?.textAlign),
+        rotation: toNum(payload?.oneText?.rotation, 0),
+      },
+    ];
+  })();
+
+  const multipleTexts = (() => {
+    if (!payload?.flags?.multipleText) return [] as any[];
+    const rows = Array.isArray(payload?.multipleTexts) ? payload.multipleTexts : [];
+    return rows
+      .map((entry: any, idx: number) => {
+        const value = String(firstDefined(entry?.value, entry?.text, "") ?? "").trim();
+        if (!value) return null;
+        return {
+          id: String(entry?.id ?? `multi-${id}-${idx}`),
+          type: "text" as const,
+          text: value,
+          x: 8,
+          y: 8 + idx * 220,
+          width: CAPTURE_SIZE.w - 16,
+          height: 210,
+          zIndex: 300 + idx,
+          color: String(
+            firstDefined(entry?.fontColor, entry?.fontColor1, entry?.fontColor2, entry?.fontColor3, "#111111"),
+          ),
+          fontSize: toNum(firstDefined(entry?.fontSize, entry?.fontSize1, entry?.fontSize2, entry?.fontSize3, 22), 22),
+          fontFamily: String(
+            firstDefined(entry?.fontFamily, entry?.fontFamily1, entry?.fontFamily2, entry?.fontFamily3, "Arial"),
+          ),
+          fontWeight: normalizeFontWeight(
+            firstDefined(entry?.fontWeight, entry?.fontWeight1, entry?.fontWeight2, entry?.fontWeight3, 400),
+            400,
+          ),
+          fontStyle: "normal",
+          textDecoration: "none",
+          lineHeight: toNum(firstDefined(entry?.lineHeight, entry?.lineHeight1, entry?.lineHeight2, entry?.lineHeight3, 1.16), 1.16),
+          align: normalizeAlign(firstDefined(entry?.textAlign, entry?.textAlign1, entry?.textAlign2, entry?.textAlign3, "center")),
+          rotation: toNum(firstDefined(entry?.rotation, entry?.rotation1, entry?.rotation2, entry?.rotation3, 0), 0),
+        };
+      })
+      .filter(Boolean) as any[];
+  })();
+
+  const aiImage = payload?.ai?.imageUrl
+    ? [
+        {
+          id: `ai-${id}`,
+          type: "image" as const,
+          src: String(payload.ai.imageUrl),
+          x: toNum(payload.ai.x, 0),
+          y: toNum(payload.ai.y, 0),
+          width: toNum(payload.ai.width, 0),
+          height: toNum(payload.ai.height, 0),
+          zIndex: 350,
+        },
+      ]
     : [];
 
   return {
     id,
     label: `slide${id}`,
-    bgColor: String(bgColor ?? "transparent"),
-    elements: [...imageElements, ...stickerElements, ...textElements],
+    bgColor: normalizedBgColor,
+    elements: [
+      ...bgFrames,
+      ...layoutStickers,
+      ...staticTexts,
+      ...userImages,
+      ...userStickers,
+      ...freeTexts,
+      ...oneText,
+      ...multipleTexts,
+      ...aiImage,
+    ],
   };
 };
 
@@ -132,10 +298,10 @@ const PreviewBookCard = () => {
   const [downloading, setDownloading] = useState(false);
   const navigate = useNavigate();
   const isIosWebKit = useMemo(() => isIosTouchDevice(), []);
-  const { layout1, bgColor1 } = useSlide1();
-  const { layout2, bgColor2 } = useSlide2();
-  const { layout3, bgColor3 } = useSlide3();
-  const { layout4, bgColor4 } = useSlide4();
+  const slide1Ctx = useSlide1();
+  const slide2Ctx = useSlide2();
+  const slide3Ctx = useSlide3();
+  const slide4Ctx = useSlide4();
 
 
   const isMobile = useMediaQuery("(max-width:500px)");
@@ -296,26 +462,19 @@ const PreviewBookCard = () => {
   }, [waitForNodeAssets]);
 
   const captureCardSlidesFromCanvasRenderer = useCallback(async () => {
+    const polygon = buildPolygonLayout(slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx, {
+      onlySelectedImages: true,
+    });
     const slides = [
-      layoutToTemplateSlide(1, layout1, bgColor1),
-      layoutToTemplateSlide(2, layout2, bgColor2),
-      layoutToTemplateSlide(3, layout3, bgColor3),
-      layoutToTemplateSlide(4, layout4, bgColor4),
+      mapPolygonSlideToTemplateSlide(1, polygon?.slides?.slide1),
+      mapPolygonSlideToTemplateSlide(2, polygon?.slides?.slide2),
+      mapPolygonSlideToTemplateSlide(3, polygon?.slides?.slide3),
+      mapPolygonSlideToTemplateSlide(4, polygon?.slides?.slide4),
     ];
 
-    const fonts = new Set<string>();
-    slides.forEach((slide) => {
-      slide.elements.forEach((el: any) => {
-        if (el?.type !== "text") return;
-        const fam = normalizeFontFamily(el?.fontFamily);
-        if (!fam) return;
-        const low = fam.toLowerCase();
-        if (["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"].includes(low)) return;
-        fonts.add(fam);
-      });
-    });
-    if (fonts.size) {
-      const urls = buildGoogleFontsUrls(Array.from(fonts));
+    const fonts = collectTemplateSlideFonts(slides);
+    if (fonts.length) {
+      const urls = buildGoogleFontsUrls(fonts);
       loadGoogleFontsOnce(urls);
       await ensureGoogleFontsLoaded(urls);
     }
@@ -360,7 +519,7 @@ const PreviewBookCard = () => {
       slidesObj,
       validCount: Object.keys(slidesObj).length,
     };
-  }, [bgColor1, bgColor2, bgColor3, bgColor4, layout1, layout2, layout3, layout4]);
+  }, [slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx]);
 
   const handleDownload = useCallback(async () => {
     if (downloading) return;
