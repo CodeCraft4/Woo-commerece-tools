@@ -877,6 +877,31 @@ const Subscription = () => {
     return await promise;
   }, []);
 
+  const waitForNodeAssets = useCallback(async (node: HTMLElement) => {
+    const images = Array.from(node.querySelectorAll("img"));
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            const element = img as HTMLImageElement;
+            if (element.complete) {
+              resolve();
+              return;
+            }
+            const done = () => resolve();
+            element.addEventListener("load", done, { once: true });
+            element.addEventListener("error", done, { once: true });
+          }),
+      ),
+    );
+    if ((document as any)?.fonts?.ready) {
+      try {
+        await (document as any).fonts.ready;
+      } catch {}
+    }
+    await waitForNextPaint();
+  }, []);
+
   const ensureCaptureSupportReady = useCallback(async () => {
     if (!rawSlides.length && !isLegacyCardProduct) return;
     if (rawSlides.length && !captureSupportEnabled) {
@@ -1079,6 +1104,7 @@ const Subscription = () => {
       for (let i = 0; i < rawSlides.length; i++) {
         const node = slideNodeRefs.current[i];
         if (!node) continue;
+        await waitForNodeAssets(node);
         const rect = node.getBoundingClientRect();
         const maxSide = Math.max(rect.width || 0, rect.height || 0);
         const ratio = maxSide ? maxDim / maxSide : 1.5;
@@ -1109,7 +1135,7 @@ const Subscription = () => {
       }
       return out;
     },
-    [rawSlides, resolveCaptureFontEmbedCss]
+    [rawSlides, resolveCaptureFontEmbedCss, waitForNodeAssets]
   );
 
   const prepareRawSlideForCanvas = useCallback(async (slide: RawSlide) => {
@@ -1176,6 +1202,7 @@ const Subscription = () => {
       for (let i = 0; i < 4; i++) {
         const node = legacyCardNodeRefs.current[i];
         if (!node) continue;
+        await waitForNodeAssets(node);
         const rect = node.getBoundingClientRect();
         const maxSide = Math.max(rect.width || 0, rect.height || 0);
         const ratio = maxSide ? maxDim / maxSide : 1.5;
@@ -1195,7 +1222,7 @@ const Subscription = () => {
       }
       return out;
     },
-    [resolveCaptureFontEmbedCss],
+    [resolveCaptureFontEmbedCss, waitForNodeAssets],
   );
 
   useEffect(() => {
@@ -3073,7 +3100,18 @@ const Subscription = () => {
           </Grid>
 
           {captureSupportEnabled && rawSlides.length > 0 && (
-            <Box sx={{ position: "fixed", left: -10000, top: 0, opacity: 0, pointerEvents: "none" }}>
+            <Box
+              sx={{
+                position: "fixed",
+                left: 0,
+                top: 0,
+                opacity: 0.01,
+                pointerEvents: "none",
+                zIndex: -1,
+                transform: "translateZ(0)",
+                WebkitTransform: "translateZ(0)",
+              }}
+            >
               {rawSlides.map((sl, i) => (
                 <Box
                   key={sl.id ?? i}
@@ -3087,7 +3125,18 @@ const Subscription = () => {
           )}
 
           {legacyCardCaptureEnabled && isLegacyCardProduct && (
-            <Box sx={{ position: "fixed", left: -10000, top: 0, opacity: 0, pointerEvents: "none" }}>
+            <Box
+              sx={{
+                position: "fixed",
+                left: 0,
+                top: 0,
+                opacity: 0.01,
+                pointerEvents: "none",
+                zIndex: -1,
+                transform: "translateZ(0)",
+                WebkitTransform: "translateZ(0)",
+              }}
+            >
               <Box sx={{ width: LEGACY_CARD_CAPTURE.w, height: LEGACY_CARD_CAPTURE.h }}>
                 <Slide1 ref={setLegacyCardNodeRef(0)} />
               </Box>
