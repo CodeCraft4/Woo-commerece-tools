@@ -132,6 +132,119 @@ const blobToDataUrl = (blob: Blob) =>
     fr.readAsDataURL(blob);
   });
 
+const decodeSvgDataUrl = (src: string) => {
+  const commaIndex = src.indexOf(",");
+  if (commaIndex < 0) return "";
+  const meta = src.slice(0, commaIndex).toLowerCase();
+  const payload = src.slice(commaIndex + 1);
+  try {
+    if (meta.includes(";base64")) {
+      return atob(payload);
+    }
+    return decodeURIComponent(payload);
+  } catch {
+    return "";
+  }
+};
+
+const loadSvgDataUrlViaBlob = async (src: string) => {
+  const svgText = decodeSvgDataUrl(src);
+  if (!svgText) throw new Error("Failed to decode SVG data URL");
+  const blob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    return await loadHtmlImage(objectUrl);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
+const tryDrawInlineSvgDataUrl = (
+  ctx: CanvasRenderingContext2D,
+  src: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) => {
+  const svgText = decodeSvgDataUrl(src);
+  if (!svgText) return false;
+  if (typeof DOMParser === "undefined") return false;
+
+  try {
+    const parsed = new DOMParser().parseFromString(svgText, "image/svg+xml");
+    const svg = parsed?.documentElement;
+    if (!svg || String(svg.nodeName || "").toLowerCase() !== "svg") return false;
+
+    const widthPx = Math.max(1, width);
+    const heightPx = Math.max(1, height);
+
+    let viewX = 0;
+    let viewY = 0;
+    let viewW = 0;
+    let viewH = 0;
+
+    const viewBox = String(svg.getAttribute("viewBox") || "").trim();
+    if (viewBox) {
+      const nums = viewBox
+        .split(/[ ,]+/)
+        .map((part) => Number(part))
+        .filter((n) => Number.isFinite(n));
+      if (nums.length >= 4) {
+        viewX = nums[0];
+        viewY = nums[1];
+        viewW = nums[2];
+        viewH = nums[3];
+      }
+    }
+    if (!(viewW > 0 && viewH > 0)) {
+      viewW = toNum(svg.getAttribute("width"), 25);
+      viewH = toNum(svg.getAttribute("height"), 25);
+    }
+    if (!(viewW > 0 && viewH > 0)) {
+      viewW = 25;
+      viewH = 25;
+    }
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.rect(0, 0, widthPx, heightPx);
+    ctx.clip();
+    ctx.scale(widthPx / viewW, heightPx / viewH);
+    ctx.translate(-viewX, -viewY);
+
+    const rects = Array.from(svg.querySelectorAll("rect"));
+    rects.forEach((rect) => {
+      const rx = toNum(rect.getAttribute("x"), 0);
+      const ry = toNum(rect.getAttribute("y"), 0);
+      const rw = Math.max(0, toNum(rect.getAttribute("width"), 0));
+      const rh = Math.max(0, toNum(rect.getAttribute("height"), 0));
+      if (!(rw > 0 && rh > 0)) return;
+      const fill = String(rect.getAttribute("fill") || "#000000").trim() || "#000000";
+      ctx.fillStyle = fill;
+      ctx.fillRect(rx, ry, rw, rh);
+    });
+
+    const paths = Array.from(svg.querySelectorAll("path"));
+    paths.forEach((path) => {
+      const d = String(path.getAttribute("d") || "").trim();
+      if (!d) return;
+      const fill = String(path.getAttribute("fill") || "#000000").trim() || "#000000";
+      try {
+        const path2d = new Path2D(d);
+        ctx.fillStyle = fill;
+        ctx.fill(path2d);
+      } catch {}
+    });
+
+    ctx.restore();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const loadHtmlImage = (src: string, crossOrigin?: "anonymous") =>
   new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
@@ -150,7 +263,16 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
   const promise = (async () => {
     if (isDataOrBlobUrl(resolved) || isSameOriginUrl(resolved)) {
-      return await loadHtmlImage(resolved);
+      try {
+        return await loadHtmlImage(resolved);
+      } catch (error) {
+        if (resolved.toLowerCase().startsWith("data:image/svg+xml")) {
+          try {
+            return await loadSvgDataUrlViaBlob(resolved);
+          } catch {}
+        }
+        throw error;
+      }
     }
 
     try {
@@ -561,6 +683,20 @@ export const renderTemplateSlideToCanvasWithStats = async (
       ctx.restore();
       drawnAssets += 1;
     } catch {
+      const renderedInlineSvg =
+        src.toLowerCase().startsWith("data:image/svg+xml") &&
+        tryDrawInlineSvgDataUrl(
+          ctx,
+          src,
+          toNum(element.x, 0),
+          toNum(element.y, 0),
+          Math.max(1, toNum(element.width, 1)),
+          Math.max(1, toNum(element.height, 1)),
+        );
+      if (renderedInlineSvg) {
+        drawnAssets += 1;
+        continue;
+      }
       failedAssets += 1;
       // Skip broken assets so the rest of the design still renders.
     }

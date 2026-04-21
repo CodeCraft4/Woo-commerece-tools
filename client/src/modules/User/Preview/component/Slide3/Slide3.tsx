@@ -11,15 +11,6 @@ const normalizeUrl = (value: any) => {
   if (value && typeof value === "object" && typeof value.url === "string") return value.url.trim();
   return "";
 };
-const safeQrSize = (box: any, fallback = 70) => {
-  const w = Number(box?.width);
-  const h = Number(box?.height);
-  if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) return Math.min(w, h);
-  if (Number.isFinite(w) && w > 0) return w;
-  if (Number.isFinite(h) && h > 0) return h;
-  return fallback;
-};
-
 type Slide3Props = {
   ref?: any
 }
@@ -247,7 +238,7 @@ const Slide3 = (props:Slide3Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator url={qrVideoUrl} size={Math.min(68, safeQrSize(qrPosition3, 75))} />
+            <QrGenerator url={qrVideoUrl} size={70} />
           </Box>
 
           {/* Clickable Link */}
@@ -293,7 +284,7 @@ const Slide3 = (props:Slide3Props) => {
           {/* Background Image */}
           <Box
             component="img"
-            src="/assets/images/video-qr-tips.png"
+            src="/assets/images/audio-qr-tips.png"
             sx={{
               width: 300,       // ✅ match the image width
               height: 200,
@@ -313,7 +304,7 @@ const Slide3 = (props:Slide3Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator url={qrAudioUrl} size={Math.min(68, safeQrSize(qrAudioPosition3, 75))} />
+            <QrGenerator url={qrAudioUrl} size={70} />
           </Box>
 
           {/* Clickable Link */}

@@ -97,58 +97,164 @@ const normalizeUrl = (value: any) => {
   return "";
 };
 
+const truncateQrUrl = (value: string) => `${String(value ?? "").slice(0, 20)}.....`;
+
+const blobToDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+
+const toDataUrlSafe = async (src: string): Promise<string> => {
+  if (!src || src.startsWith("data:") || src.startsWith("blob:")) return src;
+  try {
+    const absolute =
+      src.startsWith("/") && typeof window !== "undefined" ? `${window.location.origin}${src}` : src;
+    const resp = await fetch(absolute, { mode: "cors" });
+    if (!resp.ok) return src;
+    const blob = await resp.blob();
+    return await blobToDataUrl(blob);
+  } catch {
+    return src;
+  }
+};
+
+const hasQrTemplateBackground = (slide: TemplateSlide) =>
+  (slide?.elements ?? []).some((element: any) => {
+    if (element?.type !== "image") return false;
+    const src = String(element?.src ?? "").toLowerCase();
+    const id = String(element?.id ?? "").toLowerCase();
+    return src.includes("video-qr-tips") || src.includes("audio-qr-tips") || id.includes("qr-");
+  });
+
+const prepareTemplateSlideForCanvas = async (slide: TemplateSlide): Promise<TemplateSlide> => {
+  const elements = await Promise.all(
+    (slide?.elements ?? []).map(async (element: any) => {
+      if (element?.type !== "image" && element?.type !== "sticker") return element;
+      const src = String(element?.src ?? "");
+      if (!src) return element;
+      const safeSrc = (await toDataUrlSafe(src)) || src || TRANSPARENT_PIXEL;
+      return {
+        ...element,
+        src: safeSrc,
+      };
+    }),
+  );
+  return {
+    ...slide,
+    elements,
+  };
+};
+
 const buildQrSvgDataUrl = (value: string, size: number) => {
   const safeValue = String(value ?? "").trim();
   if (!safeValue) return "";
   const safeSize = Math.max(48, Math.min(256, Math.round(toNum(size, 72))));
   try {
     const markup = renderToStaticMarkup(
-      <QRCodeSVG value={safeValue} size={safeSize} includeMargin={false} />
+      <QRCodeSVG
+        value={safeValue}
+        size={safeSize}
+        includeMargin={false}
+        fgColor="#000000"
+        bgColor="#ffffff"
+      />
     );
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+    try {
+      const bytes = new TextEncoder().encode(markup);
+      let binary = "";
+      bytes.forEach((byte) => {
+        binary += String.fromCharCode(byte);
+      });
+      return `data:image/svg+xml;base64,${btoa(binary)}`;
+    } catch {
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+    }
   } catch {
     return "";
   }
 };
 
 const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
+  if (slideId === 1) {
+    return {
+      bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      boxWidth: CAPTURE_SIZE.w,
+      cardWidth: CAPTURE_SIZE.w,
+      cardHeight: kind === "audio" ? 190 : 180,
+      bgOffsetX: 0,
+      qrOffsetX: kind === "audio" ? 65 : 58,
+      qrOffsetY: kind === "audio" ? 57 : 49,
+      defaultQrSize: 72,
+      urlOffsetX: 370,
+      urlOffsetY: 71,
+      urlWidth: 105,
+      urlHeight: 24,
+    };
+  }
   if (slideId === 2) {
     return {
       bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      boxWidth: 400,
       cardWidth: 350,
       cardHeight: 200,
+      bgOffsetX: 25,
       qrOffsetX: 28,
       qrOffsetY: 33,
       defaultQrSize: 70,
+      urlOffsetX: 255,
+      urlOffsetY: 60,
+      urlWidth: 105,
+      urlHeight: 24,
     };
   }
   if (slideId === 3) {
     return {
       bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      boxWidth: 300,
       cardWidth: 300,
       cardHeight: 200,
+      bgOffsetX: 0,
       qrOffsetX: 25,
       qrOffsetY: 50,
       defaultQrSize: 70,
+      urlOffsetX: 165,
+      urlOffsetY: 78,
+      urlWidth: 105,
+      urlHeight: 24,
     };
   }
   if (slideId === 4) {
     return {
       bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      boxWidth: CAPTURE_SIZE.w,
       cardWidth: CAPTURE_SIZE.w,
       cardHeight: kind === "audio" ? 190 : 180,
+      bgOffsetX: 0,
       qrOffsetX: kind === "audio" ? 65 : 58,
       qrOffsetY: kind === "audio" ? 57 : 49,
       defaultQrSize: 72,
+      urlOffsetX: 370,
+      urlOffsetY: 71,
+      urlWidth: 105,
+      urlHeight: 24,
     };
   }
   return {
     bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+    boxWidth: 320,
     cardWidth: 320,
     cardHeight: 200,
+    bgOffsetX: 0,
     qrOffsetX: 28,
     qrOffsetY: 40,
     defaultQrSize: 70,
+    urlOffsetX: 205,
+    urlOffsetY: 60,
+    urlWidth: 105,
+    urlHeight: 24,
   };
 };
 
@@ -162,17 +268,14 @@ const mapQrElements = (id: number, payload?: SlidePayloadV2 | null) => {
     const x = toNum(box?.x, 0);
     const y = toNum(box?.y, 0);
     const zIndex = toNum(box?.zIndex, 900);
-    const qrSize = Math.max(
-      56,
-      Math.min(120, toNum(firstDefined(box?.width, box?.height, preset.defaultQrSize), preset.defaultQrSize))
-    );
+    const qrSize = 60;
     const qrSrc = buildQrSvgDataUrl(url, qrSize);
 
     elements.push({
       id: `qr-${kind}-bg-${id}`,
       type: "image",
       src: preset.bgSrc,
-      x,
+      x: x + toNum(preset.bgOffsetX, 0),
       y,
       width: preset.cardWidth,
       height: preset.cardHeight,
@@ -188,9 +291,29 @@ const mapQrElements = (id: number, payload?: SlidePayloadV2 | null) => {
         y: y + preset.qrOffsetY,
         width: qrSize,
         height: qrSize,
-        zIndex: zIndex + 2,
+        zIndex: zIndex + 20,
       });
     }
+
+    elements.push({
+      id: `qr-${kind}-url-${id}`,
+      type: "text",
+      text: truncateQrUrl(url),
+      x: x + toNum(preset.urlOffsetX, Math.max(0, toNum(preset.boxWidth, preset.cardWidth) - 105)),
+      y: y + toNum(preset.urlOffsetY, 60),
+      width: toNum(preset.urlWidth, 105),
+      height: toNum(preset.urlHeight, 24),
+      zIndex: zIndex + 21,
+      color: "#111111",
+      fontSize: 10,
+      fontFamily: "Arial",
+      fontWeight: 400,
+      fontStyle: "normal",
+      textDecoration: "none",
+      lineHeight: 1.1,
+      align: "left",
+      rotation: 0,
+    });
   };
 
   addQr("video", payload?.qrVideo);
@@ -523,16 +646,10 @@ const PreviewBookCard = () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
   }, []);
 
-  const captureCardSlides = useCallback(async () => {
-    const captured: string[] = [];
-
-    for (let i = 0; i < CAPTURE_ORDER.length; i += 1) {
-      const key = CAPTURE_ORDER[i];
+  const captureSingleDomSlide = useCallback(
+    async (key: CaptureSlideKey) => {
       const node = captureRefs.current[key];
-      if (!node) {
-        captured.push("");
-        continue;
-      }
+      if (!node) return "";
       await waitForNodeAssets(node);
       let capturedUrl = "";
       for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -555,6 +672,17 @@ const PreviewBookCard = () => {
         } catch {}
         await new Promise((resolve) => setTimeout(resolve, 60));
       }
+      return capturedUrl;
+    },
+    [waitForNodeAssets],
+  );
+
+  const captureCardSlides = useCallback(async () => {
+    const captured: string[] = [];
+
+    for (let i = 0; i < CAPTURE_ORDER.length; i += 1) {
+      const key = CAPTURE_ORDER[i];
+      const capturedUrl = await captureSingleDomSlide(key);
       captured.push(capturedUrl);
       if (i < CAPTURE_ORDER.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 0));
@@ -573,7 +701,7 @@ const PreviewBookCard = () => {
       slidesObj,
       validCount: Object.keys(slidesObj).length,
     };
-  }, [waitForNodeAssets]);
+  }, [captureSingleDomSlide]);
 
   const captureCardSlidesFromCanvasRenderer = useCallback(async () => {
     const polygon = buildPolygonLayout(slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx, {
@@ -600,7 +728,10 @@ const PreviewBookCard = () => {
 
     const captured: string[] = [];
     for (let i = 0; i < slides.length; i += 1) {
-      const slide = slides[i];
+      const key = CAPTURE_ORDER[i];
+      const slide = await prepareTemplateSlideForCanvas(slides[i]);
+      const hasQrTemplate = hasQrTemplateBackground(slide);
+      let dataUrl = "";
       try {
         const rendered = await renderTemplateSlideToCanvasWithStats(slide, {
           width: CAPTURE_SIZE.w,
@@ -609,13 +740,30 @@ const PreviewBookCard = () => {
           backgroundColor: "#ffffff",
         });
         if (rendered.expectedAssets > 0 && rendered.drawnAssets < rendered.expectedAssets) {
-          captured.push("");
-          continue;
+          try {
+            dataUrl = rendered.canvas.toDataURL("image/jpeg", 0.9);
+          } catch {
+            dataUrl = "";
+          }
+          if (!hasQrTemplate) {
+            dataUrl = await captureSingleDomSlide(key);
+          } else if (!String(dataUrl).startsWith("data:image/")) {
+            dataUrl = await captureSingleDomSlide(key);
+          }
+        } else {
+          try {
+            dataUrl = rendered.canvas.toDataURL("image/jpeg", 0.9);
+          } catch {
+            dataUrl = "";
+          }
         }
-        captured.push(rendered.canvas.toDataURL("image/jpeg", 0.9));
       } catch {
-        captured.push("");
+        dataUrl = "";
       }
+      if (!String(dataUrl).startsWith("data:image/")) {
+        dataUrl = await captureSingleDomSlide(key);
+      }
+      captured.push(dataUrl);
       if (i < slides.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
@@ -633,7 +781,7 @@ const PreviewBookCard = () => {
       slidesObj,
       validCount: Object.keys(slidesObj).length,
     };
-  }, [slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx]);
+  }, [captureSingleDomSlide, slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx]);
 
   const handleDownload = useCallback(async () => {
     if (downloading) return;
