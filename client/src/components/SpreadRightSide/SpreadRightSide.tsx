@@ -163,10 +163,14 @@ const normalizeMultiTexts = (arr: any[]) =>
     fontWeight3: t?.fontWeight3 ?? t?.fontWeight1 ?? t?.fontWeight ?? 400,
     fontColor3: t?.fontColor3 ?? t?.fontColor1 ?? t?.fontColor ?? "#000000",
     fontFamily3: t?.fontFamily3 ?? t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
-    textAlign: t?.textAlign ?? "center",
-    verticalAlign: t?.verticalAlign ?? "top",
-    lineHeight: t?.lineHeight ?? 1.5,
-    letterSpacing: t?.letterSpacing ?? 0,
+    textAlign3: t?.textAlign3 ?? t?.textAlign1 ?? t?.textAlign ?? "center",
+    textAlign: t?.textAlign3 ?? t?.textAlign1 ?? t?.textAlign ?? "center",
+    verticalAlign3: t?.verticalAlign3 ?? t?.verticalAlign1 ?? t?.verticalAlign ?? "top",
+    verticalAlign: t?.verticalAlign3 ?? t?.verticalAlign1 ?? t?.verticalAlign ?? "top",
+    lineHeight3: t?.lineHeight3 ?? t?.lineHeight1 ?? t?.lineHeight ?? 1.5,
+    lineHeight: t?.lineHeight3 ?? t?.lineHeight1 ?? t?.lineHeight ?? 1.5,
+    letterSpacing3: t?.letterSpacing3 ?? t?.letterSpacing1 ?? t?.letterSpacing ?? 0,
+    letterSpacing: t?.letterSpacing3 ?? t?.letterSpacing1 ?? t?.letterSpacing ?? 0,
   }));
 
 const stripLayoutTextElements = (
@@ -864,11 +868,21 @@ const SpreadRightSide = ({
             ? {
               ...t,
               fontSize3,
+              fontSize: fontSize3,
               fontWeight3,
+              fontWeight: fontWeight3,
               fontColor3,
+              fontColor: fontColor3,
               fontFamily3,
+              fontFamily: fontFamily3,
               textAlign3,
+              textAlign: textAlign3,
               verticalAlign3,
+              verticalAlign: verticalAlign3,
+              lineHeight3,
+              lineHeight: lineHeight3,
+              letterSpacing3,
+              letterSpacing: letterSpacing3,
             }
             : t
         )
@@ -881,6 +895,9 @@ const SpreadRightSide = ({
     fontColor3,
     textAlign3,
     verticalAlign3,
+    lineHeight3,
+    letterSpacing3,
+    editingIndex3,
   ]);
 
   useEffect(() => {

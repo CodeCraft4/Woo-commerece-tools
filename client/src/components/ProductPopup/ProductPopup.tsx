@@ -431,28 +431,36 @@ const ProductPopup = (props: ProductsPopTypes) => {
             return id;
           })();
 
-      let baseLayout = pickPolygonLayout(
-        (cate as any)?.polygonlayout,
-        (cate as any)?.polyganLayout
-      );
-
-      if (!baseLayout && cate?.id) {
+      let latestCard: any = null;
+      if (cate?.id) {
         try {
-          const full = await fetchCardById(String(cate.id));
-          const raw =
-            (full as any)?.raw_stores ??
-            (full as any)?.rawStores ??
-            (full as any)?.raw_store ??
-            null;
-
-          baseLayout = pickPolygonLayout(
-            (full as any)?.polygonlayout,
-            (full as any)?.polyganLayout,
-            raw?.polygonlayout,
-            raw?.polyganLayout
-          );
+          // why: always prefer freshest layout so recently updated admin designs
+          // are reflected immediately in user editor (avoid stale list/query cache)
+          latestCard = await fetchCardById(String(cate.id));
         } catch {}
       }
+
+      const latestRaw =
+        (latestCard as any)?.raw_stores ??
+        (latestCard as any)?.rawStores ??
+        (latestCard as any)?.raw_store ??
+        null;
+      const cateRaw =
+        (cate as any)?.raw_stores ??
+        (cate as any)?.rawStores ??
+        (cate as any)?.raw_store ??
+        null;
+
+      const baseLayout = pickPolygonLayout(
+        (latestCard as any)?.polygonlayout,
+        (latestCard as any)?.polyganLayout,
+        latestRaw?.polygonlayout,
+        latestRaw?.polyganLayout,
+        (cate as any)?.polygonlayout,
+        (cate as any)?.polyganLayout,
+        cateRaw?.polygonlayout,
+        cateRaw?.polyganLayout
+      );
 
       if (!baseLayout) {
         toast.error("Design data missing. Please refresh and try again.");

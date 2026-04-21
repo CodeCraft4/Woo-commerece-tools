@@ -11,6 +11,24 @@ const normalizeUrl = (value: any) => {
   if (value && typeof value === "object" && typeof value.url === "string") return value.url.trim();
   return "";
 };
+const pickSlide3Style = (entry: AnyEl, key: string, fallback: any) => {
+  const candidates = [
+    entry?.[`${key}3`],
+    entry?.[key],
+    entry?.[`${key}1`],
+    entry?.[`${key}2`],
+    entry?.[`${key}4`],
+  ];
+  for (const value of candidates) {
+    if (value === 0 || value === false) return value;
+    if (typeof value === "string") {
+      if (value.trim()) return value;
+      continue;
+    }
+    if (value != null) return value;
+  }
+  return fallback;
+};
 type Slide3Props = {
   ref?: any
 }
@@ -358,52 +376,67 @@ const Slide3 = (props:Slide3Props) => {
         ))}
 
       {multipleTextValue3 &&
-        texts3.map((e: any, index: number) => (
-          <Box
-            key={index}
-            sx={{
-              position: "absolute",
-              left: 8,
-              right: 8,
-              top: 8 + index * 220, // stack blocks like editor; adjust spacing
-              height: 210,
-              borderRadius: "6px",
-              display: "flex",
-              alignItems:
-                e.verticalAlign === "top"
-                  ? "flex-start"
-                  : e.verticalAlign === "center"
-                    ? "center"
-                    : "flex-end",
-              justifyContent:
-                e.textAlign === "left"
-                  ? "flex-start"
-                  : e.textAlign === "right"
-                    ? "flex-end"
-                    : "center",
-              p: 1,
-              zIndex: 9999,
-              pointerEvents: "none",
-            }}
-          >
-            <Typography
+        texts3.map((e: any, index: number) => {
+          const textAlignRaw = String(
+            pickSlide3Style(e, "textAlign", e?.textAlign ?? "center")
+          ).toLowerCase();
+          const textAlign =
+            textAlignRaw === "start"
+              ? "left"
+              : textAlignRaw === "end"
+                ? "right"
+                : textAlignRaw;
+          const verticalAlign = String(
+            pickSlide3Style(e, "verticalAlign", e?.verticalAlign ?? "top")
+          ).toLowerCase();
+
+          return (
+            <Box
+              key={index}
               sx={{
-                fontSize: e.fontSize3 ?? 16,
-                fontWeight: e.fontWeight3 ?? 400,
-                color: e.fontColor3 ?? "#000",
-                fontFamily: e.fontFamily3 ?? "Roboto, sans-serif",
-                textAlign: e.textAlign3 ?? "center",
-                lineHeight: e.lineHeight3 ?? 1.2,
-                letterSpacing: e.letterSpacing3 ?? 0,
-                width: "100%",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
+                position: "absolute",
+                left: 8,
+                right: 8,
+                top: 8 + index * 220, // stack blocks like editor; adjust spacing
+                height: 210,
+                borderRadius: "6px",
+                display: "flex",
+                alignItems:
+                  verticalAlign === "top"
+                    ? "flex-start"
+                    : verticalAlign === "center"
+                      ? "center"
+                      : "flex-end",
+                justifyContent:
+                  textAlign === "left"
+                    ? "flex-start"
+                    : textAlign === "right"
+                      ? "flex-end"
+                      : "center",
+                p: 1,
+                zIndex: 9999,
+                pointerEvents: "none",
               }}
             >
-              {e.value}
-            </Typography>
-          </Box>
-        ))}
+              <Typography
+                sx={{
+                  fontSize: Number(pickSlide3Style(e, "fontSize", 16)),
+                  fontWeight: pickSlide3Style(e, "fontWeight", 400),
+                  color: String(pickSlide3Style(e, "fontColor", "#000")),
+                  fontFamily: String(pickSlide3Style(e, "fontFamily", "Roboto, sans-serif")),
+                  textAlign,
+                  lineHeight: pickSlide3Style(e, "lineHeight", 1.2),
+                  letterSpacing: pickSlide3Style(e, "letterSpacing", 0),
+                  width: "100%",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {e.value}
+              </Typography>
+            </Box>
+          );
+        })}
 
       {/* 📝 Single Text Layout */}
       {isOneTextActive && (

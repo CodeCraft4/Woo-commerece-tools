@@ -632,6 +632,13 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
 
     setBgColor4(null)
     setBgImage4(null)
+    setBgRect4({ x: 40, y: 40, width: 300, height: 400 });
+    setBgEdit4(false);
+    setBgLocked4(false);
+    setCanEditBg4(true);
+    setCanEditImages4(true);
+    setCanEditStickers4(true);
+    setLayout4(null);
     setSelectedShapeImageId4(null)
     setSelectedShapePath4(null)
 

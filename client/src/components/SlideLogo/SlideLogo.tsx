@@ -21,7 +21,7 @@ import { useSlide4 } from "../../context/Slide4Context";
 import { useLocation, useParams } from "react-router-dom";
 import mergePreservePdf from "../../utils/mergePreservePdf";
 import { safeGetStorage } from "../../lib/storage";
-import { getDraftCardId, isUuid } from "../../lib/draftCardId";
+import { isUuid } from "../../lib/draftCardId";
 import { readDraftFull } from "../../lib/draftLocal";
 import { isIosTouchDevice } from "../../lib/platform";
 import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
@@ -242,7 +242,18 @@ function normalizeSlide(slide: any): {
   out.stickers.push(...(user?.stickers?.editable ?? []).map((o: any, i: number) => toSticker(o, i, true, "ust-edit")));
 
   // texts
-  out.textElements.push(...(layout?.staticText ?? []).map((o: any, i: number) => toText(o, i, !!o?.editable, "te")));
+  out.textElements.push(
+    ...(layout?.staticText ?? []).map((o: any, i: number) => {
+      const explicit =
+        typeof o?.isEditable === "boolean"
+          ? o.isEditable
+          : typeof o?.editable === "boolean"
+            ? o.editable
+            : undefined;
+      const editable = explicit ?? !o?.locked;
+      return toText(o, i, editable, "te");
+    }),
+  );
   const multiRaw = Array.isArray(slide?.multipleTexts) ? slide.multipleTexts : [];
   const hasMultiContent = multiRaw.some((o: any) => str(o?.text ?? o?.value, "").trim().length > 0);
   const includeMulti = flags?.multipleText === true || hasMultiContent;
@@ -375,10 +386,11 @@ export const UserSlide4Preview = () => {
 
   const location = useLocation();
   const { id: routeId } = useParams<{ id?: string }>();
-  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : getDraftCardId() ?? ""), [routeId]);
+  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : ""), [routeId]);
   const localDraftFull = useMemo(() => (draftId ? readDraftFull(draftId) : null), [draftId]);
   const slide4 = location.state?.layout?.slides?.slide4 ?? null;
-  const draftSlide4 = location.state?.draftFull?.slide4 ?? localDraftFull?.slide4 ?? null;
+  const explicitDraftSlide4 = location.state?.draftFull?.slide4 ?? null;
+  const draftSlide4 = explicitDraftSlide4 ?? (!slide4 ? localDraftFull?.slide4 ?? null : null);
 
 
 
@@ -501,12 +513,12 @@ export const UserSlide4Preview = () => {
     }
 
     const saved = safeGetStorage("slide4_state");
-    if (saved) {
+    if (!slide4 && saved) {
       try {
         const parsed = JSON.parse(saved);
-        const currentDraftId = draftId || getDraftCardId();
+        const currentDraftId = draftId || null;
         const savedDraftId = parsed?.draftId;
-        const canUseSaved = !currentDraftId || (savedDraftId && savedDraftId === currentDraftId);
+        const canUseSaved = Boolean(currentDraftId && savedDraftId && savedDraftId === currentDraftId);
         if (canUseSaved && parsed?.layout4) {
           if (parsed.bgColor4 !== undefined) setBgColor4?.(parsed.bgColor4);
           if (parsed.bgImage4 !== undefined) setBgImage4?.(parsed.bgImage4);
@@ -1023,13 +1035,14 @@ const AdminSlide4Canvas = ({
 
   const location = useLocation();
   const { id: routeId } = useParams<{ id?: string }>();
-  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : getDraftCardId() ?? ""), [routeId]);
+  const draftId = useMemo(() => (routeId && isUuid(routeId) ? routeId : ""), [routeId]);
   const localDraftFull = useMemo(
     () => (!isAdminEditor && draftId ? readDraftFull(draftId) : null),
     [draftId, isAdminEditor]
   );
   const slide4Template = location.state?.layout?.slides?.slide4 ?? null;
-  const draftSlide4 = location.state?.draftFull?.slide4 ?? localDraftFull?.slide4 ?? null;
+  const explicitDraftSlide4 = location.state?.draftFull?.slide4 ?? null;
+  const draftSlide4 = explicitDraftSlide4 ?? (!slide4Template ? localDraftFull?.slide4 ?? null : null);
 
   const applyTemplateLayout4 = (baseSlide: any, norm: ReturnType<typeof normalizeSlide>) => {
     const flags = baseSlide?.flags ?? {};
@@ -1142,12 +1155,12 @@ const AdminSlide4Canvas = ({
 
     // ✅ 1.5) Saved state restore
     const saved = safeGetStorage("slide4_state");
-    if (saved) {
+    if (!slide4Template && saved) {
       try {
         const parsed = JSON.parse(saved);
-        const currentDraftId = draftId || getDraftCardId();
+        const currentDraftId = draftId || null;
         const savedDraftId = parsed?.draftId;
-        const canUseSaved = !currentDraftId || (savedDraftId && savedDraftId === currentDraftId);
+        const canUseSaved = Boolean(currentDraftId && savedDraftId && savedDraftId === currentDraftId);
         if (canUseSaved && parsed?.layout4) {
           if (parsed.bgColor4 !== undefined) setBgColor4?.(parsed.bgColor4);
           if (parsed.bgImage4 !== undefined) setBgImage4?.(parsed.bgImage4);
@@ -1243,11 +1256,14 @@ const AdminSlide4Canvas = ({
     setTextElements4((prev: any[] = []) => [...prev, newTextElement]);
     setSelectedTextId4(newTextElement.id);
   };
+  const lastAddTick = useRef<number>(typeof addTextRight === "number" ? addTextRight : 0);
   useEffect(() => {
-    if (addTextRight) {
+    if (typeof addTextRight !== "number") return;
+    if (addTextRight > lastAddTick.current) {
       addNewTextElement();
     }
-  }, [addTextRight, addTextRight]);
+    lastAddTick.current = addTextRight;
+  }, [addTextRight]);
 
   const updateTextElement = (id: string, updates: Partial<any>) => {
     setTextElements4((prev: any[] = []) => prev.map((text) => (text.id === id ? { ...text, ...updates } : text)));

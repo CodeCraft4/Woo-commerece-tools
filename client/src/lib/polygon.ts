@@ -626,14 +626,84 @@ export const buildPolygonLayout = (
 
 export async function captureNodeToPng(
   node: HTMLElement,
-  bg?: string
+  bg?: string,
+  opts?: { width?: number; height?: number }
 ): Promise<string> {
-  return htmlToImage.toPng(node, {
+  const TRANSPARENT_PIXEL =
+    "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+
+  const isSafariLike = (() => {
+    try {
+      const ua = navigator.userAgent;
+      return /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|EdgA|Android/i.test(ua);
+    } catch {
+      return false;
+    }
+  })();
+
+  const waitForAssets = async () => {
+    const images = Array.from(node.querySelectorAll("img"));
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise<void>((resolve) => {
+            const el = img as HTMLImageElement;
+            if (el.complete) {
+              resolve();
+              return;
+            }
+            const done = () => resolve();
+            el.addEventListener("load", done, { once: true });
+            el.addEventListener("error", done, { once: true });
+          }),
+      ),
+    );
+    if ((document as any)?.fonts?.ready) {
+      try {
+        await (document as any).fonts.ready;
+      } catch {}
+    }
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+  };
+
+  await waitForAssets();
+
+  const rect = node.getBoundingClientRect();
+  const providedWidth =
+    typeof opts?.width === "number" && Number.isFinite(opts.width) ? Math.round(opts.width) : 0;
+  const providedHeight =
+    typeof opts?.height === "number" && Number.isFinite(opts.height) ? Math.round(opts.height) : 0;
+  const measuredWidth = Math.round(rect.width || node.clientWidth || node.scrollWidth || 0);
+  const measuredHeight = Math.round(rect.height || node.clientHeight || node.scrollHeight || 0);
+  const width = Math.max(1, providedWidth || measuredWidth || 1);
+  const height = Math.max(1, providedHeight || measuredHeight || 1);
+  const basePixelRatio = Math.min(2, Math.max(1, (typeof window !== "undefined" ? window.devicePixelRatio : 1) || 1));
+  const backgroundColor = bg ?? getComputedStyle(node).backgroundColor ?? "#ffffff";
+  const commonOpts = {
     cacheBust: true,
-    pixelRatio: 2,
-    backgroundColor: bg ?? getComputedStyle(node).backgroundColor ?? "#ffffff",
+    pixelRatio: isSafariLike ? 1 : basePixelRatio,
+    backgroundColor,
     skipFonts: false,
-  });
+    imagePlaceholder: TRANSPARENT_PIXEL,
+    width,
+    height,
+    style: { transform: "none" as const },
+  };
+
+  try {
+    return await htmlToImage.toPng(node, commonOpts);
+  } catch {
+    try {
+      return await htmlToImage.toJpeg(node, { ...commonOpts, quality: 0.9 });
+    } catch {
+      return await htmlToImage.toJpeg(node, {
+        ...commonOpts,
+        quality: 0.82,
+        pixelRatio: 1,
+        skipFonts: true,
+      });
+    }
+  }
 }
 
 /* ------------------------ Apply (hydrate) helper ------------------------- */

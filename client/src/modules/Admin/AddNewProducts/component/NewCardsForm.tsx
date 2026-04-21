@@ -19,8 +19,20 @@ import {
   applyPolygonLayoutToContexts,
   buildPolygonLayout,
   captureNodeToPng,
+  mergeBuckets,
   pickPolygonLayout,
+  type SlidePayloadV2,
 } from "../../../../lib/polygon";
+import {
+  collectTemplateSlideFonts,
+  renderTemplateSlideToCanvasWithStats,
+  type TemplateSlide,
+} from "../../../../lib/templateSlideCanvas";
+import {
+  buildGoogleFontsUrls,
+  ensureGoogleFontsLoaded,
+  loadGoogleFontsOnce,
+} from "../../../../constant/googleFonts";
 import Slide1PreviewBox from "./FirstSlidePreview/FirstSlidePreview";
 
 type AccessPlan = "free" | "bundle" | "pro";
@@ -117,6 +129,333 @@ const parseLayoutPricing = (layout: any) => {
 
 const pickLayoutCandidate = (...candidates: any[]) =>
   candidates.find((c) => c !== undefined && c !== null && c !== "") ?? null;
+
+const getDataUrlDimensions = (dataUrl: string): Promise<{ width: number; height: number } | null> =>
+  new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth || 0, height: img.naturalHeight || 0 });
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    } catch {
+      resolve(null);
+    }
+  });
+
+const isReasonableThumbnail = async (dataUrl: string) => {
+  if (!dataUrl || !dataUrl.startsWith("data:image/")) return false;
+  const dims = await getDataUrlDimensions(dataUrl);
+  if (!dims) return false;
+  const { width, height } = dims;
+  if (width < 120 || height < 120) return false;
+  const ratio = width / height;
+  // Guard against Safari broken strip captures (e.g. height ~1px).
+  if (!Number.isFinite(ratio) || ratio > 4 || ratio < 0.2) return false;
+  return true;
+};
+
+const toNum = (value: unknown, fallback = 0) => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+};
+
+const firstDefined = (...values: any[]) => {
+  for (const value of values) {
+    if (value === 0 || value === false) return value;
+    if (typeof value === "string") {
+      if (value.trim()) return value;
+      continue;
+    }
+    if (value != null) return value;
+  }
+  return undefined;
+};
+
+const normalizeAlign = (value: unknown): "left" | "center" | "right" => {
+  const text = String(value ?? "").toLowerCase().trim();
+  if (text === "start" || text === "left") return "left";
+  if (text === "end" || text === "right") return "right";
+  return "center";
+};
+
+const normalizeFontWeight = (value: unknown, fallback = 400) => {
+  if (typeof value === "boolean") return value ? 700 : 400;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return fallback;
+};
+
+const slideScopedValue = (
+  entry: Record<string, any> | null | undefined,
+  baseKey: string,
+  slideId: number,
+  fallback?: any,
+) => {
+  const orderedKeys = [
+    `${baseKey}${slideId}`,
+    baseKey,
+    ...[1, 2, 3, 4].filter((idx) => idx !== slideId).map((idx) => `${baseKey}${idx}`),
+  ];
+  return firstDefined(...orderedKeys.map((key) => entry?.[key]), fallback);
+};
+
+const blobToDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result || ""));
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+
+const toDataUrlSafe = async (src: string): Promise<string> => {
+  if (!src || src.startsWith("data:") || src.startsWith("blob:")) return src;
+  try {
+    const absolute =
+      src.startsWith("/") && typeof window !== "undefined" ? `${window.location.origin}${src}` : src;
+    const resp = await fetch(absolute, { mode: "cors" });
+    if (!resp.ok) return src;
+    const blob = await resp.blob();
+    return await blobToDataUrl(blob);
+  } catch {
+    return src;
+  }
+};
+
+const mapPolygonSlideToTemplateSlide = (
+  id: number,
+  payload: SlidePayloadV2 | null | undefined,
+  width: number,
+  height: number,
+): TemplateSlide => {
+  const rawBgColor = String(payload?.bg?.color ?? "").trim();
+  const bgColor = !rawBgColor || rawBgColor.toLowerCase() === "transparent" ? "#ffffff" : rawBgColor;
+
+  const bgRect = payload?.bg?.rect ?? { x: 0, y: 0, width, height };
+  const bgImage = String(payload?.bg?.image ?? "").trim();
+  const bgImageElements = bgImage
+    ? [
+        {
+          id: `bg-image-${id}`,
+          type: "image" as const,
+          src: bgImage,
+          x: toNum(bgRect?.x, 0),
+          y: toNum(bgRect?.y, 0),
+          width: toNum(bgRect?.width, width),
+          height: toNum(bgRect?.height, height),
+          zIndex: 0,
+        },
+      ]
+    : [];
+
+  const bgFrames = mergeBuckets(payload?.layout?.bgFrames)
+    .filter((el: any) => String(el?.src ?? "").trim())
+    .map((el: any, idx: number) => ({
+      id: String(el?.id ?? `bg-${id}-${idx}`),
+      type: "image" as const,
+      src: String(el?.src ?? ""),
+      x: toNum(el?.x, 0),
+      y: toNum(el?.y, 0),
+      width: toNum(el?.width, 0),
+      height: toNum(el?.height, 0),
+      zIndex: toNum(el?.zIndex, 1),
+    }));
+
+  const layoutStickers = mergeBuckets(payload?.layout?.stickers)
+    .filter((el: any) => String(el?.sticker ?? "").trim())
+    .map((el: any, idx: number) => ({
+      id: String(el?.id ?? `lst-${id}-${idx}`),
+      type: "sticker" as const,
+      src: String(el?.sticker ?? ""),
+      x: toNum(el?.x, 0),
+      y: toNum(el?.y, 0),
+      width: toNum(el?.width, 0),
+      height: toNum(el?.height, 0),
+      zIndex: toNum(el?.zIndex, 40),
+    }));
+
+  const staticTexts = Array.isArray(payload?.layout?.staticText)
+    ? payload.layout.staticText
+        .filter((text: any) => String(text?.text ?? "").trim().length > 0)
+        .map((text: any, idx: number) => ({
+          id: String(text?.id ?? `stxt-${id}-${idx}`),
+          type: "text" as const,
+          text: String(text?.text ?? ""),
+          x: toNum(text?.x, 0),
+          y: toNum(text?.y, 0),
+          width: toNum(text?.width, 0),
+          height: toNum(text?.height, 0),
+          zIndex: toNum(text?.zIndex, 80),
+          color: String(text?.color ?? "#111111"),
+          fontSize: toNum(text?.fontSize, 20),
+          fontFamily: String(text?.fontFamily ?? "Arial"),
+          fontWeight: normalizeFontWeight(text?.fontWeight, 400),
+          fontStyle: text?.italic ? "italic" : "normal",
+          textDecoration: "none",
+          lineHeight: 1.16,
+          align: normalizeAlign(text?.textAlign),
+          rotation: toNum(text?.rotation, 0),
+        }))
+    : [];
+
+  const userImages = mergeBuckets(payload?.user?.images)
+    .filter((el: any) => String(el?.src ?? "").trim())
+    .map((el: any, idx: number) => ({
+      id: String(el?.id ?? `uimg-${id}-${idx}`),
+      type: "image" as const,
+      src: String(el?.src ?? ""),
+      x: toNum(el?.x, 0),
+      y: toNum(el?.y, 0),
+      width: toNum(el?.width, 0),
+      height: toNum(el?.height, 0),
+      zIndex: toNum(el?.zIndex, 120),
+    }));
+
+  const userStickers = mergeBuckets(payload?.user?.stickers)
+    .filter((el: any) => String(el?.sticker ?? "").trim())
+    .map((el: any, idx: number) => ({
+      id: String(el?.id ?? `ust-${id}-${idx}`),
+      type: "sticker" as const,
+      src: String(el?.sticker ?? ""),
+      x: toNum(el?.x, 0),
+      y: toNum(el?.y, 0),
+      width: toNum(el?.width, 0),
+      height: toNum(el?.height, 0),
+      zIndex: toNum(el?.zIndex, 160),
+    }));
+
+  const freeTexts = Array.isArray(payload?.user?.freeTexts)
+    ? payload.user.freeTexts
+        .filter((text: any) => String(text?.value ?? "").trim().length > 0)
+        .map((text: any, idx: number) => ({
+          id: String(text?.id ?? `utxt-${id}-${idx}`),
+          type: "text" as const,
+          text: String(text?.value ?? ""),
+          x: toNum(text?.position?.x, 0),
+          y: toNum(text?.position?.y, 0),
+          width: toNum(text?.size?.width, 0),
+          height: toNum(text?.size?.height, 0),
+          zIndex: toNum(text?.zIndex, 220),
+          color: String(text?.fontColor ?? "#111111"),
+          fontSize: toNum(text?.fontSize, 20),
+          fontFamily: String(text?.fontFamily ?? "Arial"),
+          fontWeight: normalizeFontWeight(text?.fontWeight, 400),
+          fontStyle: "normal",
+          textDecoration: "none",
+          lineHeight: toNum(text?.lineHeight, 1.16),
+          align: normalizeAlign(text?.textAlign),
+          rotation: toNum(text?.rotation, 0),
+        }))
+    : [];
+
+  const oneText = (() => {
+    const value = String(payload?.oneText?.value ?? "").trim();
+    if (!payload?.flags?.showOneText && !value.length) return [] as any[];
+    if (!value) return [] as any[];
+    return [
+      {
+        id: `one-${id}`,
+        type: "text" as const,
+        text: value,
+        x: 8,
+        y: 8,
+        width: width - 16,
+        height: height - 16,
+        zIndex: 280,
+        color: String(payload?.oneText?.fontColor ?? "#111111"),
+        fontSize: toNum(payload?.oneText?.fontSize, 22),
+        fontFamily: String(payload?.oneText?.fontFamily ?? "Arial"),
+        fontWeight: normalizeFontWeight(payload?.oneText?.fontWeight, 400),
+        fontStyle: "normal",
+        textDecoration: "none",
+        lineHeight: toNum(payload?.oneText?.lineHeight, 1.16),
+        align: normalizeAlign(payload?.oneText?.textAlign),
+        rotation: toNum(payload?.oneText?.rotation, 0),
+      },
+    ];
+  })();
+
+  const multipleTexts = (() => {
+    const rows = Array.isArray(payload?.multipleTexts) ? payload.multipleTexts : [];
+    const hasAnyContent = rows.some((entry: any) => String(firstDefined(entry?.value, entry?.text, "") ?? "").trim());
+    if (!payload?.flags?.multipleText && !hasAnyContent) return [] as any[];
+    return rows
+      .map((entry: any, idx: number) => {
+        const value = String(firstDefined(entry?.value, entry?.text, "") ?? "").trim();
+        if (!value) return null;
+        return {
+          id: String(entry?.id ?? `multi-${id}-${idx}`),
+          type: "text" as const,
+          text: value,
+          x: 8,
+          y: 8 + idx * 220,
+          width: width - 16,
+          height: 210,
+          zIndex: 300 + idx,
+          color: String(slideScopedValue(entry, "fontColor", id, entry?.color ?? "#111111")),
+          fontSize: toNum(slideScopedValue(entry, "fontSize", id, 22), 22),
+          fontFamily: String(slideScopedValue(entry, "fontFamily", id, "Arial")),
+          fontWeight: normalizeFontWeight(slideScopedValue(entry, "fontWeight", id, 400), 400),
+          fontStyle: "normal",
+          textDecoration: "none",
+          lineHeight: toNum(slideScopedValue(entry, "lineHeight", id, 1.16), 1.16),
+          align: normalizeAlign(slideScopedValue(entry, "textAlign", id, "center")),
+          rotation: toNum(slideScopedValue(entry, "rotation", id, 0), 0),
+        };
+      })
+      .filter(Boolean) as any[];
+  })();
+
+  const aiImage = payload?.ai?.imageUrl
+    ? [
+        {
+          id: `ai-${id}`,
+          type: "image" as const,
+          src: String(payload.ai.imageUrl),
+          x: toNum(payload.ai.x, 0),
+          y: toNum(payload.ai.y, 0),
+          width: toNum(payload.ai.width, 0),
+          height: toNum(payload.ai.height, 0),
+          zIndex: 350,
+        },
+      ]
+    : [];
+
+  return {
+    id,
+    label: `slide${id}`,
+    bgColor,
+    elements: [
+      ...bgImageElements,
+      ...bgFrames,
+      ...layoutStickers,
+      ...staticTexts,
+      ...userImages,
+      ...userStickers,
+      ...freeTexts,
+      ...oneText,
+      ...multipleTexts,
+      ...aiImage,
+    ],
+  };
+};
+
+const prepareTemplateSlideForCanvas = async (slide: TemplateSlide): Promise<TemplateSlide> => {
+  const elements = await Promise.all(
+    (slide?.elements ?? []).map(async (element: any) => {
+      if (element?.type !== "image" && element?.type !== "sticker") return element;
+      const src = String(element?.src ?? "");
+      return {
+        ...element,
+        src: (await toDataUrlSafe(src)) || src,
+      };
+    }),
+  );
+  return { ...slide, elements };
+};
 
 const NewCardsForm = ({ editProduct }: Props) => {
   const slide1 = useSlide1();
@@ -264,6 +603,33 @@ const NewCardsForm = ({ editProduct }: Props) => {
     } as any;
   }, [editProduct, formData, product, editLayout]);
 
+  const existingThumbnail = useMemo(() => {
+    const src = editProduct ?? {};
+    const fd = formData ?? product ?? {};
+    const picked = pickLayoutCandidate(
+      (src as any).imageurl,
+      (src as any).imageUrl,
+      (src as any).image_url,
+      (src as any).img_url,
+      (src as any).lastpageimageurl,
+      (src as any).lastpageImageUrl,
+      (fd as any).imageurl,
+      (fd as any).imageUrl,
+      (fd as any).image_url,
+      (fd as any).img_url,
+      (fd as any).lastpageimageurl,
+      (fd as any).lastpageImageUrl,
+      (navState as any)?.imageurl,
+      (navState as any)?.imageUrl,
+      (navState as any)?.image_url,
+      (navState as any)?.img_url,
+      (navState as any)?.lastpageimageurl,
+      (navState as any)?.lastpageImageUrl
+    );
+    const v = typeof picked === "string" ? picked.trim() : "";
+    return v || null;
+  }, [editProduct, formData, product, navState]);
+
   useEffect(() => {
     reset(normalizedEdit);
   }, [normalizedEdit, reset]);
@@ -392,14 +758,76 @@ const NewCardsForm = ({ editProduct }: Props) => {
         },
       };
 
-      let imageurl: string | null = null;
-      if (previewRef.current) {
+      const captureWidth = Math.max(1, Math.round(previewSize.width));
+      const captureHeight = Math.max(1, Math.round(previewSize.height));
+      let canvasCaptureHadPartialAssets = false;
+
+      const captureThumbnailFromCanvasRenderer = async (): Promise<string | null> => {
         try {
-          imageurl = await captureNodeToPng(previewRef.current, "#ffffff");
+          const payloadSlide1 = (polygonlayout as any)?.slides?.slide1 as SlidePayloadV2 | undefined;
+          if (!payloadSlide1) return null;
+
+          let templateSlide = mapPolygonSlideToTemplateSlide(1, payloadSlide1, captureWidth, captureHeight);
+          const fonts = collectTemplateSlideFonts([templateSlide]);
+          if (fonts.length) {
+            const urls = buildGoogleFontsUrls(fonts);
+            loadGoogleFontsOnce(urls);
+            await ensureGoogleFontsLoaded(urls);
+          }
+          if ((document as any)?.fonts?.ready) {
+            try {
+              await (document as any).fonts.ready;
+            } catch {}
+          }
+
+          templateSlide = await prepareTemplateSlideForCanvas(templateSlide);
+          const rendered = await renderTemplateSlideToCanvasWithStats(templateSlide, {
+            width: captureWidth,
+            height: captureHeight,
+            pixelRatio: 2.25,
+            backgroundColor: "#ffffff",
+          });
+
+          // Match subscription safeguard: never save a partial bitmap.
+          if (rendered.expectedAssets > 0 && rendered.drawnAssets < rendered.expectedAssets) {
+            canvasCaptureHadPartialAssets = true;
+            return null;
+          }
+
+          try {
+            const png = rendered.canvas.toDataURL("image/png");
+            return png.startsWith("data:image/") ? png : null;
+          } catch {
+            return null;
+          }
         } catch {
-          imageurl = null;
+          return null;
+        }
+      };
+
+      let capturedImageurl: string | null = await captureThumbnailFromCanvasRenderer();
+      if (
+        (!capturedImageurl || !(await isReasonableThumbnail(capturedImageurl))) &&
+        !canvasCaptureHadPartialAssets &&
+        previewRef.current
+      ) {
+        try {
+          capturedImageurl = await captureNodeToPng(previewRef.current, "#ffffff", {
+            width: captureWidth,
+            height: captureHeight,
+          });
+        } catch {
+          capturedImageurl = null;
         }
       }
+      if (capturedImageurl && !(await isReasonableThumbnail(capturedImageurl))) {
+        capturedImageurl = null;
+      }
+
+      const finalImageurl =
+        (typeof capturedImageurl === "string" && capturedImageurl.startsWith("data:image/"))
+          ? capturedImageurl
+          : (id ? existingThumbnail : null);
 
       const payload = {
         cardname: data.cardname,
@@ -411,8 +839,8 @@ const NewCardsForm = ({ editProduct }: Props) => {
         polygon_shape: "",
         polygonlayout,
         lastmessage: "",
-        imageurl,
-        lastpageimageurl: null,
+        ...(finalImageurl ? { imageurl: finalImageurl } : id ? {} : { imageurl: null }),
+        ...(id ? {} : { lastpageimageurl: null }),
 
         // ✅ NEW (DB column: accessplan)
         accessplan: data.accessPlan,
@@ -428,6 +856,16 @@ const NewCardsForm = ({ editProduct }: Props) => {
       };
 
       if (payload.actualprice == null) throw new Error("Actual Price is required");
+
+      if (finalImageurl) {
+        // Keep both legacy/current thumbnail columns aligned so list pages never
+        // fall back to stale Safari-distorted snapshots.
+        (payload as any).imageurl = finalImageurl;
+        (payload as any).lastpageimageurl = finalImageurl;
+      } else if (!id) {
+        (payload as any).imageurl = null;
+        (payload as any).lastpageimageurl = null;
+      }
 
       const payloadWithTabloid = {
         ...payload,

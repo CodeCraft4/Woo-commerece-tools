@@ -77,6 +77,20 @@ const firstDefined = (...values: any[]) => {
   return undefined;
 };
 
+const slideScopedValue = (
+  entry: Record<string, any> | null | undefined,
+  baseKey: string,
+  slideId: number,
+  fallback?: any,
+) => {
+  const orderedKeys = [
+    `${baseKey}${slideId}`,
+    baseKey,
+    ...[1, 2, 3, 4].filter((idx) => idx !== slideId).map((idx) => `${baseKey}${idx}`),
+  ];
+  return firstDefined(...orderedKeys.map((key) => entry?.[key]), fallback);
+};
+
 const normalizeAlign = (value: unknown): "left" | "center" | "right" => {
   const text = String(value ?? "").toLowerCase().trim();
   if (text === "start" || text === "left") return "left";
@@ -471,21 +485,21 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           height: 210,
           zIndex: 300 + idx,
           color: String(
-            firstDefined(entry?.fontColor, entry?.fontColor1, entry?.fontColor2, entry?.fontColor3, "#111111"),
+            slideScopedValue(entry, "fontColor", id, entry?.color ?? "#111111"),
           ),
-          fontSize: toNum(firstDefined(entry?.fontSize, entry?.fontSize1, entry?.fontSize2, entry?.fontSize3, 22), 22),
+          fontSize: toNum(slideScopedValue(entry, "fontSize", id, 22), 22),
           fontFamily: String(
-            firstDefined(entry?.fontFamily, entry?.fontFamily1, entry?.fontFamily2, entry?.fontFamily3, "Arial"),
+            slideScopedValue(entry, "fontFamily", id, "Arial"),
           ),
           fontWeight: normalizeFontWeight(
-            firstDefined(entry?.fontWeight, entry?.fontWeight1, entry?.fontWeight2, entry?.fontWeight3, 400),
+            slideScopedValue(entry, "fontWeight", id, 400),
             400,
           ),
           fontStyle: "normal",
           textDecoration: "none",
-          lineHeight: toNum(firstDefined(entry?.lineHeight, entry?.lineHeight1, entry?.lineHeight2, entry?.lineHeight3, 1.16), 1.16),
-          align: normalizeAlign(firstDefined(entry?.textAlign, entry?.textAlign1, entry?.textAlign2, entry?.textAlign3, "center")),
-          rotation: toNum(firstDefined(entry?.rotation, entry?.rotation1, entry?.rotation2, entry?.rotation3, 0), 0),
+          lineHeight: toNum(slideScopedValue(entry, "lineHeight", id, 1.16), 1.16),
+          align: normalizeAlign(slideScopedValue(entry, "textAlign", id, "center")),
+          rotation: toNum(slideScopedValue(entry, "rotation", id, 0), 0),
         };
       })
       .filter(Boolean) as any[];

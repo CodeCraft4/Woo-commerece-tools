@@ -86,6 +86,14 @@ const deleteTemplateById = async (id: number | string) => {
 };
 const getTabIndex = (t: ActiveTab) => (t === "cards" ? 0 : 1);
 const indexToTab = (i: number): ActiveTab => (i === 0 ? "cards" : "templates");
+const resolveCardThumb = (row: any) =>
+  row?.imageurl ??
+  row?.imageUrl ??
+  row?.image_url ??
+  row?.img_url ??
+  row?.lastpageimageurl ??
+  row?.lastpageImageUrl ??
+  "";
 
 // cards normalize helpers
 const getCardMain = (r: CardRow) => (r.cardcategory ?? r.card_category ?? "").trim();
@@ -435,13 +443,7 @@ const Products = () => {
     image_url?: string;
     img_url?: string;
     lastpageImageUrl?: string;
-  }) =>
-    x.lastpageimageurl ||
-    x.lastpageImageUrl ||
-    x.imageurl ||
-    x.image_url ||
-    x.img_url ||
-    "";
+  }) => resolveCardThumb(x);
 
   const onEditCard = (row: any) => {
     navigate(ADMINS_DASHBOARD.ADD_NEW_CARDS, {
@@ -647,13 +649,7 @@ const Products = () => {
                         sale_price: item.salePrice ?? item.sale_price ?? item.saleprice ?? 0,
                         description: item.description ?? "",
                         created_at: item.created_at ?? new Date().toISOString(),
-                        img_url:
-                          item.lastpageimageurl ??
-                          item.imageUrl ??
-                          item.imageurl ??
-                          item.image_url ??
-                          item.lastpageImageUrl ??
-                          "",
+                        img_url: resolveCardThumb(item),
                         lastpageImageUrl: item.lastpageImageUrl ?? item.lastpageimageurl ?? "",
                         polygon_shape: item.polygon_shape ?? null,
                         __type: "card",
