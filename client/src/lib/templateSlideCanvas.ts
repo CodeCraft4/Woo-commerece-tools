@@ -366,7 +366,7 @@ const wrapText = (
     return chunks;
   };
 
-  paragraphs.forEach((paragraph, paragraphIndex) => {
+  paragraphs.forEach((paragraph) => {
     const words = paragraph.split(/\s+/).filter(Boolean);
     if (!words.length) {
       lines.push("");
@@ -394,7 +394,6 @@ const wrapText = (
     });
 
     if (current) lines.push(current);
-    if (paragraphIndex < paragraphs.length - 1) lines.push("");
   });
 
   return lines;

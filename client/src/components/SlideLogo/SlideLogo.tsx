@@ -55,6 +55,14 @@ const focusEditableTextFromTarget = (target: EventTarget | null) => {
 
 /* ===================== helpers + types ===================== */
 const num = (v: any, d = 0) => (typeof v === "number" && !Number.isNaN(v) ? v : d);
+const numLike = (v: any, d = 0) => {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const parsed = Number(v);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return d;
+};
 const str = (v: any, d = "") => (typeof v === "string" ? v : d);
 const bool = (v: any, d = false) => (typeof v === "boolean" ? v : d);
 const idOrIdx = (obj: any, idx: number, prefix: string) => str(obj?.id, `${prefix}-${idx}`);
@@ -727,6 +735,7 @@ export const UserSlide4Preview = () => {
           {layout4.textElements?.map((te: any, index: number) => {
             const isEditable = !!te.isEditable;
             const isActive = editingIndex === index;
+            const resolvedLineHeight = Math.max(0.8, numLike(te?.lineHeight, 1.2));
             return (
               <Box
                 key={te.id ?? index}
@@ -789,7 +798,8 @@ export const UserSlide4Preview = () => {
                       fontStyle: te.italic ? "italic" : "normal",
                       padding: 0,
                       background: "transparent",
-                      lineHeight: "1.2em",
+                      lineHeight: resolvedLineHeight,
+                      WebkitTextSizeAdjust: "100%",
 
                       // Let wrapper handle pointer until active
                       pointerEvents: isEditable && isActive ? "auto" : "none",
@@ -803,12 +813,15 @@ export const UserSlide4Preview = () => {
                     "& .MuiInputBase-input, & .MuiInputBase-inputMultiline": {
                       textAlign: "center",
                       textAlignLast: "center",
+                      lineHeight: resolvedLineHeight,
+                      WebkitTextSizeAdjust: "100%",
                     },
 
                     "& .MuiInputBase-input": {
                       textOverflow: "ellipsis",
                       overflow: "hidden",
                       whiteSpace: "pre-wrap",
+                      overflowWrap: "break-word",
                     },
                   }}
                 />
