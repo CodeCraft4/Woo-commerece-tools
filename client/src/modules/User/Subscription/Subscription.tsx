@@ -466,7 +466,7 @@ const getSizeDefsForCategory = (categoryName?: string): SizeDef[] => {
 
   if (name.includes("mug")) return [{ key: "mug_wrap_11oz", title: "228mm × 88.9mm wrap (11oz mug)" }];
   if (name.includes("coaster"))
-    return [{ key: "coaster_95", title: "89mm × 89mm (6 per sheet: 2 × 3)" }];
+    return [{ key: "coaster_95", title: "89mm × 89mm (2 per sheet: 1 × 2)" }];
 
   return [
     { key: "a5", title: "A3" },
@@ -628,6 +628,10 @@ const Subscription = () => {
   const [subscriptionPreviewSlides, setSubscriptionPreviewSlides] = useState<Record<string, string>>(() =>
     readSubscriptionPreviewPayload(resolveSubscriptionPreviewKey(state?.previewKey) || undefined),
   );
+  const isStripeReturn = useMemo(() => {
+    const sp = new URLSearchParams(location.search);
+    return sp.get("paid") === "1" && Boolean(sp.get("session_id"));
+  }, [location.search]);
   const [rawSlides, setRawSlides] = useState<RawSlide[]>(() =>
     readInitialRawSlides({
       previewKey: state?.previewKey,
@@ -722,6 +726,12 @@ const Subscription = () => {
     let mounted = true;
 
     const loadSlides = async () => {
+      const previewFallbackSlides = getValidSlides(subscriptionPreviewSlides);
+      if (!isIosWebKit && isStripeReturn && Object.keys(previewFallbackSlides).length) {
+        if (mounted) setSlidesObj(previewFallbackSlides);
+        return;
+      }
+
       const routeSlides = getValidSlides(state?.slides);
       if (Object.keys(routeSlides).length) {
         if (mounted) setSlidesObj(routeSlides);
@@ -751,7 +761,10 @@ const Subscription = () => {
 
       try {
         const fromLocal = JSON.parse(localStorage.getItem("slides_backup") || "{}");
-        if (mounted) setSlidesObj(fromLocal || {});
+        if (mounted && fromLocal && Object.keys(fromLocal).length) {
+          setSlidesObj(fromLocal);
+          return;
+        }
         if (fromLocal && Object.keys(fromLocal).length) return;
       } catch {
         if (mounted) setSlidesObj({});
@@ -760,7 +773,7 @@ const Subscription = () => {
       try {
         const fromIdb = await loadSlidesFromIdb();
         if (mounted && fromIdb) {
-          setSlidesObj(fromIdb);
+          setSlidesObj(fromIdb as Record<string, string>);
           return;
         }
       } catch {
@@ -772,7 +785,7 @@ const Subscription = () => {
     return () => {
       mounted = false;
     };
-  }, [isPreviewOnly, state?.slides]);
+  }, [isIosWebKit, isPreviewOnly, isStripeReturn, state?.slides, subscriptionPreviewSlides]);
 
   useEffect(() => {
     if (!activeTemplatePreviewSession) {
@@ -817,7 +830,7 @@ const Subscription = () => {
 
   const firstSlideUrl = activeTemplatePreviewSession
     ? subscriptionPreviewSlide1 || (shouldUseIosTemplateCanvasPreview ? iosTemplatePreviewSrc : "")
-    : slidesObj?.slide1 || "";
+    : slidesObj?.slide1 || (!isIosWebKit && isStripeReturn ? subscriptionPreviewSlides?.slide1 || "" : "");
   const captureWidth = Math.max(1, Math.round(Number(previewConfig?.mmWidth) || 800));
   const captureHeight = Math.max(1, Math.round(Number(previewConfig?.mmHeight) || 600));
 
@@ -1254,19 +1267,23 @@ const Subscription = () => {
   }, [captureLegacyCardSlidesFromDom, ensureCaptureSupportReady, firstSlideUrl, isIosWebKit, isLegacyCardProduct]);
 
   const storeSlidesPayload = useCallback((next: Record<string, string>) => {
-    setSlidesObj(next);
-    (globalThis as any).__slidesCache = next;
+    const valid = getValidSlides(next);
+    if (!Object.keys(valid).length) return;
+
+    setSlidesObj(valid);
+    (globalThis as any).__slidesCache = valid;
     try {
       sessionStorage.setItem("slides_preview_only", "0");
-      sessionStorage.setItem("rawSlidesCount", String(Object.keys(next).length));
+      sessionStorage.setItem("rawSlidesCount", String(Object.keys(valid).length));
+      sessionStorage.setItem("slides", JSON.stringify(valid));
     } catch {}
 
     try {
-      sessionStorage.removeItem("slides");
+      localStorage.setItem("slides_backup", JSON.stringify(valid));
     } catch {}
 
     try {
-      void saveSlidesToIdb(next);
+      void saveSlidesToIdb(valid);
     } catch {}
   }, []);
 
@@ -1583,6 +1600,10 @@ const Subscription = () => {
 
   const getSlidesPayload = async () => {
     if (slidesObj && Object.keys(slidesObj).length) return slidesObj;
+    const previewFallbackSlides = getValidSlides(subscriptionPreviewSlides);
+    if (!isIosWebKit && isStripeReturn && Object.keys(previewFallbackSlides).length) {
+      return previewFallbackSlides;
+    }
     try {
       const globalSlides = (globalThis as any).__slidesCache;
       if (globalSlides && Object.keys(globalSlides).length) return globalSlides;
@@ -1743,6 +1764,11 @@ const Subscription = () => {
         : currentKeys.every((k) => String(current[k] || "").startsWith("data:image/png"));
 
       if (hasEnough && (hasPng || (isIosWebKit && Object.keys(preparedPreviewSlides).length)) && !isPreviewOnly) {
+        const validCurrent = getValidSlides(current as Record<string, string>);
+        if (Object.keys(validCurrent).length) {
+          storeSlidesPayload(validCurrent);
+          return validCurrent;
+        }
         return current;
       }
 
@@ -2481,15 +2507,15 @@ const Subscription = () => {
       mode: "edge" as const,
     };
     const bagBgRemoveOpts = {
-      threshold: 26,
+      threshold: 18,
       alphaThreshold: 8,
-      minBrightness: 220,
-      satThreshold: 24,
-      whiteMinChannel: 215,
+      minBrightness: 246,
+      satThreshold: 8,
+      whiteMinChannel: 246,
       whiteOnly: true,
-      requireWhiteBg: false,
-      softness: 12,
-      mode: "all" as const,
+      requireWhiteBg: true,
+      softness: 0,
+      mode: "edge" as const,
     };
     const opts = isCandleCategory
       ? { threshold: 24, alphaThreshold: 8, minBrightness: 235, satThreshold: 16, mode: "all" as const }
@@ -2564,7 +2590,11 @@ const Subscription = () => {
   // slide 1's background/design layers.
   const previewSrc = hydratedPreviewSrc || mugPreview || firstSlideProcessed || iosLegacyCardPreviewSrc || "";
   const preferLiveTemplatePreview =
-    isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0 && !isLegacyCardProduct;
+    isIosWebKit &&
+    activeTemplatePreviewSession &&
+    rawSlides.length > 0 &&
+    !isLegacyCardProduct &&
+    !isBagCategory;
   const showOverlayPreview = Boolean(previewSrc) && useMockupBackground && !preferLiveTemplatePreview;
   const showFlatPreview = Boolean(previewSrc) && !useMockupBackground && !preferLiveTemplatePreview;
   const showLiveTemplatePreview =

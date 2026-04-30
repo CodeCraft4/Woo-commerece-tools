@@ -1639,9 +1639,7 @@ export default function TempletEditor() {
 
                     if (el.type === "image") {
                       const img = el as ImageEl;
-                      const isLeaflet = isLeafletCategory(adminDesign?.category);
-                      const isBg = String(el.id).startsWith("bg-") || isFullBleedImage(el);
-                      const objectFit = isLeaflet && !isBg ? "contain" : "cover";
+                      const objectFit: "cover" = "cover";
                       const showTouchOverlay = isIos && isSelected;
                       return (
                         <Rnd key={el.id} {...commonRnd}>
