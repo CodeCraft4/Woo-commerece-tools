@@ -632,6 +632,16 @@ const Subscription = () => {
     const sp = new URLSearchParams(location.search);
     return sp.get("paid") === "1" && Boolean(sp.get("session_id"));
   }, [location.search]);
+  const isStickerFromRouteOrStorage = useMemo(() => {
+    const fromQuery = String(new URLSearchParams(location.search).get("category") || "").trim();
+    if (/sticker/i.test(fromQuery)) return true;
+    try {
+      const fromLocal = String(localStorage.getItem("selectedCategory") || "").trim();
+      return /sticker/i.test(fromLocal);
+    } catch {
+      return false;
+    }
+  }, [location.search]);
   const [rawSlides, setRawSlides] = useState<RawSlide[]>(() =>
     readInitialRawSlides({
       previewKey: state?.previewKey,
@@ -698,14 +708,24 @@ const Subscription = () => {
     [isLegacyCardProduct, product?.id, selectedProductSnapshot?.id, state?.previewKey],
   );
   const preparedTemplatePreviewSlides = useMemo(
+    () => {
+      if (!activeTemplatePreviewSession) return {};
+      const persisted = getValidSlides(subscriptionPreviewSlides);
+      const runtime = getValidSlides(slidesObj);
+      const lockStripeStickerPreview =
+        isStripeReturn && isStickerFromRouteOrStorage && Object.keys(persisted).length > 0;
+      return lockStripeStickerPreview
+        ? getValidSlides({ ...runtime, ...persisted })
+        : getValidSlides({ ...persisted, ...runtime });
+    },
+    [activeTemplatePreviewSession, isStickerFromRouteOrStorage, isStripeReturn, slidesObj, subscriptionPreviewSlides],
+  );
+  const lockStripeStickerPreview = useMemo(
     () =>
-      activeTemplatePreviewSession
-        ? getValidSlides({
-            ...subscriptionPreviewSlides,
-            ...slidesObj,
-          })
-        : {},
-    [activeTemplatePreviewSession, slidesObj, subscriptionPreviewSlides],
+      isStripeReturn &&
+      isStickerFromRouteOrStorage &&
+      Object.keys(getValidSlides(subscriptionPreviewSlides)).length > 0,
+    [isStickerFromRouteOrStorage, isStripeReturn, subscriptionPreviewSlides],
   );
   const hasPreparedTemplatePreviewSlides = Object.keys(preparedTemplatePreviewSlides).length > 0;
   const subscriptionPreviewSlide1 = activeTemplatePreviewSession
@@ -727,6 +747,11 @@ const Subscription = () => {
 
     const loadSlides = async () => {
       const previewFallbackSlides = getValidSlides(subscriptionPreviewSlides);
+      if (lockStripeStickerPreview && Object.keys(previewFallbackSlides).length) {
+        if (mounted) setSlidesObj(previewFallbackSlides);
+        return;
+      }
+
       if (!isIosWebKit && isStripeReturn && Object.keys(previewFallbackSlides).length) {
         if (mounted) setSlidesObj(previewFallbackSlides);
         return;
@@ -785,7 +810,7 @@ const Subscription = () => {
     return () => {
       mounted = false;
     };
-  }, [isIosWebKit, isPreviewOnly, isStripeReturn, state?.slides, subscriptionPreviewSlides]);
+  }, [isIosWebKit, isPreviewOnly, isStripeReturn, lockStripeStickerPreview, state?.slides, subscriptionPreviewSlides]);
 
   useEffect(() => {
     if (!activeTemplatePreviewSession) {
@@ -830,6 +855,8 @@ const Subscription = () => {
 
   const firstSlideUrl = activeTemplatePreviewSession
     ? subscriptionPreviewSlide1 || (shouldUseIosTemplateCanvasPreview ? iosTemplatePreviewSrc : "")
+    : lockStripeStickerPreview
+    ? subscriptionPreviewSlides?.slide1 || slidesObj?.slide1 || ""
     : slidesObj?.slide1 || (!isIosWebKit && isStripeReturn ? subscriptionPreviewSlides?.slide1 || "" : "");
   const captureWidth = Math.max(1, Math.round(Number(previewConfig?.mmWidth) || 800));
   const captureHeight = Math.max(1, Math.round(Number(previewConfig?.mmHeight) || 600));
@@ -1269,6 +1296,7 @@ const Subscription = () => {
   const storeSlidesPayload = useCallback((next: Record<string, string>) => {
     const valid = getValidSlides(next);
     if (!Object.keys(valid).length) return;
+    if (lockStripeStickerPreview) return;
 
     setSlidesObj(valid);
     (globalThis as any).__slidesCache = valid;
@@ -1285,7 +1313,7 @@ const Subscription = () => {
     try {
       void saveSlidesToIdb(valid);
     } catch {}
-  }, []);
+  }, [lockStripeStickerPreview]);
 
   const readCapturedSlidesFromStorage = useCallback(() => {
     try {
@@ -1599,6 +1627,10 @@ const Subscription = () => {
   }, [planCode, planLoading, bundleKeyLoading, isInBundleItems]);
 
   const getSlidesPayload = async () => {
+    if (lockStripeStickerPreview) {
+      const persisted = getValidSlides(subscriptionPreviewSlides);
+      if (Object.keys(persisted).length) return persisted;
+    }
     if (slidesObj && Object.keys(slidesObj).length) return slidesObj;
     const previewFallbackSlides = getValidSlides(subscriptionPreviewSlides);
     if (!isIosWebKit && isStripeReturn && Object.keys(previewFallbackSlides).length) {
@@ -2143,8 +2175,10 @@ const Subscription = () => {
     const skipLegacyIosPrefetch = isIosWebKit && isLegacyCardProduct && Boolean(firstSlideUrl);
     const skipTemplateRegeneration =
       activeTemplatePreviewSession && (hasPreparedTemplatePreviewSlides || isIosWebKit);
+    const skipStripeStickerRegeneration = lockStripeStickerPreview;
     // Subscription should consume the preview page payload. Re-capturing here can
     // replace a correct mockup with a WebKit partial bitmap.
+    if (skipStripeStickerRegeneration) return;
     if (skipTemplateRegeneration) return;
     if (skipLegacyIosPrefetch) return;
     let cancelled = false;
@@ -2229,6 +2263,7 @@ const Subscription = () => {
     hasPreparedTemplatePreviewSlides,
     isIosWebKit,
     isLegacyCardProduct,
+    lockStripeStickerPreview,
     isPreviewOnly,
     firstSlideUrl,
     prefetchCaptureFormat,
