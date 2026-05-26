@@ -599,6 +599,15 @@ const Subscription = () => {
 
   const location: any = useLocation() as { state?: { slides?: Record<string, string>; previewOnly?: boolean } };
   const { state } = location;
+  const routeCardRawSlides = useMemo<RawSlide[]>(
+    () =>
+      Array.isArray(state?.cardRawSlides)
+        ? (state.cardRawSlides as RawSlide[]).filter(
+            (sl) => sl && typeof sl === "object" && Array.isArray((sl as any).elements),
+          )
+        : [],
+    [state?.cardRawSlides],
+  );
 
   const { user, plan } = useAuth();
   const navigate = useNavigate();
@@ -2630,11 +2639,23 @@ const Subscription = () => {
     rawSlides.length > 0 &&
     !isLegacyCardProduct &&
     !isBagCategory;
-  const showOverlayPreview = Boolean(previewSrc) && useMockupBackground && !preferLiveTemplatePreview;
-  const showFlatPreview = Boolean(previewSrc) && !useMockupBackground && !preferLiveTemplatePreview;
+  const routeCardLiveSlide = routeCardRawSlides[0] ?? null;
+  const preferLiveCardPreview =
+    isLegacyCardProduct &&
+    (legacyCardCaptureEnabled || (isIosWebKit && Boolean(routeCardLiveSlide)));
+  const showOverlayPreview =
+    Boolean(previewSrc) &&
+    useMockupBackground &&
+    !preferLiveTemplatePreview &&
+    !preferLiveCardPreview;
+  const showFlatPreview =
+    Boolean(previewSrc) &&
+    !useMockupBackground &&
+    !preferLiveTemplatePreview &&
+    !preferLiveCardPreview;
   const showLiveTemplatePreview =
     activeTemplatePreviewSession && rawSlides.length > 0 && (preferLiveTemplatePreview || !previewSrc);
-  const showLiveCardPreview = isLegacyCardProduct && !previewSrc;
+  const showLiveCardPreview = isLegacyCardProduct && (preferLiveCardPreview || !previewSrc);
   const stripLiveMockupBackground =
     isStickerCategory || isCandleCategory || isBagCategory || isClothingCategory;
   const iosStablePreviewLayerSx = isIosWebKit
@@ -2939,7 +2960,9 @@ const Subscription = () => {
                         }}
                       >
                         <Box sx={iosStablePreviewLayerSx}>
-                          <Slide1 />
+                          {routeCardLiveSlide
+                            ? renderSlide(routeCardLiveSlide)
+                            : <Slide1 />}
                         </Box>
                       </Box>
                     </Box>
@@ -2968,12 +2991,14 @@ const Subscription = () => {
                         WebkitTransform: isIosWebKit ? "translateZ(0)" : undefined,
                         ...iosStablePreviewLayerSx,
                       }}
-                    >
-                      <Box sx={iosStablePreviewLayerSx}>
-                        <Slide1 />
+                      >
+                        <Box sx={iosStablePreviewLayerSx}>
+                        {routeCardLiveSlide
+                          ? renderSlide(routeCardLiveSlide)
+                          : <Slide1 />}
+                        </Box>
                       </Box>
                     </Box>
-                  </Box>
                 )
               ) : (
                 <Box

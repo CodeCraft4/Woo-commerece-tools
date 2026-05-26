@@ -338,6 +338,22 @@ const mapQrElements = (id: number, payload?: SlidePayloadV2 | null) => {
 const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | null): TemplateSlide => {
   const rawBgColor = String(payload?.bg?.color ?? "").trim();
   const normalizedBgColor = !rawBgColor || rawBgColor.toLowerCase() === "transparent" ? "#ffffff" : rawBgColor;
+  const bgImageSrc = String(payload?.bg?.image ?? "").trim();
+  const bgRect = payload?.bg?.rect ?? null;
+  const bgImageLayer = bgImageSrc
+    ? [
+        {
+          id: `bg-image-${id}`,
+          type: "image" as const,
+          src: bgImageSrc,
+          x: toNum(bgRect?.x, 0),
+          y: toNum(bgRect?.y, 0),
+          width: toNum(bgRect?.width, CAPTURE_SIZE.w),
+          height: toNum(bgRect?.height, CAPTURE_SIZE.h),
+          zIndex: 0,
+        },
+      ]
+    : [];
 
   const bgFrames = mergeBuckets(payload?.layout?.bgFrames)
     .filter((el: any) => String(el?.src ?? "").trim())
@@ -527,6 +543,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
     label: `slide${id}`,
     bgColor: normalizedBgColor,
     elements: [
+      ...bgImageLayer,
       ...bgFrames,
       ...layoutStickers,
       ...staticTexts,
@@ -692,16 +709,9 @@ const PreviewBookCard = () => {
   );
 
   const captureCardSlides = useCallback(async () => {
-    const captured: string[] = [];
-
-    for (let i = 0; i < CAPTURE_ORDER.length; i += 1) {
-      const key = CAPTURE_ORDER[i];
-      const capturedUrl = await captureSingleDomSlide(key);
-      captured.push(capturedUrl);
-      if (i < CAPTURE_ORDER.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
-    }
+    const captured = await Promise.all(
+      CAPTURE_ORDER.map((key) => captureSingleDomSlide(key)),
+    );
 
     const slidesObj = Object.fromEntries(
       CAPTURE_ORDER.map((_, idx) => {
@@ -759,9 +769,9 @@ const PreviewBookCard = () => {
           } catch {
             dataUrl = "";
           }
-          if (!hasQrTemplate) {
+          if (!isIosWebKit && !hasQrTemplate) {
             dataUrl = await captureSingleDomSlide(key);
-          } else if (!String(dataUrl).startsWith("data:image/")) {
+          } else if (!isIosWebKit && !String(dataUrl).startsWith("data:image/")) {
             dataUrl = await captureSingleDomSlide(key);
           }
         } else {
@@ -795,17 +805,38 @@ const PreviewBookCard = () => {
       slidesObj,
       validCount: Object.keys(slidesObj).length,
     };
-  }, [captureSingleDomSlide, slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx]);
+  }, [captureSingleDomSlide, isIosWebKit, slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx]);
+
+  const buildCardRawSlides = useCallback((): TemplateSlide[] => {
+    const polygon = buildPolygonLayout(slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx, {
+      onlySelectedImages: true,
+    });
+    return [
+      mapPolygonSlideToTemplateSlide(1, polygon?.slides?.slide1),
+      mapPolygonSlideToTemplateSlide(2, polygon?.slides?.slide2),
+      mapPolygonSlideToTemplateSlide(3, polygon?.slides?.slide3),
+      mapPolygonSlideToTemplateSlide(4, polygon?.slides?.slide4),
+    ];
+  }, [slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx]);
 
   const handleDownload = useCallback(async () => {
     if (downloading) return;
     setDownloading(true);
     try {
-      const domResult = isIosWebKit ? null : await captureCardSlides();
-      const iosCanvasResult = isIosWebKit ? await captureCardSlidesFromCanvasRenderer() : null;
-      const activeResult = iosCanvasResult ?? domResult ?? { captured: [], slidesObj: {}, validCount: 0 };
-      const { captured, slidesObj, validCount } = activeResult;
       const expectedCount = CAPTURE_ORDER.length;
+      // Canvas renderer from slide state is deterministic across Safari/WebKit.
+      // Use it as primary for all platforms; fallback to DOM only if needed.
+      const canvasResult = await captureCardSlidesFromCanvasRenderer();
+      let activeResult = canvasResult ?? { captured: [], slidesObj: {}, validCount: 0 };
+
+      if (canvasResult.validCount < expectedCount) {
+        const domResult = await captureCardSlides();
+        if (domResult?.validCount > activeResult.validCount) {
+          activeResult = domResult;
+        }
+      }
+
+      const { captured, slidesObj, validCount } = activeResult;
       const previewOnly = validCount < expectedCount;
 
       try {
@@ -855,18 +886,19 @@ const PreviewBookCard = () => {
         return;
       }
 
-      navigate(USER_ROUTES.SUBSCRIPTION, {
-        state: {
-          slides: slidesObj,
-          previewOnly: false,
-        },
-      });
+        navigate(USER_ROUTES.SUBSCRIPTION, {
+          state: {
+            slides: slidesObj,
+            previewOnly: false,
+            cardRawSlides: buildCardRawSlides(),
+          },
+        });
     } catch {
       toast.error("Could not prepare preview. Please try again.");
     } finally {
       setDownloading(false);
     }
-  }, [captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, isIosWebKit, navigate]);
+  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, navigate]);
 
 
   return (
