@@ -2451,7 +2451,14 @@ const AdminSlide4Canvas = ({
                     setTextAlign4(textObj.textAlign);
                     setVerticalAlign4(textObj.verticalAlign);
                   }}
-                  sx={{ width: "100%", height: "100%", cursor: "pointer" }}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: textObj.verticalAlign === "top" ? "flex-start" : textObj.verticalAlign === "bottom" ? "flex-end" : "center",
+                    justifyContent: textObj.textAlign === "left" ? "flex-start" : textObj.textAlign === "right" ? "flex-end" : "center",
+                  }}
                 >
                   <Typography
                     sx={{
@@ -2463,10 +2470,9 @@ const AdminSlide4Canvas = ({
                       lineHeight: textObj.lineHeight,
                       letterSpacing: textObj.letterSpacing,
                       width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      alignItems: textObj.verticalAlign === "top" ? "flex-start" : textObj.verticalAlign === "bottom" ? "flex-end" : "center",
-                      justifyContent: textObj.textAlign === "left" ? "flex-start" : textObj.textAlign === "right" ? "flex-end" : "center",
+                      height: "auto",
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "anywhere",
                     }}
                   >
                     {textObj.value.length === 0 ? <TitleOutlined sx={{ alignSelf: "center", color: "gray" }} /> : null} {textObj.value}

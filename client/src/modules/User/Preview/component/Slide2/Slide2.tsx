@@ -12,6 +12,32 @@ const normalizeUrl = (value: any) => {
   if (value && typeof value === "object" && typeof value.url === "string") return value.url.trim();
   return "";
 };
+const resolveTextBoxFontSize = (entry: any) => {
+  const raw = entry?.fontSize ?? entry?.fontSize1 ?? 16;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 16;
+};
+const resolveTextBoxFontWeight = (entry: any) => {
+  const raw = entry?.fontWeight ?? entry?.fontWeight1 ?? 400;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : raw;
+};
+const resolveTextBoxFontColor = (entry: any) =>
+  entry?.fontColor ?? entry?.fontColor1 ?? "#000";
+const resolveTextBoxFontFamily = (entry: any) =>
+  entry?.fontFamily ?? entry?.fontFamily1 ?? "Roboto, sans-serif";
+const normalizeTextAlign = (value: any): "left" | "center" | "right" => {
+  const v = String(value ?? "").toLowerCase();
+  if (v === "left" || v === "start") return "left";
+  if (v === "right" || v === "end") return "right";
+  return "center";
+};
+const toFlexAlign = (value: any) => {
+  const v = String(value ?? "").toLowerCase();
+  if (v === "left" || v === "start" || v === "top") return "flex-start";
+  if (v === "right" || v === "end" || v === "bottom") return "flex-end";
+  return "center";
+};
 type Slide2Props = {
   ref?: any
 }
@@ -51,6 +77,10 @@ const Slide2 = (props: Slide2Props) => {
   const audioUrl = normalizeUrl(selectedAudioUrl);
   const qrVideoUrl = normalizeUrl(qrPosition?.url) || videoUrl;
   const qrAudioUrl = normalizeUrl(qrAudioPosition?.url) || audioUrl;
+  const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
+  const multiBoxHeight = isMobileViewport ? 180 : 210;
+  const multiBoxGap = 16;
+  const multiBoxTop = 10;
 
   return (
     <Box
@@ -368,22 +398,12 @@ const Slide2 = (props: Slide2Props) => {
               position: "absolute",
               left: 8,
               right: 8,
-              top: 8 + index * 220, // stack blocks like editor; adjust spacing
-              height: 210,
+              top: multiBoxTop + index * (multiBoxHeight + multiBoxGap),
+              height: multiBoxHeight,
               borderRadius: "6px",
               display: "flex",
-              alignItems:
-                e.verticalAlign === "top"
-                  ? "flex-start"
-                  : e.verticalAlign === "center"
-                    ? "center"
-                    : "flex-end",
-              justifyContent:
-                e.textAlign === "left"
-                  ? "flex-start"
-                  : e.textAlign === "right"
-                    ? "flex-end"
-                    : "center",
+              alignItems: toFlexAlign(e.verticalAlign),
+              justifyContent: toFlexAlign(e.textAlign),
               p: 1,
               zIndex: 9999,
               pointerEvents: "none",
@@ -391,11 +411,11 @@ const Slide2 = (props: Slide2Props) => {
           >
             <Typography
               sx={{
-                fontSize: e.fontSize ?? 16,
-                fontWeight: e.fontWeight ?? 400,
-                color: e.fontColor ?? "#000",
-                fontFamily: e.fontFamily ?? "Roboto, sans-serif",
-                textAlign: e.textAlign ?? "center",
+                fontSize: resolveTextBoxFontSize(e),
+                fontWeight: resolveTextBoxFontWeight(e),
+                color: resolveTextBoxFontColor(e),
+                fontFamily: resolveTextBoxFontFamily(e),
+                textAlign: normalizeTextAlign(e.textAlign),
                 lineHeight: e.lineHeight ?? 1.2,
                 letterSpacing: e.letterSpacing ?? 0,
                 width: "100%",

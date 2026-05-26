@@ -8470,7 +8470,7 @@ function expiresAt(expiresIn) {
   return timeNow + expiresIn;
 }
 function generateCallbackId() {
-  return Symbol("auth-callback");
+  return /* @__PURE__ */ Symbol("auth-callback");
 }
 function parseParametersFromURL(href) {
   const result = {};

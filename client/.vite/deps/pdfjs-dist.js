@@ -11939,7 +11939,7 @@ var Metadata = class {
     return this.#map.entries();
   }
 };
-var INTERNAL = Symbol("INTERNAL");
+var INTERNAL = /* @__PURE__ */ Symbol("INTERNAL");
 var OptionalContentGroup = class {
   #isDisplay = false;
   #isPrint = false;
@@ -13482,7 +13482,7 @@ var PDFNodeStreamFsRangeReader = class {
     }
   }
 };
-var INITIAL_DATA = Symbol("INITIAL_DATA");
+var INITIAL_DATA = /* @__PURE__ */ Symbol("INITIAL_DATA");
 var PDFObjects = class {
   #objs = /* @__PURE__ */ Object.create(null);
   #ensureObj(objId) {

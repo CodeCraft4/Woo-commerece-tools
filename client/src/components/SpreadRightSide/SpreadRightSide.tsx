@@ -1593,6 +1593,7 @@ const SpreadRightSide = ({
                 {selectedVideoUrl3 && (
                   <ScaledRnd
                     cancel=".no-drag"
+                    size={{ width: qrPosition3.width, height: qrPosition3.height }}
                     position={{ x: qrPosition3.x, y: qrPosition3.y }}
                     onDragStop={(_, d) =>
                       setQrPosition3((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrPosition3.zIndex }))
@@ -2220,7 +2221,24 @@ const SpreadRightSide = ({
                               setTextAlign3(textObj.textAlign);
                               setVerticalAlign3(textObj.verticalAlign);
                             }}
-                            sx={{ width: "100%", height: "100%", cursor: "pointer" }}
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems:
+                                textObj.verticalAlign === "top"
+                                  ? "flex-start"
+                                  : textObj.verticalAlign === "bottom"
+                                    ? "flex-end"
+                                    : "center",
+                              justifyContent:
+                                textObj.textAlign === "left"
+                                  ? "flex-start"
+                                  : textObj.textAlign === "right"
+                                    ? "flex-end"
+                                    : "center",
+                            }}
                           >
                             <Typography
                               sx={{
@@ -2232,20 +2250,9 @@ const SpreadRightSide = ({
                                 lineHeight: textObj.lineHeight,
                                 letterSpacing: textObj.letterSpacing,
                                 width: "100%",
-                                height: "100%",
-                                display: "flex",
-                                alignItems:
-                                  textObj.verticalAlign === "top"
-                                    ? "flex-start"
-                                    : textObj.verticalAlign === "bottom"
-                                      ? "flex-end"
-                                      : "center",
-                                justifyContent:
-                                  textObj.textAlign === "left"
-                                    ? "flex-start"
-                                    : textObj.textAlign === "right"
-                                      ? "flex-end"
-                                      : "center",
+                                height: "auto",
+                                whiteSpace: "pre-wrap",
+                                overflowWrap: "anywhere",
                               }}
                             >
                               {textObj.value.length === 0 ? (
@@ -2916,6 +2923,7 @@ const SpreadRightSide = ({
                   <ScaledRnd
                     bounds="parent"
                     cancel=".no-drag"
+                    size={{ width: qrPosition3.width, height: qrPosition3.height }}
                     position={{ x: qrPosition3.x, y: qrPosition3.y }}
                     onDragStop={(_, d) =>
                       setQrPosition3((prev) => ({
@@ -3036,6 +3044,7 @@ const SpreadRightSide = ({
                   <ScaledRnd
                     bounds="parent"
                     cancel=".no-drag"
+                    size={{ width: qrAudioPosition3.width, height: qrAudioPosition3.height }}
                     position={{ x: qrAudioPosition3.x, y: qrAudioPosition3.y }}
                     onDragStop={(_, d) =>
                       setQrAudioPosition3((prev) => ({
@@ -3106,10 +3115,7 @@ const SpreadRightSide = ({
                         >
                           <QrGenerator
                             url={selectedAudioUrl3}
-                            size={Math.min(
-                              qrAudioPosition3.width,
-                              qrAudioPosition3.height
-                            )}
+                            size={Math.min(qrAudioPosition3.width, qrAudioPosition3.height)}
                           />
                         </Box>
                         <a href={`${selectedAudioUrl3}`} target="_blank">
@@ -3565,6 +3571,19 @@ const SpreadRightSide = ({
                               width: "100%",
                               height: "100%",
                               cursor: "pointer",
+                              display: "flex",
+                              alignItems:
+                                textObj.verticalAlign === "top"
+                                  ? "flex-start"
+                                  : textObj.verticalAlign === "bottom"
+                                    ? "flex-end"
+                                    : "center",
+                              justifyContent:
+                                textObj.textAlign === "left"
+                                  ? "flex-start"
+                                  : textObj.textAlign === "right"
+                                    ? "flex-end"
+                                    : "center",
                             }}
                           >
                             <Typography
@@ -3577,20 +3596,9 @@ const SpreadRightSide = ({
                                 lineHeight: textObj.lineHeight,
                                 letterSpacing: textObj.letterSpacing,
                                 width: "100%",
-                                height: "100%",
-                                display: "flex",
-                                alignItems:
-                                  textObj.verticalAlign === "top"
-                                    ? "flex-start"
-                                    : textObj.verticalAlign === "bottom"
-                                      ? "flex-end"
-                                      : "center",
-                                justifyContent:
-                                  textObj.textAlign === "left"
-                                    ? "flex-start"
-                                    : textObj.textAlign === "right"
-                                      ? "flex-end"
-                                      : "center",
+                                height: "auto",
+                                whiteSpace: "pre-wrap",
+                                overflowWrap: "anywhere",
                               }}
                             >
                               {textObj.value.length === 0 ? (

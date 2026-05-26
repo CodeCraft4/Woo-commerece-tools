@@ -83,6 +83,24 @@ const normalizeMultiTexts = (arr: any[]) =>
     letterSpacing: t?.letterSpacing ?? 0,
   }));
 
+const resolveTextBoxFontSize = (textObj: any) => {
+  const raw = textObj?.fontSize ?? textObj?.fontSize1 ?? 16;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 16;
+};
+
+const resolveTextBoxFontWeight = (textObj: any) => {
+  const raw = textObj?.fontWeight ?? textObj?.fontWeight1 ?? 400;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : raw;
+};
+
+const resolveTextBoxFontColor = (textObj: any) =>
+  textObj?.fontColor ?? textObj?.fontColor1 ?? "#000000";
+
+const resolveTextBoxFontFamily = (textObj: any) =>
+  textObj?.fontFamily ?? textObj?.fontFamily1 ?? "Roboto";
+
 const stripLayoutTextElements = (
   layout: any,
   opts: { stripMulti?: boolean; stripOne?: boolean }
@@ -1908,10 +1926,12 @@ const SlideSpread = ({
                                 width: "100%",
                                 resize: "none",
                                 height: "100px",
-                                fontSize: textObj.fontSize1,
-                                fontWeight: textObj.fontWeight1,
-                                color: textObj.fontColor1,
-                                fontFamily: textObj.fontFamily1,
+                                fontSize: isIos
+                                  ? Math.max(16, resolveTextBoxFontSize(textObj))
+                                  : resolveTextBoxFontSize(textObj),
+                                fontWeight: resolveTextBoxFontWeight(textObj),
+                                color: resolveTextBoxFontColor(textObj),
+                                fontFamily: resolveTextBoxFontFamily(textObj),
                                 textAlign: textObj.textAlign,
                                 lineHeight: textObj.lineHeight,
                                 letterSpacing: textObj.letterSpacing,
@@ -1936,39 +1956,45 @@ const SlideSpread = ({
                               );
                             }
                             setEditingIndex(index);
-                            setFontSize(textObj.fontSize1);
-                            setFontFamily(textObj.fontFamily1);
-                            setFontWeight(textObj.fontWeight1);
-                            setFontColor(textObj.fontColor1);
+                            setFontSize(resolveTextBoxFontSize(textObj));
+                            setFontFamily(resolveTextBoxFontFamily(textObj));
+                            setFontWeight(resolveTextBoxFontWeight(textObj) as number);
+                            setFontColor(resolveTextBoxFontColor(textObj));
                             setTextAlign(textObj.textAlign);
                             setVerticalAlign(textObj.verticalAlign);
                           }}
-                          sx={{ width: "100%", height: "100%", cursor: "pointer" }}
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems:
+                              textObj.verticalAlign === "top"
+                                ? "flex-start"
+                                : textObj.verticalAlign === "bottom"
+                                  ? "flex-end"
+                                  : "center",
+                            justifyContent:
+                              textObj.textAlign === "left"
+                                ? "flex-start"
+                                : textObj.textAlign === "right"
+                                  ? "flex-end"
+                                  : "center",
+                          }}
                         >
                           <Typography
                             sx={{
-                              fontSize: textObj.fontSize1,
-                              fontWeight: textObj.fontWeight1,
-                              color: textObj.fontColor1,
-                              fontFamily: textObj.fontFamily1,
+                              fontSize: resolveTextBoxFontSize(textObj),
+                              fontWeight: resolveTextBoxFontWeight(textObj),
+                              color: resolveTextBoxFontColor(textObj),
+                              fontFamily: resolveTextBoxFontFamily(textObj),
                               textAlign: textObj.textAlign,
                               lineHeight: textObj.lineHeight,
                               letterSpacing: textObj.letterSpacing,
                               width: "100%",
-                              height: "100%",
-                              display: "flex",
-                              alignItems:
-                                textObj.verticalAlign === "top"
-                                  ? "flex-start"
-                                  : textObj.verticalAlign === "bottom"
-                                    ? "flex-end"
-                                    : "center",
-                              justifyContent:
-                                textObj.textAlign === "left"
-                                  ? "flex-start"
-                                  : textObj.textAlign === "right"
-                                    ? "flex-end"
-                                    : "center",
+                              height: "auto",
+                              whiteSpace: "pre-wrap",
+                              overflowWrap: "anywhere",
                             }}
                           >
                             {textObj.value.length === 0 ? (
@@ -3293,10 +3319,12 @@ const SlideSpread = ({
                               "& textarea": {
                                 width: "100%",
                                 resize: "none",
-                                fontSize: textObj.fontSize,
-                                fontWeight: textObj.fontWeight,
-                                color: textObj.fontColor,
-                                fontFamily: textObj.fontFamily,
+                                fontSize: isIos
+                                  ? Math.max(16, resolveTextBoxFontSize(textObj))
+                                  : resolveTextBoxFontSize(textObj),
+                                fontWeight: resolveTextBoxFontWeight(textObj),
+                                color: resolveTextBoxFontColor(textObj),
+                                fontFamily: resolveTextBoxFontFamily(textObj),
                                 textAlign: textAlign,
                                 lineHeight: textObj.lineHeight,
                                 letterSpacing: textObj.letterSpacing,
@@ -3323,10 +3351,10 @@ const SlideSpread = ({
 
                             // ✅ Then select new box
                             setEditingIndex(index);
-                            setFontSize(textObj.fontSize);
-                            setFontFamily(textObj.fontFamily);
-                            setFontWeight(textObj.fontWeight);
-                            setFontColor(textObj.fontColor);
+                            setFontSize(resolveTextBoxFontSize(textObj));
+                            setFontFamily(resolveTextBoxFontFamily(textObj));
+                            setFontWeight(resolveTextBoxFontWeight(textObj) as number);
+                            setFontColor(resolveTextBoxFontColor(textObj));
                             setTextAlign(textObj.textAlign);
                             setVerticalAlign(textObj.verticalAlign);
                           }}
@@ -3334,32 +3362,34 @@ const SlideSpread = ({
                             width: "100%",
                             height: "100%",
                             cursor: "pointer",
+                            display: "flex",
+                            alignItems:
+                              textObj.verticalAlign === "top"
+                                ? "flex-start"
+                                : textObj.verticalAlign === "bottom"
+                                  ? "flex-end"
+                                  : "center",
+                            justifyContent:
+                              textObj.textAlign === "left"
+                                ? "flex-start"
+                                : textObj.textAlign === "right"
+                                  ? "flex-end"
+                                  : "center",
                           }}
                         >
                           <Typography
                             sx={{
-                              fontSize: textObj.fontSize,
-                              fontWeight: textObj.fontWeight,
-                              color: textObj.fontColor,
-                              fontFamily: textObj.fontFamily,
+                              fontSize: resolveTextBoxFontSize(textObj),
+                              fontWeight: resolveTextBoxFontWeight(textObj),
+                              color: resolveTextBoxFontColor(textObj),
+                              fontFamily: resolveTextBoxFontFamily(textObj),
                               textAlign: textObj.textAlign,
                               lineHeight: textObj.lineHeight,
                               letterSpacing: textObj.letterSpacing,
                               width: "100%",
-                              height: "100%",
-                              display: "flex",
-                              alignItems:
-                                textObj.verticalAlign === "top"
-                                  ? "flex-start"
-                                  : textObj.verticalAlign === "bottom"
-                                    ? "flex-end"
-                                    : "center",
-                              justifyContent:
-                                textObj.textAlign === "left"
-                                  ? "flex-start"
-                                  : textObj.textAlign === "right"
-                                    ? "flex-end"
-                                    : "center",
+                              height: "auto",
+                              whiteSpace: "pre-wrap",
+                              overflowWrap: "anywhere",
                             }}
                           >
                             {textObj.value.length === 0 ? (

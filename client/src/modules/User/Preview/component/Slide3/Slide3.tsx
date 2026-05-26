@@ -29,6 +29,16 @@ const pickSlide3Style = (entry: AnyEl, key: string, fallback: any) => {
   }
   return fallback;
 };
+const toNumberSafe = (value: any, fallback: number) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+const resolveSlide3TextAlign = (value: any): "left" | "center" | "right" => {
+  const raw = String(value ?? "").toLowerCase();
+  if (raw === "left" || raw === "start") return "left";
+  if (raw === "right" || raw === "end") return "right";
+  return "center";
+};
 type Slide3Props = {
   ref?: any
 }
@@ -68,6 +78,10 @@ const Slide3 = (props:Slide3Props) => {
   const audioUrl = normalizeUrl(selectedAudioUrl3);
   const qrVideoUrl = normalizeUrl(qrPosition3?.url) || videoUrl;
   const qrAudioUrl = normalizeUrl(qrAudioPosition3?.url) || audioUrl;
+  const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
+  const multiBoxHeight = isMobileViewport ? 180 : 210;
+  const multiBoxGap = 16;
+  const multiBoxTop = 10;
   return (
     <Box
     ref={ref}
@@ -224,8 +238,8 @@ const Slide3 = (props:Slide3Props) => {
             position: "absolute", // use absolute like Rnd
             top: qrPosition3.y,
             left: qrPosition3.x,
-            width: 300,       // ✅ match the image width
-            height: 200,
+            width: qrPosition3.width,
+            height: qrPosition3.height,
             display: "flex",
             justifyContent: "center",
             alignItems: "flex-end",
@@ -238,7 +252,7 @@ const Slide3 = (props:Slide3Props) => {
             component="img"
             src="/assets/images/video-qr-tips.png"
             sx={{
-              width: 300,       // ✅ match the image width
+              width: "100%",
               height: 200,
               objectFit: "fill",
               borderRadius: "6px",
@@ -249,14 +263,14 @@ const Slide3 = (props:Slide3Props) => {
           <Box
             sx={{
               position: "absolute",
-              top: 50,
+              top: 55,
               height: 10,
               width: 15,
-              left: { md: 2, sm: 27, xs: 25 },
+              left: 6,
               borderRadius: 2,
             }}
           >
-            <QrGenerator url={qrVideoUrl} size={70} />
+            <QrGenerator url={qrVideoUrl} size={Math.min(qrPosition3.width, qrPosition3.height)} />
           </Box>
 
           {/* Clickable Link */}
@@ -268,8 +282,8 @@ const Slide3 = (props:Slide3Props) => {
             <Typography
               sx={{
                 position: "absolute",
-                top: 78,
-                right: { md: 0, sm: 30, xs: 30 },
+                top: 80,
+                right: 15,
                 zIndex: 99,
                 color: "black",
                 fontSize: "10px",
@@ -290,8 +304,8 @@ const Slide3 = (props:Slide3Props) => {
             position: "absolute", // use absolute like Rnd
             top: qrAudioPosition3.y,
             left: qrAudioPosition3.x,
-            width: 300,       // ✅ match the image width
-            height: 200,
+            width: qrAudioPosition3.width,
+            height: qrAudioPosition3.height,
             display: "flex",
             justifyContent: "center",
             alignItems: "flex-end",
@@ -304,7 +318,7 @@ const Slide3 = (props:Slide3Props) => {
             component="img"
             src="/assets/images/audio-qr-tips.png"
             sx={{
-              width: 300,       // ✅ match the image width
+              width: "100%",
               height: 200,
               objectFit: "fill",
               borderRadius: "6px",
@@ -315,14 +329,14 @@ const Slide3 = (props:Slide3Props) => {
           <Box
             sx={{
               position: "absolute",
-              top: 50,
+              top: 55,
               height: 10,
               width: 15,
-              left: { md: 2, sm: 27, xs: 25 },
+              left: 6,
               borderRadius: 2,
             }}
           >
-            <QrGenerator url={qrAudioUrl} size={70} />
+            <QrGenerator url={qrAudioUrl} size={Math.min(qrAudioPosition3.width, qrAudioPosition3.height)} />
           </Box>
 
           {/* Clickable Link */}
@@ -335,7 +349,7 @@ const Slide3 = (props:Slide3Props) => {
               sx={{
                 position: "absolute",
                 top: 78,
-                right: { md: 0, sm: 30, xs: 30 },
+                right: 15,
                 zIndex: 99,
                 color: "black",
                 fontSize: "10px",
@@ -380,12 +394,7 @@ const Slide3 = (props:Slide3Props) => {
           const textAlignRaw = String(
             pickSlide3Style(e, "textAlign", e?.textAlign ?? "center")
           ).toLowerCase();
-          const textAlign =
-            textAlignRaw === "start"
-              ? "left"
-              : textAlignRaw === "end"
-                ? "right"
-                : textAlignRaw;
+          const textAlign = resolveSlide3TextAlign(textAlignRaw);
           const verticalAlign = String(
             pickSlide3Style(e, "verticalAlign", e?.verticalAlign ?? "top")
           ).toLowerCase();
@@ -397,8 +406,8 @@ const Slide3 = (props:Slide3Props) => {
                 position: "absolute",
                 left: 8,
                 right: 8,
-                top: 8 + index * 220, // stack blocks like editor; adjust spacing
-                height: 210,
+                top: multiBoxTop + index * (multiBoxHeight + multiBoxGap),
+                height: multiBoxHeight,
                 borderRadius: "6px",
                 display: "flex",
                 alignItems:
@@ -420,7 +429,7 @@ const Slide3 = (props:Slide3Props) => {
             >
               <Typography
                 sx={{
-                  fontSize: Number(pickSlide3Style(e, "fontSize", 16)),
+                  fontSize: toNumberSafe(pickSlide3Style(e, "fontSize", 16), 16),
                   fontWeight: pickSlide3Style(e, "fontWeight", 400),
                   color: String(pickSlide3Style(e, "fontColor", "#000")),
                   fontFamily: String(pickSlide3Style(e, "fontFamily", "Roboto, sans-serif")),
