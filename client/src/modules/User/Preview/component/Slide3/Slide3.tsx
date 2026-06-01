@@ -237,27 +237,28 @@ const Slide3 = (props:Slide3Props) => {
           sx={{
             position: "absolute", // use absolute like Rnd
             top: qrPosition3.y,
-            left: qrPosition3.x,
-            width: qrPosition3.width,
-            height: qrPosition3.height,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-end",
+            left: 0,
+            width: "100%",
+            height: 180,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-center",
             textAlign: "center",
             zIndex: qrPosition3.zIndex || 1,
           }}
         >
           {/* Background Image */}
-          <Box
-            component="img"
-            src="/assets/images/video-qr-tips.png"
-            sx={{
-              width: "100%",
-              height: 200,
-              objectFit: "fill",
-              borderRadius: "6px",
-            }}
-          />
+            <Box
+              component="img"
+              src="/assets/images/video-qr-tips.png"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "fill",
+                borderRadius: "6px",
+                display: "block",
+              }}
+            />
 
           {/* QR Code */}
           <Box
@@ -269,9 +270,9 @@ const Slide3 = (props:Slide3Props) => {
               left: 6,
               borderRadius: 2,
             }}
-          >
-            <QrGenerator url={qrVideoUrl} size={Math.min(qrPosition3.width, qrPosition3.height)} />
-          </Box>
+            >
+              <QrGenerator url={qrVideoUrl} size={70} />
+            </Box>
 
           {/* Clickable Link */}
           <a
@@ -303,27 +304,28 @@ const Slide3 = (props:Slide3Props) => {
           sx={{
             position: "absolute", // use absolute like Rnd
             top: qrAudioPosition3.y,
-            left: qrAudioPosition3.x,
-            width: qrAudioPosition3.width,
-            height: qrAudioPosition3.height,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-end",
+            left: 0,
+            width: "100%",
+            height: 180,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-end",
             textAlign: "center",
             zIndex: qrAudioPosition3.zIndex || 1,
           }}
         >
           {/* Background Image */}
-          <Box
-            component="img"
-            src="/assets/images/audio-qr-tips.png"
-            sx={{
-              width: "100%",
-              height: 200,
-              objectFit: "fill",
-              borderRadius: "6px",
-            }}
-          />
+            <Box
+              component="img"
+              src="/assets/images/audio-qr-tips.png"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "fill",
+                borderRadius: "6px",
+                display: "block",
+              }}
+            />
 
           {/* QR Code */}
           <Box
@@ -335,9 +337,9 @@ const Slide3 = (props:Slide3Props) => {
               left: 6,
               borderRadius: 2,
             }}
-          >
-            <QrGenerator url={qrAudioUrl} size={Math.min(qrAudioPosition3.width, qrAudioPosition3.height)} />
-          </Box>
+            >
+              <QrGenerator url={qrAudioUrl} size={70} />
+            </Box>
 
           {/* Clickable Link */}
           <a

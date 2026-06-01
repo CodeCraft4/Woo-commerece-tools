@@ -214,27 +214,28 @@ const Slide4 = (props: Slide4Props) => {
           sx={{
             position: "absolute",
             top: qrPosition4.y,
-            left: qrPosition4.x,
+            left: 0,
             width: "100%",
             height: 180,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-end",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-end",
             textAlign: "center",
             zIndex: qrPosition4.zIndex || 1,
           }}
         >
           {/* Background Image */}
-          <Box
-            component="img"
-            src="/assets/images/video-qr-tips.png"
-            sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: "6px",
-            }}
-          />
+            <Box
+              component="img"
+              src="/assets/images/video-qr-tips.png"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "fill",
+                borderRadius: "6px",
+                display: "block",
+              }}
+            />
 
           {/* QR Code */}
           <Box
@@ -280,27 +281,28 @@ const Slide4 = (props: Slide4Props) => {
           sx={{
             position: "absolute", // use absolute like Rnd
             top: qrAudioPosition4.y,
-            left: qrAudioPosition4.x,
+            left: 0,
             width: "100%",
             height: 190,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-end",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-end",
             textAlign: "center",
             zIndex: qrAudioPosition4.zIndex || 1,
           }}
         >
           {/* Background Image */}
-          <Box
-            component="img"
-            src="/assets/images/audio-qr-tips.png"
-            sx={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: "6px",
-            }}
-          />
+            <Box
+              component="img"
+              src="/assets/images/audio-qr-tips.png"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "fill",
+                borderRadius: "6px",
+                display: "block",
+              }}
+            />
 
           {/* QR Code */}
           <Box

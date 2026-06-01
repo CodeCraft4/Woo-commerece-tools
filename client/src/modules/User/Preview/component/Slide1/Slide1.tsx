@@ -204,12 +204,12 @@ const Slide1 = (props: Slide1Props) => {
           sx={{
             position: "absolute",
             top: qrPosition1.y,
-            left: qrPosition1.x,
+            left: 0,
             width: "100%",
             height: 180,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-end",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-end",
             textAlign: "center",
             zIndex: qrPosition1.zIndex || 1,
           }}
@@ -220,8 +220,9 @@ const Slide1 = (props: Slide1Props) => {
             sx={{
               width: "100%",
               height: "100%",
-              objectFit: "cover",
+              objectFit: "fill",
               borderRadius: "6px",
+              display: "block",
             }}
           />
           <Box
@@ -261,12 +262,12 @@ const Slide1 = (props: Slide1Props) => {
           sx={{
             position: "absolute",
             top: qrAudioPosition1.y,
-            left: qrAudioPosition1.x,
+            left: 0,
             width: "100%",
             height: 190,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-end",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-end",
             textAlign: "center",
             zIndex: qrAudioPosition1.zIndex || 1,
           }}
@@ -277,8 +278,9 @@ const Slide1 = (props: Slide1Props) => {
             sx={{
               width: "100%",
               height: "100%",
-              objectFit: "cover",
+              objectFit: "fill",
               borderRadius: "6px",
+              display: "block",
             }}
           />
           <Box

@@ -192,15 +192,32 @@ const buildQrSvgDataUrl = (value: string, size: number) => {
 };
 
 const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
-  if (slideId === 1) {
+  if (kind === "video") {
     return {
-      bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      bgSrc: "/assets/images/video-qr-tips.png",
       boxWidth: CAPTURE_SIZE.w,
       cardWidth: CAPTURE_SIZE.w,
-      cardHeight: kind === "audio" ? 190 : 180,
+      cardHeight: 180,
       bgOffsetX: 0,
-      qrOffsetX: kind === "audio" ? 65 : 58,
-      qrOffsetY: kind === "audio" ? 57 : 49,
+      qrOffsetX: 58,
+      qrOffsetY: 49,
+      defaultQrSize: 72,
+      urlOffsetX: 370,
+      urlOffsetY: 71,
+      urlWidth: 105,
+      urlHeight: 24,
+    };
+  }
+
+  if (slideId === 1) {
+    return {
+      bgSrc: "/assets/images/audio-qr-tips.png",
+      boxWidth: CAPTURE_SIZE.w,
+      cardWidth: CAPTURE_SIZE.w,
+      cardHeight: 190,
+      bgOffsetX: 0,
+      qrOffsetX: 65,
+      qrOffsetY: 57,
       defaultQrSize: 72,
       urlOffsetX: 370,
       urlOffsetY: 71,
@@ -210,15 +227,15 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
   }
   if (slideId === 2) {
     return {
-      bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
-      boxWidth: 400,
-      cardWidth: 350,
-      cardHeight: 200,
-      bgOffsetX: 25,
+      bgSrc: "/assets/images/audio-qr-tips.png",
+      boxWidth: CAPTURE_SIZE.w,
+      cardWidth: CAPTURE_SIZE.w,
+      cardHeight: 190,
+      bgOffsetX: 0,
       qrOffsetX: 28,
       qrOffsetY: 33,
       defaultQrSize: 70,
-      urlOffsetX: 255,
+      urlOffsetX: 370,
       urlOffsetY: 60,
       urlWidth: 105,
       urlHeight: 24,
@@ -226,15 +243,15 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
   }
   if (slideId === 3) {
     return {
-      bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
-      boxWidth: 300,
-      cardWidth: 300,
-      cardHeight: 200,
+      bgSrc: "/assets/images/audio-qr-tips.png",
+      boxWidth: CAPTURE_SIZE.w,
+      cardWidth: CAPTURE_SIZE.w,
+      cardHeight: 190,
       bgOffsetX: 0,
       qrOffsetX: 25,
-      qrOffsetY: 50,
+      qrOffsetY: 55,
       defaultQrSize: 70,
-      urlOffsetX: 165,
+      urlOffsetX: 370,
       urlOffsetY: 78,
       urlWidth: 105,
       urlHeight: 24,
@@ -242,13 +259,13 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
   }
   if (slideId === 4) {
     return {
-      bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
+      bgSrc: "/assets/images/audio-qr-tips.png",
       boxWidth: CAPTURE_SIZE.w,
       cardWidth: CAPTURE_SIZE.w,
-      cardHeight: kind === "audio" ? 190 : 180,
+      cardHeight: 190,
       bgOffsetX: 0,
-      qrOffsetX: kind === "audio" ? 65 : 58,
-      qrOffsetY: kind === "audio" ? 57 : 49,
+      qrOffsetX: 65,
+      qrOffsetY: 57,
       defaultQrSize: 72,
       urlOffsetX: 370,
       urlOffsetY: 71,
@@ -257,16 +274,16 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
     };
   }
   return {
-    bgSrc: kind === "audio" ? "/assets/images/audio-qr-tips.png" : "/assets/images/video-qr-tips.png",
-    boxWidth: 320,
-    cardWidth: 320,
-    cardHeight: 200,
+    bgSrc: "/assets/images/audio-qr-tips.png",
+    boxWidth: CAPTURE_SIZE.w,
+    cardWidth: CAPTURE_SIZE.w,
+    cardHeight: 190,
     bgOffsetX: 0,
     qrOffsetX: 28,
-    qrOffsetY: 40,
+    qrOffsetY: 57,
     defaultQrSize: 70,
-    urlOffsetX: 205,
-    urlOffsetY: 60,
+    urlOffsetX: 370,
+    urlOffsetY: 71,
     urlWidth: 105,
     urlHeight: 24,
   };

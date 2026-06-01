@@ -2141,7 +2141,7 @@ const Subscription = () => {
             orientation: "landscape",
             fit: "cover",
             pairStrategy: "outer-inner",
-            swapPairs: true,
+            swapPairs: false,
             pageMm: getPageMmForSize(prep.cardSize),
             pageTitle: ({ pageIndex }) => {
               if (pageIndex === 1) return "";
