@@ -297,7 +297,7 @@ const mapQrElements = (id: number, payload?: SlidePayloadV2 | null) => {
     if (!url) return;
     const preset = qrPresetFor(id, kind);
     const x = toNum(box?.x, 0);
-    const y = toNum(box?.y, 0);
+    const y = toNum(box?.y, 0) + (kind === "audio" ? 10 : 0);
     const zIndex = toNum(box?.zIndex, 900);
     const qrSize = 60;
     const qrSrc = buildQrSvgDataUrl(url, qrSize);

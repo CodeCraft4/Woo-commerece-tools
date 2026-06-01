@@ -12,6 +12,14 @@ const normalizeUrl = (value: any) => {
   if (value && typeof value === "object" && typeof value.url === "string") return value.url.trim();
   return "";
 };
+const safeQrSize = (box: any, fallback = 70) => {
+  const w = Number(box?.width);
+  const h = Number(box?.height);
+  if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) return Math.min(w, h);
+  if (Number.isFinite(w) && w > 0) return w;
+  if (Number.isFinite(h) && h > 0) return h;
+  return fallback;
+};
 const resolveTextBoxFontSize = (entry: any) => {
   const raw = entry?.fontSize ?? entry?.fontSize1 ?? 16;
   const n = Number(raw);
@@ -78,6 +86,8 @@ const Slide2 = (props: Slide2Props) => {
   const qrVideoUrl = normalizeUrl(qrPosition?.url) || videoUrl;
   const qrAudioUrl = normalizeUrl(qrAudioPosition?.url) || audioUrl;
   const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
+  const qrPanelWidth = isMobileViewport ? "92%" : "74%";
+  const qrTopNudge = 10;
   const multiBoxHeight = isMobileViewport ? 180 : 210;
   const multiBoxGap = 16;
   const multiBoxTop = 10;
@@ -237,10 +247,11 @@ const Slide2 = (props: Slide2Props) => {
         <Box
           sx={{
             position: "absolute",
-            top: qrPosition.y,
-            left: 0,
-            width: "100%",
-            height: 180,
+            top: qrPosition.y + qrTopNudge,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: qrPanelWidth,
+            height: 200,
               display: "flex",
               justifyContent: "center",
               alignItems: "flex-center",
@@ -272,7 +283,7 @@ const Slide2 = (props: Slide2Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator url={qrVideoUrl} size={70} />
+            <QrGenerator url={qrVideoUrl} size={safeQrSize(qrPosition, 70)} />
           </Box>
 
           {/* Clickable Link */}
@@ -304,10 +315,11 @@ const Slide2 = (props: Slide2Props) => {
         <Box
           sx={{
             position: "absolute",
-            top: qrAudioPosition.y,
-            left: 0,
-            width: "100%",
-            height: 180,
+            top: qrAudioPosition.y + qrTopNudge,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: qrPanelWidth,
+            height: 200,
               display: "flex",
               justifyContent: "center",
               alignItems: "flex-end",
@@ -339,7 +351,7 @@ const Slide2 = (props: Slide2Props) => {
               borderRadius: 2,
             }}
           >
-            <QrGenerator url={qrAudioUrl} size={70} />
+            <QrGenerator url={qrAudioUrl} size={safeQrSize(qrAudioPosition, 70)} />
           </Box>
 
           {/* Clickable Link */}

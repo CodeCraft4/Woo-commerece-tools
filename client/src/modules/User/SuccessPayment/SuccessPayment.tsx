@@ -80,6 +80,19 @@ const getValidSlides = (slides?: Record<string, any> | null) =>
     ),
   ) as Record<string, string>;
 
+const reorderCardsPdfSlides = (slides: Record<string, string>) => {
+  const s1 = slides.slide1;
+  const s2 = slides.slide2;
+  const s3 = slides.slide3;
+  const s4 = slides.slide4;
+  const next: Record<string, string> = {};
+  if (s4) next.slide1 = s4;
+  if (s1) next.slide2 = s1;
+  if (s2) next.slide3 = s2;
+  if (s3) next.slide4 = s3;
+  return Object.keys(next).length ? next : slides;
+};
+
 const singularizeCategory = (name?: string) => {
   const trimmed = String(name ?? "").trim();
   if (!trimmed) return "";
@@ -496,7 +509,7 @@ export default function PremiumSuccess() {
             pageMm: getLeafletTwoUpPageMm(cardSize),
           })
         : isTwoUpLandscape
-        ? await buildTwoUpSlides(baseSlides, {
+        ? await buildTwoUpSlides(reorderCardsPdfSlides(baseSlides), {
             gapPx: 0,
             orientation: "landscape",
             fit: "cover",
