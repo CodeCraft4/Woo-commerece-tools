@@ -19,22 +19,6 @@ const safeQrSize = (box: any, fallback = 70) => {
   if (Number.isFinite(h) && h > 0) return h;
   return fallback;
 };
-const isCardsCategory = () => {
-  if (typeof window === "undefined") return false;
-
-  const directCategory = String(localStorage.getItem("selectedCategory") || "").trim().toLowerCase();
-  if (directCategory === "cards") return true;
-
-  try {
-    const storedProduct = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
-    const productCategory = String(storedProduct?.category ?? storedProduct?.cardcategory ?? "")
-      .trim()
-      .toLowerCase();
-    return productCategory === "cards";
-  } catch {
-    return false;
-  }
-};
 const pickSlide3Style = (entry: AnyEl, key: string, fallback: any) => {
   const candidates = [
     entry?.[`${key}3`],
@@ -103,7 +87,6 @@ const Slide3 = (props:Slide3Props) => {
   const qrVideoUrl = normalizeUrl(qrPosition3?.url) || videoUrl;
   const qrAudioUrl = normalizeUrl(qrAudioPosition3?.url) || audioUrl;
   const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
-  const isCardsPreview = isCardsCategory();
   const qrPanelWidth = isMobileViewport ? "92%" : "74%";
   const qrTopNudge = 10;
   const multiBoxHeight = isMobileViewport ? 180 : 210;
@@ -259,81 +242,23 @@ const Slide3 = (props:Slide3Props) => {
         </Box>
       )}
 
-      {videoUrl &&
-        (isCardsPreview ? (
-          <Box
-            sx={{
-              position: "absolute",
-              top: qrPosition3.y + qrTopNudge,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "354px",
-              height: 200,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-end",
-              textAlign: "center",
-              zIndex: qrPosition3.zIndex || 1,
-            }}
-          >
-            <Box
-              component="img"
-              src="/assets/images/video-qr-tips.png"
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "fill",
-                borderRadius: "6px",
-                display: "block",
-              }}
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                top: 55,
-                height: 10,
-                width: 10,
-                left: { md: 6, sm: 6, xs: 5 },
-                borderRadius: 2,
-              }}
-            >
-              <QrGenerator url={qrVideoUrl} size={70} />
-            </Box>
-            <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-              <Typography
-                sx={{
-                  position: "absolute",
-                  top: 80,
-                  right: 15,
-                  zIndex: 99,
-                  color: "black",
-                  fontSize: "10px",
-                  width: "105px",
-                  cursor: "pointer",
-                  "&:hover": { textDecoration: "underline" },
-                }}
-              >
-                {`${videoUrl.slice(0, 20)}.....`}
-              </Typography>
-            </a>
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              position: "absolute", // use absolute like Rnd
-              top: qrPosition3.y + qrTopNudge,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: qrPanelWidth,
-              height: 200,
+      {videoUrl && (
+        <Box
+          sx={{
+            position: "absolute", // use absolute like Rnd
+            top: qrPosition3.y + qrTopNudge,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: qrPanelWidth,
+            height: 200,
               display: "flex",
               justifyContent: "center",
               alignItems: "flex-center",
-              textAlign: "center",
-              zIndex: qrPosition3.zIndex || 1,
-            }}
-          >
-            {/* Background Image */}
+            textAlign: "center",
+            zIndex: qrPosition3.zIndex || 1,
+          }}
+        >
+          {/* Background Image */}
             <Box
               component="img"
               src="/assets/images/video-qr-tips.png"
@@ -346,157 +271,112 @@ const Slide3 = (props:Slide3Props) => {
               }}
             />
 
-            {/* QR Code */}
-            <Box
-              sx={{
-                position: "absolute",
-                top: 55,
-                height: 10,
-                width: 15,
-                left: 6,
-                borderRadius: 2,
-              }}
+          {/* QR Code */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: 55,
+              height: 10,
+              width: 15,
+              left: 6,
+              borderRadius: 2,
+            }}
             >
               <QrGenerator url={qrVideoUrl} size={safeQrSize(qrPosition3, 70)} />
             </Box>
 
-            {/* Clickable Link */}
-            <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-              <Typography
-                sx={{
-                  position: "absolute",
-                  top: 80,
-                  right: 15,
-                  zIndex: 99,
-                  color: "black",
-                  fontSize: "10px",
-                  width: "105px",
-                  cursor: "pointer",
-                  "&:hover": { textDecoration: "underline" },
-                }}
-              >
-                {`${videoUrl.slice(0, 20)}.....`}
-              </Typography>
-            </a>
-          </Box>
-        ))}
+          {/* Clickable Link */}
+          <a
+            href={videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Typography
+              sx={{
+                position: "absolute",
+                top: 80,
+                right: 15,
+                zIndex: 99,
+                color: "black",
+                fontSize: "10px",
+                width: "105px",
+                cursor: "pointer",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              {`${videoUrl.slice(0, 20)}.....`}
+            </Typography>
+          </a>
+        </Box>
+      )}
 
-      {audioUrl &&
-        (isCardsPreview ? (
+      {audioUrl && (
+        <Box
+          sx={{
+            position: "absolute", // use absolute like Rnd
+            top: qrAudioPosition3.y + qrTopNudge,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: qrPanelWidth,
+            height: 200,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-end",
+            textAlign: "center",
+            zIndex: qrAudioPosition3.zIndex || 1,
+          }}
+        >
+          {/* Background Image */}
+            <Box
+              component="img"
+              src="/assets/images/audio-qr-tips.png"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "fill",
+                borderRadius: "6px",
+                display: "block",
+              }}
+            />
+
+          {/* QR Code */}
           <Box
             sx={{
               position: "absolute",
-              top: qrAudioPosition3.y + qrTopNudge,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "354px",
-              height: 200,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-end",
-              textAlign: "center",
-              zIndex: qrAudioPosition3.zIndex || 1,
+              top: 55,
+              height: 10,
+              width: 15,
+              left: 6,
+              borderRadius: 2,
             }}
-          >
-            <Box
-              component="img"
-              src="/assets/images/audio-qr-tips.png"
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "fill",
-                borderRadius: "6px",
-                display: "block",
-              }}
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                top: 55,
-                height: 10,
-                width: 10,
-                left: { md: 6, sm: 6, xs: 5 },
-                borderRadius: 2,
-              }}
-            >
-              <QrGenerator url={qrAudioUrl} size={70} />
-            </Box>
-            <a href={audioUrl} target="_blank" rel="noopener noreferrer">
-              <Typography
-                sx={{
-                  position: "absolute",
-                  top: 78,
-                  right: 15,
-                  zIndex: 99,
-                  color: "black",
-                  fontSize: "10px",
-                  width: "105px",
-                  cursor: "pointer",
-                  "&:hover": { textDecoration: "underline" },
-                }}
-              >
-                {`${audioUrl.slice(0, 20)}.....`}
-              </Typography>
-            </a>
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              position: "absolute", // use absolute like Rnd
-              top: qrAudioPosition3.y + qrTopNudge,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: qrPanelWidth,
-              height: 200,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-end",
-              textAlign: "center",
-              zIndex: qrAudioPosition3.zIndex || 1,
-            }}
-          >
-            <Box
-              component="img"
-              src="/assets/images/audio-qr-tips.png"
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "fill",
-                borderRadius: "6px",
-                display: "block",
-              }}
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                top: 55,
-                height: 10,
-                width: 15,
-                left: 6,
-                borderRadius: 2,
-              }}
             >
               <QrGenerator url={qrAudioUrl} size={safeQrSize(qrAudioPosition3, 70)} />
             </Box>
-            <a href={audioUrl} target="_blank" rel="noopener noreferrer">
-              <Typography
-                sx={{
-                  position: "absolute",
-                  top: 78,
-                  right: 15,
-                  zIndex: 99,
-                  color: "black",
-                  fontSize: "10px",
-                  width: "105px",
-                  cursor: "pointer",
-                  "&:hover": { textDecoration: "underline" },
-                }}
-              >
-                {`${audioUrl.slice(0, 20)}.....`}
-              </Typography>
-            </a>
-          </Box>
-        ))}
+
+          {/* Clickable Link */}
+          <a
+            href={audioUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Typography
+              sx={{
+                position: "absolute",
+                top: 78,
+                right: 15,
+                zIndex: 99,
+                color: "black",
+                fontSize: "10px",
+                width: "105px",
+                cursor: "pointer",
+                "&:hover": { textDecoration: "underline" },
+              }}
+            >
+              {`${audioUrl.slice(0, 20)}.....`}
+            </Typography>
+          </a>
+        </Box>
+      )}
 
       {/* 🖼️ Only selected images */}
       {draggableImages3

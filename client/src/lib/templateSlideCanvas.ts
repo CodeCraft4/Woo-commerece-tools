@@ -341,6 +341,14 @@ const fitCover = (
   };
 };
 
+const shouldContainImage = (element: TemplateImageEl | TemplateStickerEl) => {
+  const src = String((element as TemplateImageEl | TemplateStickerEl)?.src ?? "").toLowerCase();
+  const id = String((element as any)?.id ?? "").toLowerCase();
+  if (src.includes("video-qr-tips") || src.includes("audio-qr-tips")) return true;
+  if (id.startsWith("qr-") && id.includes("-bg-")) return true;
+  return false;
+};
+
 const wrapText = (
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -663,7 +671,10 @@ export const renderTemplateSlideToCanvasWithStats = async (
 
     try {
       const img = await loadImage(src);
-      const fit = element.type === "sticker" ? fitContain : fitCover;
+      const fit =
+        element.type === "sticker" || shouldContainImage(element as TemplateImageEl | TemplateStickerEl)
+          ? fitContain
+          : fitCover;
       const widthPx = Math.max(1, toNum(element.width, 1));
       const heightPx = Math.max(1, toNum(element.height, 1));
       const box = fit(
