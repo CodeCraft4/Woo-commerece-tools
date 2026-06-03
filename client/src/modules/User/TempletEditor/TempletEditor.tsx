@@ -23,6 +23,7 @@ import { COLORS } from "../../../constant/color";
 import { CATEGORY_CONFIG, type CategoryKey } from "../../../constant/data";
 import toast from "react-hot-toast";
 import { safeGetStorage, safeSetLocalStorage } from "../../../lib/storage";
+import { loadSlideStateFromIdb, saveSlideStateToIdb } from "../../../lib/idbSlideState";
 import AlignmentGuides from "../../../components/AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../../hooks/useAlignGuides";
 import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../../constant/googleFonts";
@@ -809,7 +810,7 @@ export default function TempletEditor() {
     navigate(-1);
   };
 
-  const persistEditorState = () => {
+  const persistEditorState = async () => {
     if (!adminDesign) return;
     const payload = {
       adminDesign,
@@ -822,7 +823,11 @@ export default function TempletEditor() {
       clearOnFail: ["slides_backup"],
       fallbackToSession: true,
     });
-    if (!ok) {
+    if (ok) return;
+    try {
+      await saveSlideStateToIdb(storageKey(productId), payload);
+      return;
+    } catch {
       console.warn("Failed to persist editor state");
     }
   };
@@ -912,7 +917,7 @@ export default function TempletEditor() {
   };
 
   const handleSaveDraftAndExit = async () => {
-    persistEditorState();
+    await persistEditorState();
     try {
       await saveDraftToDb();
       toast.success("Draft saved ✅");
@@ -927,15 +932,26 @@ export default function TempletEditor() {
 
   // ✅ Restore
   useEffect(() => {
-  const restored = safeJsonParse<{
-      adminDesign: AdminPreview;
-      userSlides: Slide[];
-      activeSlide: number;
-      selectedElId: string | null;
-    }>(safeGetStorage(storageKey(productId)));
+    let cancelled = false;
+    const restore = async () => {
+      const localRestored = safeJsonParse<{
+        adminDesign: AdminPreview;
+        userSlides: Slide[];
+        activeSlide: number;
+        selectedElId: string | null;
+      }>(safeGetStorage(storageKey(productId)));
+      const restored =
+        localRestored?.adminDesign && localRestored?.userSlides?.length
+          ? localRestored
+          : await loadSlideStateFromIdb<{
+              adminDesign: AdminPreview;
+              userSlides: Slide[];
+              activeSlide: number;
+              selectedElId: string | null;
+            }>(storageKey(productId)).catch(() => null);
 
-    if (restored?.adminDesign && restored?.userSlides?.length) {
-      // If incoming template has new/extra elements, ignore stale local restore.
+      if (cancelled || !restored?.adminDesign || !restored?.userSlides?.length) return;
+
       if (state?.templetDesign) {
         const incoming = buildSlidesFromRawStores(state.templetDesign);
         const types: Array<AnyEl["type"]> = ["text", "image", "sticker"];
@@ -959,12 +975,17 @@ export default function TempletEditor() {
       setActiveSlide(restored.activeSlide ?? 0);
       setSelectedElId(restored.selectedElId ?? null);
       setLoading(false);
-    }
+    };
+
+    void restore();
+    return () => {
+      cancelled = true;
+    };
   }, [productId, state?.templetDesign]);
 
   useEffect(() => {
     if (!adminDesign) return;
-    persistEditorState();
+    void persistEditorState();
   }, [adminDesign, userSlides, activeSlide, selectedElId, productId]);
 
 
@@ -1397,7 +1418,7 @@ export default function TempletEditor() {
     if (!adminDesign?.category) return;
 
     // ensure latest edits are persisted before navigating
-    persistEditorState();
+    await persistEditorState();
     setPreviewLoading(true);
 
     const category = encodeURIComponent(adminDesign.category);

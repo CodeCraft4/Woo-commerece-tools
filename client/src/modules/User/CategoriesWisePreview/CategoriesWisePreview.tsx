@@ -234,6 +234,30 @@ const waitForNextPaint = () =>
     });
   });
 
+const waitForNodeAssets = async (node: HTMLElement) => {
+  const images = Array.from(node.querySelectorAll("img"));
+  await Promise.all(
+    images.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          const element = img as HTMLImageElement;
+          if (element.complete) {
+            resolve();
+            return;
+          }
+          const done = () => resolve();
+          element.addEventListener("load", done, { once: true });
+          element.addEventListener("error", done, { once: true });
+        }),
+    ),
+  );
+  if ((document as any)?.fonts?.ready) {
+    try {
+      await (document as any).fonts.ready;
+    } catch {}
+  }
+};
+
 
 const CategoriesWisePreview: React.FC = () => {
   const { state } = useLocation() as { state?: NavState };
@@ -589,6 +613,8 @@ const CategoriesWisePreview: React.FC = () => {
     for (let i = 0; i < slides.length; i++) {
       const node = slideNodeRefs.current[i];
       if (!node) continue;
+      await waitForNodeAssets(node);
+      await waitForNextPaint();
       const rect = node.getBoundingClientRect();
       const maxSide = Math.max(rect.width || 0, rect.height || 0);
       const ratio = maxSide ? maxDim / maxSide : 1.5;
@@ -727,6 +753,7 @@ const CategoriesWisePreview: React.FC = () => {
       setDownloading(true);
 
       const stored = readCapturedFromStorage();
+      const expectedSlideCount = slides.length;
       let quickList: string[] = stored.length
         ? stored
         : (captured?.length ? captured : currentImg ? [currentImg] : []).filter(Boolean);
@@ -736,19 +763,30 @@ const CategoriesWisePreview: React.FC = () => {
         if (prefetched.length) quickList = prefetched;
       }
 
-      if (!quickList.length && slides.length) {
+      const hasCompleteQuickList = expectedSlideCount
+        ? quickList.length >= expectedSlideCount
+        : quickList.length > 0;
+
+      if (!hasCompleteQuickList && slides.length) {
         await ensureCaptureSupportReady();
         const format = isTransparentCaptureCategory ? "png" : "jpeg";
         const maxDim = isTransparentCaptureCategory ? 2400 : 1600;
         quickList = isIosWebKit
           ? await captureSlidesFromCanvasRenderer(format, maxDim)
           : await captureSlidesFromDom(format, maxDim);
+        if (slides.length > 1 && quickList.length > 0 && quickList.length < slides.length) {
+          await waitForNextPaint();
+          await ensureCaptureSupportReady();
+          quickList = isIosWebKit
+            ? await captureSlidesFromCanvasRenderer(format, maxDim)
+            : await captureSlidesFromDom(format, maxDim);
+        }
         if (quickList.length) {
           prefetchedSlidesRef.current = quickList;
         }
       }
 
-      const previewOnly = slides.length ? quickList.length < slides.length : quickList.length === 0;
+      const previewOnly = expectedSlideCount ? quickList.length < expectedSlideCount : quickList.length === 0;
       const slidesObj = Object.fromEntries(
         quickList.map((u: string, idx: number) => [`slide${idx + 1}`, u]),
       );

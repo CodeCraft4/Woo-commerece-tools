@@ -836,6 +836,26 @@ const PreviewBookCard = () => {
     ];
   }, [slide1Ctx, slide2Ctx, slide3Ctx, slide4Ctx]);
 
+  const persistCardRawSlides = useCallback((slides: TemplateSlide[]) => {
+    try {
+      const selectedProductRaw = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
+      const selectedVariantRaw = JSON.parse(localStorage.getItem("selectedVariant") || "{}");
+      sessionStorage.setItem("card_raw_slides", JSON.stringify(slides));
+      sessionStorage.setItem(
+        "card_raw_slides_meta",
+        JSON.stringify({
+          productId: String(selectedProductRaw?.id ?? ""),
+          category: String(
+            localStorage.getItem("selectedCategory") ||
+              selectedProductRaw?.category ||
+              "",
+          ),
+          size: String(localStorage.getItem("selectedSize") || selectedVariantRaw?.key || ""),
+        }),
+      );
+    } catch {}
+  }, []);
+
   const handleDownload = useCallback(async () => {
     if (downloading) return;
     setDownloading(true);
@@ -903,19 +923,22 @@ const PreviewBookCard = () => {
         return;
       }
 
+      const cardRawSlides = buildCardRawSlides();
+      persistCardRawSlides(cardRawSlides);
+
         navigate(USER_ROUTES.SUBSCRIPTION, {
           state: {
             slides: slidesObj,
             previewOnly: false,
-            cardRawSlides: buildCardRawSlides(),
+            cardRawSlides,
           },
         });
-    } catch {
-      toast.error("Could not prepare preview. Please try again.");
-    } finally {
-      setDownloading(false);
-    }
-  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, navigate]);
+      } catch {
+        toast.error("Could not prepare preview. Please try again.");
+      } finally {
+        setDownloading(false);
+      }
+  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, navigate, persistCardRawSlides]);
 
 
   return (

@@ -511,6 +511,19 @@ const getValidSlides = (slides?: Record<string, any> | null) =>
     ),
   ) as Record<string, string>;
 
+const readPersistedCardRawSlides = (): RawSlide[] => {
+  try {
+    const stored = sessionStorage.getItem("card_raw_slides");
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed)
+      ? parsed.filter((sl) => sl && typeof sl === "object" && Array.isArray((sl as any).elements))
+      : [];
+  } catch {
+    return [];
+  }
+};
+
 const reorderCardsPdfSlides = (slides: Record<string, string>) => {
   const s1 = slides.slide1;
   const s2 = slides.slide2;
@@ -612,15 +625,7 @@ const Subscription = () => {
 
   const location: any = useLocation() as { state?: { slides?: Record<string, string>; previewOnly?: boolean } };
   const { state } = location;
-  const routeCardRawSlides = useMemo<RawSlide[]>(
-    () =>
-      Array.isArray(state?.cardRawSlides)
-        ? (state.cardRawSlides as RawSlide[]).filter(
-            (sl) => sl && typeof sl === "object" && Array.isArray((sl as any).elements),
-          )
-        : [],
-    [state?.cardRawSlides],
-  );
+  const routeCardRawSlides = useMemo<RawSlide[]>(() => readPersistedCardRawSlides(), []);
 
   const { user, plan } = useAuth();
   const navigate = useNavigate();
@@ -1421,6 +1426,7 @@ const Subscription = () => {
   }, [categoryName]);
 
   const isMugsCategory = useMemo(() => lc(categoryName).includes("mug"), [categoryName]);
+  const isCardsCategoryPage = useMemo(() => isCardsCategory(categoryName), [categoryName]);
   const categoryLabel = useMemo(
     () => singularizeCategory(product?.category || categoryName),
     [product?.category, categoryName]
@@ -2152,8 +2158,8 @@ const Subscription = () => {
         ? await buildTwoUpSlides(reorderCardsPdfSlides(baseSlides), {
             gapPx: 0,
             orientation: "landscape",
-            fit: "cover",
-            pairStrategy: "outer-inner",
+            fit: "contain",
+            pairStrategy: "sequential",
             swapPairs: false,
             pageMm: getPageMmForSize(prep.cardSize),
             pageTitle: ({ pageIndex }) => {
@@ -2653,22 +2659,27 @@ const Subscription = () => {
     !isLegacyCardProduct &&
     !isBagCategory;
   const routeCardLiveSlide = routeCardRawSlides[0] ?? null;
+  const forceLiveCardPreview = isIosWebKit && (isLegacyCardProduct || isCardsCategoryPage);
   const preferLiveCardPreview =
-    isLegacyCardProduct &&
+    (isLegacyCardProduct || isCardsCategoryPage) &&
     (legacyCardCaptureEnabled || (isIosWebKit && Boolean(routeCardLiveSlide)));
   const showOverlayPreview =
     Boolean(previewSrc) &&
     useMockupBackground &&
     !preferLiveTemplatePreview &&
-    !preferLiveCardPreview;
+    !preferLiveCardPreview &&
+    !forceLiveCardPreview;
   const showFlatPreview =
     Boolean(previewSrc) &&
     !useMockupBackground &&
     !preferLiveTemplatePreview &&
-    !preferLiveCardPreview;
+    !preferLiveCardPreview &&
+    !forceLiveCardPreview;
   const showLiveTemplatePreview =
     activeTemplatePreviewSession && rawSlides.length > 0 && (preferLiveTemplatePreview || !previewSrc);
-  const showLiveCardPreview = isLegacyCardProduct && (preferLiveCardPreview || !previewSrc);
+  const showLiveCardPreview =
+    (isLegacyCardProduct || isCardsCategoryPage) &&
+    (forceLiveCardPreview || preferLiveCardPreview || !previewSrc);
   const stripLiveMockupBackground =
     isStickerCategory || isCandleCategory || isBagCategory || isClothingCategory;
   const iosStablePreviewLayerSx = isIosWebKit
@@ -2973,9 +2984,29 @@ const Subscription = () => {
                         }}
                       >
                         <Box sx={iosStablePreviewLayerSx}>
-                          {routeCardLiveSlide
-                            ? renderSlide(routeCardLiveSlide)
-                            : <Slide1 />}
+                          {previewSrc ? (
+                            <Box
+                              component="img"
+                              src={previewSrc}
+                              alt="card preview"
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                display: "block",
+                                userSelect: "none",
+                                pointerEvents: "none",
+                                transform: isIosWebKit ? "translateZ(0)" : undefined,
+                                WebkitTransform: isIosWebKit ? "translateZ(0)" : undefined,
+                                backfaceVisibility: isIosWebKit ? "hidden" : undefined,
+                                WebkitBackfaceVisibility: isIosWebKit ? "hidden" : undefined,
+                              }}
+                            />
+                          ) : routeCardLiveSlide ? (
+                            renderSlide(routeCardLiveSlide)
+                          ) : (
+                            <Slide1 />
+                          )}
                         </Box>
                       </Box>
                     </Box>
@@ -3006,9 +3037,29 @@ const Subscription = () => {
                       }}
                       >
                         <Box sx={iosStablePreviewLayerSx}>
-                        {routeCardLiveSlide
-                          ? renderSlide(routeCardLiveSlide)
-                          : <Slide1 />}
+                        {previewSrc ? (
+                          <Box
+                            component="img"
+                            src={previewSrc}
+                            alt="card preview"
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                              display: "block",
+                              userSelect: "none",
+                              pointerEvents: "none",
+                              transform: isIosWebKit ? "translateZ(0)" : undefined,
+                              WebkitTransform: isIosWebKit ? "translateZ(0)" : undefined,
+                              backfaceVisibility: isIosWebKit ? "hidden" : undefined,
+                              WebkitBackfaceVisibility: isIosWebKit ? "hidden" : undefined,
+                            }}
+                          />
+                        ) : routeCardLiveSlide ? (
+                          renderSlide(routeCardLiveSlide)
+                        ) : (
+                          <Slide1 />
+                        )}
                         </Box>
                       </Box>
                     </Box>

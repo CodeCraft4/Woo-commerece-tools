@@ -1593,7 +1593,7 @@ const SpreadRightSide = ({
                 {selectedVideoUrl3 && (
                   <ScaledRnd
                     cancel=".no-drag"
-                    size={{ width: qrPosition3.width, height: qrPosition3.height }}
+                    size={{ width: 354, height: 200 }}
                     position={{ x: qrPosition3.x, y: qrPosition3.y }}
                     onDragStop={(_, d) =>
                       setQrPosition3((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrPosition3.zIndex }))
@@ -1623,12 +1623,30 @@ const SpreadRightSide = ({
                           flex: 1,
                         }}
                       >
-                        <Box component={"img"} src="/assets/images/video-qr-tips.png" sx={{ width: "100%", height: 200, pointerEvents: "none" }} />
-                        <Box sx={{ position: "absolute", top: 55, height: 10, width: 10, left: { md: 6, sm: 6, xs: 5 }, borderRadius: 2 }}>
-                          <QrGenerator url={selectedVideoUrl3} size={Math.min(qrPosition3.width, qrPosition3.height)} />
+                        <Box
+                          component={"img"}
+                          src="/assets/images/video-qr-tips.png"
+                          sx={{ width: "100%", height: 200, pointerEvents: "none" }}
+                        />
+                        <Box
+                          sx={{ position: "absolute", top: 55, height: 10, width: 10, left: { md: 6, sm: 6, xs: 5 }, borderRadius: 2 }}
+                        >
+                          <QrGenerator url={selectedVideoUrl3} size={70} />
                         </Box>
                         <a href={`${selectedVideoUrl3}`} target="_blank">
-                          <Typography sx={{ position: "absolute", top: 80, right: 15, zIndex: 9999, color: "black", fontSize: "10px", width: "105px" }}>
+                          <Typography
+                            sx={{
+                              position: "absolute",
+                              top: 80,
+                              right: 15,
+                              zIndex: 9999,
+                              color: "black",
+                              fontSize: "10px",
+                              width: "105px",
+                              cursor: "pointer",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                          >
                             {`${selectedVideoUrl3.slice(0, 20)}.....`}
                           </Typography>
                         </a>
@@ -1645,6 +1663,8 @@ const SpreadRightSide = ({
                             bgcolor: COLORS.black,
                             color: COLORS.white,
                             zIndex: 9999,
+                            pointerEvents: "auto",
+                            touchAction: "manipulation",
                             "&:hover": { bgcolor: "red" },
                           }}
                         >
@@ -2923,7 +2943,7 @@ const SpreadRightSide = ({
                   <ScaledRnd
                     bounds="parent"
                     cancel=".no-drag"
-                    size={{ width: qrPosition3.width, height: qrPosition3.height }}
+                    size={{ width: 354, height: 200 }}
                     position={{ x: qrPosition3.x, y: qrPosition3.y }}
                     onDragStop={(_, d) =>
                       setQrPosition3((prev) => ({
@@ -2978,7 +2998,7 @@ const SpreadRightSide = ({
                             width: "100%",
                             height: 200,
                             position: "relative",
-                            pointerEvents: 'none'
+                            pointerEvents: "none"
                           }}
                         />
                         <Box
@@ -2991,10 +3011,7 @@ const SpreadRightSide = ({
                             borderRadius: 2,
                           }}
                         >
-                          <QrGenerator
-                            url={selectedVideoUrl3}
-                            size={Math.min(qrPosition3.width, qrPosition3.height)}
-                          />
+                          <QrGenerator url={selectedVideoUrl3} size={70} />
                         </Box>
                         <a href={`${selectedVideoUrl3}`} target="_blank">
                           <Typography
@@ -3044,7 +3061,7 @@ const SpreadRightSide = ({
                   <ScaledRnd
                     bounds="parent"
                     cancel=".no-drag"
-                    size={{ width: qrAudioPosition3.width, height: qrAudioPosition3.height }}
+                    size={{ width: 354, height: 200 }}
                     position={{ x: qrAudioPosition3.x, y: qrAudioPosition3.y }}
                     onDragStop={(_, d) =>
                       setQrAudioPosition3((prev) => ({
@@ -3100,7 +3117,7 @@ const SpreadRightSide = ({
                             width: "100%",
                             height: 200,
                             position: "relative",
-                            pointerEvents: 'none'
+                            pointerEvents: "none"
                           }}
                         />
                         <Box
@@ -3113,10 +3130,7 @@ const SpreadRightSide = ({
                             borderRadius: 2,
                           }}
                         >
-                          <QrGenerator
-                            url={selectedAudioUrl3}
-                            size={Math.min(qrAudioPosition3.width, qrAudioPosition3.height)}
-                          />
+                          <QrGenerator url={selectedAudioUrl3} size={70} />
                         </Box>
                         <a href={`${selectedAudioUrl3}`} target="_blank">
                           <Typography
@@ -3146,6 +3160,9 @@ const SpreadRightSide = ({
                             right: 0,
                             bgcolor: COLORS.black,
                             color: COLORS.white,
+                            zIndex: 9999,
+                            pointerEvents: "auto",
+                            touchAction: "manipulation",
                             "&:hover": { bgcolor: "red" },
                           }}
                         >

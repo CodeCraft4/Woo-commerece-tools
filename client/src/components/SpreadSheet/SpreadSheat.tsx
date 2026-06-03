@@ -101,6 +101,23 @@ const resolveTextBoxFontColor = (textObj: any) =>
 const resolveTextBoxFontFamily = (textObj: any) =>
   textObj?.fontFamily ?? textObj?.fontFamily1 ?? "Roboto";
 
+const isCardsCategory = () => {
+  if (typeof window === "undefined") return false;
+
+  const directCategory = String(safeGetStorage("selectedCategory") || "").trim().toLowerCase();
+  if (directCategory === "cards") return true;
+
+  try {
+    const storedProduct = JSON.parse(safeGetStorage("selectedProduct") || "{}");
+    const productCategory = String(storedProduct?.category ?? storedProduct?.cardcategory ?? "")
+      .trim()
+      .toLowerCase();
+    return productCategory === "cards";
+  } catch {
+    return false;
+  }
+};
+
 const stripLayoutTextElements = (
   layout: any,
   opts: { stripMulti?: boolean; stripOne?: boolean }
@@ -1322,69 +1339,187 @@ const SlideSpread = ({
                 })}
 
               {/* VIDEO QR */}
-              {selectedVideoUrl && (
-                <ScaledRnd
-                  cancel=".no-drag"
-                  position={{ x: qrPosition.x, y: qrPosition.y }}
-                  onDragStop={(_, d) =>
-                    setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrPosition.zIndex }))
-                  }
-                  bounds="parent"
-                  enableResizing={false}
-                  style={{ padding: "10px", zIndex: 999 }}
-                >
-                  <motion.div
-                    key={selectedVideoUrl}
-                    initial={{ opacity: 0, x: 100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -100 }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}
+              {selectedVideoUrl &&
+                (isCardsCategory() ? (
+                  <ScaledRnd
+                    cancel=".no-drag"
+                    position={{ x: qrPosition.x, y: qrPosition.y }}
+                    onDragStop={(_, d) =>
+                      setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrPosition.zIndex }))
+                    }
+                    bounds="parent"
+                    enableResizing={false}
+                    style={{ padding: "10px", zIndex: 999 }}
                   >
-                    <Box
-                      sx={{
-                        position: "relative",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "flex-end",
-                        m: "auto",
-                        width: "100%",
-                        textAlign: "center",
-                        height: "100%",
-                        bottom: 0,
-                        flex: 1,
-                      }}
+                    <motion.div
+                      key={selectedVideoUrl}
+                      initial={{ opacity: 0, x: 100 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -100 }}
+                      transition={{ duration: 0.5, ease: "easeInOut" }}
                     >
-                      <Box component={"img"} src="/assets/images/video-qr-tips.png" sx={{ width: "100%", height: 200, pointerEvents: "none" }} />
-                      <Box sx={{ position: "absolute", top: 55, height: 10, width: 10, left: { md: 6, sm: 6, xs: 5 }, borderRadius: 2 }}>
-                        <QrGenerator url={selectedVideoUrl} size={Math.min(qrPosition.width, qrPosition.height)} />
-                      </Box>
-                      <a href={`${selectedVideoUrl}`} target="_blank">
-                        <Typography sx={{ position: "absolute", top: 80, right: 15, zIndex: 9999, color: "black", fontSize: "10px", width: "105px" }}>
-                          {`${selectedVideoUrl.slice(0, 20)}.....`}
-                        </Typography>
-                      </a>
-                      <IconButton
-                        className="no-drag"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedVideoUrl(null);
-                        }}
+                      <Box
                         sx={{
-                          position: "absolute",
-                          top: 0,
-                          right: 0,
-                          bgcolor: COLORS.black,
-                          color: COLORS.white,
-                          zIndex: 9999,
-                          "&:hover": { bgcolor: "red" },
+                          position: "relative",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "flex-end",
+                          m: "auto",
+                          width: "100%",
+                          textAlign: "center",
+                          height: "100%",
+                          bottom: 0,
+                          flex: 1,
                         }}
                       >
-                        <Close fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </motion.div>
-                </ScaledRnd>
-              )}
+                        <Box
+                          component={"img"}
+                          src="/assets/images/video-qr-tips.png"
+                          sx={{
+                            width: "100%",
+                            height: 200,
+                            position: "relative",
+                            pointerEvents: "none",
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 55,
+                            height: 10,
+                            width: 10,
+                            left: { md: 6, sm: 6, xs: 5 },
+                            borderRadius: 2,
+                          }}
+                        >
+                          <QrGenerator url={selectedVideoUrl} size={70} />
+                        </Box>
+                        <a href={`${selectedVideoUrl}`} target="_blank">
+                          <Typography
+                            sx={{
+                              position: "absolute",
+                              top: 80,
+                              right: 15,
+                              zIndex: 9999,
+                              color: "black",
+                              fontSize: "10px",
+                              width: "105px",
+                              cursor: "pointer",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                          >
+                            {`${selectedVideoUrl.slice(0, 20)}.....`}
+                          </Typography>
+                        </a>
+                        <IconButton
+                          className="no-drag"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedVideoUrl(null);
+                          }}
+                          sx={{
+                            position: "absolute",
+                            top: 0,
+                            right: 0,
+                            bgcolor: COLORS.black,
+                            color: COLORS.white,
+                            zIndex: 9999,
+                            pointerEvents: "auto",
+                            touchAction: "manipulation",
+                            "&:hover": { bgcolor: "red" },
+                          }}
+                        >
+                          <Close fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </motion.div>
+                  </ScaledRnd>
+                ) : (
+                  <ScaledRnd
+                    cancel=".no-drag"
+                    position={{ x: qrPosition.x, y: qrPosition.y }}
+                    onDragStop={(_, d) =>
+                      setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrPosition.zIndex }))
+                    }
+                    bounds="parent"
+                    enableResizing={false}
+                    style={{ padding: "10px", zIndex: 999 }}
+                  >
+                    <motion.div
+                      key={selectedVideoUrl}
+                      initial={{ opacity: 0, x: 100 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -100 }}
+                      transition={{ duration: 0.5, ease: "easeInOut" }}
+                    >
+                      <Box
+                        sx={{
+                          position: "relative",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "flex-end",
+                          m: "auto",
+                          width: "100%",
+                          textAlign: "center",
+                          height: "100%",
+                          bottom: 0,
+                          flex: 1,
+                        }}
+                      >
+                        <Box
+                          component={"img"}
+                          src="/assets/images/video-qr-tips.png"
+                          sx={{ width: "100%", height: 200, pointerEvents: "none" }}
+                        />
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 55,
+                            height: 10,
+                            width: 10,
+                            left: { md: 6, sm: 6, xs: 5 },
+                            borderRadius: 2,
+                          }}
+                        >
+                          <QrGenerator url={selectedVideoUrl} size={Math.min(qrPosition.width, qrPosition.height)} />
+                        </Box>
+                        <a href={`${selectedVideoUrl}`} target="_blank">
+                          <Typography
+                            sx={{
+                              position: "absolute",
+                              top: 80,
+                              right: 15,
+                              zIndex: 9999,
+                              color: "black",
+                              fontSize: "10px",
+                              width: "105px",
+                            }}
+                          >
+                            {`${selectedVideoUrl.slice(0, 20)}.....`}
+                          </Typography>
+                        </a>
+                        <IconButton
+                          className="no-drag"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedVideoUrl(null);
+                          }}
+                          sx={{
+                            position: "absolute",
+                            top: 0,
+                            right: 0,
+                            bgcolor: COLORS.black,
+                            color: COLORS.white,
+                            zIndex: 9999,
+                            "&:hover": { bgcolor: "red" },
+                          }}
+                        >
+                          <Close fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </motion.div>
+                  </ScaledRnd>
+                ))}
 
               {/* AUDIO QR */}
               {selectedAudioUrl && (
@@ -2758,7 +2893,7 @@ const SlideSpread = ({
                         component={"img"}
                         src="/assets/images/video-qr-tips.png"
                         sx={{
-                          width: '100%',
+                          width: "100%",
                           height: 200,
                           position: "relative",
                           pointerEvents: "none",
@@ -2770,22 +2905,19 @@ const SlideSpread = ({
                           top: 55,
                           height: 10,
                           width: 10,
-                          left: { md: 7, sm: 7, xs: 5 },
+                          left: { md: 6, sm: 6, xs: 5 },
                           borderRadius: 2,
                         }}
                       >
-                        <QrGenerator
-                          url={selectedVideoUrl}
-                          size={Math.min(qrPosition.width, qrPosition.height)}
-                        />
+                        <QrGenerator url={selectedVideoUrl} size={70} />
                       </Box>
                       <a href={`${selectedVideoUrl}`} target="_blank">
                         <Typography
                           sx={{
                             position: "absolute",
                             top: 80,
-                            right: 5,
-                            zIndex: 99,
+                            right: 15,
+                            zIndex: 9999,
                             color: "black",
                             fontSize: "10px",
                             width: "105px",
@@ -2807,6 +2939,9 @@ const SlideSpread = ({
                           right: 0,
                           bgcolor: COLORS.black,
                           color: COLORS.white,
+                          zIndex: 9999,
+                          pointerEvents: "auto",
+                          touchAction: "manipulation",
                           "&:hover": { bgcolor: "red" },
                         }}
                       >
