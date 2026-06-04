@@ -139,6 +139,12 @@ function getSelectedCategory() {
     }
   } catch {}
 
+  try {
+    const product = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
+    const productCategory = String(product?.category || product?.cardcategory || product?.cardCategory || "").trim();
+    if (productCategory) return productCategory;
+  } catch {}
+
   const direct = localStorage.getItem("selectedCategory");
   if (direct) return direct;
 
@@ -147,12 +153,7 @@ function getSelectedCategory() {
     if (variant?.category) return variant.category;
   } catch {}
 
-  try {
-    const raw = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
-    return raw?.category || "";
-  } catch {
-    return "";
-  }
+  return "";
 }
 
 function getSelectedProductKey() {
@@ -512,13 +513,13 @@ export default function PremiumSuccess() {
         ? await buildTwoUpSlides(reorderCardsPdfSlides(baseSlides), {
             gapPx: 0,
             orientation: "landscape",
-            fit: "cover",
-            pairStrategy: "outer-inner",
-            swapPairs: true,
+            fit: "contain",
+            pairStrategy: "sequential",
+            swapPairs: false,
             pageMm: getPageMmForSize(cardSize),
             pageTitle: ({ pageIndex }) => {
-              if (pageIndex === 1) return "Page 1: (front) and (back)";
-              if (pageIndex === 2) return "Page 2: (inside 1) and (inside 2)";
+              if (pageIndex === 1) return "";
+              if (pageIndex === 2) return "";
               return null;
             },
           })

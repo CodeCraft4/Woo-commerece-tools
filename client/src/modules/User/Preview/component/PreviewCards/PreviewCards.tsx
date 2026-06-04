@@ -33,6 +33,7 @@ type CaptureSlideKey = "slide1" | "slide2" | "slide3" | "slide4";
 
 const CAPTURE_ORDER: CaptureSlideKey[] = ["slide1", "slide2", "slide3", "slide4"];
 const CAPTURE_SIZE = { w: 500, h: 700 };
+const QR_PANEL_SIZE = { w: 354, h: 200 };
 const TRANSPARENT_PIXEL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 
@@ -195,15 +196,15 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
   if (kind === "video") {
     return {
       bgSrc: "/assets/images/video-qr-tips.png",
-      boxWidth: CAPTURE_SIZE.w,
-      cardWidth: CAPTURE_SIZE.w,
-      cardHeight: 180,
+      boxWidth: QR_PANEL_SIZE.w,
+      cardWidth: QR_PANEL_SIZE.w,
+      cardHeight: QR_PANEL_SIZE.h,
       bgOffsetX: 0,
-      qrOffsetX: 58,
-      qrOffsetY: 49,
-      defaultQrSize: 72,
-      urlOffsetX: 370,
-      urlOffsetY: 71,
+      qrOffsetX: 6,
+      qrOffsetY: 55,
+      defaultQrSize: 70,
+      urlOffsetX: QR_PANEL_SIZE.w - 15 - 105,
+      urlOffsetY: 80,
       urlWidth: 105,
       urlHeight: 24,
     };
@@ -212,15 +213,15 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
   if (slideId === 1) {
     return {
       bgSrc: "/assets/images/audio-qr-tips.png",
-      boxWidth: CAPTURE_SIZE.w,
-      cardWidth: CAPTURE_SIZE.w,
-      cardHeight: 190,
+      boxWidth: QR_PANEL_SIZE.w,
+      cardWidth: QR_PANEL_SIZE.w,
+      cardHeight: QR_PANEL_SIZE.h,
       bgOffsetX: 0,
-      qrOffsetX: 65,
-      qrOffsetY: 57,
-      defaultQrSize: 72,
-      urlOffsetX: 370,
-      urlOffsetY: 71,
+      qrOffsetX: 6,
+      qrOffsetY: 55,
+      defaultQrSize: 70,
+      urlOffsetX: QR_PANEL_SIZE.w - 15 - 105,
+      urlOffsetY: 78,
       urlWidth: 105,
       urlHeight: 24,
     };
@@ -228,15 +229,15 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
   if (slideId === 2) {
     return {
       bgSrc: "/assets/images/audio-qr-tips.png",
-      boxWidth: CAPTURE_SIZE.w,
-      cardWidth: CAPTURE_SIZE.w,
-      cardHeight: 190,
+      boxWidth: QR_PANEL_SIZE.w,
+      cardWidth: QR_PANEL_SIZE.w,
+      cardHeight: QR_PANEL_SIZE.h,
       bgOffsetX: 0,
-      qrOffsetX: 28,
-      qrOffsetY: 33,
+      qrOffsetX: 6,
+      qrOffsetY: 55,
       defaultQrSize: 70,
-      urlOffsetX: 370,
-      urlOffsetY: 60,
+      urlOffsetX: QR_PANEL_SIZE.w - 15 - 105,
+      urlOffsetY: 78,
       urlWidth: 105,
       urlHeight: 24,
     };
@@ -244,14 +245,14 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
   if (slideId === 3) {
     return {
       bgSrc: "/assets/images/audio-qr-tips.png",
-      boxWidth: CAPTURE_SIZE.w,
-      cardWidth: CAPTURE_SIZE.w,
-      cardHeight: 190,
+      boxWidth: QR_PANEL_SIZE.w,
+      cardWidth: QR_PANEL_SIZE.w,
+      cardHeight: QR_PANEL_SIZE.h,
       bgOffsetX: 0,
-      qrOffsetX: 25,
+      qrOffsetX: 6,
       qrOffsetY: 55,
       defaultQrSize: 70,
-      urlOffsetX: 370,
+      urlOffsetX: QR_PANEL_SIZE.w - 15 - 105,
       urlOffsetY: 78,
       urlWidth: 105,
       urlHeight: 24,
@@ -260,30 +261,30 @@ const qrPresetFor = (slideId: number, kind: "video" | "audio") => {
   if (slideId === 4) {
     return {
       bgSrc: "/assets/images/audio-qr-tips.png",
-      boxWidth: CAPTURE_SIZE.w,
-      cardWidth: CAPTURE_SIZE.w,
-      cardHeight: 190,
+      boxWidth: QR_PANEL_SIZE.w,
+      cardWidth: QR_PANEL_SIZE.w,
+      cardHeight: QR_PANEL_SIZE.h,
       bgOffsetX: 0,
-      qrOffsetX: 65,
-      qrOffsetY: 57,
-      defaultQrSize: 72,
-      urlOffsetX: 370,
-      urlOffsetY: 71,
+      qrOffsetX: 6,
+      qrOffsetY: 55,
+      defaultQrSize: 70,
+      urlOffsetX: QR_PANEL_SIZE.w - 15 - 105,
+      urlOffsetY: 78,
       urlWidth: 105,
       urlHeight: 24,
     };
   }
   return {
     bgSrc: "/assets/images/audio-qr-tips.png",
-    boxWidth: CAPTURE_SIZE.w,
-    cardWidth: CAPTURE_SIZE.w,
-    cardHeight: 190,
+    boxWidth: QR_PANEL_SIZE.w,
+    cardWidth: QR_PANEL_SIZE.w,
+    cardHeight: QR_PANEL_SIZE.h,
     bgOffsetX: 0,
-    qrOffsetX: 28,
-    qrOffsetY: 57,
+    qrOffsetX: 6,
+    qrOffsetY: 55,
     defaultQrSize: 70,
-    urlOffsetX: 370,
-    urlOffsetY: 71,
+    urlOffsetX: QR_PANEL_SIZE.w - 15 - 105,
+    urlOffsetY: 78,
     urlWidth: 105,
     urlHeight: 24,
   };
@@ -299,7 +300,7 @@ const mapQrElements = (id: number, payload?: SlidePayloadV2 | null) => {
     const x = toNum(box?.x, 0);
     const y = toNum(box?.y, 0) + (kind === "audio" ? 10 : 0);
     const zIndex = toNum(box?.zIndex, 900);
-    const qrSize = 60;
+    const qrSize = preset.defaultQrSize;
     const qrSrc = buildQrSvgDataUrl(url, qrSize);
 
     elements.push({

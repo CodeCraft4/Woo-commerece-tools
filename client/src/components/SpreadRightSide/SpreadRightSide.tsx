@@ -1710,7 +1710,7 @@ const SpreadRightSide = ({
                       >
                         <Box component={"img"} src="/assets/images/audio-qr-tips.png" sx={{ width: "100%", height: 200, pointerEvents: "none" }} />
                         <Box sx={{ position: "absolute", top: 55, height: 10, width: 10, left: { md: 6, sm: 6, xs: 5 }, borderRadius: 2 }}>
-                          <QrGenerator url={selectedAudioUrl3} size={Math.min(qrAudioPosition3.width, qrAudioPosition3.height)} />
+                          <QrGenerator url={selectedAudioUrl3} size={70} />
                         </Box>
                         <a href={`${selectedAudioUrl3}`} target="_blank">
                           <Typography sx={{ position: "absolute", top: 78, right: 15, zIndex: 9999, color: "black", fontSize: "10px", width: "105px" }}>

@@ -28,6 +28,7 @@ import AlignmentGuides from "../AlignmentGuides/AlignmentGuides";
 import { useAlignGuides } from "../../hooks/useAlignGuides";
 
 type RndProps = ComponentProps<typeof Rnd>;
+const QR_CONTAINER_SIZE = { width: 354, height: 200 };
 const CanvasScaleContext = createContext(1);
 const ScaledRnd = (props: RndProps) => {
   const scale = useContext(CanvasScaleContext);
@@ -1343,13 +1344,14 @@ const SlideSpread = ({
                 (isCardsCategory() ? (
                   <ScaledRnd
                     cancel=".no-drag"
+                    size={QR_CONTAINER_SIZE}
                     position={{ x: qrPosition.x, y: qrPosition.y }}
                     onDragStop={(_, d) =>
                       setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrPosition.zIndex }))
                     }
                     bounds="parent"
                     enableResizing={false}
-                    style={{ padding: "10px", zIndex: 999 }}
+                    style={{ padding: 0, zIndex: 999 }}
                   >
                     <motion.div
                       key={selectedVideoUrl}
@@ -1437,13 +1439,14 @@ const SlideSpread = ({
                 ) : (
                   <ScaledRnd
                     cancel=".no-drag"
+                    size={QR_CONTAINER_SIZE}
                     position={{ x: qrPosition.x, y: qrPosition.y }}
                     onDragStop={(_, d) =>
                       setQrPosition((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrPosition.zIndex }))
                     }
                     bounds="parent"
                     enableResizing={false}
-                    style={{ padding: "10px", zIndex: 999 }}
+                    style={{ padding: 0, zIndex: 999 }}
                   >
                     <motion.div
                       key={selectedVideoUrl}
@@ -1525,13 +1528,14 @@ const SlideSpread = ({
               {selectedAudioUrl && (
                 <ScaledRnd
                   cancel=".no-drag"
+                  size={QR_CONTAINER_SIZE}
                   position={{ x: qrAudioPosition.x, y: qrAudioPosition.y }}
                   onDragStop={(_, d) =>
                     setQrAudioPosition((prev) => ({ ...prev, x: d.x, y: d.y, zIndex: qrAudioPosition.zIndex }))
                   }
                   bounds="parent"
                   enableResizing={false}
-                  style={{ padding: "10px", zIndex: 999 }}
+                  style={{ padding: 0, zIndex: 999 }}
                 >
                   <motion.div
                     key={selectedAudioUrl}
@@ -2842,6 +2846,7 @@ const SlideSpread = ({
               {selectedVideoUrl && (
                 <ScaledRnd
                   cancel=".no-drag"
+                  size={QR_CONTAINER_SIZE}
                   position={{ x: qrPosition.x, y: qrPosition.y }}
                   onDragStop={(_, d) =>
                     setQrPosition((prev) => ({
@@ -2864,7 +2869,7 @@ const SlideSpread = ({
                   bounds="parent"
                   enableResizing={false}
                   style={{
-                    padding: "10px",
+                    padding: 0,
                     zIndex: 999
                   }}
                 >
@@ -2955,6 +2960,7 @@ const SlideSpread = ({
               {selectedAudioUrl && (
                 <ScaledRnd
                   cancel=".no-drag"
+                  size={QR_CONTAINER_SIZE}
                   position={{ x: qrAudioPosition.x, y: qrAudioPosition.y }}
                   onDragStop={(_, d) =>
                     setQrAudioPosition((prev) => ({
@@ -2977,7 +2983,7 @@ const SlideSpread = ({
                   bounds="parent"
                   enableResizing={false}
                   style={{
-                    padding: "10px",
+                    padding: 0,
                     zIndex: 999
                   }}
                 >

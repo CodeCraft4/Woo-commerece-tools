@@ -716,7 +716,7 @@ const Subscription = () => {
     }
   }, [state?.previewOnly]);
   const isLegacyCardProduct = useMemo(() => {
-    const normalizedType = normalizeItemType(product?.type);
+    const normalizedType = normalizeItemType(product?.type ?? selectedProductSnapshot?.type);
     if (normalizedType === "card") return true;
     if (normalizedType) return false;
     try {
@@ -724,7 +724,7 @@ const Subscription = () => {
     } catch {
       return false;
     }
-  }, [product?.type]);
+  }, [product?.type, selectedProductSnapshot?.type]);
   const activeTemplatePreviewSession = useMemo(
     () =>
       !isLegacyCardProduct &&
@@ -1416,8 +1416,12 @@ const Subscription = () => {
       }
     })();
 
-    return variant?.category || product?.category || lsCat || "default";
-  }, [variant?.category, product?.category]);
+    return (
+      [product?.category, selectedProductSnapshot?.category, variant?.category, lsCat]
+        .map((value) => String(value ?? "").trim())
+        .find(Boolean) || "default"
+    );
+  }, [product?.category, selectedProductSnapshot?.category, variant?.category]);
 
   useEffect(() => {
     try {
@@ -2984,7 +2988,9 @@ const Subscription = () => {
                         }}
                       >
                         <Box sx={iosStablePreviewLayerSx}>
-                          {previewSrc ? (
+                          {routeCardLiveSlide ? (
+                            renderSlide(routeCardLiveSlide)
+                          ) : previewSrc ? (
                             <Box
                               component="img"
                               src={previewSrc}
@@ -3002,8 +3008,6 @@ const Subscription = () => {
                                 WebkitBackfaceVisibility: isIosWebKit ? "hidden" : undefined,
                               }}
                             />
-                          ) : routeCardLiveSlide ? (
-                            renderSlide(routeCardLiveSlide)
                           ) : (
                             <Slide1 />
                           )}
@@ -3037,7 +3041,9 @@ const Subscription = () => {
                       }}
                       >
                         <Box sx={iosStablePreviewLayerSx}>
-                        {previewSrc ? (
+                        {routeCardLiveSlide ? (
+                          renderSlide(routeCardLiveSlide)
+                        ) : previewSrc ? (
                           <Box
                             component="img"
                             src={previewSrc}
@@ -3055,8 +3061,6 @@ const Subscription = () => {
                               WebkitBackfaceVisibility: isIosWebKit ? "hidden" : undefined,
                             }}
                           />
-                        ) : routeCardLiveSlide ? (
-                          renderSlide(routeCardLiveSlide)
                         ) : (
                           <Slide1 />
                         )}

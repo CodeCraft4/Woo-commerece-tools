@@ -266,8 +266,7 @@ const Slide2 = (props: Slide2Props) => {
             sx={{
               position: "absolute",
               top: qrPosition.y + qrTopNudge,
-              left: "50%",
-              transform: "translateX(-50%)",
+              left: val(qrPosition.x, 0),
               width: "354px",
               height: 200,
               display: "flex",
@@ -323,8 +322,7 @@ const Slide2 = (props: Slide2Props) => {
             sx={{
               position: "absolute",
               top: qrPosition.y + qrTopNudge,
-              left: "50%",
-              transform: "translateX(-50%)",
+              left: val(qrPosition.x, 0),
               width: qrPanelWidth,
               height: 200,
               display: "flex",
@@ -384,8 +382,7 @@ const Slide2 = (props: Slide2Props) => {
             sx={{
               position: "absolute",
               top: qrAudioPosition.y + qrTopNudge,
-              left: "50%",
-              transform: "translateX(-50%)",
+              left: val(qrAudioPosition.x, 0),
               width: "354px",
               height: 200,
               display: "flex",
@@ -441,8 +438,7 @@ const Slide2 = (props: Slide2Props) => {
             sx={{
               position: "absolute",
               top: qrAudioPosition.y + qrTopNudge,
-              left: "50%",
-              transform: "translateX(-50%)",
+              left: val(qrAudioPosition.x, 0),
               width: qrPanelWidth,
               height: 200,
               display: "flex",
