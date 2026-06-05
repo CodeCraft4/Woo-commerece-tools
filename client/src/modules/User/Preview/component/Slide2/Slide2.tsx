@@ -114,8 +114,9 @@ const Slide2 = (props: Slide2Props) => {
       ref={ref}
       sx={{
         position: "relative",
-        width: 485,
+        width: "100%",
         height: "100%",
+        boxSizing: "border-box",
         overflow: "hidden",
         borderRadius: 2,
         // background fill
@@ -619,7 +620,7 @@ const Slide2 = (props: Slide2Props) => {
                     letterSpacing: `${e.letterSpacing ?? 0}px`,
                     transform: `rotate(${e.rotation}deg)`,
                     justifyContent: e.textAlign ?? "center",
-                    alignItems: e.verticalAlign ?? "top",
+                    alignItems: e.verticalAlign ?? "center",
                     padding: "5px",
                     whiteSpace: "pre-line", // ⭐ FIX: Show line breaks
                     cursor: "text",
@@ -660,8 +661,11 @@ const Slide2 = (props: Slide2Props) => {
             width: `${sticker.width}px`, // 👈 width
             height: `${sticker.height}px`, // 👈 height
             objectFit: "contain",
+            display: "block",
+            boxSizing: "border-box",
             zIndex: sticker.zIndex,
             transform: `rotate(${sticker.rotation || 0}deg)`,
+            transformOrigin: "center center",
             pointerEvents: "none", // so it can’t be clicked
           }}
         />

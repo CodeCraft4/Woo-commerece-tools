@@ -64,6 +64,7 @@ const createNewTextElement = (defaults: any) => ({
   fontColor: defaults.fontColor || "#000000",
   fontFamily: defaults.fontFamily || "Roboto",
   textAlign: defaults.textAlign || "center",
+  verticalAlign: defaults.verticalAlign || "center",
   rotation: defaults.rotation || 0,
   zIndex: defaults.zIndex || 1,
   position: { x: 50 + Math.random() * 50, y: 50 + Math.random() * 50 },
@@ -79,7 +80,7 @@ const normalizeMultiTexts = (arr: any[]) =>
     fontColor1: t?.fontColor1 ?? t?.fontColor ?? "#000000",
     fontFamily1: t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
     textAlign: t?.textAlign ?? "center",
-    verticalAlign: t?.verticalAlign ?? "top",
+    verticalAlign: t?.verticalAlign ?? "center",
     lineHeight: t?.lineHeight ?? 1.5,
     letterSpacing: t?.letterSpacing ?? 0,
   }));
@@ -588,7 +589,7 @@ const SlideSpread = ({
             fontColor: "#000000",
             fontFamily: "Roboto",
             textAlign: "center",
-            verticalAlign: "top",
+            verticalAlign: "center",
             rotation: 0,
             lineHeight: 1.5,
             letterSpacing: 0
@@ -1066,9 +1067,9 @@ const SlideSpread = ({
                   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
                   const hAlign =
-                    textElement.textAlign === "top"
+                    textElement.textAlign === "left" || textElement.textAlign === "start"
                       ? "flex-start"
-                      : textElement.textAlign === "end"
+                      : textElement.textAlign === "right" || textElement.textAlign === "end"
                         ? "flex-end"
                         : "center";
                   const vAlign =
@@ -2552,9 +2553,9 @@ const SlideSpread = ({
                         typeof window !== "undefined" && window.innerWidth < 768;
 
                       const hAlign =
-                        textElement.textAlign === "top"
+                        textElement.textAlign === "left" || textElement.textAlign === "start"
                           ? "flex-start"
-                          : textElement.textAlign === "end"
+                          : textElement.textAlign === "right" || textElement.textAlign === "end"
                             ? "flex-end"
                             : "center";
                       const vAlign =

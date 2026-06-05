@@ -391,11 +391,11 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
   const [fontSize1, setFontSize1] = useState(20);
   const [fontWeight1, setFontWeight1] = useState(400);
   const [textAlign1, setTextAlign1] = useState<"start" | "center" | "end">(
-    "start"
+    "center"
   );
   const [verticalAlign1, setVerticalAlign1] = useState<
     "top" | "center" | "bottom"
-  >("top");
+  >("center");
   const [fontFamily1, setFontFamily1] = useState("Roboto");
   const [fontColor1, setFontColor1] = useState(fontColors[0]);
   const [rotation1, setRotation1] = useState(0);
@@ -579,8 +579,8 @@ export const Slide1Provider: React.FC<{ children: React.ReactNode }> = ({
     // Fonts & text defaults
     setFontSize1(20);
     setFontWeight1(400);
-    setTextAlign1("start");
-    setVerticalAlign1("top");
+    setTextAlign1("center");
+    setVerticalAlign1("center");
     setFontFamily1("Roboto");
     setFontColor1("#000000");
     setRotation1(0);

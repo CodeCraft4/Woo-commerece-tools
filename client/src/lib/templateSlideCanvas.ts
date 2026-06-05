@@ -5,6 +5,7 @@ type BaseEl = {
   width: number;
   height: number;
   zIndex?: number;
+  rotation?: number;
 };
 
 export type TemplateTextEl = BaseEl & {
@@ -20,7 +21,6 @@ export type TemplateTextEl = BaseEl & {
   textDecoration?: string;
   lineHeight?: number;
   align?: "left" | "center" | "right";
-  rotation?: number;
   curve?: number;
 };
 
@@ -347,6 +347,25 @@ const shouldContainImage = (element: TemplateImageEl | TemplateStickerEl) => {
   if (src.includes("video-qr-tips") || src.includes("audio-qr-tips")) return true;
   if (id.startsWith("qr-") && id.includes("-bg-")) return true;
   return false;
+};
+
+const drawInsideRotatedElementBox = (
+  ctx: CanvasRenderingContext2D,
+  element: TemplateImageEl | TemplateStickerEl,
+  width: number,
+  height: number,
+  draw: () => void,
+) => {
+  const x = toNum(element.x, 0);
+  const y = toNum(element.y, 0);
+  const rotation = (toNum(element.rotation, 0) * Math.PI) / 180;
+
+  ctx.save();
+  ctx.translate(x + width / 2, y + height / 2);
+  if (rotation) ctx.rotate(rotation);
+  ctx.translate(-width / 2, -height / 2);
+  draw();
+  ctx.restore();
 };
 
 const wrapText = (
@@ -684,25 +703,34 @@ export const renderTemplateSlideToCanvasWithStats = async (
         heightPx,
       );
 
-      ctx.save();
-      ctx.translate(toNum(element.x, 0), toNum(element.y, 0));
-      ctx.beginPath();
-      ctx.rect(0, 0, widthPx, heightPx);
-      ctx.clip();
-      ctx.drawImage(img, box.x, box.y, box.width, box.height);
-      ctx.restore();
+      drawInsideRotatedElementBox(
+        ctx,
+        element as TemplateImageEl | TemplateStickerEl,
+        widthPx,
+        heightPx,
+        () => {
+          ctx.beginPath();
+          ctx.rect(0, 0, widthPx, heightPx);
+          ctx.clip();
+          ctx.drawImage(img, box.x, box.y, box.width, box.height);
+        },
+      );
       drawnAssets += 1;
     } catch {
-      const renderedInlineSvg =
-        src.toLowerCase().startsWith("data:image/svg+xml") &&
-        tryDrawInlineSvgDataUrl(
+      const widthPx = Math.max(1, toNum(element.width, 1));
+      const heightPx = Math.max(1, toNum(element.height, 1));
+      let renderedInlineSvg = false;
+      if (src.toLowerCase().startsWith("data:image/svg+xml")) {
+        drawInsideRotatedElementBox(
           ctx,
-          src,
-          toNum(element.x, 0),
-          toNum(element.y, 0),
-          Math.max(1, toNum(element.width, 1)),
-          Math.max(1, toNum(element.height, 1)),
+          element as TemplateImageEl | TemplateStickerEl,
+          widthPx,
+          heightPx,
+          () => {
+            renderedInlineSvg = tryDrawInlineSvgDataUrl(ctx, src, 0, 0, widthPx, heightPx);
+          },
         );
+      }
       if (renderedInlineSvg) {
         drawnAssets += 1;
         continue;

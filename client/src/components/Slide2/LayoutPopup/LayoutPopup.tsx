@@ -28,15 +28,15 @@ const LayoutPopup = ({ onClose, activeIndex }: LayoutPopupProps) => {
 
   const handleOneTextLayout = () => {
     setSelectedLayout("oneText");
-    setTextAlign("start");
-    setVerticalAlign("top");
+    setTextAlign("center");
+    setVerticalAlign("center");
     setShowOneTextRightSideBox(true);
     setMultipleTextValue(false); // hide others
   };
 
   const handleMultipleTextLayout = () => {
-    setTextAlign("start");
-    setVerticalAlign("top");
+    setTextAlign("center");
+    setVerticalAlign("center");
     setSelectedLayout((prev) => {
       if (prev === "multipleText") {
         // 🔁 Force reactivation if user clicks again after removing all texts

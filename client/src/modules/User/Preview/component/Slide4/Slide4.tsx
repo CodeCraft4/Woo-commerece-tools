@@ -67,6 +67,7 @@ const Slide4 = (props: Slide4Props) => {
         position: "relative",
         width: "100%",
         height: "100%",
+        boxSizing: "border-box",
         overflow: "hidden",
         backgroundColor: bgColor4 ?? "transparent",
         // backgroundImage: bgImage4 ? `url(${bgImage4})` : "none",
@@ -520,8 +521,11 @@ const Slide4 = (props: Slide4Props) => {
             width: `${sticker.width}px`, // 👈 width
             height: `${sticker.height}px`, // 👈 height
             objectFit: "contain",
+            display: "block",
+            boxSizing: "border-box",
             zIndex: sticker.zIndex,
             transform: `rotate(${sticker.rotation || 0}deg)`, // rotaion for sticker
+            transformOrigin: "center center",
             pointerEvents: "none", // so it can’t be clicked
           }}
         />

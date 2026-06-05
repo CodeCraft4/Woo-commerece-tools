@@ -45,7 +45,7 @@ interface TextElement {
   fontWeight: number;
   fontColor: string;
   fontFamily: string;
-  textAlign: "top" | "center" | "end";
+  textAlign: "left" | "center" | "right" | "start" | "end";
   rotation: number;
   zIndex: number;
   position: Position;
@@ -358,11 +358,11 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
   const [fontSize3, setFontSize3] = useState(20);
   const [fontWeight3, setFontWeight3] = useState(400);
   const [textAlign3, setTextAlign3] = useState<"start" | "center" | "end">(
-    "start"
+    "center"
   );
   const [verticalAlign3, setVerticalAlign3] = useState<
     "top" | "center" | "bottom"
-  >("top");
+  >("center");
   const [fontFamily3, setFontFamily3] = useState("Roboto");
   const [fontColor3, setFontColor3] = useState(fontColors[0]);
   const [rotation3, setRotation3] = useState(0);
@@ -544,8 +544,8 @@ export const Slide3Provider: React.FC<{ children: React.ReactNode }> = ({
     // Fonts & text defaults
     setFontSize3(20);
     setFontWeight3(400);
-    setTextAlign3("start");
-    setVerticalAlign3("top");
+    setTextAlign3("center");
+    setVerticalAlign3("center");
     setFontFamily3("Roboto");
     setFontColor3("#000000");
     setRotation3(0);

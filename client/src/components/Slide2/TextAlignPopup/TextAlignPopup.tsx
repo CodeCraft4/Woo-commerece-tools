@@ -7,6 +7,7 @@ import {
   VerticalAlignBottom,
 } from "@mui/icons-material";
 import { Box, Divider, Typography } from "@mui/material";
+import { useEffect } from "react";
 import { useSlide2 } from "../../../context/Slide2Context";
 
 const verticalAlignOptions = [
@@ -20,6 +21,17 @@ const horizontalAlignOptions = [
   { key: "center", icon: <FormatAlignCenter />, label: "Center" },
   { key: "right", icon: <FormatAlignRight />, label: "Right" },
 ];
+
+const normalizeVerticalAlign = (value: any) =>
+  value === "top" || value === "bottom" || value === "center"
+    ? value
+    : "center";
+
+const normalizeHorizontalAlign = (value: any) => {
+  if (value === "left" || value === "start") return "left";
+  if (value === "right" || value === "end") return "right";
+  return "center";
+};
 
 const TextAlignPopup = () => {
   const {
@@ -35,6 +47,32 @@ const TextAlignPopup = () => {
   const selectedTextElement = textElements.find(
     (text) => text.id === selectedTextId
   );
+  const activeVerticalAlign = normalizeVerticalAlign(
+    selectedTextElement?.verticalAlign ?? verticalAlign
+  );
+  const activeHorizontalAlign = normalizeHorizontalAlign(
+    selectedTextElement?.textAlign ?? textAlign
+  );
+
+  useEffect(() => {
+    if (!selectedTextId || !selectedTextElement) return;
+    const nextVerticalAlign = normalizeVerticalAlign(selectedTextElement.verticalAlign);
+    const nextHorizontalAlign = normalizeHorizontalAlign(selectedTextElement.textAlign);
+    if (
+      selectedTextElement.verticalAlign === nextVerticalAlign &&
+      selectedTextElement.textAlign === nextHorizontalAlign
+    ) {
+      return;
+    }
+
+    setTextElements((prev) =>
+      prev.map((text) =>
+        text.id === selectedTextId
+          ? { ...text, verticalAlign: nextVerticalAlign, textAlign: nextHorizontalAlign }
+          : text
+      )
+    );
+  }, [selectedTextElement, selectedTextId, setTextElements]);
 
   const updateTextProperty = (property: string, value: any) => {
     if (selectedTextId) {
@@ -73,16 +111,14 @@ const TextAlignPopup = () => {
               onClick={() => updateTextProperty("verticalAlign", opt.key)}
               sx={{
                 p: 2,
-                border: `2px solid ${(selectedTextElement?.verticalAlign || verticalAlign) ===
-                  opt.key
+                border: `2px solid ${activeVerticalAlign === opt.key
                   ? "#3a7bd5"
                   : "lightgray"
                   }`,
                 borderRadius: 3,
                 cursor: "pointer",
                 color:
-                  (selectedTextElement?.verticalAlign || verticalAlign) ===
-                    opt.key
+                  activeVerticalAlign === opt.key
                     ? "#3a7bd5"
                     : "inherit",
                 transition: "all 0.2s ease",
@@ -110,14 +146,14 @@ const TextAlignPopup = () => {
               onClick={() => updateTextProperty("textAlign", opt.key)}
               sx={{
                 p: 2,
-                border: `2px solid ${(selectedTextElement?.textAlign || textAlign) === opt.key
+                border: `2px solid ${activeHorizontalAlign === opt.key
                   ? "#3a7bd5"
                   : "lightgray"
                   }`,
                 borderRadius: 3,
                 cursor: "pointer",
                 color:
-                  (selectedTextElement?.textAlign || textAlign) === opt.key
+                  activeHorizontalAlign === opt.key
                     ? "#3a7bd5"
                     : "inherit",
                 transition: "all 0.2s ease",

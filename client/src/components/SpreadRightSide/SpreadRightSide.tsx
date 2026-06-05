@@ -165,8 +165,8 @@ const normalizeMultiTexts = (arr: any[]) =>
     fontFamily3: t?.fontFamily3 ?? t?.fontFamily1 ?? t?.fontFamily ?? "Roboto",
     textAlign3: t?.textAlign3 ?? t?.textAlign1 ?? t?.textAlign ?? "center",
     textAlign: t?.textAlign3 ?? t?.textAlign1 ?? t?.textAlign ?? "center",
-    verticalAlign3: t?.verticalAlign3 ?? t?.verticalAlign1 ?? t?.verticalAlign ?? "top",
-    verticalAlign: t?.verticalAlign3 ?? t?.verticalAlign1 ?? t?.verticalAlign ?? "top",
+    verticalAlign3: t?.verticalAlign3 ?? t?.verticalAlign1 ?? t?.verticalAlign ?? "center",
+    verticalAlign: t?.verticalAlign3 ?? t?.verticalAlign1 ?? t?.verticalAlign ?? "center",
     lineHeight3: t?.lineHeight3 ?? t?.lineHeight1 ?? t?.lineHeight ?? 1.5,
     lineHeight: t?.lineHeight3 ?? t?.lineHeight1 ?? t?.lineHeight ?? 1.5,
     letterSpacing3: t?.letterSpacing3 ?? t?.letterSpacing1 ?? t?.letterSpacing ?? 0,
@@ -308,6 +308,7 @@ const createNewTextElement3 = (defaults: any) => ({
   fontColor: defaults.fontColor || "#000000",
   fontFamily: defaults.fontFamily || "Roboto",
   textAlign: defaults.textAlign || "center",
+  verticalAlign: defaults.verticalAlign || "center",
   rotation: defaults.rotation || 0,
   zIndex: defaults.zIndex || 1,
   position: { x: 50 + Math.random() * 50, y: 50 + Math.random() * 50 },
@@ -835,7 +836,7 @@ const SpreadRightSide = ({
             fontColor: "#000000",
             fontFamily: "Roboto",
             textAlign: "center",
-            verticalAlign: "top",
+            verticalAlign: "center",
             rotation: 0,
             lineHeight: 1.5,
             letterSpacing: 0
@@ -1329,9 +1330,9 @@ const SpreadRightSide = ({
                         const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
                         const hAlign =
-                          textElement.textAlign === "top"
+                          textElement.textAlign === "left" || textElement.textAlign === "start"
                             ? "flex-start"
-                            : textElement.textAlign === "end"
+                            : textElement.textAlign === "right" || textElement.textAlign === "end"
                               ? "flex-end"
                               : "center";
                         const vAlign =
@@ -2682,9 +2683,9 @@ const SpreadRightSide = ({
                     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
                     const hAlign =
-                      textElement.textAlign === "top"
+                      textElement.textAlign === "left" || textElement.textAlign === "start"
                         ? "flex-start"
-                        : textElement.textAlign === "end"
+                        : textElement.textAlign === "right" || textElement.textAlign === "end"
                           ? "flex-end"
                           : "center";
                     const vAlign =

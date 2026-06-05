@@ -28,16 +28,16 @@ const Layout4Popup = ({ onClose, activeIndex }: Layout4PopupProps) => {
 
   const handleOneTextLayout = () => {
     setSelectedLayout4("oneText");
-    setTextAlign4("start");
-    setVerticalAlign4("top");
+    setTextAlign4("center");
+    setVerticalAlign4("center");
     setShowOneTextRightSideBox4(true);
     setMultipleTextValue4(false);
   };
 
   const handleMultipleTextLayout = () => {
     setSelectedLayout4("multipleText");
-    setTextAlign4("start");
-    setVerticalAlign4("top");
+    setTextAlign4("center");
+    setVerticalAlign4("center");
     setShowOneTextRightSideBox4(false);
     setMultipleTextValue4(true);
   };

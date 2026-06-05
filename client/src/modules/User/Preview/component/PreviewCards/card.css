@@ -4,6 +4,7 @@
   height: 700px;
   position: relative;
   transition: transform 0.5s;
+  box-sizing: border-box;
 }
 
 .book-container {
@@ -12,6 +13,7 @@
   align-items: center;
   overflow: hidden;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .paper {
@@ -21,6 +23,7 @@
   top: 0;
   left: 0;
   perspective: 1500px;
+  box-sizing: border-box;
 }
 
 .front {
@@ -50,6 +53,7 @@
   transform-origin: left;
   transition: transform 0.5s;
   border-radius: 15px;
+  box-sizing: border-box;
 }
 
 .front {
@@ -65,7 +69,10 @@
   height: 100%;
   text-align: center;
   border-radius: 10px;
-  border: 1px solid #dbdbdb;
+  outline: 1px solid #dbdbdb;
+  outline-offset: -1px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .back-content {
@@ -101,8 +108,8 @@
 @media (max-width: 480px) {
   .front-content,
   .back-content {
-    width: 80%;
-    height: 90%;
+    width: 100%;
+    height: 100%;
   }
 
   .book {
@@ -110,7 +117,9 @@
   } /* hide 3D book on mobile */
   .mobile-slide {
     border-radius: 15px;
-    border: 1px solid #dbdbdb;
+    outline: 1px solid #dbdbdb;
+    outline-offset: -1px;
+    box-sizing: border-box;
     overflow: hidden; /* show only active slide */
     /* subtle transition for content swap */
     transition: transform 0.3s ease, opacity 0.3s ease;

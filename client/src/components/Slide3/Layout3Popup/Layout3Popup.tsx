@@ -28,16 +28,16 @@ const Layout3Popup = ({ onClose, activeIndex }: Layout3PopupProps) => {
 
   const handleOneTextLayout = () => {
     setSelectedLayout3("oneText");
-    setTextAlign3("start");
-    setVerticalAlign3("top");
+    setTextAlign3("center");
+    setVerticalAlign3("center");
     setShowOneTextRightSideBox3(true);
     setMultipleTextValue3(false);
   };
 
   const handleMultipleTextLayout = () => {
     setSelectedLayout3("multipleText");
-    setTextAlign3("start");
-    setVerticalAlign3("top");
+    setTextAlign3("center");
+    setVerticalAlign3("center");
     setShowOneTextRightSideBox3(false);
     setMultipleTextValue3(true);
   };

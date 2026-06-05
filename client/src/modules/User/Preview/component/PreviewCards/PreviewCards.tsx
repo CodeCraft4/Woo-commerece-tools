@@ -369,6 +369,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           width: toNum(bgRect?.width, CAPTURE_SIZE.w),
           height: toNum(bgRect?.height, CAPTURE_SIZE.h),
           zIndex: 0,
+          rotation: toNum((bgRect as any)?.rotation, 0),
         },
       ]
     : [];
@@ -384,6 +385,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
       width: toNum(el?.width, 0),
       height: toNum(el?.height, 0),
       zIndex: toNum(el?.zIndex, 1),
+      rotation: toNum(el?.rotation, 0),
     }));
 
   const layoutStickers = mergeBuckets(payload?.layout?.stickers)
@@ -397,6 +399,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
       width: toNum(el?.width, 0),
       height: toNum(el?.height, 0),
       zIndex: toNum(el?.zIndex, 40),
+      rotation: toNum(el?.rotation, 0),
     }));
 
   const staticTexts = Array.isArray(payload?.layout?.staticText)
@@ -434,6 +437,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
       width: toNum(el?.width, 0),
       height: toNum(el?.height, 0),
       zIndex: toNum(el?.zIndex, 120),
+      rotation: toNum(el?.rotation, 0),
     }));
 
   const userStickers = mergeBuckets(payload?.user?.stickers)
@@ -447,6 +451,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
       width: toNum(el?.width, 0),
       height: toNum(el?.height, 0),
       zIndex: toNum(el?.zIndex, 160),
+      rotation: toNum(el?.rotation, 0),
     }));
 
   const freeTexts = Array.isArray(payload?.user?.freeTexts)
@@ -550,6 +555,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           width: toNum(payload.ai.width, 0),
           height: toNum(payload.ai.height, 0),
           zIndex: 350,
+          rotation: toNum((payload.ai as any).rotation, 0),
         },
       ]
     : [];

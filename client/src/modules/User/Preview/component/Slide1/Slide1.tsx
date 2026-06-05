@@ -68,6 +68,7 @@ const Slide1 = (props: Slide1Props) => {
         position: "relative",
         width: "100%",
         height: "100%",
+        boxSizing: "border-box",
         overflow: "hidden",
         borderRadius: 2,
         backgroundColor: bgColor1 ?? "transparent",
@@ -427,7 +428,7 @@ const Slide1 = (props: Slide1Props) => {
                 letterSpacing: `${e.letterSpacing ?? 0}px`,
                 transform: `rotate(${e.rotation}deg)`,
                 justifyContent: e.textAlign ?? "center",
-                alignItems: e.verticalAlign ?? "top",
+                alignItems: e.verticalAlign ?? "center",
                 padding: "5px",
                 whiteSpace: "pre-line",
                 cursor: "text",
@@ -465,8 +466,11 @@ const Slide1 = (props: Slide1Props) => {
             width: `${sticker.width}px`,
             height: `${sticker.height}px`,
             objectFit: "contain",
+            display: "block",
+            boxSizing: "border-box",
             zIndex: sticker.zIndex,
             transform: `rotate(${sticker.rotation || 0}deg)`,
+            transformOrigin: "center center",
             pointerEvents: "none",
           }}
         />

@@ -7,6 +7,7 @@ import {
   VerticalAlignBottom,
 } from "@mui/icons-material";
 import { Box, Divider, Typography } from "@mui/material";
+import { useEffect } from "react";
 import { useSlide3 } from "../../../context/Slide3Context";
 
 const verticalAlignOptions = [
@@ -20,6 +21,17 @@ const horizontalAlignOptions = [
   { key: "center", icon: <FormatAlignCenter />, label: "Center" },
   { key: "right", icon: <FormatAlignRight />, label: "Right" },
 ];
+
+const normalizeVerticalAlign = (value: any) =>
+  value === "top" || value === "bottom" || value === "center"
+    ? value
+    : "center";
+
+const normalizeHorizontalAlign = (value: any) => {
+  if (value === "left" || value === "start") return "left";
+  if (value === "right" || value === "end") return "right";
+  return "center";
+};
 
 const TextAlign3Popup = () => {
   const {
@@ -35,6 +47,32 @@ const TextAlign3Popup = () => {
   const selectedTextElement = textElements3.find(
     (text) => text.id === selectedTextId3
   );
+  const activeVerticalAlign = normalizeVerticalAlign(
+    selectedTextElement?.verticalAlign ?? verticalAlign3
+  );
+  const activeHorizontalAlign = normalizeHorizontalAlign(
+    selectedTextElement?.textAlign ?? textAlign3
+  );
+
+  useEffect(() => {
+    if (!selectedTextId3 || !selectedTextElement) return;
+    const nextVerticalAlign = normalizeVerticalAlign(selectedTextElement.verticalAlign);
+    const nextHorizontalAlign = normalizeHorizontalAlign(selectedTextElement.textAlign);
+    if (
+      selectedTextElement.verticalAlign === nextVerticalAlign &&
+      selectedTextElement.textAlign === nextHorizontalAlign
+    ) {
+      return;
+    }
+
+    setTextElements3((prev) =>
+      prev.map((text) =>
+        text.id === selectedTextId3
+          ? { ...text, verticalAlign: nextVerticalAlign, textAlign: nextHorizontalAlign }
+          : text
+      )
+    );
+  }, [selectedTextElement, selectedTextId3, setTextElements3]);
 
   const updateTextProperty = (property: string, value: any) => {
     if (selectedTextId3) {
@@ -74,16 +112,14 @@ const TextAlign3Popup = () => {
               sx={{
                 p: 2,
                 border: `2px solid ${
-                  (selectedTextElement?.verticalAlign || verticalAlign3) ===
-                  opt.key
+                  activeVerticalAlign === opt.key
                     ? "#3a7bd5"
                     : "lightgray"
                 }`,
                 borderRadius: 3,
                 cursor: "pointer",
                 color:
-                  (selectedTextElement?.verticalAlign || verticalAlign3) ===
-                  opt.key
+                  activeVerticalAlign === opt.key
                     ? "#3a7bd5"
                     : "inherit",
                 transition: "all 0.2s ease",
@@ -112,14 +148,14 @@ const TextAlign3Popup = () => {
               sx={{
                 p: 2,
                 border: `2px solid ${
-                  (selectedTextElement?.textAlign || textAlign3) === opt.key
+                  activeHorizontalAlign === opt.key
                     ? "#3a7bd5"
                     : "lightgray"
                 }`,
                 borderRadius: 3,
                 cursor: "pointer",
                 color:
-                  (selectedTextElement?.textAlign || textAlign3) === opt.key
+                  activeHorizontalAlign === opt.key
                     ? "#3a7bd5"
                     : "inherit",
                 transition: "all 0.2s ease",

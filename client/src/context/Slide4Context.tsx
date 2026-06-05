@@ -376,11 +376,11 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
   const [fontSize4, setFontSize4] = useState(20);
   const [fontWeight4, setFontWeight4] = useState(400);
   const [textAlign4, setTextAlign4] = useState<"start" | "center" | "end">(
-    "start"
+    "center"
   );
   const [verticalAlign4, setVerticalAlign4] = useState<
     "top" | "center" | "bottom"
-  >("top");
+  >("center");
   const [fontFamily4, setFontFamily4] = useState("Roboto");
   const [fontColor4, setFontColor4] = useState(fontColors[0]);
   const [rotation4, setRotation4] = useState(0);
@@ -569,8 +569,8 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
     // Fonts & text defaults
     setFontSize4(20);
     setFontWeight4(400);
-    setTextAlign4("start");
-    setVerticalAlign4("top");
+    setTextAlign4("center");
+    setVerticalAlign4("center");
     setFontFamily4("Roboto");
     setFontColor4("#000000");
     setRotation4(0);
@@ -873,9 +873,9 @@ export const Slide4Provider: React.FC<{ children: React.ReactNode }> = ({
         setDefaultFontWeight4: () => { },
         defaultFontFamily4: "Roboto",
         setDefaultFontFamily4: () => { },
-        defaultTextAlign4: "start",
+        defaultTextAlign4: "center",
         setDefaultTextAlign4: () => { },
-        defaultVerticalAlign4: "top",
+        defaultVerticalAlign4: "center",
         setDefaultVerticalAlign4: () => { },
         defaultRotation4: 0,
         setDefaultRotation4: () => { },

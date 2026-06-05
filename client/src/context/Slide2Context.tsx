@@ -45,7 +45,7 @@ interface TextElement {
   fontWeight: number;
   fontColor: string;
   fontFamily: string;
-  textAlign: "top" | "center" | "end";
+  textAlign: "left" | "center" | "right" | "start" | "end";
   rotation: number;
   zIndex: number;
   position: Position;
@@ -377,11 +377,11 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
   const [fontSize, setFontSize] = useState(20);
   const [fontWeight, setFontWeight] = useState(400);
   const [textAlign, setTextAlign] = useState<"start" | "center" | "end">(
-    "start"
+    "center"
   );
   const [verticalAlign, setVerticalAlign] = useState<
     "top" | "center" | "bottom"
-  >("top");
+  >("center");
   const [fontFamily, setFontFamily] = useState("Roboto");
   const [fontColor, setFontColor] = useState(fontColors[0]);
   const [rotation, setRotation] = useState(0);
@@ -570,8 +570,8 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
     // Fonts & text defaults
     setFontSize(20);
     setFontWeight(400);
-    setTextAlign("start");
-    setVerticalAlign("top");
+    setTextAlign("center");
+    setVerticalAlign("center");
     setFontFamily("Roboto");
     setFontColor("#000000");
     setRotation(0);
@@ -865,9 +865,9 @@ export const Slide2Provider: React.FC<{ children: React.ReactNode }> = ({
         setDefaultFontWeight: () => { },
         defaultFontFamily: "Roboto",
         setDefaultFontFamily: () => { },
-        defaultTextAlign: "start",
+        defaultTextAlign: "center",
         setDefaultTextAlign: () => { },
-        defaultVerticalAlign: "top",
+        defaultVerticalAlign: "center",
         setDefaultVerticalAlign: () => { },
         defaultRotation: 0,
         setDefaultRotation: () => { },
