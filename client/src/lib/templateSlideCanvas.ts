@@ -21,6 +21,7 @@ export type TemplateTextEl = BaseEl & {
   textDecoration?: string;
   lineHeight?: number;
   align?: "left" | "center" | "right";
+  verticalAlign?: "top" | "center" | "bottom";
   curve?: number;
 };
 
@@ -582,6 +583,7 @@ const drawTextElement = (
   const lineHeight = fontSize * lineHeightRatio;
   const rotation = (toNum(text.rotation, 0) * Math.PI) / 180;
   const align = text.align ?? "center";
+  const verticalAlign = text.verticalAlign ?? "center";
   const textColor = text.color ?? "#111111";
   const textDecoration = String(text.textDecoration ?? "none").toLowerCase();
 
@@ -603,7 +605,12 @@ const drawTextElement = (
 
   const lineMetrics = lines.map((line) => getTextLineMetrics(ctx, line, fontSize));
   const totalHeight = lines.length * lineHeight;
-  const blockTop = Math.max(0, (height - totalHeight) / 2);
+  const blockTop =
+    verticalAlign === "top"
+      ? 0
+      : verticalAlign === "bottom"
+      ? Math.max(0, height - totalHeight)
+      : Math.max(0, (height - totalHeight) / 2);
   const anchorX = align === "left" ? 0 : align === "right" ? width : width / 2;
 
   lines.forEach((line, index) => {

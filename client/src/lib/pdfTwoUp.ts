@@ -11,6 +11,7 @@ type TwoUpOptions = {
   swapPairs?: boolean;
   pageMm?: { w: number; h: number };
   outputFormat?: "jpeg" | "png";
+  slotAlignY?: "top" | "center" | "bottom";
   pageTitle?: (args: {
     pageIndex: number;
     leftKey?: string;
@@ -74,6 +75,7 @@ const defaultOptions: Required<TwoUpOptions> = {
   swapPairs: false,
   pageMm: A4_PORTRAIT_MM,
   outputFormat: "jpeg",
+  slotAlignY: "center",
   pageTitle: () => undefined,
   titleStyle: {
     font: "22px Arial",
@@ -530,7 +532,12 @@ export async function buildTwoUpSlides(
       const drawW = img.width * scale;
       const drawH = img.height * scale;
       const offsetX = slotX + (slotWidth - drawW) / 2;
-      const offsetY = (slotHeight - drawH) / 2;
+      const offsetY =
+        opts.slotAlignY === "top"
+          ? 0
+          : opts.slotAlignY === "bottom"
+          ? slotHeight - drawH
+          : (slotHeight - drawH) / 2;
       ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
     };
 

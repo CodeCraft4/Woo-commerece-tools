@@ -25,6 +25,7 @@ import {
   isCardsCategory,
   isLeafletTwoUpSize,
   isNotebookTwoUpSize,
+  isParallelCardSize,
   getLeafletTwoUpPageMm,
   getNotebookTwoUpPageMm,
   getPageMmForSize,
@@ -70,7 +71,7 @@ const STRIPE_PK =
   import.meta.env.VITE_STRIPE_PK ||
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : Promise.resolve(null);
-const PREPARED_SLIDES_PREFIX = "prepared:v2:";
+const PREPARED_SLIDES_PREFIX = "prepared:v5:";
 
 // ------------------ Types ------------------
 type SelectedVariant = {
@@ -1070,6 +1071,13 @@ const Subscription = () => {
             const align = el.align ?? "center";
             const justify =
               align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
+            const verticalAlign = el.verticalAlign ?? "center";
+            const alignItems =
+              verticalAlign === "top"
+                ? "flex-start"
+                : verticalAlign === "bottom"
+                ? "flex-end"
+                : "center";
             const rotation = resolveTextRotation(el);
             const curve = Math.max(-200, Math.min(200, resolveTextCurve(el)));
             const hasCurve = Math.abs(curve) > 0.5;
@@ -1092,7 +1100,7 @@ const Subscription = () => {
                 sx={{
                   ...baseStyle,
                   display: "flex",
-                  alignItems: "center",
+                  alignItems,
                   justifyContent: justify,
                   textAlign: align,
                   transform: rotation ? `rotate(${rotation}deg)` : "none",
@@ -1563,7 +1571,7 @@ const Subscription = () => {
     (cardSize?: string | null) => {
       const effectiveCardSize =
         String(cardSize ?? "").trim() || localStorage.getItem("selectedSize") || selectedPlan;
-      const isTwoUpLandscape = false;
+      const isTwoUpLandscape = isCardsCategory(categoryName) && isParallelCardSize(effectiveCardSize);
       const isInviteTwoUp =
         /invite/i.test(String(categoryName ?? "")) && isInviteTwoUpSize(effectiveCardSize);
       const isLeafletTwoUp =
@@ -2162,14 +2170,11 @@ const Subscription = () => {
             gapPx: 0,
             orientation: "landscape",
             fit: "contain",
+            slotAlignY: "bottom",
             pairStrategy: "sequential",
             swapPairs: false,
             pageMm: getPageMmForSize(prep.cardSize),
-            pageTitle: ({ pageIndex }) => {
-              if (pageIndex === 1) return "";
-              if (pageIndex === 2) return "";
-              return null;
-            },
+            pageTitle: () => null,
           })
         : processedBgSlides;
 

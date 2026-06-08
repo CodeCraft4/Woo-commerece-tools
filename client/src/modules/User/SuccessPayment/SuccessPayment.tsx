@@ -514,14 +514,11 @@ export default function PremiumSuccess() {
             gapPx: 0,
             orientation: "landscape",
             fit: "contain",
+            slotAlignY: "bottom",
             pairStrategy: "sequential",
             swapPairs: false,
             pageMm: getPageMmForSize(cardSize),
-            pageTitle: ({ pageIndex }) => {
-              if (pageIndex === 1) return "";
-              if (pageIndex === 2) return "";
-              return null;
-            },
+            pageTitle: () => null,
           })
         : processedBgSlides;
 

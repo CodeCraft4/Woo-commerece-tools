@@ -868,15 +868,19 @@ const PreviewBookCard = () => {
     setDownloading(true);
     try {
       const expectedCount = CAPTURE_ORDER.length;
-      // Canvas renderer from slide state is deterministic across Safari/WebKit.
-      // Use it as primary for all platforms; fallback to DOM only if needed.
-      const canvasResult = await captureCardSlidesFromCanvasRenderer();
-      let activeResult = canvasResult ?? { captured: [], slidesObj: {}, validCount: 0 };
+      // DOM capture preserves the exact CSS text layout shown in the preview.
+      // Canvas remains the primary path for iOS/WebKit where DOM capture is less reliable.
+      const primaryResult = isIosWebKit
+        ? await captureCardSlidesFromCanvasRenderer()
+        : await captureCardSlides();
+      let activeResult = primaryResult ?? { captured: [], slidesObj: {}, validCount: 0 };
 
-      if (canvasResult.validCount < expectedCount) {
-        const domResult = await captureCardSlides();
-        if (domResult?.validCount > activeResult.validCount) {
-          activeResult = domResult;
+      if (activeResult.validCount < expectedCount) {
+        const fallbackResult = isIosWebKit
+          ? await captureCardSlides()
+          : await captureCardSlidesFromCanvasRenderer();
+        if (fallbackResult?.validCount > activeResult.validCount) {
+          activeResult = fallbackResult;
         }
       }
 
@@ -945,7 +949,7 @@ const PreviewBookCard = () => {
       } finally {
         setDownloading(false);
       }
-  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, navigate, persistCardRawSlides]);
+  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, isIosWebKit, navigate, persistCardRawSlides]);
 
 
   return (
