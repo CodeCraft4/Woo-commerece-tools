@@ -472,7 +472,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           fontWeight: normalizeFontWeight(text?.fontWeight, 400),
           fontStyle: "normal",
           textDecoration: "none",
-          lineHeight: toNum(text?.lineHeight, 1.16),
+          lineHeight: toNum(text?.lineHeight, 1.5),
           align: normalizeAlign(text?.textAlign),
           rotation: toNum(text?.rotation, 0),
         }))
@@ -499,7 +499,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
         fontWeight: normalizeFontWeight(payload?.oneText?.fontWeight, 400),
         fontStyle: "normal",
         textDecoration: "none",
-        lineHeight: toNum(payload?.oneText?.lineHeight, 1.16),
+        lineHeight: toNum(payload?.oneText?.lineHeight, 1.5),
         align: normalizeAlign(payload?.oneText?.textAlign),
         rotation: toNum(payload?.oneText?.rotation, 0),
       },
@@ -536,7 +536,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           ),
           fontStyle: "normal",
           textDecoration: "none",
-          lineHeight: toNum(slideScopedValue(entry, "lineHeight", id, 1.16), 1.16),
+          lineHeight: toNum(slideScopedValue(entry, "lineHeight", id, 1.5), 1.5),
           align: normalizeAlign(slideScopedValue(entry, "textAlign", id, "center")),
           rotation: toNum(slideScopedValue(entry, "rotation", id, 0), 0),
         };
