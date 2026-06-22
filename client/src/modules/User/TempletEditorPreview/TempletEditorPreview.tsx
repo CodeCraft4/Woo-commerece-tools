@@ -27,7 +27,6 @@ import {
 
 const MUG_URL = "/assets/modals/tea_cup.glb";
 const MUG_TEXTURE_VERTICAL_OFFSET_PX = -10;
-const MUG_TEXT_VERTICAL_OFFSET_PX = -20;
 
 let container: HTMLDivElement | null;
 let camera: THREE.PerspectiveCamera;
@@ -620,21 +619,6 @@ const readPreviewMugImageFromSessionStorage = (): string | null => {
   }
 };
 
-const offsetSlideTextY = (slide: TemplateSlide, offsetPx: number): TemplateSlide => {
-  if (!offsetPx) return slide;
-  return {
-    ...slide,
-    elements: (slide.elements ?? []).map((el: any) => {
-      if (el?.type !== "text") return el;
-      return {
-        ...el,
-        y: Number(el?.y ?? 0) + offsetPx,
-      };
-    }),
-  };
-};
-
-
 const TempletEditorPreview: React.FC = () => {
   const { state } = useLocation() as {
     state?: {
@@ -661,10 +645,8 @@ const TempletEditorPreview: React.FC = () => {
   const textureSlide = useMemo(() => {
     const first = previewSlides[0];
     if (!first) return null;
-    return isSafariTextureCapture
-      ? offsetSlideTextY(first, MUG_TEXT_VERTICAL_OFFSET_PX)
-      : first;
-  }, [isSafariTextureCapture, previewSlides]);
+    return first;
+  }, [previewSlides]);
   const routeMugImage = useMemo(
     () => (typeof state?.mugImage === "string" && state.mugImage ? state.mugImage : null),
     [state?.mugImage],

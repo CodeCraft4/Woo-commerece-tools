@@ -868,17 +868,13 @@ const PreviewBookCard = () => {
     setDownloading(true);
     try {
       const expectedCount = CAPTURE_ORDER.length;
-      // DOM capture preserves the exact CSS text layout shown in the preview.
-      // Canvas remains the primary path for iOS/WebKit where DOM capture is less reliable.
-      const primaryResult = isIosWebKit
-        ? await captureCardSlidesFromCanvasRenderer()
-        : await captureCardSlides();
+      // Capture the same DOM/CSS layout shown in the preview on every platform.
+      // Canvas text metrics do not exactly match browser flex/text baselines.
+      const primaryResult = await captureCardSlides();
       let activeResult = primaryResult ?? { captured: [], slidesObj: {}, validCount: 0 };
 
       if (activeResult.validCount < expectedCount) {
-        const fallbackResult = isIosWebKit
-          ? await captureCardSlides()
-          : await captureCardSlidesFromCanvasRenderer();
+        const fallbackResult = await captureCardSlidesFromCanvasRenderer();
         if (fallbackResult?.validCount > activeResult.validCount) {
           activeResult = fallbackResult;
         }
@@ -949,7 +945,7 @@ const PreviewBookCard = () => {
       } finally {
         setDownloading(false);
       }
-  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, isIosWebKit, navigate, persistCardRawSlides]);
+  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, navigate, persistCardRawSlides]);
 
 
   return (

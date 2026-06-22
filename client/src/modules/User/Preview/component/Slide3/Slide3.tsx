@@ -80,7 +80,6 @@ const Slide3 = (props:Slide3Props) => {
   const qrAudioUrl = normalizeUrl(qrAudioPosition3?.url) || audioUrl;
   const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
   const qrPanelWidth = isMobileViewport ? "92%" : "74%";
-  const qrTopNudge = 10;
   const multiBoxHeight = isMobileViewport ? 180 : 210;
   const multiBoxGap = 16;
   const multiBoxTop = 10;
@@ -239,7 +238,7 @@ const Slide3 = (props:Slide3Props) => {
         <Box
           sx={{
             position: "absolute", // use absolute like Rnd
-            top: qrPosition3.y + qrTopNudge,
+            top: qrPosition3.y,
             left: val(qrPosition3.x, 0),
             width: qrPanelWidth,
             height: 200,
@@ -306,7 +305,7 @@ const Slide3 = (props:Slide3Props) => {
         <Box
           sx={{
             position: "absolute", // use absolute like Rnd
-            top: qrAudioPosition3.y + qrTopNudge,
+            top: qrAudioPosition3.y,
             left: val(qrAudioPosition3.x, 0),
             width: qrPanelWidth,
             height: 200,
@@ -439,7 +438,7 @@ const Slide3 = (props:Slide3Props) => {
                   color: String(pickSlide3Style(e, "fontColor", "#000")),
                   fontFamily: String(pickSlide3Style(e, "fontFamily", "Roboto, sans-serif")),
                   textAlign,
-                  lineHeight: pickSlide3Style(e, "lineHeight", 1.2),
+                  lineHeight: pickSlide3Style(e, "lineHeight", 1.5),
                   letterSpacing: pickSlide3Style(e, "letterSpacing", 0),
                   width: "100%",
                   whiteSpace: "pre-wrap",

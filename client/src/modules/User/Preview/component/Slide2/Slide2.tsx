@@ -104,7 +104,6 @@ const Slide2 = (props: Slide2Props) => {
   const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
   const qrPanelWidth = isMobileViewport ? "92%" : "74%";
   const isCardsPreview = isCardsCategory();
-  const qrTopNudge = 10;
   const multiBoxHeight = isMobileViewport ? 180 : 210;
   const multiBoxGap = 16;
   const multiBoxTop = 10;
@@ -266,7 +265,7 @@ const Slide2 = (props: Slide2Props) => {
           <Box
             sx={{
               position: "absolute",
-              top: qrPosition.y + qrTopNudge,
+              top: qrPosition.y,
               left: val(qrPosition.x, 0),
               width: "354px",
               height: 200,
@@ -322,7 +321,7 @@ const Slide2 = (props: Slide2Props) => {
           <Box
             sx={{
               position: "absolute",
-              top: qrPosition.y + qrTopNudge,
+              top: qrPosition.y,
               left: val(qrPosition.x, 0),
               width: qrPanelWidth,
               height: 200,
@@ -382,7 +381,7 @@ const Slide2 = (props: Slide2Props) => {
           <Box
             sx={{
               position: "absolute",
-              top: qrAudioPosition.y + qrTopNudge,
+              top: qrAudioPosition.y,
               left: val(qrAudioPosition.x, 0),
               width: "354px",
               height: 200,
@@ -438,7 +437,7 @@ const Slide2 = (props: Slide2Props) => {
           <Box
             sx={{
               position: "absolute",
-              top: qrAudioPosition.y + qrTopNudge,
+              top: qrAudioPosition.y,
               left: val(qrAudioPosition.x, 0),
               width: qrPanelWidth,
               height: 200,
@@ -544,7 +543,7 @@ const Slide2 = (props: Slide2Props) => {
                 color: resolveTextBoxFontColor(e),
                 fontFamily: resolveTextBoxFontFamily(e),
                 textAlign: normalizeTextAlign(e.textAlign),
-                lineHeight: e.lineHeight ?? 1.2,
+                lineHeight: e.lineHeight ?? 1.5,
                 letterSpacing: e.letterSpacing ?? 0,
                 width: "100%",
                 whiteSpace: "pre-wrap",
