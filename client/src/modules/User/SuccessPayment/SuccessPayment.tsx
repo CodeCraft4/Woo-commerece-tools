@@ -203,6 +203,8 @@ export default function PremiumSuccess() {
       sessionStorage.removeItem("templ_preview_config");
       sessionStorage.removeItem("slides_mirrored");
       sessionStorage.removeItem("slides_mirrored_category");
+      sessionStorage.removeItem("card_raw_slides");
+      sessionStorage.removeItem("card_raw_slides_meta");
     } catch {}
 
     try {

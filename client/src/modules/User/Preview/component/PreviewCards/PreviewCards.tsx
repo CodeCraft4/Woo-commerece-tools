@@ -868,13 +868,19 @@ const PreviewBookCard = () => {
     setDownloading(true);
     try {
       const expectedCount = CAPTURE_ORDER.length;
-      // Capture the same DOM/CSS layout shown in the preview on every platform.
-      // Canvas text metrics do not exactly match browser flex/text baselines.
-      const primaryResult = await captureCardSlides();
+      // WebKit can report a successful html-to-image capture while scaling
+      // absolutely-positioned card layers incorrectly. Use the raw coordinate
+      // renderer first on iOS so the PDF handoff is based on the same model
+      // data that drives the editor state.
+      const primaryResult = isIosWebKit
+        ? await captureCardSlidesFromCanvasRenderer()
+        : await captureCardSlides();
       let activeResult = primaryResult ?? { captured: [], slidesObj: {}, validCount: 0 };
 
       if (activeResult.validCount < expectedCount) {
-        const fallbackResult = await captureCardSlidesFromCanvasRenderer();
+        const fallbackResult = isIosWebKit
+          ? await captureCardSlides()
+          : await captureCardSlidesFromCanvasRenderer();
         if (fallbackResult?.validCount > activeResult.validCount) {
           activeResult = fallbackResult;
         }
@@ -945,7 +951,7 @@ const PreviewBookCard = () => {
       } finally {
         setDownloading(false);
       }
-  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, navigate, persistCardRawSlides]);
+  }, [buildCardRawSlides, captureCardSlides, captureCardSlidesFromCanvasRenderer, downloading, isIosWebKit, navigate, persistCardRawSlides]);
 
 
   return (

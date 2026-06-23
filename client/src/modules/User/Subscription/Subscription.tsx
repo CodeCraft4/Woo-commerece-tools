@@ -511,14 +511,16 @@ const getValidSlides = (slides?: Record<string, any> | null) =>
     ),
   ) as Record<string, string>;
 
+const normalizeRawSlides = (value: any): RawSlide[] =>
+  Array.isArray(value)
+    ? value.filter((sl) => sl && typeof sl === "object" && Array.isArray((sl as any).elements))
+    : [];
+
 const readPersistedCardRawSlides = (): RawSlide[] => {
   try {
     const stored = sessionStorage.getItem("card_raw_slides");
     if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed)
-      ? parsed.filter((sl) => sl && typeof sl === "object" && Array.isArray((sl as any).elements))
-      : [];
+    return normalizeRawSlides(JSON.parse(stored));
   } catch {
     return [];
   }
@@ -625,7 +627,10 @@ const Subscription = () => {
 
   const location: any = useLocation() as { state?: { slides?: Record<string, string>; previewOnly?: boolean } };
   const { state } = location;
-  const routeCardRawSlides = useMemo<RawSlide[]>(() => readPersistedCardRawSlides(), []);
+  const routeCardRawSlides = useMemo<RawSlide[]>(() => {
+    const fromRoute = normalizeRawSlides(state?.cardRawSlides);
+    return fromRoute.length ? fromRoute : readPersistedCardRawSlides();
+  }, [state?.cardRawSlides]);
 
   const { user, plan } = useAuth();
   const navigate = useNavigate();
@@ -725,6 +730,8 @@ const Subscription = () => {
       return false;
     }
   }, [product?.type, selectedProductSnapshot?.type]);
+  const shouldRenderCardRawForPdf =
+    isIosWebKit && isLegacyCardProduct && routeCardRawSlides.length > 0;
   const activeTemplatePreviewSession = useMemo(
     () =>
       !isLegacyCardProduct &&
@@ -1264,6 +1271,56 @@ const Subscription = () => {
     [captureHeight, captureWidth, prepareRawSlideForCanvas, rawSlides],
   );
 
+  const captureCardRawSlidesFromCanvasRenderer = useCallback(
+    async (format: "jpeg" | "png", maxDim = 1600) => {
+      if (!routeCardRawSlides.length) return [];
+
+      const fonts = collectFontsFromRawSlides(routeCardRawSlides);
+      if (fonts.length) {
+        const urls = buildGoogleFontsUrls(fonts);
+        loadGoogleFontsOnce(urls);
+        await ensureGoogleFontsLoaded(urls);
+      }
+      if ((document as any)?.fonts?.ready) {
+        try {
+          await (document as any).fonts.ready;
+        } catch {}
+      }
+
+      const out: string[] = [];
+      const maxSide = Math.max(LEGACY_CARD_CAPTURE.w, LEGACY_CARD_CAPTURE.h, 1);
+      const ratio = maxSide ? maxDim / maxSide : 1.5;
+      const pixelRatio = Math.min(format === "png" ? 3 : 2.5, Math.max(1, ratio));
+
+      for (let i = 0; i < routeCardRawSlides.length; i += 1) {
+        const preparedSlide = await prepareRawSlideForCanvas(routeCardRawSlides[i]);
+        const result = await renderTemplateSlideToCanvasWithStats(preparedSlide as any, {
+          width: LEGACY_CARD_CAPTURE.w,
+          height: LEGACY_CARD_CAPTURE.h,
+          pixelRatio,
+          backgroundColor: format === "png" ? "transparent" : "#ffffff",
+        });
+
+        if (result.expectedAssets > 0 && result.drawnAssets < result.expectedAssets) {
+          return [];
+        }
+
+        const dataUrl =
+          format === "png"
+            ? result.canvas.toDataURL("image/png")
+            : result.canvas.toDataURL("image/jpeg", 0.9);
+        out.push(dataUrl);
+
+        if (i < routeCardRawSlides.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      }
+
+      return out;
+    },
+    [prepareRawSlideForCanvas, routeCardRawSlides],
+  );
+
   const captureLegacyCardSlidesFromDom = useCallback(
     async (maxDim = 1600) => {
       const out: string[] = [];
@@ -1711,6 +1768,8 @@ const Subscription = () => {
       sessionStorage.removeItem("slides_mirrored");
       sessionStorage.removeItem("slides_mirrored_category");
       sessionStorage.removeItem("card_preview_downloaded");
+      sessionStorage.removeItem("card_raw_slides");
+      sessionStorage.removeItem("card_raw_slides_meta");
     } catch {}
 
     clearSubscriptionPreviewPayload();
@@ -1834,6 +1893,15 @@ const Subscription = () => {
         ? true
         : currentKeys.every((k) => String(current[k] || "").startsWith("data:image/png"));
 
+      if (shouldRenderCardRawForPdf) {
+        const list = await captureCardRawSlidesFromCanvasRenderer(format, needPng ? 2400 : 1600);
+        if (list.length) {
+          const next = Object.fromEntries(list.map((u, idx) => [`slide${idx + 1}`, u]));
+          storeSlidesPayload(next);
+          return next;
+        }
+      }
+
       if (hasEnough && (hasPng || (isIosWebKit && Object.keys(preparedPreviewSlides).length)) && !isPreviewOnly) {
         const validCurrent = getValidSlides(current as Record<string, string>);
         if (Object.keys(validCurrent).length) {
@@ -1870,6 +1938,7 @@ const Subscription = () => {
       return next;
     },
     [
+      captureCardRawSlidesFromCanvasRenderer,
       captureSlidesFromCanvasRenderer,
       captureLegacyCardSlidesFromDom,
       captureSlidesFromDom,
@@ -1883,6 +1952,7 @@ const Subscription = () => {
       preparedTemplatePreviewSlides,
       readCapturedSlidesFromStorage,
       rawSlides.length,
+      shouldRenderCardRawForPdf,
       storeSlidesPayload,
     ]
   );
@@ -1941,13 +2011,15 @@ const Subscription = () => {
       onProgress?: (value: number, label: string) => void,
     ) => {
       const prep = getCheckoutPreparation(cardSize);
-      const cached = await loadPreparedSlidesPayload(prep.cardSize);
-      if (cached && Object.keys(cached).length) {
-        return {
-          slides: cached,
-          outputFormat: prep.outputFormat,
-          pageOrientation: prep.pageOrientation,
-        };
+      if (!shouldRenderCardRawForPdf) {
+        const cached = await loadPreparedSlidesPayload(prep.cardSize);
+        if (cached && Object.keys(cached).length) {
+          return {
+            slides: cached,
+            outputFormat: prep.outputFormat,
+            pageOrientation: prep.pageOrientation,
+          };
+        }
       }
 
       const rawSlides = await ensureSlidesPayload(prep.captureFormat);
@@ -2195,6 +2267,7 @@ const Subscription = () => {
       ensureSlidesPayload,
       getCheckoutPreparation,
       loadPreparedSlidesPayload,
+      shouldRenderCardRawForPdf,
       storePreparedSlidesPayload,
     ],
   );
@@ -2208,7 +2281,8 @@ const Subscription = () => {
   }, [categoryName, isMugsCategory]);
 
   useEffect(() => {
-    const skipLegacyIosPrefetch = isIosWebKit && isLegacyCardProduct && Boolean(firstSlideUrl);
+    const skipLegacyIosPrefetch =
+      isIosWebKit && isLegacyCardProduct && Boolean(firstSlideUrl) && !shouldRenderCardRawForPdf;
     const skipTemplateRegeneration =
       activeTemplatePreviewSession && (hasPreparedTemplatePreviewSlides || isIosWebKit);
     const skipStripeStickerRegeneration = lockStripeStickerPreview;
@@ -2232,7 +2306,8 @@ const Subscription = () => {
               : 4
             : 0;
         const bypassStoredIosPreviewSlides =
-          isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0;
+          shouldRenderCardRawForPdf ||
+          (isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0);
         const hasEnough = expectedCount ? currentKeys.length >= expectedCount : currentKeys.length > 0;
         const hasPng =
           prefetchCaptureFormat !== "png" ||
@@ -2254,19 +2329,24 @@ const Subscription = () => {
           return;
         }
 
-        if (!rawSlides.length && !isLegacyCardProduct) return;
+        if (!rawSlides.length && !isLegacyCardProduct && !shouldRenderCardRawForPdf) return;
 
         await ensureCaptureSupportReady();
         const useCanvasCaptureForTemplate =
           isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0;
-        const list = rawSlides.length
-          ? useCanvasCaptureForTemplate
+        const list = shouldRenderCardRawForPdf
+          ? await captureCardRawSlidesFromCanvasRenderer(
+              prefetchCaptureFormat,
+              prefetchCaptureFormat === "png" ? 2400 : 1600
+            )
+          : rawSlides.length
+            ? useCanvasCaptureForTemplate
             ? await captureSlidesFromCanvasRenderer(
                 prefetchCaptureFormat,
                 prefetchCaptureFormat === "png" ? 2400 : 1600
               )
             : await captureSlidesFromDom(prefetchCaptureFormat, prefetchCaptureFormat === "png" ? 2400 : 1600)
-          : await captureLegacyCardSlidesFromDom(1600);
+            : await captureLegacyCardSlidesFromDom(1600);
         if (cancelled || !list.length) return;
         const next = Object.fromEntries(list.map((u, idx) => [`slide${idx + 1}`, u]));
         if (useCanvasCaptureForTemplate) {
@@ -2291,6 +2371,7 @@ const Subscription = () => {
     };
   }, [
     captureLegacyCardSlidesFromDom,
+    captureCardRawSlidesFromCanvasRenderer,
     captureSlidesFromCanvasRenderer,
     captureSlidesFromDom,
     ensureCaptureSupportReady,
@@ -2305,6 +2386,7 @@ const Subscription = () => {
     prefetchCaptureFormat,
     rawSlides,
     readCapturedSlidesFromStorage,
+    shouldRenderCardRawForPdf,
     storeSlidesPayload,
     subscriptionPreviewKey,
   ]);
@@ -2320,8 +2402,10 @@ const Subscription = () => {
         const validCurrent = getValidSlides(current);
         if (!Object.keys(validCurrent).length) return;
         const prep = getCheckoutPreparation(selectedPlan);
-        const cached = await loadPreparedSlidesPayload(prep.cardSize);
-        if (cached && Object.keys(cached).length) return;
+        if (!shouldRenderCardRawForPdf) {
+          const cached = await loadPreparedSlidesPayload(prep.cardSize);
+          if (cached && Object.keys(cached).length) return;
+        }
         await prepareDeliverySlides(prep.cardSize);
       } catch {
         // Best-effort warm cache only.
@@ -2348,6 +2432,7 @@ const Subscription = () => {
     prepareDeliverySlides,
     rawSlides.length,
     selectedPlan,
+    shouldRenderCardRawForPdf,
   ]);
 
   const sendPdfDirectForSubscription = useCallback(

@@ -59,6 +59,8 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     sessionStorage.removeItem("cart-store-v2");
     sessionStorage.removeItem("draft:card_id");
     sessionStorage.removeItem("card_preview_downloaded");
+    sessionStorage.removeItem("card_raw_slides");
+    sessionStorage.removeItem("card_raw_slides_meta");
     clearSlidesFromIdb().catch(() => {});
     delete (globalThis as any).__slidesCache;
     delete (globalThis as any).__rawSlidesCache;
