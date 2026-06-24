@@ -40,8 +40,6 @@ import MainLayout from "../../../layout/MainLayout";
 import { COLORS } from "../../../constant/color";
 import { removeWhiteBg } from "../../../lib/lib";
 import {
-  clearSlidesFromIdb,
-  clearSlidesFromIdbByPrefix,
   loadSlidesFromIdb,
   loadSlidesFromIdbByKey,
   saveSlidesToIdb,
@@ -57,7 +55,6 @@ import {
 import { isIosTouchDevice } from "../../../lib/platform";
 import { renderTemplateSlideToCanvasWithStats } from "../../../lib/templateSlideCanvas";
 import {
-  clearSubscriptionPreviewPayload,
   readSubscriptionPreviewPayload,
   saveSubscriptionPreviewPayload,
 } from "../../../lib/subscriptionPreview";
@@ -516,6 +513,37 @@ const normalizeRawSlides = (value: any): RawSlide[] =>
     ? value.filter((sl) => sl && typeof sl === "object" && Array.isArray((sl as any).elements))
     : [];
 
+const hasRenderableRawSlideContent = (slide?: RawSlide | null) => {
+  if (!slide) return false;
+  const bg = String(slide.bgColor ?? "").trim().toLowerCase();
+  if (bg && bg !== "transparent" && bg !== "#fff" && bg !== "#ffffff" && bg !== "white") {
+    return true;
+  }
+
+  return (slide.elements ?? []).some((el: any) => {
+    const type = String(el?.type ?? "").toLowerCase();
+    const width = toNum(el?.width, 0);
+    const height = toNum(el?.height, 0);
+    if (type === "text") return String(el?.text ?? "").trim().length > 0;
+    if (type === "image" || type === "sticker") {
+      return Boolean(String(el?.src ?? "").trim()) && width > 0 && height > 0;
+    }
+    return false;
+  });
+};
+
+const firstRenderableRawSlideIndex = (slides: RawSlide[]) => {
+  const idx = (slides ?? []).findIndex(hasRenderableRawSlideContent);
+  return idx >= 0 ? idx : 0;
+};
+
+const pickSlideByNumber = (slides: Record<string, string> | null | undefined, slideNumber: number) => {
+  const valid = getValidSlides(slides);
+  const preferred = valid[`slide${Math.max(1, slideNumber)}`];
+  if (preferred) return preferred;
+  return valid.slide1 || Object.values(valid)[0] || "";
+};
+
 const readPersistedCardRawSlides = (): RawSlide[] => {
   try {
     const stored = sessionStorage.getItem("card_raw_slides");
@@ -631,6 +659,11 @@ const Subscription = () => {
     const fromRoute = normalizeRawSlides(state?.cardRawSlides);
     return fromRoute.length ? fromRoute : readPersistedCardRawSlides();
   }, [state?.cardRawSlides]);
+  const cardPreviewSlideIndex = useMemo(
+    () => firstRenderableRawSlideIndex(routeCardRawSlides),
+    [routeCardRawSlides],
+  );
+  const cardPreviewSlideNumber = cardPreviewSlideIndex + 1;
 
   const { user, plan } = useAuth();
   const navigate = useNavigate();
@@ -819,22 +852,22 @@ const Subscription = () => {
       }
 
       try {
+        const fromIdb = await loadSlidesFromIdb();
+        if (mounted && fromIdb) {
+          setSlidesObj(fromIdb as Record<string, string>);
+          return;
+        }
+      } catch {
+        if (mounted) setSlidesObj({});
+      }
+
+      try {
         const fromLocal = JSON.parse(localStorage.getItem("slides_backup") || "{}");
         if (mounted && fromLocal && Object.keys(fromLocal).length) {
           setSlidesObj(fromLocal);
           return;
         }
         if (fromLocal && Object.keys(fromLocal).length) return;
-      } catch {
-        if (mounted) setSlidesObj({});
-      }
-
-      try {
-        const fromIdb = await loadSlidesFromIdb();
-        if (mounted && fromIdb) {
-          setSlidesObj(fromIdb as Record<string, string>);
-          return;
-        }
       } catch {
         if (mounted) setSlidesObj({});
       }
@@ -891,6 +924,11 @@ const Subscription = () => {
     ? subscriptionPreviewSlide1 || (shouldUseIosTemplateCanvasPreview ? iosTemplatePreviewSrc : "")
     : lockStripeStickerPreview
     ? subscriptionPreviewSlides?.slide1 || slidesObj?.slide1 || ""
+    : isLegacyCardProduct
+    ? pickSlideByNumber(slidesObj, cardPreviewSlideNumber) ||
+      (!isIosWebKit && isStripeReturn
+        ? pickSlideByNumber(subscriptionPreviewSlides, cardPreviewSlideNumber)
+        : "")
     : slidesObj?.slide1 || (!isIosWebKit && isStripeReturn ? subscriptionPreviewSlides?.slide1 || "" : "");
   const captureWidth = Math.max(1, Math.round(Number(previewConfig?.mmWidth) || 800));
   const captureHeight = Math.max(1, Math.round(Number(previewConfig?.mmHeight) || 600));
@@ -1754,43 +1792,6 @@ const Subscription = () => {
     }
   };
 
-  const clearPreviewStorage = useCallback(() => {
-    try {
-      sessionStorage.removeItem("slides");
-      sessionStorage.removeItem("slides_preview_only");
-      sessionStorage.removeItem("rawSlidesCount");
-      sessionStorage.removeItem("capturedSlides");
-      sessionStorage.removeItem("capturedSlidesKey");
-      sessionStorage.removeItem("templ_preview_slides");
-      sessionStorage.removeItem("templ_preview_key");
-      sessionStorage.removeItem("templ_preview_category");
-      sessionStorage.removeItem("templ_preview_config");
-      sessionStorage.removeItem("slides_mirrored");
-      sessionStorage.removeItem("slides_mirrored_category");
-      sessionStorage.removeItem("card_preview_downloaded");
-      sessionStorage.removeItem("card_raw_slides");
-      sessionStorage.removeItem("card_raw_slides_meta");
-    } catch {}
-
-    clearSubscriptionPreviewPayload();
-
-    try {
-      localStorage.removeItem("slides_backup");
-    } catch {}
-
-    try {
-      void clearSlidesFromIdb();
-      void clearSlidesFromIdbByPrefix(PREPARED_SLIDES_PREFIX);
-    } catch {}
-
-    try {
-      delete (globalThis as any).__slidesCache;
-      delete (globalThis as any).__preparedSlidesCache;
-      delete (globalThis as any).__rawSlidesCache;
-      delete (globalThis as any).__previewConfigCache;
-    } catch {}
-  }, []);
-
   const syncLocalSelection = (p: { id: any; title: string; price: number }) => {
     try {
       const newVariant: SelectedVariant = {
@@ -2011,7 +2012,8 @@ const Subscription = () => {
       onProgress?: (value: number, label: string) => void,
     ) => {
       const prep = getCheckoutPreparation(cardSize);
-      if (!shouldRenderCardRawForPdf) {
+      const canUsePreparedSlidesCache = !shouldRenderCardRawForPdf && !isLegacyCardProduct;
+      if (canUsePreparedSlidesCache) {
         const cached = await loadPreparedSlidesPayload(prep.cardSize);
         if (cached && Object.keys(cached).length) {
           return {
@@ -2255,7 +2257,9 @@ const Subscription = () => {
         throw new Error("No valid slides found");
       }
 
-      storePreparedSlidesPayload(prep.cardSize, validSlides);
+      if (canUsePreparedSlidesCache) {
+        storePreparedSlidesPayload(prep.cardSize, validSlides);
+      }
       return {
         slides: validSlides,
         outputFormat: prep.outputFormat,
@@ -2266,6 +2270,7 @@ const Subscription = () => {
       categoryName,
       ensureSlidesPayload,
       getCheckoutPreparation,
+      isLegacyCardProduct,
       loadPreparedSlidesPayload,
       shouldRenderCardRawForPdf,
       storePreparedSlidesPayload,
@@ -2402,7 +2407,7 @@ const Subscription = () => {
         const validCurrent = getValidSlides(current);
         if (!Object.keys(validCurrent).length) return;
         const prep = getCheckoutPreparation(selectedPlan);
-        if (!shouldRenderCardRawForPdf) {
+        if (!shouldRenderCardRawForPdf && !isLegacyCardProduct) {
           const cached = await loadPreparedSlidesPayload(prep.cardSize);
           if (cached && Object.keys(cached).length) return;
         }
@@ -2486,7 +2491,6 @@ const Subscription = () => {
 
         setCheckoutProgressStep(94, "Sending your file to email...");
         await res.json();
-        clearPreviewStorage();
         setCheckoutProgressStep(100, "Done");
         toast.success("File generated & emailed to you!", {
           id: opts?.sessionId ? `file-generated-${opts.sessionId}` : "file-generated-direct",
@@ -2509,7 +2513,6 @@ const Subscription = () => {
       planCode,
       getCheckoutPreparation,
       prepareDeliverySlides,
-      clearPreviewStorage,
     ]
   );
 
@@ -2751,28 +2754,26 @@ const Subscription = () => {
     rawSlides.length > 0 &&
     !isLegacyCardProduct &&
     !isBagCategory;
-  const routeCardLiveSlide = routeCardRawSlides[0] ?? null;
-  const forceLiveCardPreview = isIosWebKit && (isLegacyCardProduct || isCardsCategoryPage);
+  const routeCardLiveSlide = routeCardRawSlides[cardPreviewSlideIndex] ?? routeCardRawSlides[0] ?? null;
   const preferLiveCardPreview =
     (isLegacyCardProduct || isCardsCategoryPage) &&
+    !previewSrc &&
     (legacyCardCaptureEnabled || (isIosWebKit && Boolean(routeCardLiveSlide)));
   const showOverlayPreview =
     Boolean(previewSrc) &&
     useMockupBackground &&
     !preferLiveTemplatePreview &&
-    !preferLiveCardPreview &&
-    !forceLiveCardPreview;
+    !preferLiveCardPreview;
   const showFlatPreview =
     Boolean(previewSrc) &&
     !useMockupBackground &&
     !preferLiveTemplatePreview &&
-    !preferLiveCardPreview &&
-    !forceLiveCardPreview;
+    !preferLiveCardPreview;
   const showLiveTemplatePreview =
     activeTemplatePreviewSession && rawSlides.length > 0 && (preferLiveTemplatePreview || !previewSrc);
   const showLiveCardPreview =
     (isLegacyCardProduct || isCardsCategoryPage) &&
-    (forceLiveCardPreview || preferLiveCardPreview || !previewSrc);
+    (preferLiveCardPreview || !previewSrc);
   const stripLiveMockupBackground =
     isStickerCategory || isCandleCategory || isBagCategory || isClothingCategory;
   const iosStablePreviewLayerSx = isIosWebKit

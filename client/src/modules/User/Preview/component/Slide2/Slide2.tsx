@@ -101,10 +101,9 @@ const Slide2 = (props: Slide2Props) => {
   const audioUrl = normalizeUrl(selectedAudioUrl);
   const qrVideoUrl = normalizeUrl(qrPosition?.url) || videoUrl;
   const qrAudioUrl = normalizeUrl(qrAudioPosition?.url) || audioUrl;
-  const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
-  const qrPanelWidth = isMobileViewport ? "92%" : "74%";
+  const qrPanelWidth = "74%";
   const isCardsPreview = isCardsCategory();
-  const multiBoxHeight = isMobileViewport ? 180 : 210;
+  const multiBoxHeight = 210;
   const multiBoxGap = 16;
   const multiBoxTop = 10;
 

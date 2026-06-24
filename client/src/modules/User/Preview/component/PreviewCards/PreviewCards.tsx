@@ -24,7 +24,12 @@ import {
   renderTemplateSlideToCanvasWithStats,
   type TemplateSlide,
 } from "../../../../../lib/templateSlideCanvas";
-import { buildGoogleFontsUrls, ensureGoogleFontsLoaded, loadGoogleFontsOnce } from "../../../../../constant/googleFonts";
+import {
+  buildGoogleFontsUrls,
+  ensureGoogleFontsLoaded,
+  getGoogleFontEmbedCss,
+  loadGoogleFontsOnce,
+} from "../../../../../constant/googleFonts";
 import { buildPolygonLayout, mergeBuckets, type SlidePayloadV2 } from "../../../../../lib/polygon";
 import { QRCodeSVG } from "qrcode.react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -36,6 +41,14 @@ const CAPTURE_SIZE = { w: 500, h: 700 };
 const QR_PANEL_SIZE = { w: 354, h: 200 };
 const TRANSPARENT_PIXEL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+const GENERIC_FONT_FAMILIES = new Set([
+  "serif",
+  "sans-serif",
+  "monospace",
+  "cursive",
+  "fantasy",
+  "system-ui",
+]);
 
 const buildCardSlidesScopeKeys = () => {
   try {
@@ -64,6 +77,33 @@ const toNum = (value: unknown, fallback = 0) => {
     if (Number.isFinite(parsed)) return parsed;
   }
   return fallback;
+};
+
+const normalizeFontFamilyForCapture = (value?: string | null) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const quoted = raw.match(/['"]([^'"]+)['"]/);
+  if (quoted?.[1]) return quoted[1].trim();
+  const first = raw.split(",")[0]?.trim() ?? "";
+  return first.replace(/^['"]|['"]$/g, "").trim();
+};
+
+const collectFontsFromNode = (node: HTMLElement | null) => {
+  if (!node) return [];
+  const fonts = new Set<string>();
+  const walk = (el: HTMLElement) => {
+    const fontFamily = getComputedStyle(el).fontFamily || "";
+    fontFamily.split(",").forEach((value) => {
+      const family = normalizeFontFamilyForCapture(value);
+      if (!family || GENERIC_FONT_FAMILIES.has(family.toLowerCase())) return;
+      fonts.add(family);
+    });
+    Array.from(el.children).forEach((child) => {
+      if (child instanceof HTMLElement) walk(child);
+    });
+  };
+  walk(node);
+  return Array.from(fonts);
 };
 
 const firstDefined = (...values: any[]) => {
@@ -671,6 +711,7 @@ const PreviewBookCard = () => {
     slide3: null,
     slide4: null,
   });
+  const captureFontEmbedCssCacheRef = useRef<Map<string, Promise<string>>>(new Map());
 
   const setCaptureRef = (key: CaptureSlideKey) => (node: HTMLDivElement | null) => {
     captureRefs.current[key] = node;
@@ -701,11 +742,31 @@ const PreviewBookCard = () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
   }, []);
 
+  const resolveCaptureFontEmbedCss = useCallback(async (fonts: string[]) => {
+    const normalizedFonts = Array.from(
+      new Set(
+        fonts
+          .map((font) => normalizeFontFamilyForCapture(font))
+          .filter((font) => font && !GENERIC_FONT_FAMILIES.has(font.toLowerCase())),
+      ),
+    ).sort();
+    if (!normalizedFonts.length) return "";
+
+    const cacheKey = normalizedFonts.join("|");
+    const cached = captureFontEmbedCssCacheRef.current.get(cacheKey);
+    if (cached) return await cached;
+
+    const promise = getGoogleFontEmbedCss(normalizedFonts).catch(() => "");
+    captureFontEmbedCssCacheRef.current.set(cacheKey, promise);
+    return await promise;
+  }, []);
+
   const captureSingleDomSlide = useCallback(
     async (key: CaptureSlideKey) => {
       const node = captureRefs.current[key];
       if (!node) return "";
       await waitForNodeAssets(node);
+      const fontEmbedCSS = await resolveCaptureFontEmbedCss(collectFontsFromNode(node));
       let capturedUrl = "";
       for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
@@ -719,6 +780,8 @@ const PreviewBookCard = () => {
             backgroundColor: "#ffffff",
             cacheBust: true,
             imagePlaceholder: TRANSPARENT_PIXEL,
+            skipFonts: !fontEmbedCSS,
+            fontEmbedCSS: fontEmbedCSS || undefined,
             width: CAPTURE_SIZE.w,
             height: CAPTURE_SIZE.h,
             style: { transform: "none" },
@@ -729,7 +792,7 @@ const PreviewBookCard = () => {
       }
       return capturedUrl;
     },
-    [waitForNodeAssets],
+    [resolveCaptureFontEmbedCss, waitForNodeAssets],
   );
 
   const captureCardSlides = useCallback(async () => {

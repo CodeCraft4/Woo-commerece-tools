@@ -78,9 +78,8 @@ const Slide3 = (props:Slide3Props) => {
   const audioUrl = normalizeUrl(selectedAudioUrl3);
   const qrVideoUrl = normalizeUrl(qrPosition3?.url) || videoUrl;
   const qrAudioUrl = normalizeUrl(qrAudioPosition3?.url) || audioUrl;
-  const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
-  const qrPanelWidth = isMobileViewport ? "92%" : "74%";
-  const multiBoxHeight = isMobileViewport ? 180 : 210;
+  const qrPanelWidth = "74%";
+  const multiBoxHeight = 210;
   const multiBoxGap = 16;
   const multiBoxTop = 10;
   return (
