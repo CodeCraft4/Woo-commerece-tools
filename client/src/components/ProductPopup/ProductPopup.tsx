@@ -24,6 +24,18 @@ import SmartImage from "../SmartImage/SmartImage";
 import { shouldSmartCropCategory } from "../../lib/thumbnail";
 import TemplateSvgThumbnail from "../TemplateSvgThumbnail/TemplateSvgThumbnail";
 
+const CARD_MOCKUP_PREVIEW_STORAGE_PREFIX = "subscription:card:mockup-preview";
+
+const clearCardMockupPreviewStorage = (storage: Storage) => {
+  for (let i = storage.length - 1; i >= 0; i -= 1) {
+    const key = storage.key(i);
+    if (!key) continue;
+    if (key === "card_mockup_preview_src" || key.startsWith(CARD_MOCKUP_PREVIEW_STORAGE_PREFIX)) {
+      storage.removeItem(key);
+    }
+  }
+};
+
 const style = {
   position: "absolute" as const,
   top: "50%",
@@ -65,6 +77,8 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     delete (globalThis as any).__slidesCache;
     delete (globalThis as any).__rawSlidesCache;
     delete (globalThis as any).__previewConfigCache;
+    clearCardMockupPreviewStorage(sessionStorage);
+    clearCardMockupPreviewStorage(localStorage);
 
 
     for (let i = localStorage.length - 1; i >= 0; i--) {

@@ -20,6 +20,7 @@ export type TemplateTextEl = BaseEl & {
   fontStyle?: string;
   textDecoration?: string;
   lineHeight?: number;
+  letterSpacing?: number;
   align?: "left" | "center" | "right";
   verticalAlign?: "top" | "center" | "bottom";
   curve?: number;
@@ -369,10 +370,22 @@ const drawInsideRotatedElementBox = (
   ctx.restore();
 };
 
+const measureTextWidth = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  letterSpacing = 0,
+) => {
+  const chars = Array.from(String(text ?? ""));
+  if (!chars.length) return 0;
+  const measured = chars.reduce((sum, char) => sum + ctx.measureText(char).width, 0);
+  return Math.max(0, measured + letterSpacing * Math.max(0, chars.length - 1));
+};
+
 const wrapText = (
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
+  letterSpacing = 0,
 ) => {
   const lines: string[] = [];
   const normalized = String(text ?? "").replace(/\r/g, "");
@@ -383,7 +396,7 @@ const wrapText = (
     const chunks: string[] = [];
     for (const char of word) {
       const next = `${current}${char}`;
-      if (current && ctx.measureText(next).width > maxWidth) {
+      if (current && measureTextWidth(ctx, next, letterSpacing) > maxWidth) {
         chunks.push(current);
         current = char;
       } else {
@@ -403,7 +416,7 @@ const wrapText = (
 
     let current = "";
     words.forEach((word) => {
-      if (ctx.measureText(word).width > maxWidth) {
+      if (measureTextWidth(ctx, word, letterSpacing) > maxWidth) {
         if (current) {
           lines.push(current);
           current = "";
@@ -413,7 +426,7 @@ const wrapText = (
       }
 
       const next = current ? `${current} ${word}` : word;
-      if (ctx.measureText(next).width > maxWidth && current) {
+      if (measureTextWidth(ctx, next, letterSpacing) > maxWidth && current) {
         lines.push(current);
         current = word;
       } else {
@@ -542,7 +555,10 @@ const drawCurvedText = (
 
   const glyphs = Array.from(content);
   const widths = glyphs.map((glyph) => ctx.measureText(glyph).width);
-  const totalGlyphWidth = widths.reduce((sum, width) => sum + width, 0);
+  const letterSpacing = toNum(text.letterSpacing, 0);
+  const totalGlyphWidth =
+    widths.reduce((sum, width) => sum + width, 0) +
+    letterSpacing * Math.max(0, glyphs.length - 1);
   const align = text.align ?? "center";
   const startDistance =
     align === "left"
@@ -565,8 +581,41 @@ const drawCurvedText = (
     ctx.fillText(glyph, -glyphWidth / 2, 0);
     ctx.restore();
 
-    consumed += glyphWidth;
+    consumed += glyphWidth + letterSpacing;
   });
+};
+
+const fillTextLine = (
+  ctx: CanvasRenderingContext2D,
+  line: string,
+  anchorX: number,
+  y: number,
+  align: CanvasTextAlign,
+  letterSpacing: number,
+) => {
+  if (!line || !letterSpacing) {
+    ctx.fillText(line, anchorX, y);
+    return;
+  }
+
+  const chars = Array.from(line);
+  const lineWidth = measureTextWidth(ctx, line, letterSpacing);
+  const startX =
+    align === "right"
+      ? anchorX - lineWidth
+      : align === "center"
+      ? anchorX - lineWidth / 2
+      : anchorX;
+  const previousAlign = ctx.textAlign;
+
+  ctx.textAlign = "left";
+  let cursorX = startX;
+  chars.forEach((char, index) => {
+    ctx.fillText(char, cursorX, y);
+    cursorX += ctx.measureText(char).width;
+    if (index < chars.length - 1) cursorX += letterSpacing;
+  });
+  ctx.textAlign = previousAlign;
 };
 
 const drawTextElement = (
@@ -581,6 +630,7 @@ const drawTextElement = (
   const fontFamily = text.fontFamily || "Arial";
   const lineHeightRatio = Math.max(0.8, toNum(text.lineHeight, 1.2));
   const lineHeight = fontSize * lineHeightRatio;
+  const letterSpacing = toNum(text.letterSpacing, 0);
   const rotation = (toNum(text.rotation, 0) * Math.PI) / 180;
   const align = text.align ?? "center";
   const verticalAlign = text.verticalAlign ?? "center";
@@ -596,7 +646,7 @@ const drawTextElement = (
   ctx.textBaseline = "alphabetic";
   ctx.textAlign = align as CanvasTextAlign;
 
-  const lines = wrapText(ctx, text.text ?? "", width);
+  const lines = wrapText(ctx, text.text ?? "", width, letterSpacing);
   if (Math.abs(toNum(text.curve, 0)) > 0.5) {
     drawCurvedText(ctx, text, lines);
     ctx.restore();
@@ -619,9 +669,9 @@ const drawTextElement = (
     const glyphHeight = metrics.ascent + metrics.descent;
     const glyphTop = lineTop + Math.max(0, (lineHeight - glyphHeight) / 2);
     const y = glyphTop + metrics.ascent;
-    ctx.fillText(line, anchorX, y);
+    fillTextLine(ctx, line, anchorX, y, align as CanvasTextAlign, letterSpacing);
     if (line && textDecoration.includes("underline")) {
-      const measured = ctx.measureText(line).width;
+      const measured = measureTextWidth(ctx, line, letterSpacing);
       const underlineX =
         align === "left" ? anchorX : align === "right" ? anchorX - measured : anchorX - measured / 2;
       drawTextUnderline(

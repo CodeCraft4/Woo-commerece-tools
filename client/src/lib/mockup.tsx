@@ -252,10 +252,10 @@ const CATEGORY_MOCKUPS: Array<{
         mockupSrc: "/assets/mockup/greeting-card-mockup.jpg",
         cardAspectRatio: "1 / 1",
         overlay: {
-          top: "20%",
+          top: "21%",
           left: "31%",
           width: "36%",
-          height: "74%",
+          height: "68.5%",
           objectFit: "fill",
         },
       },

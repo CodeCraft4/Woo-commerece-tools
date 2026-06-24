@@ -40,6 +40,7 @@ const CAPTURE_ORDER: CaptureSlideKey[] = ["slide1", "slide2", "slide3", "slide4"
 const CAPTURE_SIZE = { w: 500, h: 700 };
 const QR_PANEL_SIZE = { w: 354, h: 200 };
 const MULTI_TEXT_BOX = { x: 8, y: 10, width: CAPTURE_SIZE.w - 16, height: 210, gap: 16 };
+const CARD_MOCKUP_PREVIEW_STORAGE_PREFIX = "subscription:card:mockup-preview";
 const TRANSPARENT_PIXEL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 const GENERIC_FONT_FAMILIES = new Set([
@@ -79,6 +80,66 @@ const toNum = (value: unknown, fallback = 0) => {
   }
   return fallback;
 };
+
+const buildCardMockupPreviewStorageKey = () => {
+  try {
+    const storedProduct = JSON.parse(localStorage.getItem("selectedProduct") || "{}");
+    const productId = String(storedProduct?.id ?? "").trim() || "unknown-product";
+    const category = String(
+      localStorage.getItem("selectedCategory") ||
+        storedProduct?.category ||
+        "cards",
+    )
+      .trim()
+      .toLowerCase();
+    return `${CARD_MOCKUP_PREVIEW_STORAGE_PREFIX}:${productId}:${category || "cards"}`;
+  } catch {
+    return `${CARD_MOCKUP_PREVIEW_STORAGE_PREFIX}:unknown-product:cards`;
+  }
+};
+
+const isDataImageUrl = (value?: string | null) =>
+  typeof value === "string" && value.startsWith("data:image/");
+
+const compressPreviewDataUrl = (
+  src: string,
+  opts: { maxWidth?: number; maxHeight?: number; quality?: number } = {},
+) =>
+  new Promise<string>((resolve) => {
+    if (!isDataImageUrl(src) || typeof Image === "undefined" || typeof document === "undefined") {
+      resolve(src);
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const maxWidth = Math.max(1, opts.maxWidth ?? 1000);
+        const maxHeight = Math.max(1, opts.maxHeight ?? 1400);
+        const naturalWidth = img.naturalWidth || img.width || 1;
+        const naturalHeight = img.naturalHeight || img.height || 1;
+        const scale = Math.min(1, maxWidth / naturalWidth, maxHeight / naturalHeight);
+        const width = Math.max(1, Math.round(naturalWidth * scale));
+        const height = Math.max(1, Math.round(naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(src);
+          return;
+        }
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", opts.quality ?? 0.82));
+      } catch {
+        resolve(src);
+      }
+    };
+    img.onerror = () => resolve(src);
+    img.src = src;
+  });
 
 const normalizeFontFamilyForCapture = (value?: string | null) => {
   const raw = String(value ?? "").trim();
@@ -469,6 +530,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           fontStyle: text?.italic ? "italic" : "normal",
           textDecoration: "none",
           lineHeight: 1.16,
+          letterSpacing: toNum(text?.letterSpacing, 0),
           align: normalizeAlign(text?.textAlign),
           verticalAlign: normalizeVerticalAlign(text?.verticalAlign),
           rotation: toNum(text?.rotation, 0),
@@ -522,6 +584,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           fontStyle: "normal",
           textDecoration: "none",
           lineHeight: toNum(text?.lineHeight, 1.5),
+          letterSpacing: toNum(text?.letterSpacing, 0),
           align: normalizeAlign(text?.textAlign),
           verticalAlign: normalizeVerticalAlign(text?.verticalAlign),
           rotation: toNum(text?.rotation, 0),
@@ -550,6 +613,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
         fontStyle: "normal",
         textDecoration: "none",
         lineHeight: toNum(payload?.oneText?.lineHeight, 1.5),
+        letterSpacing: toNum(payload?.oneText?.letterSpacing, 0),
         align: normalizeAlign(payload?.oneText?.textAlign),
         verticalAlign: normalizeVerticalAlign(payload?.oneText?.verticalAlign),
         rotation: toNum(payload?.oneText?.rotation, 0),
@@ -588,6 +652,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           fontStyle: "normal",
           textDecoration: "none",
           lineHeight: toNum(slideScopedValue(entry, "lineHeight", id, 1.5), 1.5),
+          letterSpacing: toNum(slideScopedValue(entry, "letterSpacing", id, 0), 0),
           align: normalizeAlign(slideScopedValue(entry, "textAlign", id, "center")),
           verticalAlign: normalizeVerticalAlign(slideScopedValue(entry, "verticalAlign", id, "center")),
           rotation: toNum(slideScopedValue(entry, "rotation", id, 0), 0),
@@ -996,6 +1061,16 @@ const PreviewBookCard = () => {
         try {
           const minimal = slidesObj?.slide1 ? JSON.stringify({ slide1: slidesObj.slide1 }) : "{}";
           localStorage.setItem("slides_backup", minimal);
+          if (isDataImageUrl(slidesObj?.slide1)) {
+            const preview = await compressPreviewDataUrl(slidesObj.slide1, {
+              maxWidth: 1000,
+              maxHeight: 1400,
+              quality: 0.82,
+            });
+            const key = buildCardMockupPreviewStorageKey();
+            sessionStorage.setItem(key, preview);
+            localStorage.setItem(key, preview);
+          }
         } catch {}
       } else {
         try {

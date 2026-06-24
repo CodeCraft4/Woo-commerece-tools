@@ -426,6 +426,7 @@ const Slide3 = (props:Slide3Props) => {
                       ? "flex-end"
                       : "center",
                 p: 1,
+                boxSizing: "border-box",
                 zIndex: 9999,
                 pointerEvents: "none",
               }}
@@ -440,6 +441,9 @@ const Slide3 = (props:Slide3Props) => {
                   lineHeight: pickSlide3Style(e, "lineHeight", 1.5),
                   letterSpacing: pickSlide3Style(e, "letterSpacing", 0),
                   width: "100%",
+                  minWidth: 0,
+                  m: 0,
+                  boxSizing: "border-box",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
                 }}
@@ -481,6 +485,7 @@ const Slide3 = (props:Slide3Props) => {
             textAlign: textAlign3, // ✅ still needed for multiline/inline text
             whiteSpace: "pre-wrap",
             p: 1,
+            boxSizing: "border-box",
             zIndex: 9998,
           }}
         >
@@ -514,6 +519,7 @@ const Slide3 = (props:Slide3Props) => {
                     justifyContent: e.textAlign ?? "center",
                     alignItems: e.verticalAlign ?? "center",
                     padding: "5px",
+                    boxSizing: "border-box",
                     whiteSpace: "pre-line", // ⭐ FIX: Show line breaks
                     cursor: "text",
                   }}
