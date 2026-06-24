@@ -39,6 +39,7 @@ type CaptureSlideKey = "slide1" | "slide2" | "slide3" | "slide4";
 const CAPTURE_ORDER: CaptureSlideKey[] = ["slide1", "slide2", "slide3", "slide4"];
 const CAPTURE_SIZE = { w: 500, h: 700 };
 const QR_PANEL_SIZE = { w: 354, h: 200 };
+const MULTI_TEXT_BOX = { x: 8, y: 10, width: CAPTURE_SIZE.w - 16, height: 210, gap: 16 };
 const TRANSPARENT_PIXEL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 const GENERIC_FONT_FAMILIES = new Set([
@@ -136,6 +137,13 @@ const normalizeAlign = (value: unknown): "left" | "center" | "right" => {
   const text = String(value ?? "").toLowerCase().trim();
   if (text === "start" || text === "left") return "left";
   if (text === "end" || text === "right") return "right";
+  return "center";
+};
+
+const normalizeVerticalAlign = (value: unknown): "top" | "center" | "bottom" => {
+  const text = String(value ?? "").toLowerCase().trim();
+  if (text === "top" || text === "start") return "top";
+  if (text === "bottom" || text === "end") return "bottom";
   return "center";
 };
 
@@ -462,6 +470,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           textDecoration: "none",
           lineHeight: 1.16,
           align: normalizeAlign(text?.textAlign),
+          verticalAlign: normalizeVerticalAlign(text?.verticalAlign),
           rotation: toNum(text?.rotation, 0),
         }))
     : [];
@@ -514,6 +523,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           textDecoration: "none",
           lineHeight: toNum(text?.lineHeight, 1.5),
           align: normalizeAlign(text?.textAlign),
+          verticalAlign: normalizeVerticalAlign(text?.verticalAlign),
           rotation: toNum(text?.rotation, 0),
         }))
     : [];
@@ -541,6 +551,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
         textDecoration: "none",
         lineHeight: toNum(payload?.oneText?.lineHeight, 1.5),
         align: normalizeAlign(payload?.oneText?.textAlign),
+        verticalAlign: normalizeVerticalAlign(payload?.oneText?.verticalAlign),
         rotation: toNum(payload?.oneText?.rotation, 0),
       },
     ];
@@ -558,10 +569,10 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           id: String(entry?.id ?? `multi-${id}-${idx}`),
           type: "text" as const,
           text: value,
-          x: 8,
-          y: 8 + idx * 220,
-          width: CAPTURE_SIZE.w - 16,
-          height: 210,
+          x: MULTI_TEXT_BOX.x,
+          y: MULTI_TEXT_BOX.y + idx * (MULTI_TEXT_BOX.height + MULTI_TEXT_BOX.gap),
+          width: MULTI_TEXT_BOX.width,
+          height: MULTI_TEXT_BOX.height,
           zIndex: 300 + idx,
           color: String(
             slideScopedValue(entry, "fontColor", id, entry?.color ?? "#111111"),
@@ -578,6 +589,7 @@ const mapPolygonSlideToTemplateSlide = (id: number, payload?: SlidePayloadV2 | n
           textDecoration: "none",
           lineHeight: toNum(slideScopedValue(entry, "lineHeight", id, 1.5), 1.5),
           align: normalizeAlign(slideScopedValue(entry, "textAlign", id, "center")),
+          verticalAlign: normalizeVerticalAlign(slideScopedValue(entry, "verticalAlign", id, "center")),
           rotation: toNum(slideScopedValue(entry, "rotation", id, 0), 0),
         };
       })
