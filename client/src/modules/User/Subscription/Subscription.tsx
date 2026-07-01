@@ -109,6 +109,22 @@ const TRANSPARENT_PIXEL =
 
 const lc = (s: unknown) => (s == null ? "" : String(s).trim().toLowerCase());
 
+const parseAspectRatio = (ratio?: string | null) => {
+  const raw = String(ratio ?? "").trim();
+  const match = raw.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+  if (!match) return null;
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
+  return { width, height };
+};
+
+const aspectRatioToPadding = (ratio?: string | null) => {
+  const parsed = parseAspectRatio(ratio);
+  if (!parsed) return undefined;
+  return `${(parsed.height / parsed.width) * 100}%`;
+};
+
 const blobToDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const fr = new FileReader();
@@ -1803,8 +1819,12 @@ const Subscription = () => {
 
   const useMockupBackground = allowMockup && Boolean(mock?.mockupSrc) && mockupOk;
   const useIosMockupRatioFallback = useMockupBackground && isIosWebKit;
-  const mockupAspectRatio = useMockupBackground && !useIosMockupRatioFallback ? "818 / 600" : undefined;
-  const iosMockupRatioPadding = useIosMockupRatioFallback ? "73.349633%" : undefined;
+  const mockupSurfaceAspectRatio = mock?.surfaceAspectRatio || "818 / 600";
+  const mockupAspectRatio =
+    useMockupBackground && !useIosMockupRatioFallback ? mockupSurfaceAspectRatio : undefined;
+  const iosMockupRatioPadding = useIosMockupRatioFallback
+    ? aspectRatioToPadding(mockupSurfaceAspectRatio) || "73.349633%"
+    : undefined;
 
   useEffect(() => {
     measurePreviewSurface();
@@ -3128,7 +3148,7 @@ const Subscription = () => {
                   : `url(${TableBgImg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
-                backgroundSize: useMockupBackground ? "100% 100%" : "cover",
+                backgroundSize: "cover",
                 borderRadius: 7,
                 border: "1px solid gray",
                 position: "relative",

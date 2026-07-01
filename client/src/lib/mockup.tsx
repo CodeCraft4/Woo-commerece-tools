@@ -17,6 +17,7 @@ export type MockupOverlay = {
 export type MockupConfig = {
   mockupSrc: string;
   cardAspectRatio: string;
+  surfaceAspectRatio?: string;
   overlay: MockupOverlay;
 };
 
@@ -32,6 +33,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/bag-mockup.png",
         cardAspectRatio: "1 / 1.2",
+        surfaceAspectRatio: "1 / 1",
         overlay: {
           top: "45%",
           left: "20%",
@@ -50,6 +52,7 @@ const CATEGORY_MOCKUPS: Array<{
     cfg: {
       mockupSrc: "/assets/mockup/coaster-mockup.jpg",
       cardAspectRatio: "1 / 1.2",
+      surfaceAspectRatio: "818 / 600",
       overlay: {
           top: "16.5%",
           left: "18%",
@@ -69,6 +72,7 @@ const CATEGORY_MOCKUPS: Array<{
     cfg: {
       mockupSrc: "/assets/mockup/candle-mockup.jpeg",
       cardAspectRatio: "1 / 1.2",
+      surfaceAspectRatio: "1 / 1",
       overlay: {
         top: "32%",
         left: "25%",
@@ -87,6 +91,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/invitation-mockup.jpg",
         cardAspectRatio: "1 / 1.2",
+        surfaceAspectRatio: "818 / 600",
         overlay: {
           top: "15%",
           left: "31.3%",
@@ -104,6 +109,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/Tshirt-mockup.jpg",
         cardAspectRatio: "1 / 1.2",
+        surfaceAspectRatio: "818 / 600",
         overlay: {
           top: "30%",
           left: "33%",
@@ -122,6 +128,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/business-leaflets-mockup.jpg",
         cardAspectRatio: "1 / 1.2",
+        surfaceAspectRatio: "818 / 600",
         overlay: {
           top: "15%",
           left: "33.2%",
@@ -140,6 +147,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/business-card-mockup.jpg",
         cardAspectRatio: "1 / 1",
+        surfaceAspectRatio: "818 / 600",
         overlay: {
           borderRadius: 0,
           top: "20.45%",
@@ -159,6 +167,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/stickers-Mockup.jpeg",
         cardAspectRatio: "1 / 1.2",
+        surfaceAspectRatio: "1 / 1",
         overlay: {
           top: "10%",
           left: "10%",
@@ -177,6 +186,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/mug-mockup.jpg",
         cardAspectRatio: "1 / 1",
+        surfaceAspectRatio: "818 / 600",
         overlay: {
           top: "3%",
           left: "30%",
@@ -194,6 +204,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/notebook-mockup.jpg",
         cardAspectRatio: "1 / 1",
+        surfaceAspectRatio: "818 / 600",
         overlay: {
           top: "20%",
           left: "36.9%",
@@ -214,6 +225,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/photoArt-mockup.jpeg",
         cardAspectRatio: "1 / 1.25",
+        surfaceAspectRatio: "1 / 1",
         overlay: {
           top: "21%",
           left: "36%",
@@ -234,6 +246,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/wallart-mockup.jpg",
         cardAspectRatio: "1 / 1.25",
+        surfaceAspectRatio: "818 / 600",
         overlay: {
           top: "26.5%",
           left: "39.2%",
@@ -251,6 +264,7 @@ const CATEGORY_MOCKUPS: Array<{
       cfg: {
         mockupSrc: "/assets/mockup/greeting-card-mockup.jpg",
         cardAspectRatio: "1 / 1",
+        surfaceAspectRatio: "818 / 600",
         overlay: {
           top: "21%",
           left: "31%",

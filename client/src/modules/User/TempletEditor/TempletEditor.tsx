@@ -1292,12 +1292,47 @@ export default function TempletEditor() {
     if (!file) return;
     const dataUrl = await fileToDataUrl(file);
     setIsDirty(true);
+    const shouldClearLeafletUnderlay =
+      /business\s*leaflets?/i.test(String(adminDesign?.category ?? "")) &&
+      (/png/i.test(String(file.type ?? "")) || /\.png$/i.test(file.name ?? ""));
 
     setUserSlides((prev) => {
       const copy = cloneSlides(prev);
       const el = copy[slideIndex]?.elements.find((e) => e.id === elId);
       if (el && el.type === "image" && (el as ImageEl).editable !== false) {
         (el as ImageEl).src = dataUrl;
+        if (shouldClearLeafletUnderlay) {
+          const targetZ = asNum(el.zIndex, 1);
+          const targetArea = Math.max(1, asNum(el.width, 0) * asNum(el.height, 0));
+          copy[slideIndex].elements = copy[slideIndex].elements.filter((candidate) => {
+            if (candidate.id === el.id || candidate.type !== "image") return true;
+            const image = candidate as ImageEl;
+            const candidateZ = asNum(image.zIndex, 1);
+            if (candidateZ > targetZ) return true;
+
+            const fullBleed =
+              asNum(image.x, 0) <= 8 &&
+              asNum(image.y, 0) <= 8 &&
+              asNum(image.width, 0) >= artboardWidth - 8 &&
+              asNum(image.height, 0) >= artboardHeight - 8;
+            const knownPlaceholder =
+              String(image.id ?? "").toLowerCase().startsWith("bg-") ||
+              String(image.src ?? "").toLowerCase().includes("placeholder");
+            const overlapW = Math.max(
+              0,
+              Math.min(asNum(image.x, 0) + asNum(image.width, 0), asNum(el.x, 0) + asNum(el.width, 0)) -
+                Math.max(asNum(image.x, 0), asNum(el.x, 0)),
+            );
+            const overlapH = Math.max(
+              0,
+              Math.min(asNum(image.y, 0) + asNum(image.height, 0), asNum(el.y, 0) + asNum(el.height, 0)) -
+                Math.max(asNum(image.y, 0), asNum(el.y, 0)),
+            );
+            const overlapRatio = (overlapW * overlapH) / targetArea;
+
+            return !(image.editable === false && (fullBleed || knownPlaceholder || overlapRatio > 0.72));
+          });
+        }
       }
       return copy;
     });

@@ -668,7 +668,9 @@ const drawTextElement = (
     const lineTop = blockTop + index * lineHeight;
     const glyphHeight = metrics.ascent + metrics.descent;
     const glyphTop = lineTop + Math.max(0, (lineHeight - glyphHeight) / 2);
-    const y = glyphTop + metrics.ascent;
+    const metricsBaseline = glyphTop + metrics.ascent;
+    const cssLikeBaseline = lineTop + Math.max(0, (lineHeight - fontSize) / 2) + fontSize * 0.8;
+    const y = Math.min(metricsBaseline, cssLikeBaseline);
     fillTextLine(ctx, line, anchorX, y, align as CanvasTextAlign, letterSpacing);
     if (line && textDecoration.includes("underline")) {
       const measured = measureTextWidth(ctx, line, letterSpacing);
