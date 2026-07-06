@@ -23,6 +23,7 @@ import { fetchCardById } from "../../source/source";
 import SmartImage from "../SmartImage/SmartImage";
 import { shouldSmartCropCategory } from "../../lib/thumbnail";
 import TemplateSvgThumbnail from "../TemplateSvgThumbnail/TemplateSvgThumbnail";
+import { clearSubscriptionPreviewPayload } from "../../lib/subscriptionPreview";
 
 const CARD_MOCKUP_PREVIEW_STORAGE_PREFIX = "subscription:card:mockup-preview";
 
@@ -74,6 +75,7 @@ function clearEditorStorage(opts?: { all?: boolean }) {
     sessionStorage.removeItem("card_raw_slides");
     sessionStorage.removeItem("card_raw_slides_meta");
     clearSlidesFromIdb().catch(() => {});
+    clearSubscriptionPreviewPayload();
     delete (globalThis as any).__slidesCache;
     delete (globalThis as any).__rawSlidesCache;
     delete (globalThis as any).__previewConfigCache;

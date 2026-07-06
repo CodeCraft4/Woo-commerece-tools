@@ -34,6 +34,7 @@ import {
   isMugWrapSize,
   getMugWrapPageMm,
 } from "../../../lib/pdfTwoUp";
+import { clearSubscriptionPreviewPayload } from "../../../lib/subscriptionPreview";
 import useModal from "../../../hooks/useModal";
 import ConfirmModal from "../../../components/ConfirmModal/ConfirmModal";
 import { Check, ErrorOutline, HourglassEmptyOutlined } from "@mui/icons-material";
@@ -209,6 +210,7 @@ export default function PremiumSuccess() {
 
     try {
       localStorage.removeItem("slides_backup");
+      clearSubscriptionPreviewPayload();
     } catch {}
 
     try {

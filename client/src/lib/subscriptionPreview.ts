@@ -21,10 +21,15 @@ export const saveSubscriptionPreviewPayload = (
 ) => {
   const validSlides = getValidSlides(slides);
   if (!Object.keys(validSlides).length) return;
+  const normalizedPreviewKey = String(previewKey ?? "").trim();
+  if (!normalizedPreviewKey) {
+    clearSubscriptionPreviewPayload();
+    return;
+  }
 
   const payload: PersistedSubscriptionPreview = {
     slides: validSlides,
-    ...(previewKey ? { previewKey } : {}),
+    previewKey: normalizedPreviewKey,
   };
 
   try {
@@ -36,6 +41,9 @@ export const saveSubscriptionPreviewPayload = (
 };
 
 export const readSubscriptionPreviewPayload = (expectedPreviewKey?: string | null): SubscriptionPreviewSlides => {
+  const nextPreviewKey = String(expectedPreviewKey ?? "").trim();
+  if (!nextPreviewKey) return {};
+
   const tryParse = (raw: string | null) => {
     if (!raw) return {} as SubscriptionPreviewSlides;
     try {
@@ -44,10 +52,7 @@ export const readSubscriptionPreviewPayload = (expectedPreviewKey?: string | nul
       if (!Object.keys(validSlides).length) return {} as SubscriptionPreviewSlides;
 
       const storedPreviewKey = String(parsed?.previewKey ?? "").trim();
-      const nextPreviewKey = String(expectedPreviewKey ?? "").trim();
-      if (storedPreviewKey && nextPreviewKey && storedPreviewKey !== nextPreviewKey) {
-        return {} as SubscriptionPreviewSlides;
-      }
+      if (!storedPreviewKey || storedPreviewKey !== nextPreviewKey) return {} as SubscriptionPreviewSlides;
 
       return validSlides;
     } catch {

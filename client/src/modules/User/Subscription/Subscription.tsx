@@ -45,6 +45,11 @@ import {
   saveSlidesToIdb,
   saveSlidesToIdbByKey,
 } from "../../../lib/idbSlides";
+import {
+  loadSlidesFromScopes,
+  resolveSlidesScopeCandidates,
+  saveSlidesToScopes,
+} from "../../../lib/slidesScope";
 import { API_BASE } from "../../../lib/apiBase";
 import {
   buildGoogleFontsUrls,
@@ -789,6 +794,46 @@ const Subscription = () => {
   const [subscriptionPreviewSlides, setSubscriptionPreviewSlides] = useState<Record<string, string>>(() =>
     readSubscriptionPreviewPayload(resolveSubscriptionPreviewKey(state?.previewKey) || undefined),
   );
+  const checkoutSlidesScopeKeys = useMemo(() => {
+    const localCategory = (() => {
+      try {
+        return localStorage.getItem("selectedCategory") || "";
+      } catch {
+        return "";
+      }
+    })();
+    const localSize = (() => {
+      try {
+        return localStorage.getItem("selectedSize") || "";
+      } catch {
+        return "";
+      }
+    })();
+    const scopedProductKey =
+      product?.id && product?.type
+        ? `${product.type}:${product.id}`
+        : selectedProductSnapshot?.id && selectedProductSnapshot?.type
+        ? `${selectedProductSnapshot.type}:${selectedProductSnapshot.id}`
+        : "";
+
+    return resolveSlidesScopeCandidates({
+      includeStoredDraft: false,
+      previewKey: subscriptionPreviewKey,
+      productKey: scopedProductKey,
+      category: product?.category || selectedProductSnapshot?.category || variant?.category || localCategory,
+      cardSize: localSize || selectedPlan,
+    });
+  }, [
+    product?.category,
+    product?.id,
+    product?.type,
+    selectedPlan,
+    selectedProductSnapshot?.category,
+    selectedProductSnapshot?.id,
+    selectedProductSnapshot?.type,
+    subscriptionPreviewKey,
+    variant?.category,
+  ]);
   const isStripeReturn = useMemo(() => {
     const sp = new URLSearchParams(location.search);
     return sp.get("paid") === "1" && Boolean(sp.get("session_id"));
@@ -951,6 +996,19 @@ const Subscription = () => {
       }
 
       try {
+        const scopedSlides = await loadSlidesFromScopes(checkoutSlidesScopeKeys);
+        if (mounted && scopedSlides && Object.keys(scopedSlides).length) {
+          setSlidesObj(scopedSlides);
+          return;
+        }
+      } catch {}
+
+      if (isStripeReturn) {
+        if (mounted) setSlidesObj({});
+        return;
+      }
+
+      try {
         const globalSlides = (globalThis as any).__slidesCache;
         if (globalSlides && Object.keys(globalSlides).length) {
           if (mounted) setSlidesObj(globalSlides);
@@ -997,7 +1055,15 @@ const Subscription = () => {
     return () => {
       mounted = false;
     };
-  }, [isIosWebKit, isPreviewOnly, isStripeReturn, lockStripeStickerPreview, state?.slides, subscriptionPreviewSlides]);
+  }, [
+    checkoutSlidesScopeKeys,
+    isIosWebKit,
+    isPreviewOnly,
+    isStripeReturn,
+    lockStripeStickerPreview,
+    state?.slides,
+    subscriptionPreviewSlides,
+  ]);
 
   useEffect(() => {
     if (!activeTemplatePreviewSession) {
@@ -1641,7 +1707,11 @@ const Subscription = () => {
     try {
       void saveSlidesToIdb(valid);
     } catch {}
-  }, [lockStripeStickerPreview]);
+
+    try {
+      void saveSlidesToScopes(checkoutSlidesScopeKeys, valid);
+    } catch {}
+  }, [checkoutSlidesScopeKeys, lockStripeStickerPreview]);
 
   const readCapturedSlidesFromStorage = useCallback(() => {
     try {
@@ -1818,7 +1888,7 @@ const Subscription = () => {
   }, [mock?.mockupSrc, mugPreview, isMugsCategory, allowMockup]);
 
   const useMockupBackground = allowMockup && Boolean(mock?.mockupSrc) && mockupOk;
-  const useIosMockupRatioFallback = useMockupBackground && isIosWebKit;
+  const useIosMockupRatioFallback = useMockupBackground && isLegacyIosWebKit;
   const mockupSurfaceAspectRatio = mock?.surfaceAspectRatio || "818 / 600";
   const mockupAspectRatio =
     useMockupBackground && !useIosMockupRatioFallback ? mockupSurfaceAspectRatio : undefined;
@@ -1976,9 +2046,14 @@ const Subscription = () => {
     }
     if (slidesObj && Object.keys(slidesObj).length) return slidesObj;
     const previewFallbackSlides = getValidSlides(subscriptionPreviewSlides);
-    if (!isIosWebKit && isStripeReturn && Object.keys(previewFallbackSlides).length) {
+    if (Object.keys(previewFallbackSlides).length) {
       return previewFallbackSlides;
     }
+    try {
+      const scopedSlides = await loadSlidesFromScopes(checkoutSlidesScopeKeys);
+      if (scopedSlides && Object.keys(scopedSlides).length) return scopedSlides;
+    } catch {}
+    if (isStripeReturn) return {};
     try {
       const globalSlides = (globalThis as any).__slidesCache;
       if (globalSlides && Object.keys(globalSlides).length) return globalSlides;
@@ -3038,23 +3113,49 @@ const Subscription = () => {
             }),
       }
     : {};
+  const effectiveMockupOverlay = useMemo(() => {
+    if (!mock?.overlay) {
+      return { top: "20%", left: "20%", width: "60%", height: "60%" };
+    }
+    return mock.overlay;
+  }, [mock]);
+
   const liveMockupOverlay = useMemo(() => {
-    if (!useMockupBackground || !mock || !previewSurfaceSize.w || !previewSurfaceSize.h) return null;
-    const overlayWidth = previewSurfaceSize.w * (toPercent(mock.overlay.width) / 100);
-    const overlayHeight = previewSurfaceSize.h * (toPercent(mock.overlay.height) / 100);
-    const scale = Math.min(overlayWidth / captureWidth, overlayHeight / captureHeight);
+    if (!useMockupBackground || !previewSurfaceSize.w || !previewSurfaceSize.h) return null;
+    const overlayWidth = previewSurfaceSize.w * (toPercent(effectiveMockupOverlay.width) / 100);
+    const overlayHeight = previewSurfaceSize.h * (toPercent(effectiveMockupOverlay.height) / 100);
+    const scaleX = overlayWidth / captureWidth;
+    const scaleY = overlayHeight / captureHeight;
+    const fit = effectiveMockupOverlay.objectFit ?? "cover";
+    const scale =
+      fit === "fill"
+        ? Math.min(scaleX, scaleY)
+        : fit === "cover"
+        ? Math.max(scaleX, scaleY)
+        : Math.min(scaleX, scaleY);
     const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    const safeScaleX = Number.isFinite(scaleX) && scaleX > 0 ? scaleX : safeScale;
+    const safeScaleY = Number.isFinite(scaleY) && scaleY > 0 ? scaleY : safeScale;
     return {
       scale: safeScale,
-      width: Math.max(1, Math.round(captureWidth * safeScale)),
-      height: Math.max(1, Math.round(captureHeight * safeScale)),
+      scaleX: fit === "fill" ? safeScaleX : safeScale,
+      scaleY: fit === "fill" ? safeScaleY : safeScale,
+      width: Math.max(1, Math.round(fit === "fill" ? overlayWidth : captureWidth * safeScale)),
+      height: Math.max(1, Math.round(fit === "fill" ? overlayHeight : captureHeight * safeScale)),
     };
-  }, [captureHeight, captureWidth, mock, previewSurfaceSize.h, previewSurfaceSize.w, useMockupBackground]);
+  }, [
+    captureHeight,
+    captureWidth,
+    effectiveMockupOverlay,
+    previewSurfaceSize.h,
+    previewSurfaceSize.w,
+    useMockupBackground,
+  ]);
 
   const liveCardMockupOverlay = useMemo(() => {
-    if (!useMockupBackground || !mock || !previewSurfaceSize.w || !previewSurfaceSize.h) return null;
-    const overlayWidth = previewSurfaceSize.w * (toPercent(mock.overlay.width) / 100);
-    const overlayHeight = previewSurfaceSize.h * (toPercent(mock.overlay.height) / 100);
+    if (!useMockupBackground || !previewSurfaceSize.w || !previewSurfaceSize.h) return null;
+    const overlayWidth = previewSurfaceSize.w * (toPercent(effectiveMockupOverlay.width) / 100);
+    const overlayHeight = previewSurfaceSize.h * (toPercent(effectiveMockupOverlay.height) / 100);
     const scaleX = overlayWidth / LEGACY_CARD_CAPTURE.w;
     const scaleY = overlayHeight / LEGACY_CARD_CAPTURE.h;
     return {
@@ -3063,7 +3164,7 @@ const Subscription = () => {
       width: Math.max(1, Math.round(overlayWidth)),
       height: Math.max(1, Math.round(overlayHeight)),
     };
-  }, [mock, previewSurfaceSize.h, previewSurfaceSize.w, useMockupBackground]);
+  }, [effectiveMockupOverlay, previewSurfaceSize.h, previewSurfaceSize.w, useMockupBackground]);
 
   return (
     <MainLayout>
@@ -3148,7 +3249,7 @@ const Subscription = () => {
                   : `url(${TableBgImg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
-                backgroundSize: "cover",
+                backgroundSize: useMockupBackground ? "100% 100%" : "cover",
                 borderRadius: 7,
                 border: "1px solid gray",
                 position: "relative",
@@ -3166,20 +3267,20 @@ const Subscription = () => {
                 <Box
                   sx={{
                     position: "absolute",
-                    top: mock?.overlay.top ?? "20%",
-                    left: mock?.overlay.left ?? "20%",
-                    width: mock?.overlay.width ?? "60%",
-                    height: mock?.overlay.height ?? "60%",
-                    opacity: mock?.overlay.opacity ?? 1,
-                    filter: mock?.overlay.filter,
-                    clipPath: mock?.overlay.clipPath,
-                    WebkitClipPath: mock?.overlay.clipPath,
-                    borderRadius: mock?.overlay.borderRadius ?? 0,
+                    top: effectiveMockupOverlay.top ?? "20%",
+                    left: effectiveMockupOverlay.left ?? "20%",
+                    width: effectiveMockupOverlay.width ?? "60%",
+                    height: effectiveMockupOverlay.height ?? "60%",
+                    opacity: effectiveMockupOverlay.opacity ?? 1,
+                    filter: effectiveMockupOverlay.filter,
+                    clipPath: effectiveMockupOverlay.clipPath,
+                    WebkitClipPath: effectiveMockupOverlay.clipPath,
+                    borderRadius: effectiveMockupOverlay.borderRadius ?? 0,
                     transform: isIosWebKit ? "translateZ(0)" : undefined,
                     WebkitTransform: isIosWebKit ? "translateZ(0)" : undefined,
                     backfaceVisibility: isIosWebKit ? "hidden" : undefined,
                     WebkitBackfaceVisibility: isIosWebKit ? "hidden" : undefined,
-                    ...(mock?.overlay.sx as any),
+                    ...(effectiveMockupOverlay.sx as any),
                   }}
                 >
                   <Box
@@ -3189,7 +3290,7 @@ const Subscription = () => {
                     sx={{
                       width: "100%",
                       height: "100%",
-                      objectFit: (mock?.overlay.objectFit as any) ?? "cover",
+                      objectFit: (effectiveMockupOverlay.objectFit as any) ?? "cover",
                       display: "block",
                       userSelect: "none",
                       pointerEvents: "none",
@@ -3219,20 +3320,20 @@ const Subscription = () => {
                   <Box
                     sx={{
                       position: "absolute",
-                      top: mock?.overlay.top ?? "20%",
-                      left: mock?.overlay.left ?? "20%",
-                      width: mock?.overlay.width ?? "60%",
-                      height: mock?.overlay.height ?? "60%",
-                      opacity: mock?.overlay.opacity ?? 1,
-                      filter: mock?.overlay.filter,
-                      clipPath: mock?.overlay.clipPath,
-                      WebkitClipPath: mock?.overlay.clipPath,
-                      borderRadius: mock?.overlay.borderRadius ?? 0,
+                      top: effectiveMockupOverlay.top ?? "20%",
+                      left: effectiveMockupOverlay.left ?? "20%",
+                      width: effectiveMockupOverlay.width ?? "60%",
+                      height: effectiveMockupOverlay.height ?? "60%",
+                      opacity: effectiveMockupOverlay.opacity ?? 1,
+                      filter: effectiveMockupOverlay.filter,
+                      clipPath: effectiveMockupOverlay.clipPath,
+                      WebkitClipPath: effectiveMockupOverlay.clipPath,
+                      borderRadius: effectiveMockupOverlay.borderRadius ?? 0,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       overflow: "hidden",
-                      ...(mock?.overlay.sx as any),
+                      ...(effectiveMockupOverlay.sx as any),
                     }}
                   >
                     {liveMockupOverlay ? (
@@ -3250,7 +3351,7 @@ const Subscription = () => {
                             height: captureHeight,
                             position: "absolute",
                             inset: 0,
-                            transform: `scale(${liveMockupOverlay.scale})`,
+                            transform: `scale(${liveMockupOverlay.scaleX}, ${liveMockupOverlay.scaleY})`,
                             transformOrigin: "top left",
                           }}
                         >
@@ -3294,20 +3395,20 @@ const Subscription = () => {
                   <Box
                     sx={{
                       position: "absolute",
-                      top: mock?.overlay.top ?? "20%",
-                      left: mock?.overlay.left ?? "20%",
-                      width: mock?.overlay.width ?? "60%",
-                      height: mock?.overlay.height ?? "60%",
-                      opacity: mock?.overlay.opacity ?? 1,
-                      filter: mock?.overlay.filter,
-                      clipPath: mock?.overlay.clipPath,
-                      WebkitClipPath: mock?.overlay.clipPath,
-                      borderRadius: mock?.overlay.borderRadius ?? 0,
+                      top: effectiveMockupOverlay.top ?? "20%",
+                      left: effectiveMockupOverlay.left ?? "20%",
+                      width: effectiveMockupOverlay.width ?? "60%",
+                      height: effectiveMockupOverlay.height ?? "60%",
+                      opacity: effectiveMockupOverlay.opacity ?? 1,
+                      filter: effectiveMockupOverlay.filter,
+                      clipPath: effectiveMockupOverlay.clipPath,
+                      WebkitClipPath: effectiveMockupOverlay.clipPath,
+                      borderRadius: effectiveMockupOverlay.borderRadius ?? 0,
                       overflow: "hidden",
                       transform: isIosWebKit ? "translateZ(0)" : undefined,
                       WebkitTransform: isIosWebKit ? "translateZ(0)" : undefined,
                       ...iosStablePreviewLayerSx,
-                      ...(mock?.overlay.sx as any),
+                      ...(effectiveMockupOverlay.sx as any),
                     }}
                   >
                     <Box
