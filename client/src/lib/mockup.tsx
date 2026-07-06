@@ -93,10 +93,10 @@ const CATEGORY_MOCKUPS: Array<{
         cardAspectRatio: "1 / 1.2",
         surfaceAspectRatio: "818 / 600",
         overlay: {
-          top: "22%",
+          top: "17%",
           left: "31.3%",
           width: "38%",
-          height: "56%",
+          height: "66%",
           rotate: "0deg",
           objectFit: "fill",
           filter: "contrast(1.05) saturate(1.02)",

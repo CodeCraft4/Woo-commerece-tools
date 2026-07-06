@@ -885,7 +885,7 @@ const Subscription = () => {
   const processingPaidSessionRef = useRef<string | null>(null);
   const isIosWebKit = useMemo(() => isIosTouchDevice(), []);
   const iosMajorVersion = useMemo(() => getIosMajorVersion(), []);
-  const isLegacyIosWebKit = isIosWebKit && (iosMajorVersion === null || iosMajorVersion < 15);
+  const isLegacyIosWebKit = isIosWebKit && iosMajorVersion !== null && iosMajorVersion < 15;
 
   useEffect(() => {
     setCardMockupPreviewSrc(readStoredCardMockupPreviewSrc(cardMockupPreviewStorageKey));
@@ -3249,7 +3249,7 @@ const Subscription = () => {
                   : `url(${TableBgImg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
-                backgroundSize: useMockupBackground ? "100% 100%" : "cover",
+                backgroundSize: useMockupBackground ? (isIosWebKit ? "cover" : "100% 100%") : "cover",
                 borderRadius: 7,
                 border: "1px solid gray",
                 position: "relative",
