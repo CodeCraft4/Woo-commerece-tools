@@ -24,6 +24,7 @@ import SmartImage from "../SmartImage/SmartImage";
 import { shouldSmartCropCategory } from "../../lib/thumbnail";
 import TemplateSvgThumbnail from "../TemplateSvgThumbnail/TemplateSvgThumbnail";
 import { clearSubscriptionPreviewPayload } from "../../lib/subscriptionPreview";
+import { supabase } from "../../supabase/supabase";
 
 const CARD_MOCKUP_PREVIEW_STORAGE_PREFIX = "subscription:card:mockup-preview";
 
@@ -201,6 +202,31 @@ const getProductThumbSrc = (cate: any, isTempletDesign?: boolean) => {
     cate?.img_url ||
     ""
   );
+};
+
+const fetchTemplateEditorPayload = async (id: string | number) => {
+  const { data, error } = await supabase
+    .from("templetDesign")
+    .select(
+      [
+        "id",
+        "title",
+        "description",
+        "img_url",
+        "category",
+        "subCategory",
+        "subSubCategory",
+        "raw_stores",
+        "slides",
+        "config",
+        "canvas",
+      ].join(","),
+    )
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
 };
 
 type ActualMap = Partial<Record<SizeKeyConfig, number>>;
@@ -418,18 +444,42 @@ const ProductPopup = (props: ProductsPopTypes) => {
 
     // template flow
     if (isTempletDesign && user) {
-      const row = (cate as any)?.templetDesign ?? cate;
+      const row = (((cate as any)?.templetDesign ?? cate) || {}) as Record<string, any>;
 
-      const raw =
+      const existingRaw =
         (cate as any)?.rawStores ??
         row?.raw_stores ??
         row?.rawStores ??
         row?.raw_Stores ??
-        row;
+        row?.slides;
 
-      const routeCategory = row?.category ?? raw?.category ?? cate?.category ?? cate?.cardcategory ?? "general";
+      let editorRow: Record<string, any> = row;
+      if (!existingRaw && row?.id) {
+        try {
+          const editorPayload = (await fetchTemplateEditorPayload(row.id)) as Record<string, any>;
+          editorRow = {
+            ...row,
+            ...editorPayload,
+          };
+        } catch (error) {
+          console.error("Template editor payload fetch failed:", error);
+          toast.error("Design data missing. Please refresh and try again.");
+          setLoading(false);
+          return;
+        }
+      }
 
-      navigate(`${USER_ROUTES.TEMPLET_EDITORS}/${encodeURIComponent(routeCategory)}/${row?.id ?? cate.id}`, {
+      const raw =
+        (cate as any)?.rawStores ??
+        editorRow?.raw_stores ??
+        editorRow?.rawStores ??
+        editorRow?.raw_Stores ??
+        editorRow?.slides ??
+        editorRow;
+
+      const routeCategory = editorRow?.category ?? raw?.category ?? cate?.category ?? cate?.cardcategory ?? "general";
+
+      navigate(`${USER_ROUTES.TEMPLET_EDITORS}/${encodeURIComponent(routeCategory)}/${editorRow?.id ?? cate.id}`, {
         state: { templetDesign: raw },
       });
 

@@ -105,6 +105,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const chanRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const loadedForAdminRef = useRef(false);
+  const loadingInitialRef = useRef(false);
   const { isAdmin, loading: adminLoading } = useAdmin();
 
   const addOrReplace = (item: NotificationItem) => {
@@ -120,7 +122,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   };
 
   const loadInitial = async () => {
+    if (loadingInitialRef.current || loadedForAdminRef.current) return;
+
     try {
+      loadingInitialRef.current = true;
       setLoading(true);
       const queries = [
         supabase.from("Users").select("id,name,email,created_at").order("created_at", { ascending: false }).limit(50),
@@ -143,10 +148,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
       list.sort((a, b) => b.created_at.localeCompare(a.created_at));
       setNotifications(list);
+      loadedForAdminRef.current = true;
     } catch (e) {
       console.error(e);
       toast.error("Failed to load notifications");
     } finally {
+      loadingInitialRef.current = false;
       setLoading(false);
     }
   };
@@ -197,6 +204,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     if (adminLoading) return;
 
     if (!isAdmin) {
+      loadedForAdminRef.current = false;
+      loadingInitialRef.current = false;
       setNotifications([]);
       setLoading(false);
       if (chanRef.current) {

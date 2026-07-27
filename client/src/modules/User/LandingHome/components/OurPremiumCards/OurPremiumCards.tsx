@@ -33,8 +33,7 @@ async function fetchTemplatesLight() {
 
   const fallback = await supabase
     .from("templetDesign")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("id,img_url,accessplan");
 
   if (fallback.error) throw fallback.error;
   return fallback.data ?? [];
@@ -58,14 +57,14 @@ const SubscriptionModelSection: React.FC = () => {
     queryKey: ["allCards"],
     queryFn: fetchCardsLight,
     staleTime: 1000 * 60 * 10,
-    refetchOnMount: "always",
+    refetchOnMount: false,
   });
 
   const { data: templateData = [], isLoading: templatesLoading } = useQuery({
     queryKey: ["allTemplates"],
     queryFn: fetchTemplatesLight,
     staleTime: 1000 * 60 * 10,
-    refetchOnMount: "always",
+    refetchOnMount: false,
   });
 
   // ✅ IMPORTANT: no setState here, useMemo instead

@@ -14,13 +14,11 @@ export const fetchAllCardsLight = async () => {
     .select(`
       id,
       cardname,
-      cardName,
       cardcategory,
-      cardCategory,
+      subCategory,
+      subSubCategory,
       imageurl,
-      image_url,
       lastpageimageurl,
-      lastpageImageUrl,
       accessplan
     `);
 
@@ -35,18 +33,14 @@ export const fetchCardById = async (id: string) => {
     .select(`
       id,
       cardname,
-      cardName,
       cardcategory,
-      cardCategory,
+      subCategory,
+      subSubCategory,
       imageurl,
-      image_url,
       lastpageimageurl,
-      lastpageImageUrl,
       accessplan,
       polygonlayout,
-      raw_stores,
-      rawStores,
-      raw_store
+      raw_stores
     `)
     .eq("id", id)
     .single();
@@ -217,7 +211,7 @@ export async function fetchMyOrders() {
 export const fetchAllBlogs = async () => {
   const { data, error } = await supabase
     .from("blogs")
-    .select("id,title,image_base64,created_at")
+    .select("id,title,created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -334,9 +328,21 @@ export const fetchAllTempletDesigns = async (): Promise<any[]> => {
     throw error;
   }
 
+  const fallbackSelect = `
+      id,
+      title,
+      category,
+      img_url,
+      created_at,
+      description,
+      sku,
+      "subCategory",
+      "subSubCategory"
+    `;
+
   const fallback = await supabase
     .from("templetDesign")
-    .select("*")
+    .select(fallbackSelect)
     .order("created_at", { ascending: false });
 
   if (fallback.error) {
