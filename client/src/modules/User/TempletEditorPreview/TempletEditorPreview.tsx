@@ -10,12 +10,12 @@ import { toPng } from "html-to-image";
 import LandingButton from "../../../components/LandingButton/LandingButton";
 import { USER_ROUTES } from "../../../constant/route";
 import { resolveSlidesScopeCandidates, saveSlidesToScopes } from "../../../lib/slidesScope";
-import { isIosTouchDevice } from "../../../lib/platform";
+import { isWebKitBrowser } from "../../../lib/platform";
 import { saveSubscriptionPreviewPayload } from "../../../lib/subscriptionPreview";
 import toast from "react-hot-toast";
 import {
   collectTemplateSlideFonts,
-  renderTemplateSlideToCanvas,
+  renderTemplateSlideToCanvasWithStats,
   type TemplateSlide,
 } from "../../../lib/templateSlideCanvas";
 import {
@@ -629,13 +629,10 @@ const TempletEditorPreview: React.FC = () => {
     };
   };
   const flatSlideRef = useRef<HTMLDivElement | null>(null);
-  const isSafariTextureCapture = useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    const ua = navigator.userAgent || "";
-    const isSafari =
-      /Safari/i.test(ua) && !/Chrome|CriOS|Chromium|FxiOS|Firefox|EdgiOS|EdgA|OPiOS|OPR|Android/i.test(ua);
-    return isSafari && isIosTouchDevice();
-  }, []);
+  // html-to-image can omit large data-URL layers and web fonts in WebKit.
+  // Use the deterministic canvas renderer on both macOS Safari and iOS
+  // browsers, matching the card/subscription preview workaround.
+  const isSafariTextureCapture = useMemo(() => isWebKitBrowser(), []);
   const routeSlides = useMemo(() => (Array.isArray(state?.slides) ? (state?.slides as TemplateSlide[]) : []), [state?.slides]);
   const storedSlides = useMemo(() => readPreviewSlidesFromSessionStorage(), []);
   const previewSlides = useMemo(
@@ -918,12 +915,29 @@ const TempletEditorPreview: React.FC = () => {
 
           if (!flatCanvas) {
             const preparedSlide = (await prepareSlideAssetsForCanvas(textureSlide)) ?? textureSlide;
-            flatCanvas = await renderTemplateSlideToCanvas(preparedSlide, {
+            const rendered = await renderTemplateSlideToCanvasWithStats(preparedSlide, {
               width: baseWidth,
               height: baseHeight,
               pixelRatio: 3,
               backgroundColor: "#ffffff",
             });
+            flatCanvas = rendered.canvas;
+
+            // A partially rendered wrap is worse than the editor capture. If
+            // WebKit failed to decode any saved design layer, prefer the
+            // already captured complete editor image when it is available.
+            if (
+              rendered.failedAssets > 0 &&
+              mugImageSrc
+            ) {
+              try {
+                const safeSrc =
+                  (await toDataUrlSafe(String(mugImageSrc))) || String(mugImageSrc);
+                flatCanvas = await dataUrlToCanvas(safeSrc);
+              } catch {
+                // Keep the successfully rendered canvas/text layers.
+              }
+            }
           }
 
           if (cancelled) return;

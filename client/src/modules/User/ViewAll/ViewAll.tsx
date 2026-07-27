@@ -10,6 +10,7 @@ import ProductPopup from "../../../components/ProductPopup/ProductPopup";
 import MainLayout from "../../../layout/MainLayout";
 import { USER_ROUTES } from "../../../constant/route";
 import SmartImage from "../../../components/SmartImage/SmartImage";
+import ThumbnailLoadingPlaceholder from "../../../components/ThumbnailLoadingPlaceholder/ThumbnailLoadingPlaceholder";
 import { shouldSmartCropCategory } from "../../../lib/thumbnail";
 import TemplateSvgThumbnail from "../../../components/TemplateSvgThumbnail/TemplateSvgThumbnail";
 import toast from "react-hot-toast";
@@ -581,7 +582,7 @@ const ViewAllCard = () => {
     retry: 1,
   });
 
-  const { data: templateImageRows = [] } = useQuery({
+  const { data: templateImageRows = [], isFetching: templateImagesFetching } = useQuery({
     queryKey: ["templates:images", ...filterKey],
     queryFn: ({ signal }) => fetchTemplateImages(queryFilters, signal),
     enabled:
@@ -1102,23 +1103,17 @@ const ViewAllCard = () => {
                       {plan === "bundle" && null}
 
                       {!source ? (
-                        <Box
+                        <ThumbnailLoadingPlaceholder
+                          showProgress={
+                            item.__type === "templet"
+                              ? templatesFetching || templateImagesFetching
+                              : cardsFetching || cardImagesFetching
+                          }
                           sx={{
                             width: "100%",
                             height: "100%",
-                            display: "grid",
-                            placeItems: "center",
-                            px: 2,
-                            color: "#555",
-                            background:
-                              "linear-gradient(110deg, #f3f3f3 8%, #fafafa 18%, #f3f3f3 33%)",
-                            backgroundSize: "200% 100%",
                           }}
-                        >
-                          <Typography fontWeight={700}>
-                            {item.title || item.cardname || "Loading preview…"}
-                          </Typography>
-                        </Box>
+                        />
                       ) : item.__type === "templet" ? (
                         <TemplateSvgThumbnail
                           template={item}

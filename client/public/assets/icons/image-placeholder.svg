@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 280" role="img" aria-labelledby="title">
+  <title id="title">Image loading placeholder</title>
+  <rect width="320" height="280" fill="#ffffff"/>
+  <rect x="34" y="42" width="252" height="196" rx="14" fill="#f4f1e5" stroke="#414240" stroke-width="11"/>
+  <path d="M40 205 112 143c7-6 16-5 22 2l31 36 50-68c7-10 22-10 29 1l36 65v42c0 6-5 11-11 11H51c-6 0-11-5-11-11z" fill="#52a5a7"/>
+  <path d="m165 181 50-68c7-10 22-10 29 1l36 65v42c0 6-5 11-11 11H165z" fill="#418d8e"/>
+  <path d="M160 48h109c6 0 11 5 11 11v162c0 6-5 11-11 11H160z" fill="#000000" opacity=".035"/>
+  <circle cx="100" cy="111" r="18" fill="#f5b643"/>
+  <path d="M100 93a18 18 0 0 1 0 36z" fill="#e9a62e"/>
+</svg>

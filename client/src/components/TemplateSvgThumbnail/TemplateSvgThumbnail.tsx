@@ -1,8 +1,12 @@
 import { Box, type SxProps, type Theme } from "@mui/material";
-import { useMemo, useEffect, type ReactNode } from "react";
+import { useMemo, useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import SmartImage from "../SmartImage/SmartImage";
-import { buildGoogleFontsUrls, loadGoogleFontsOnce } from "../../constant/googleFonts";
+import ThumbnailLoadingPlaceholder from "../ThumbnailLoadingPlaceholder/ThumbnailLoadingPlaceholder";
+import {
+  buildGoogleFontsUrls,
+  ensureGoogleFontsLoaded,
+} from "../../constant/googleFonts";
 import { supabase } from "../../supabase/supabase";
 import {
   getTemplateDisplayFactor,
@@ -424,11 +428,6 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
     return Array.from(out);
   }, [firstSlideElements]);
 
-  useEffect(() => {
-    if (!fonts.length) return;
-    loadGoogleFontsOnce(buildGoogleFontsUrls(fonts));
-  }, [fonts]);
-
   const slideBg = useMemo(() => {
     const slideBgMap = rawStores?.slideBg ?? {};
     const firstRaw = firstSlide?.id;
@@ -454,9 +453,77 @@ const TemplateSvgThumbnail = ({ template, fallbackSrc, alt = "template", sx }: P
     return null;
   }, [firstSlide?.id, firstSlide?.label, rawStores?.slideBg]);
 
+  const previewAssetSources = useMemo(() => {
+    const sources = firstSlideElements
+      .filter((el: any) => normalizeElementType(el) !== "text")
+      .map((el: any) =>
+        String(el?.src ?? el?.sticker ?? el?.image ?? el?.url ?? el?.imageUrl ?? "").trim(),
+      )
+      .filter(Boolean);
+    const backgroundSrc = String(slideBg?.image ?? "").trim();
+    if (backgroundSrc) sources.push(backgroundSrc);
+    return Array.from(new Set(sources));
+  }, [firstSlideElements, slideBg?.image]);
+
+  const [assetStatus, setAssetStatus] = useState<"loading" | "ready" | "failed">("loading");
+
+  useEffect(() => {
+    if (!shouldRenderLive || firstSlideElements.length === 0) {
+      setAssetStatus("ready");
+      return;
+    }
+
+    let active = true;
+    setAssetStatus("loading");
+
+    const loadImage = (src: string) =>
+      new Promise<void>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error(`Thumbnail asset failed: ${src.slice(0, 80)}`));
+        image.src = src;
+      });
+
+    const prepare = async () => {
+      if (fonts.length) {
+        await ensureGoogleFontsLoaded(buildGoogleFontsUrls(fonts));
+        const fontSet = (document as any)?.fonts;
+        if (fontSet) {
+          await Promise.all(
+            fonts.map((family) =>
+              fontSet.load(`400 24px "${family.replace(/"/g, '\\"')}"`).catch(() => null),
+            ),
+          );
+          await fontSet.ready?.catch(() => null);
+        }
+      }
+      await Promise.all(previewAssetSources.map(loadImage));
+    };
+
+    void prepare()
+      .then(() => {
+        if (active) setAssetStatus("ready");
+      })
+      .catch(() => {
+        if (active) setAssetStatus("failed");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [firstSlideElements, fonts, previewAssetSources, shouldRenderLive]);
+
   const fallback = fallbackSrc || fallbackImageSrc(template);
 
   if (!shouldRenderLive || firstSlideElements.length === 0) {
+    return <SmartImage src={fallback} alt={alt} sx={sx} />;
+  }
+
+  if (assetStatus === "loading") {
+    return <ThumbnailLoadingPlaceholder sx={sx} />;
+  }
+
+  if (assetStatus === "failed") {
     return <SmartImage src={fallback} alt={alt} sx={sx} />;
   }
 
