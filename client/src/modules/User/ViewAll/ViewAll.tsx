@@ -16,6 +16,13 @@ import TemplateSvgThumbnail from "../../../components/TemplateSvgThumbnail/Templ
 const VIEW_ALL = "View All Filters";
 const MAX_LIST_ITEMS = 100;
 
+// Legacy cards stored multi-megabyte base64 previews directly in Postgres.
+// Keep their lightweight previews in the app until those rows are migrated
+// to Supabase Storage. The original design image remains untouched in the DB.
+const LEGACY_CARD_PREVIEWS: Record<string, string> = {
+  "37": "/product-previews/card-37.webp",
+};
+
 const lc = (value: unknown) =>
   value == null ? "" : String(value).trim().toLowerCase();
 
@@ -292,12 +299,20 @@ async function fetchCardsLight(
   let query = supabase
     .from("cards")
     .select(
-      "id,cardname,imageurl,accessplan,cardcategory,subCategory,subSubCategory,created_at",
+      "id,cardname,accessplan,cardcategory,subCategory,subSubCategory,created_at",
     )
     .order("created_at", { ascending: false })
     .limit(MAX_LIST_ITEMS);
 
-  if (orFilter) query = query.or(orFilter);
+  if (canonicalCategory(filters.categoryName) === "cards") {
+    query = query.ilike("cardcategory", "Cards");
+    if (filters.subCategory) query = query.ilike("subCategory", filters.subCategory);
+    if (filters.subSubCategory) {
+      query = query.ilike("subSubCategory", filters.subSubCategory);
+    }
+  } else if (orFilter) {
+    query = query.or(orFilter);
+  }
   if (signal) query = query.abortSignal(signal);
 
   const { data, error } = await query;
@@ -308,7 +323,7 @@ async function fetchCardsLight(
   // Schema-drift fallback: these common fields are known to exist in the old schema.
   let fallbackQuery = supabase
     .from("cards")
-    .select("id,cardname,imageurl,accessplan,created_at")
+    .select("id,cardname,accessplan,created_at")
     .order("created_at", { ascending: false })
     .limit(MAX_LIST_ITEMS);
 
@@ -334,12 +349,20 @@ async function fetchTemplatesLight(
   let query = supabase
     .from("templetDesign")
     .select(
-      "id,title,img_url,accessplan,category,subCategory,subSubCategory,created_at",
+      "id,title,accessplan,category,subCategory,subSubCategory,created_at",
     )
     .order("created_at", { ascending: false })
     .limit(MAX_LIST_ITEMS);
 
-  if (orFilter) query = query.or(orFilter);
+  if (canonicalCategory(filters.categoryName) === "cards") {
+    query = query.ilike("category", "Cards");
+    if (filters.subCategory) query = query.ilike("subCategory", filters.subCategory);
+    if (filters.subSubCategory) {
+      query = query.ilike("subSubCategory", filters.subSubCategory);
+    }
+  } else if (orFilter) {
+    query = query.or(orFilter);
+  }
   if (signal) query = query.abortSignal(signal);
 
   const { data, error } = await query;
@@ -349,7 +372,7 @@ async function fetchTemplatesLight(
 
   let fallbackQuery = supabase
     .from("templetDesign")
-    .select("id,title,img_url,accessplan,category,created_at")
+    .select("id,title,accessplan,category,created_at")
     .order("created_at", { ascending: false })
     .limit(MAX_LIST_ITEMS);
 
@@ -362,6 +385,57 @@ async function fetchTemplatesLight(
   return fallback.data ?? [];
 }
 
+async function fetchCardImages(
+  filters: QueryFilterInput,
+  signal?: AbortSignal,
+): Promise<any[]> {
+  let query = supabase
+    .from("cards")
+    .select("id,imageurl")
+    .limit(MAX_LIST_ITEMS);
+
+  if (canonicalCategory(filters.categoryName) === "cards") {
+    query = query.ilike("cardcategory", "Cards");
+    if (filters.subCategory) query = query.ilike("subCategory", filters.subCategory);
+    if (filters.subSubCategory) {
+      query = query.ilike("subSubCategory", filters.subSubCategory);
+    }
+  }
+
+  if (signal) query = query.abortSignal(signal);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function fetchTemplateImages(
+  filters: QueryFilterInput,
+  signal?: AbortSignal,
+): Promise<any[]> {
+  let query = supabase
+    .from("templetDesign")
+    .select("id,img_url")
+    .limit(MAX_LIST_ITEMS);
+
+  if (filters.categoryName && filters.categoryName !== VIEW_ALL) {
+    query = query.ilike(
+      "category",
+      canonicalCategory(filters.categoryName) === "cards"
+        ? "Cards"
+        : filters.categoryName,
+    );
+    if (filters.subCategory) query = query.ilike("subCategory", filters.subCategory);
+    if (filters.subSubCategory) {
+      query = query.ilike("subSubCategory", filters.subSubCategory);
+    }
+  }
+
+  if (signal) query = query.abortSignal(signal);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
 async function fetchCardFullById(id: string): Promise<any> {
   const { data, error } = await supabase
     .from("cards")
@@ -372,7 +446,6 @@ async function fetchCardFullById(id: string): Promise<any> {
         "description",
         "imageurl",
         "lastpageimageurl",
-        "poster",
         "accessplan",
         "cardcategory",
         "subCategory",
@@ -404,7 +477,6 @@ async function fetchTemplateFullById(id: string): Promise<any> {
         "title",
         "description",
         "img_url",
-        "poster",
         "cover_screenshot",
         "accessplan",
         "category",
@@ -515,10 +587,6 @@ const ViewAllCard = () => {
       canonicalCategory(queryFilters.categoryName),
       normalizeLabel(queryFilters.subCategory),
       normalizeLabel(queryFilters.subSubCategory),
-      queryFilters.knownCardSubcategories
-        .map(normalizeLabel)
-        .sort()
-        .join("|"),
     ],
     [queryFilters],
   );
@@ -556,6 +624,52 @@ const ViewAllCard = () => {
     refetchOnMount: false,
     placeholderData: (previousData) => previousData,
   });
+
+  const { data: cardImageRows = [], isFetching: cardImagesFetching } = useQuery({
+    queryKey: ["cards:images", ...filterKey],
+    queryFn: ({ signal }) => fetchCardImages(queryFilters, signal),
+    enabled:
+      cardData.length > 0 &&
+      !cardsFetching &&
+      cardData.some((card: any) => !LEGACY_CARD_PREVIEWS[String(card.id)]),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1,
+  });
+
+  const { data: templateImageRows = [] } = useQuery({
+    queryKey: ["templates:images", ...filterKey],
+    queryFn: ({ signal }) => fetchTemplateImages(queryFilters, signal),
+    enabled:
+      templetCardData.length > 0 &&
+      !templatesFetching &&
+      !cardImagesFetching,
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1,
+  });
+
+  const cardImages = useMemo(
+    () =>
+      new Map(
+        cardImageRows.map((row: any) => [String(row.id), row.imageurl ?? ""]),
+      ),
+    [cardImageRows],
+  );
+
+  const templateImages = useMemo(
+    () =>
+      new Map(
+        templateImageRows.map((row: any) => [String(row.id), row.img_url ?? ""]),
+      ),
+    [templateImageRows],
+  );
 
   useEffect(() => {
     const nextTab: ActiveTab = !routeCategoryName
@@ -957,8 +1071,13 @@ const ViewAllCard = () => {
                   const plan = getAccessPlan(item);
                   const source =
                     item.__type === "templet"
-                      ? getTempletImage(item)
-                      : getCardImage(item);
+                      ? getTempletImage(item) ||
+                        templateImages.get(String(item.id)) ||
+                        ""
+                      : getCardImage(item) ||
+                        LEGACY_CARD_PREVIEWS[String(item.id)] ||
+                        cardImages.get(String(item.id)) ||
+                        "";
 
                   const templateCategory =
                     item?.category ??
@@ -1021,7 +1140,25 @@ const ViewAllCard = () => {
                     >
                       {plan === "bundle" && null}
 
-                      {item.__type === "templet" ? (
+                      {!source ? (
+                        <Box
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            display: "grid",
+                            placeItems: "center",
+                            px: 2,
+                            color: "#555",
+                            background:
+                              "linear-gradient(110deg, #f3f3f3 8%, #fafafa 18%, #f3f3f3 33%)",
+                            backgroundSize: "200% 100%",
+                          }}
+                        >
+                          <Typography fontWeight={700}>
+                            {item.title || item.cardname || "Loading preview…"}
+                          </Typography>
+                        </Box>
+                      ) : item.__type === "templet" ? (
                         <TemplateSvgThumbnail
                           template={item}
                           fallbackSrc={source}
