@@ -464,6 +464,9 @@ const Products = () => {
           salea4price: row.salea4price,
           salea5price: row.salea5price,
           saleusletter: row.saleusletter,
+          ustabloid: row.ustabloid,
+          saleustabloid: row.saleustabloid,
+          accessPlan: row.accessplan ?? "free",
           description: row.description ?? "",
           imageUrl: imageForEdit(row),
           polygon_shape: row.polygon_shape ?? "",
@@ -511,32 +514,35 @@ const Products = () => {
         rawStores, // ✅ normalized
 
         imgUrl:
-          tpl.img_url ??
-          tpl.image_url ??
-          tpl.imageurl ??
-          tpl.lastpageImageUrl ??
-          tpl.lastpageimageurl ??
+          fullTpl.img_url ??
+          fullTpl.image_url ??
+          fullTpl.imageurl ??
+          fullTpl.lastpageImageUrl ??
+          fullTpl.lastpageimageurl ??
           "",
 
         product: {
-          cardname: tpl.title ?? tpl.name ?? "",
-          cardcategory: tpl.category ?? "",
-
-          subCategory: tpl.subCategory ?? tpl.subcategory ?? "",
-          subSubCategory: tpl.subSubCategory ?? tpl.sub_subcategory ?? "",
-
-          sku: tpl.sku ?? "",
-          actualprice: tpl.actualprice ?? tpl.actualPrice ?? "",
-          a4price: tpl.a4price ?? "",
-          a5price: tpl.a5price ?? "",
-          usletter: tpl.usletter ?? "",
-
-          saleprice: tpl.saleprice ?? tpl.salePrice ?? "",
-          salea4price: tpl.salea4price ?? "",
-          salea5price: tpl.salea5price ?? "",
-          saleusletter: tpl.saleusletter ?? "",
-
-          description: tpl.description ?? "",
+          cardname: fullTpl.title ?? fullTpl.name ?? "",
+          cardcategory: fullTpl.category ?? "",
+          subCategory: fullTpl.subCategory ?? fullTpl.subcategory ?? "",
+          subSubCategory: fullTpl.subSubCategory ?? fullTpl.sub_subcategory ?? "",
+          sku: fullTpl.sku ?? "",
+          actualprice: fullTpl.actualprice ?? fullTpl.actualPrice ?? "",
+          a4price: fullTpl.a4price ?? "",
+          a5price: fullTpl.a5price ?? "",
+          a3price: fullTpl.a3price ?? "",
+          halfusletter: fullTpl.halfusletter ?? "",
+          usletter: fullTpl.usletter ?? "",
+          ustabloid: fullTpl.ustabloid ?? "",
+          saleprice: fullTpl.saleprice ?? fullTpl.salePrice ?? "",
+          salea4price: fullTpl.salea4price ?? "",
+          salea5price: fullTpl.salea5price ?? "",
+          salea3price: fullTpl.salea3price ?? "",
+          salehalfusletter: fullTpl.salehalfusletter ?? "",
+          saleusletter: fullTpl.saleusletter ?? "",
+          saleustabloid: fullTpl.saleustabloid ?? "",
+          accessplan: fullTpl.accessplan ?? "free",
+          description: fullTpl.description ?? "",
         },
       },
     });

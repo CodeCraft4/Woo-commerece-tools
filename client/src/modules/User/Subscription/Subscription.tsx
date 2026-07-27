@@ -57,7 +57,7 @@ import {
   getGoogleFontEmbedCss,
   loadGoogleFontsOnce,
 } from "../../../constant/googleFonts";
-import { getIosMajorVersion, isIosTouchDevice } from "../../../lib/platform";
+import { getIosMajorVersion, isWebKitBrowser } from "../../../lib/platform";
 import { renderTemplateSlideToCanvasWithStats } from "../../../lib/templateSlideCanvas";
 import {
   readSubscriptionPreviewPayload,
@@ -883,7 +883,7 @@ const Subscription = () => {
   const [captureSupportEnabled, setCaptureSupportEnabled] = useState(false);
   const [legacyCardCaptureEnabled, setLegacyCardCaptureEnabled] = useState(false);
   const processingPaidSessionRef = useRef<string | null>(null);
-  const isIosWebKit = useMemo(() => isIosTouchDevice(), []);
+  const isIosWebKit = useMemo(() => isWebKitBrowser(), []);
   const iosMajorVersion = useMemo(() => getIosMajorVersion(), []);
   const isLegacyIosWebKit = isIosWebKit && iosMajorVersion !== null && iosMajorVersion < 15;
 
@@ -1667,25 +1667,47 @@ const Subscription = () => {
     let alive = true;
 
     const buildCardPreview = async () => {
-    try {
-      // iOS/WebKit can keep a data:image slide that exists but is visually blank.
-      // Do not skip this fallback just because firstSlideUrl is present.
-      await ensureCaptureSupportReady();
-      const captured = await captureLegacyCardSlidesFromDom(1800);
-      if (!alive) return;
-      setIosLegacyCardPreviewSrc(String(captured?.[0] || ""));
-    } catch {
-      if (!alive) return;
-      setIosLegacyCardPreviewSrc("");
-    }
-  };
+      try {
+        // WebKit may return a valid-looking DOM capture with image/sticker
+        // layers missing. Render the persisted raw model first; the renderer
+        // verifies expectedAssets === drawnAssets before returning anything.
+        await ensureCaptureSupportReady();
+        const canvasCaptured = await captureCardRawSlidesFromCanvasRenderer("jpeg", 1800);
+        if (!alive) return;
+
+        const preferred =
+          String(canvasCaptured?.[cardPreviewSlideIndex] || "") ||
+          String(canvasCaptured?.[0] || "");
+        if (isDataImageUrl(preferred)) {
+          setIosLegacyCardPreviewSrc(preferred);
+          return;
+        }
+
+        // Last-resort compatibility path for old drafts without raw slide data.
+        const domCaptured = await captureLegacyCardSlidesFromDom(1800);
+        if (!alive) return;
+        setIosLegacyCardPreviewSrc(
+          String(domCaptured?.[cardPreviewSlideIndex] || domCaptured?.[0] || ""),
+        );
+      } catch {
+        if (!alive) return;
+        setIosLegacyCardPreviewSrc("");
+      }
+    };
 
   void buildCardPreview();
 
   return () => {
     alive = false;
   };
-}, [captureLegacyCardSlidesFromDom, ensureCaptureSupportReady, isIosWebKit, isLegacyCardProduct]);
+}, [
+  captureCardRawSlidesFromCanvasRenderer,
+  captureLegacyCardSlidesFromDom,
+  cardPreviewSlideIndex,
+  ensureCaptureSupportReady,
+  isIosWebKit,
+  isLegacyCardProduct,
+]);
 
   const storeSlidesPayload = useCallback((next: Record<string, string>) => {
     const valid = getValidSlides(next);
@@ -2991,12 +3013,15 @@ const Subscription = () => {
   }, [firstSlideUrl, isStickerCategory, isCandleCategory, isBagCategory, isClothingCategory]);
 
   const isIosCardMockupFlow = isIosWebKit && isLegacyCardProduct;
+  const cardPreviewToPersist = isIosCardMockupFlow
+    ? iosLegacyCardPreviewSrc
+    : firstSlideProcessed;
   useEffect(() => {
-    if (!isLegacyCardProduct || isStripeReturn || !isDataImageUrl(firstSlideProcessed)) return;
+    if (!isLegacyCardProduct || isStripeReturn || !isDataImageUrl(cardPreviewToPersist)) return;
     let cancelled = false;
 
     const persistPreview = async () => {
-      const compressed = await compressPreviewDataUrl(firstSlideProcessed, {
+      const compressed = await compressPreviewDataUrl(cardPreviewToPersist, {
         maxWidth: 1000,
         maxHeight: 1400,
         quality: 0.82,
@@ -3014,17 +3039,35 @@ const Subscription = () => {
     return () => {
       cancelled = true;
     };
-  }, [cardMockupPreviewStorageKey, firstSlideProcessed, isLegacyCardProduct, isStripeReturn]);
+  }, [
+    cardMockupPreviewStorageKey,
+    cardPreviewToPersist,
+    isLegacyCardProduct,
+    isStripeReturn,
+  ]);
 
   const routePrebuiltCardPreviewSrc = pickSlideByNumber(getValidSlides(state?.slides), cardPreviewSlideNumber);
   const slidesObjPrebuiltCardPreviewSrc = pickSlideByNumber(slidesObj, cardPreviewSlideNumber);
   const stableCardMockupPreviewSrc =
-    cardMockupPreviewSrc ||
-    routePrebuiltCardPreviewSrc ||
-    slidesObjPrebuiltCardPreviewSrc ||
-    "";
+    isIosCardMockupFlow
+      ? routeCardRawSlides.length > 0
+        // While the verified canvas render is pending, leave previewSrc empty
+        // so the complete live raw slide is shown. Never flash a cached partial
+        // Safari DOM capture over a known-complete raw model.
+        ? iosLegacyCardPreviewSrc || ""
+        : iosLegacyCardPreviewSrc ||
+          routePrebuiltCardPreviewSrc ||
+          slidesObjPrebuiltCardPreviewSrc ||
+          cardMockupPreviewSrc ||
+          ""
+      : cardMockupPreviewSrc ||
+        routePrebuiltCardPreviewSrc ||
+        slidesObjPrebuiltCardPreviewSrc ||
+        "";
   const cardSafePreviewSrc = isIosCardMockupFlow
-    ? stableCardMockupPreviewSrc || iosLegacyCardPreviewSrc || firstSlideProcessed
+    ? routeCardRawSlides.length > 0
+      ? stableCardMockupPreviewSrc
+      : stableCardMockupPreviewSrc || iosLegacyCardPreviewSrc || firstSlideProcessed
     : firstSlideProcessed || iosLegacyCardPreviewSrc;
 
   useEffect(() => {
@@ -3068,7 +3111,9 @@ const Subscription = () => {
   // For iOS card mockups, prefer the safe prebuilt Slide1 capture over any
   // older hydrated/cached bitmap that WebKit may have decoded as blank.
   const previewSrc = isIosCardMockupFlow
-    ? mugPreview || stableCardMockupPreviewSrc || hydratedPreviewSrc || iosLegacyCardPreviewSrc || ""
+    ? routeCardRawSlides.length > 0
+      ? mugPreview || iosLegacyCardPreviewSrc || ""
+      : mugPreview || stableCardMockupPreviewSrc || hydratedPreviewSrc || iosLegacyCardPreviewSrc || ""
     : hydratedPreviewSrc || mugPreview || cardSafePreviewSrc || "";
   const preferLiveTemplatePreview =
     isIosWebKit &&

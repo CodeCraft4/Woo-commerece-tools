@@ -30,17 +30,54 @@ export const fetchAllCardsLight = async () => {
 export const fetchCardById = async (id: string) => {
   const { data, error } = await supabase
     .from("cards")
+    // This list matches the deployed legacy card schema. Do not add template
+    // columns here: one absent PostgREST column rejects the whole request.
     .select(`
       id,
       cardname,
       cardcategory,
       subCategory,
       subSubCategory,
-      imageurl,
-      lastpageimageurl,
+      description,
+      sku,
       accessplan,
-      polygonlayout,
-      raw_stores
+      actualprice,
+      a4price,
+      a5price,
+      usletter,
+      saleprice,
+      salea4price,
+      salea5price,
+      saleusletter,
+      polygonlayout
+    `)
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const fetchCardProductDetailsById = async (id: string | number) => {
+  const { data, error } = await supabase
+    .from("cards")
+    .select(`
+      id,
+      cardname,
+      cardcategory,
+      subCategory,
+      subSubCategory,
+      description,
+      sku,
+      accessplan,
+      actualprice,
+      a4price,
+      a5price,
+      usletter,
+      saleprice,
+      salea4price,
+      salea5price,
+      saleusletter
     `)
     .eq("id", id)
     .single();
@@ -288,6 +325,7 @@ export const fetchAllTempletDesigns = async (): Promise<any[]> => {
       id,
       title,
       category,
+      accessplan,
       img_url,
       created_at,
       description,
@@ -383,6 +421,59 @@ export const fetchTempletDesignFullById = async (id: string | number) => {
 
   if (error) throw error;
   return data ?? null;
+};
+
+/**
+ * Public/editor full-row loader.
+ *
+ * Keep this as select("*") for one row: product schemas are currently not
+ * identical across environments, and an explicit select containing one
+ * unavailable optional column causes PostgREST to reject the complete query.
+ */
+export const fetchTempletProductById = async (id: string | number) => {
+  const { data, error } = await supabase
+    .from("templetDesign")
+    // Commerce/modal payload only. Heavy editor JSON is fetched on demand.
+    .select(`
+      id,
+      title,
+      category,
+      subCategory,
+      subSubCategory,
+      description,
+      sku,
+      accessplan,
+      actualprice,
+      a4price,
+      a5price,
+      a3price,
+      halfusletter,
+      usletter,
+      ustabloid,
+      saleprice,
+      salea4price,
+      salea5price,
+      salea3price,
+      salehalfusletter,
+      saleusletter,
+      saleustabloid
+    `)
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const fetchTempletEditorPayloadById = async (id: string | number) => {
+  const { data, error } = await supabase
+    .from("templetDesign")
+    .select("id,title,category,raw_stores,slides,config")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data;
 };
 
 // ✅ Jab need ho tab (open/preview) raw_stores lao
@@ -546,4 +637,3 @@ export async function fileToBase64Url(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
-

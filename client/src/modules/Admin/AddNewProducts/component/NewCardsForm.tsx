@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { supabase } from "../../../../supabase/supabase";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ADMINS_DASHBOARD } from "../../../../constant/route";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchAllCategoriesFromDB } from "../../../../source/source";
 import { useSlide1 } from "../../../../context/Slide1Context";
 import { useSlide2 } from "../../../../context/Slide2Context";
@@ -468,6 +468,7 @@ const NewCardsForm = ({ editProduct }: Props) => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const navState = (location.state as any) || {};
   const { id, product, formData, mode } = navState;
 
@@ -896,6 +897,14 @@ const NewCardsForm = ({ editProduct }: Props) => {
         if (error) throw error;
         toast.success("Card saved successfully!");
       }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["cards"] }),
+        queryClient.invalidateQueries({ queryKey: ["allCards:light"] }),
+        queryClient.invalidateQueries({ queryKey: ["cards:light"] }),
+        queryClient.invalidateQueries({ queryKey: ["cards:images"] }),
+        queryClient.invalidateQueries({ queryKey: ["card:full"] }),
+      ]);
 
       if (!id) {
         reset();

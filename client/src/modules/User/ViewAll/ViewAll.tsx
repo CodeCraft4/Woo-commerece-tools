@@ -12,6 +12,11 @@ import { USER_ROUTES } from "../../../constant/route";
 import SmartImage from "../../../components/SmartImage/SmartImage";
 import { shouldSmartCropCategory } from "../../../lib/thumbnail";
 import TemplateSvgThumbnail from "../../../components/TemplateSvgThumbnail/TemplateSvgThumbnail";
+import toast from "react-hot-toast";
+import {
+  fetchCardProductDetailsById,
+  fetchTempletProductById,
+} from "../../../source/source";
 
 const VIEW_ALL = "View All Filters";
 const MAX_LIST_ITEMS = 100;
@@ -436,70 +441,6 @@ async function fetchTemplateImages(
   return data ?? [];
 }
 
-async function fetchCardFullById(id: string): Promise<any> {
-  const { data, error } = await supabase
-    .from("cards")
-    .select(
-      [
-        "id",
-        "cardname",
-        "description",
-        "imageurl",
-        "lastpageimageurl",
-        "accessplan",
-        "cardcategory",
-        "subCategory",
-        "subSubCategory",
-        "actualprice",
-        "a4price",
-        "a5price",
-        "a3price",
-        "halfusletter",
-        "usletter",
-        "ustabloid",
-        "created_at",
-      ].join(","),
-    )
-    .eq("id", id)
-    .single();
-
-  if (error) throw error;
-
-  return data;
-}
-
-async function fetchTemplateFullById(id: string): Promise<any> {
-  const { data, error } = await supabase
-    .from("templetDesign")
-    .select(
-      [
-        "id",
-        "title",
-        "description",
-        "img_url",
-        "cover_screenshot",
-        "accessplan",
-        "category",
-        "subCategory",
-        "subSubCategory",
-        "actualprice",
-        "a4price",
-        "a5price",
-        "a3price",
-        "halfusletter",
-        "usletter",
-        "ustabloid",
-        "created_at",
-      ].join(","),
-    )
-    .eq("id", id)
-    .single();
-
-  if (error) throw error;
-
-  return data;
-}
-
 const ViewAllCard = () => {
   const navigate = useNavigate();
   const { search } = useParams();
@@ -870,7 +811,25 @@ const ViewAllCard = () => {
   const openCategoryModalPopup = async (category: any) => {
     if (!category?.id) return;
 
-    setSelectedCate(category);
+    const categoryWithImage =
+      category.__type === "templet"
+        ? {
+            ...category,
+            img_url:
+              getTempletImage(category) ||
+              templateImages.get(String(category.id)) ||
+              "",
+          }
+        : {
+            ...category,
+            imageurl:
+              getCardImage(category) ||
+              LEGACY_CARD_PREVIEWS[String(category.id)] ||
+              cardImages.get(String(category.id)) ||
+              "",
+          };
+
+    setSelectedCate(categoryWithImage);
     setPopupLoading(true);
     openModal();
 
@@ -878,7 +837,7 @@ const ViewAllCard = () => {
       if (category.__type === "templet") {
         const fullTemplate = await queryClient.fetchQuery({
           queryKey: ["templet:full", String(category.id)],
-          queryFn: () => fetchTemplateFullById(String(category.id)),
+          queryFn: () => fetchTempletProductById(String(category.id)),
           staleTime: 1000 * 60 * 10,
         });
 
@@ -890,7 +849,7 @@ const ViewAllCard = () => {
       } else {
         const fullCard = await queryClient.fetchQuery({
           queryKey: ["card:full", String(category.id)],
-          queryFn: () => fetchCardFullById(String(category.id)),
+          queryFn: () => fetchCardProductDetailsById(String(category.id)),
           staleTime: 1000 * 60 * 10,
         });
 
@@ -902,6 +861,8 @@ const ViewAllCard = () => {
       }
     } catch (error) {
       console.error("Full product fetch failed:", error);
+      toast.error("Product details could not be loaded. Please try again.");
+      closeModal();
     } finally {
       setPopupLoading(false);
     }

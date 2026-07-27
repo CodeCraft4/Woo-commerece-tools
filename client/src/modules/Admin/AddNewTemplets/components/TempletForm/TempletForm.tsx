@@ -1250,6 +1250,9 @@ const TempletForm = () => {
       queryClient.invalidateQueries({ queryKey: ["allTemplates"] }),
       queryClient.invalidateQueries({ queryKey: ["templates"] }),
       queryClient.invalidateQueries({ queryKey: ["templates:light"] }),
+      queryClient.invalidateQueries({ queryKey: ["templates:images"] }),
+      queryClient.invalidateQueries({ queryKey: ["templet:full"] }),
+      queryClient.invalidateQueries({ queryKey: ["template-svg-thumb"] }),
     ]);
 
     setLoading(false);

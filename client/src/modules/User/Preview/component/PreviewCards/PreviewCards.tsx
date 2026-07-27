@@ -14,7 +14,7 @@ import { clearSlidesFromIdb, saveSlidesToIdb } from "../../../../../lib/idbSlide
 import { resolveSlidesScopeCandidates, saveSlidesToScopes } from "../../../../../lib/slidesScope";
 import { toJpeg } from "html-to-image";
 import toast from "react-hot-toast";
-import { isIosTouchDevice } from "../../../../../lib/platform";
+import { isWebKitBrowser } from "../../../../../lib/platform";
 import { useSlide1 } from "../../../../../context/Slide1Context";
 import { useSlide2 } from "../../../../../context/Slide2Context";
 import { useSlide3 } from "../../../../../context/Slide3Context";
@@ -706,7 +706,9 @@ const PreviewBookCard = () => {
   const [mobileIndex, setMobileIndex] = useState(1);
   const [downloading, setDownloading] = useState(false);
   const navigate = useNavigate();
-  const isIosWebKit = useMemo(() => isIosTouchDevice(), []);
+  // Safari (including macOS) needs the coordinate/canvas renderer. Its
+  // html-to-image DOM capture can resolve successfully with missing layers.
+  const isIosWebKit = useMemo(() => isWebKitBrowser(), []);
   const slide1Ctx = useSlide1();
   const slide2Ctx = useSlide2();
   const slide3Ctx = useSlide3();

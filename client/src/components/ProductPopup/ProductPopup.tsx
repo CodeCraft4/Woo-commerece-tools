@@ -19,12 +19,14 @@ import { ensureDraftCardId, newUuid, setDraftCardId } from "../../lib/draftCardI
 import { getPricingConfig, type SizeKeyConfig } from "../../lib/pricing";
 import { clearSlidesFromIdb } from "../../lib/idbSlides";
 import { pickPolygonLayout } from "../../lib/polygon";
-import { fetchCardById } from "../../source/source";
+import {
+  fetchCardById,
+  fetchTempletEditorPayloadById,
+} from "../../source/source";
 import SmartImage from "../SmartImage/SmartImage";
 import { shouldSmartCropCategory } from "../../lib/thumbnail";
 import TemplateSvgThumbnail from "../TemplateSvgThumbnail/TemplateSvgThumbnail";
 import { clearSubscriptionPreviewPayload } from "../../lib/subscriptionPreview";
-import { supabase } from "../../supabase/supabase";
 
 const CARD_MOCKUP_PREVIEW_STORAGE_PREFIX = "subscription:card:mockup-preview";
 
@@ -204,70 +206,80 @@ const getProductThumbSrc = (cate: any, isTempletDesign?: boolean) => {
   );
 };
 
-const fetchTemplateEditorPayload = async (id: string | number) => {
-  const { data, error } = await supabase
-    .from("templetDesign")
-    .select(
-      [
-        "id",
-        "title",
-        "description",
-        "img_url",
-        "category",
-        "subCategory",
-        "subSubCategory",
-        "raw_stores",
-        "slides",
-        "config",
-        "canvas",
-      ].join(","),
-    )
-    .eq("id", id)
-    .single();
-
-  if (error) throw error;
-  return data;
-};
-
 type ActualMap = Partial<Record<SizeKeyConfig, number>>;
 
-// ✅ builds actual prices (same rules you had)
+const getStoredPricing = (cate?: any) => {
+  const raw =
+    cate?.raw_stores ??
+    cate?.rawStores ??
+    cate?.raw_store ??
+    {};
+  const polygon = parseLayoutPricing(cate?.polygonlayout);
+  return {
+    pricing:
+      (raw?.pricing && typeof raw.pricing === "object" ? raw.pricing : null) ??
+      polygon.pricing ??
+      {},
+    salePricing:
+      (raw?.salePricing && typeof raw.salePricing === "object"
+        ? raw.salePricing
+        : null) ??
+      polygon.salePricing ??
+      {},
+  };
+};
+
+const firstPrice = (...values: unknown[]) => {
+  for (const value of values) {
+    const parsed = toNum(value, 0);
+    if (parsed > 0) return parsed;
+  }
+  return 0;
+};
+
 const buildActualPrices = (cate?: any, categoryName?: string, isTempletDesign?: boolean): ActualMap => {
-  const actual: any = {};
-  const { pricing: layoutPricing } = parseLayoutPricing(cate?.polygonlayout);
+  const actual: ActualMap = {};
+  const { pricing: stored } = getStoredPricing(cate);
   const isCandleCategory = /candle/i.test(String(categoryName ?? ""));
-  const layoutTabloid =
-    layoutPricing?.US_TABLOID ??
-    layoutPricing?.us_tabloid ??
-    layoutPricing?.ustabloid ??
-    null;
-  const candleLetterFallback = toNum(cate?.ustabloid ?? layoutTabloid, 0);
+  const storedTabloid = stored?.US_TABLOID ?? stored?.us_tabloid ?? stored?.ustabloid;
+  const candleLetterFallback = firstPrice(cate?.ustabloid, storedTabloid);
   const candleTabloidFallback = toNum(cate?.usletter, 0);
 
-  // common/legacy
-  actual.A4 = toNum(cate?.a4price, 0);
-  actual.US_LETTER = toNum(cate?.usletter, isCandleCategory ? candleLetterFallback : 0);
-
-  // template new columns
-  actual.HALF_US_LETTER = toNum(cate?.halfusletter, 0);
-  actual.US_TABLOID = toNum(
-    cate?.ustabloid ?? layoutTabloid,
+  actual.A4 = firstPrice(cate?.a4price, stored?.A4, stored?.a4);
+  actual.US_LETTER = firstPrice(
+    cate?.usletter,
+    stored?.US_LETTER,
+    stored?.us_letter,
+    isCandleCategory ? candleLetterFallback : 0,
+  );
+  actual.HALF_US_LETTER = firstPrice(
+    cate?.halfusletter,
+    stored?.HALF_US_LETTER,
+    stored?.half_us_letter,
+  );
+  actual.US_TABLOID = firstPrice(
+    cate?.ustabloid,
+    storedTabloid,
     isCandleCategory ? candleTabloidFallback : 0,
   );
-
-  // A5 normal
-  actual.A5 = toNum(cate?.a5price, 0);
-
-  // A3 rule (cards: from a5price, templates: from a3price fallback a5price)
-  actual.A3 = isTempletDesign ? toNum(cate?.a3price, toNum(cate?.a5price, 0)) : toNum(cate?.a5price, 0);
-
-  // single-size categories
-  actual.MUG_WRAP_11OZ = toNum(cate?.actualprice, 0);
-  actual.COASTER_95 = toNum(cate?.actualprice, 0);
+  actual.A5 = firstPrice(cate?.a5price, stored?.A5, stored?.a5);
+  actual.A3 = isTempletDesign
+    ? firstPrice(cate?.a3price, stored?.A3, stored?.a3, cate?.a5price)
+    : firstPrice(stored?.A3, stored?.a3, cate?.a5price);
+  actual.MUG_WRAP_11OZ = firstPrice(
+    cate?.actualprice,
+    stored?.MUG_WRAP_11OZ,
+    stored?.mug_wrap_11oz,
+  );
+  actual.COASTER_95 = firstPrice(
+    cate?.actualprice,
+    stored?.COASTER_95,
+    stored?.coaster_95,
+  );
 
   // fallback: older row me sirf actualprice filled ho
   const sizes = getPricingConfig(categoryName).sizes;
-  const firstKey = sizes[0]?.key;
+  const firstKey = sizes[0]?.key as SizeKeyConfig | undefined;
   if (firstKey) {
     const cur = toNum(actual[firstKey], 0);
     const legacy = toNum(cate?.actualprice, 0);
@@ -275,6 +287,44 @@ const buildActualPrices = (cate?: any, categoryName?: string, isTempletDesign?: 
   }
 
   return actual;
+};
+
+const buildSalePrices = (cate?: any, isTempletDesign?: boolean): ActualMap => {
+  const sale: ActualMap = {};
+  const { salePricing: stored } = getStoredPricing(cate);
+
+  sale.A4 = firstPrice(cate?.salea4price, stored?.A4, stored?.a4);
+  sale.US_LETTER = firstPrice(
+    cate?.saleusletter,
+    stored?.US_LETTER,
+    stored?.us_letter,
+  );
+  sale.HALF_US_LETTER = firstPrice(
+    cate?.salehalfusletter,
+    stored?.HALF_US_LETTER,
+    stored?.half_us_letter,
+  );
+  sale.US_TABLOID = firstPrice(
+    cate?.saleustabloid,
+    stored?.US_TABLOID,
+    stored?.us_tabloid,
+  );
+  sale.A5 = firstPrice(cate?.salea5price, stored?.A5, stored?.a5);
+  sale.A3 = isTempletDesign
+    ? firstPrice(cate?.salea3price, stored?.A3, stored?.a3, cate?.salea5price)
+    : firstPrice(stored?.A3, stored?.a3, cate?.salea5price);
+  sale.MUG_WRAP_11OZ = firstPrice(
+    cate?.saleprice,
+    stored?.MUG_WRAP_11OZ,
+    stored?.mug_wrap_11oz,
+  );
+  sale.COASTER_95 = firstPrice(
+    cate?.saleprice,
+    stored?.COASTER_95,
+    stored?.coaster_95,
+  );
+
+  return sale;
 };
 
 const ProductPopup = (props: ProductsPopTypes) => {
@@ -354,6 +404,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
     () => buildActualPrices(cate, categoryName, isTempletDesign),
     [cate, categoryName, isTempletDesign]
   );
+  const salePrices = useMemo(
+    () => buildSalePrices(cate, isTempletDesign),
+    [cate, isTempletDesign],
+  );
 
   const getPriceForKey = (key: any) =>
     toNum(
@@ -381,7 +435,22 @@ const ProductPopup = (props: ProductsPopTypes) => {
     setSelectedPlan(initOk ? initKey : firstWithPrice ?? fallback);
   }, [open, sizeOptions, actualPrices, initialPlan]);
 
-  const displayPrice = useMemo(() => getPriceForKey(selectedPlan), [actualPrices, selectedPlan]);
+  const selectedActualPrice = useMemo(
+    () => getPriceForKey(selectedPlan),
+    [actualPrices, selectedPlan],
+  );
+  const selectedSalePrice = useMemo(
+    () => toNum((salePrices as any)?.[selectedPlan], 0),
+    [salePrices, selectedPlan],
+  );
+  const selectedIsOnSale =
+    selectedSalePrice > 0 && selectedSalePrice < selectedActualPrice;
+  const displayPrice = selectedIsOnSale ? selectedSalePrice : selectedActualPrice;
+  const getDisplayPriceForKey = (key: SizeKeyConfig) => {
+    const actual = getPriceForKey(key);
+    const sale = toNum((salePrices as any)?.[key], 0);
+    return sale > 0 && sale < actual ? sale : actual;
+  };
 
   const selectedIsValid = useMemo(() => {
     if (!selectedPlan) return false;
@@ -417,7 +486,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
       key: selectedPlan,
       title: sizeOptions.find((s) => s.key === selectedPlan)?.title || String(selectedPlan),
       price: displayPrice,
-      isOnSale: false,
+      isOnSale: selectedIsOnSale,
       category: categoryName,
     };
 
@@ -432,7 +501,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
     try {
       localStorage.setItem("selectedVariant", JSON.stringify(selectedVariant));
       localStorage.setItem("selectedSize", String(selectedPlan));
-      localStorage.setItem("selectedPrices", JSON.stringify({ actual: actualPrices, sale: {} }));
+      localStorage.setItem("selectedPrices", JSON.stringify({ actual: actualPrices, sale: salePrices }));
       localStorage.setItem("selectedProduct", JSON.stringify(selectedProduct));
       localStorage.setItem("selectedCategory", String(categoryName));
     } catch {}
@@ -456,7 +525,7 @@ const ProductPopup = (props: ProductsPopTypes) => {
       let editorRow: Record<string, any> = row;
       if (!existingRaw && row?.id) {
         try {
-          const editorPayload = (await fetchTemplateEditorPayload(row.id)) as Record<string, any>;
+          const editorPayload = (await fetchTempletEditorPayloadById(row.id)) as Record<string, any>;
           editorRow = {
             ...row,
             ...editorPayload,
@@ -610,8 +679,8 @@ const ProductPopup = (props: ProductsPopTypes) => {
       category,
       description,
       selectedSize: selectedPlan,
-      prices: { actual: actualPrices, sale: {} },
-      isOnSale: false,
+      prices: { actual: actualPrices, sale: salePrices },
+      isOnSale: selectedIsOnSale,
       displayPrice,
       polygonlayout: type === "card" ? cate?.polygonlayout : undefined,
       templetDesign: type === "templet" ? templetRow : undefined,
@@ -709,8 +778,10 @@ const ProductPopup = (props: ProductsPopTypes) => {
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: { md: "20px", sm: "20px", xs: "10px" } }}>
                 {sizeOptions.map((opt) => {
-                  const price = getPriceForKey(opt.key);
-                  const disabled = price <= 0;
+                  const actualPrice = getPriceForKey(opt.key);
+                  const price = getDisplayPriceForKey(opt.key);
+                  const hasSale = price > 0 && price < actualPrice;
+                  const disabled = actualPrice <= 0;
 
                   return (
                     <Box
@@ -746,7 +817,18 @@ const ProductPopup = (props: ProductsPopTypes) => {
                         </Box>
                       </Box>
 
-                      <Typography variant="h5">{disabled ? "—" : `£${price.toFixed(2)}`}</Typography>
+                      <Box sx={{ textAlign: "right" }}>
+                        {hasSale ? (
+                          <Typography
+                            sx={{ fontSize: 13, textDecoration: "line-through", opacity: 0.75 }}
+                          >
+                            £{actualPrice.toFixed(2)}
+                          </Typography>
+                        ) : null}
+                        <Typography variant="h5">
+                          {disabled ? "—" : `£${price.toFixed(2)}`}
+                        </Typography>
+                      </Box>
                     </Box>
                   );
                 })}
