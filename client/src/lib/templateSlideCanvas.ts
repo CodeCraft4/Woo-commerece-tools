@@ -24,6 +24,7 @@ export type TemplateTextEl = BaseEl & {
   align?: "left" | "center" | "right";
   verticalAlign?: "top" | "center" | "bottom";
   curve?: number;
+  preserveWordShaping?: boolean;
 };
 
 export type TemplateImageEl = BaseEl & { type: "image"; src: string };
@@ -553,7 +554,13 @@ const drawCurvedText = (
   const p2 = { x: safeW, y: midY };
   const curve = buildCurveSamples(p0, p1, p2);
 
-  const glyphs = Array.from(content);
+  // Drawing a cursive/script font one character at a time breaks the shaping
+  // substitutions that join letters inside a word. The SVG editor renders a
+  // complete text run, so checkout regeneration can preserve that behavior by
+  // bending whole words (and whitespace runs) along the path.
+  const glyphs = text.preserveWordShaping
+    ? content.split(/(\s+)/).filter(Boolean)
+    : Array.from(content);
   const widths = glyphs.map((glyph) => ctx.measureText(glyph).width);
   const letterSpacing = toNum(text.letterSpacing, 0);
   const totalGlyphWidth =
@@ -568,6 +575,8 @@ const drawCurvedText = (
       : Math.max(0, (curve.totalLength - totalGlyphWidth) / 2);
 
   let consumed = 0;
+  const previousAlign = ctx.textAlign;
+  ctx.textAlign = "left";
   glyphs.forEach((glyph, index) => {
     const glyphWidth = widths[index] || 0;
     const distance = startDistance + consumed + glyphWidth / 2;
@@ -583,6 +592,7 @@ const drawCurvedText = (
 
     consumed += glyphWidth + letterSpacing;
   });
+  ctx.textAlign = previousAlign;
 };
 
 const fillTextLine = (

@@ -245,14 +245,6 @@ const toDataUrlSafe = async (src: string): Promise<string> => {
   }
 };
 
-const hasQrTemplateBackground = (slide: TemplateSlide) =>
-  (slide?.elements ?? []).some((element: any) => {
-    if (element?.type !== "image") return false;
-    const src = String(element?.src ?? "").toLowerCase();
-    const id = String(element?.id ?? "").toLowerCase();
-    return src.includes("video-qr-tips") || src.includes("audio-qr-tips") || id.includes("qr-");
-  });
-
 const prepareTemplateSlideForCanvas = async (slide: TemplateSlide): Promise<TemplateSlide> => {
   const elements = await Promise.all(
     (slide?.elements ?? []).map(async (element: any) => {
@@ -920,32 +912,41 @@ const PreviewBookCard = () => {
     for (let i = 0; i < slides.length; i += 1) {
       const key = CAPTURE_ORDER[i];
       const slide = await prepareTemplateSlideForCanvas(slides[i]);
-      const hasQrTemplate = hasQrTemplateBackground(slide);
       let dataUrl = "";
       try {
-        const rendered = await renderTemplateSlideToCanvasWithStats(slide, {
+        let rendered = await renderTemplateSlideToCanvasWithStats(slide, {
           width: CAPTURE_SIZE.w,
           height: CAPTURE_SIZE.h,
           pixelRatio: 2.5,
           backgroundColor: "#ffffff",
         });
         if (rendered.expectedAssets > 0 && rendered.drawnAssets < rendered.expectedAssets) {
+          // WebKit can fire an image load failure while the visible DOM image
+          // is already present. A partial canvas is still a syntactically valid
+          // data URL, so accepting it permanently drops every failed raster
+          // layer and leaves only text. Retry once after the current image
+          // decode turn, then capture the complete live DOM instead.
+          await new Promise((resolve) => window.setTimeout(resolve, 150));
+          const retrySlide = await prepareTemplateSlideForCanvas(slides[i]);
+          rendered = await renderTemplateSlideToCanvasWithStats(retrySlide, {
+            width: CAPTURE_SIZE.w,
+            height: CAPTURE_SIZE.h,
+            pixelRatio: 2.5,
+            backgroundColor: "#ffffff",
+          });
+        }
+
+        if (
+          rendered.expectedAssets === 0 ||
+          rendered.drawnAssets === rendered.expectedAssets
+        ) {
           try {
             dataUrl = rendered.canvas.toDataURL("image/jpeg", 0.9);
           } catch {
             dataUrl = "";
-          }
-          if (!isIosWebKit && !hasQrTemplate) {
-            dataUrl = await captureSingleDomSlide(key);
-          } else if (!isIosWebKit && !String(dataUrl).startsWith("data:image/")) {
-            dataUrl = await captureSingleDomSlide(key);
           }
         } else {
-          try {
-            dataUrl = rendered.canvas.toDataURL("image/jpeg", 0.9);
-          } catch {
-            dataUrl = "";
-          }
+          dataUrl = await captureSingleDomSlide(key);
         }
       } catch {
         dataUrl = "";

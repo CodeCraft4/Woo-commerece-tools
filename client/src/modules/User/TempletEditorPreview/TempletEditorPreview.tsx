@@ -1043,6 +1043,11 @@ const TempletEditorPreview: React.FC = () => {
                   }
                 })();
                 sessionStorage.removeItem("slides");
+                // This is the final edited flat mug wrap, not a mockup-only
+                // fallback. Mark it complete so Subscription never replaces it
+                // with the original template slide during checkout.
+                sessionStorage.setItem("slides_preview_only", "0");
+                sessionStorage.setItem("rawSlidesCount", "1");
                 // Keep checkout preview normal; PDF flow will mirror for mug category.
                 sessionStorage.removeItem("slides_mirrored");
                 sessionStorage.removeItem("slides_mirrored_category");

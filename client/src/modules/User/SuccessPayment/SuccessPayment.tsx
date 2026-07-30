@@ -282,13 +282,14 @@ export default function PremiumSuccess() {
       const isBagOrClothingForPdf = isBagCategory || isClothingCategory;
       const isNotebookCategory = isNotebooksCategory(categoryName);
       const clothingBgRemoveOpts = {
-        threshold: 28,
-        alphaThreshold: 6,
-        minBrightness: 160,
-        satThreshold: 32,
-        whiteOnly: false,
-        requireWhiteBg: false,
-        softness: 18,
+        threshold: 12,
+        alphaThreshold: 8,
+        minBrightness: 245,
+        satThreshold: 12,
+        whiteMinChannel: 242,
+        whiteOnly: true,
+        requireWhiteBg: true,
+        softness: 0,
         mode: "edge" as const,
       };
       const bagBgRemoveOpts = {

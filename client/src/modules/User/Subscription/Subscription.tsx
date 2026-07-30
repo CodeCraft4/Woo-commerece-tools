@@ -57,7 +57,11 @@ import {
   getGoogleFontEmbedCss,
   loadGoogleFontsOnce,
 } from "../../../constant/googleFonts";
-import { getIosMajorVersion, isWebKitBrowser } from "../../../lib/platform";
+import {
+  getIosMajorVersion,
+  isIosTouchDevice,
+  isWebKitBrowser,
+} from "../../../lib/platform";
 import { renderTemplateSlideToCanvasWithStats } from "../../../lib/templateSlideCanvas";
 import {
   readSubscriptionPreviewPayload,
@@ -73,8 +77,9 @@ const STRIPE_PK =
   import.meta.env.VITE_STRIPE_PK ||
   "pk_test_51S5Pnw6w4VLajVLTFff76bJmNdN9UKKAZ2GKrXL41ZHlqaMxjXBjlCEly60J69hr3noxGXv6XL2Rj4Gp4yfPCjAy00j41t6ReK";
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : Promise.resolve(null);
-const PREPARED_SLIDES_PREFIX = "prepared:v5:";
+const PREPARED_SLIDES_PREFIX = "prepared:v6:";
 const CARD_MOCKUP_PREVIEW_STORAGE_PREFIX = "subscription:card:mockup-preview";
+const DURABLE_CHECKOUT_SOURCE_PREFIX = "checkout:design:source:v1:";
 
 // ------------------ Types ------------------
 type SelectedVariant = {
@@ -151,6 +156,23 @@ const toDataUrlSafe = async (src: string): Promise<string> => {
     return src;
   }
 };
+
+const withTimeout = async <T,>(
+  task: Promise<T>,
+  timeoutMs: number,
+  fallback: T,
+): Promise<T> =>
+  await new Promise<T>((resolve) => {
+    let settled = false;
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = window.setTimeout(() => finish(fallback), timeoutMs);
+    task.then(finish).catch(() => finish(fallback));
+  });
 
 const readSelectedProductSnapshot = (): SelectedProduct | null => {
   try {
@@ -848,6 +870,16 @@ const Subscription = () => {
       return false;
     }
   }, [location.search]);
+  const isClothingFromRouteOrStorage = useMemo(() => {
+    const fromQuery = String(new URLSearchParams(location.search).get("category") || "").trim();
+    if (/clothing|clothes|apparel/i.test(fromQuery)) return true;
+    try {
+      const fromLocal = String(localStorage.getItem("selectedCategory") || "").trim();
+      return /clothing|clothes|apparel/i.test(fromLocal);
+    } catch {
+      return false;
+    }
+  }, [location.search]);
   const [rawSlides, setRawSlides] = useState<RawSlide[]>(() =>
     readInitialRawSlides({
       previewKey: state?.previewKey,
@@ -884,6 +916,7 @@ const Subscription = () => {
   const [legacyCardCaptureEnabled, setLegacyCardCaptureEnabled] = useState(false);
   const processingPaidSessionRef = useRef<string | null>(null);
   const isIosWebKit = useMemo(() => isWebKitBrowser(), []);
+  const isIosDevice = useMemo(() => isIosTouchDevice(), []);
   const iosMajorVersion = useMemo(() => getIosMajorVersion(), []);
   const isLegacyIosWebKit = isIosWebKit && iosMajorVersion !== null && iosMajorVersion < 15;
 
@@ -946,11 +979,26 @@ const Subscription = () => {
       const runtime = getValidSlides(slidesObj);
       const lockStripeStickerPreview =
         isStripeReturn && isStickerFromRouteOrStorage && Object.keys(persisted).length > 0;
+      const lockPaidClothingPreview =
+        isStripeReturn && isClothingFromRouteOrStorage && Object.keys(persisted).length > 0;
+      if (lockPaidClothingPreview) {
+        // The runtime payload is hydrated from the immutable checkout snapshot.
+        // Let it replace the older preview copy after Stripe returns; otherwise
+        // a stale/partial WebKit capture can keep winning this merge forever.
+        return getValidSlides({ ...persisted, ...runtime });
+      }
       return lockStripeStickerPreview
         ? getValidSlides({ ...runtime, ...persisted })
         : getValidSlides({ ...persisted, ...runtime });
     },
-    [activeTemplatePreviewSession, isStickerFromRouteOrStorage, isStripeReturn, slidesObj, subscriptionPreviewSlides],
+    [
+      activeTemplatePreviewSession,
+      isClothingFromRouteOrStorage,
+      isStickerFromRouteOrStorage,
+      isStripeReturn,
+      slidesObj,
+      subscriptionPreviewSlides,
+    ],
   );
   const lockStripeStickerPreview = useMemo(
     () =>
@@ -1110,6 +1158,8 @@ const Subscription = () => {
     ? subscriptionPreviewSlide1 || (shouldUseIosTemplateCanvasPreview ? iosTemplatePreviewSrc : "")
     : lockStripeStickerPreview
     ? subscriptionPreviewSlides?.slide1 || slidesObj?.slide1 || ""
+    : isStripeReturn && isClothingFromRouteOrStorage
+    ? slidesObj?.slide1 || subscriptionPreviewSlides?.slide1 || ""
     : isLegacyCardProduct
     ? pickSlideByNumber(slidesObj, cardPreviewSlideNumber) ||
       (!isIosWebKit && isStripeReturn
@@ -1516,9 +1566,57 @@ const Subscription = () => {
     [rawSlides, resolveCaptureFontEmbedCss, waitForNodeAssets]
   );
 
-  const prepareRawSlideForCanvas = useCallback(async (slide: RawSlide) => {
+  const prepareRawSlideForCanvas = useCallback(async (
+    slide: RawSlide,
+    opts?: {
+      transparentBackground?: boolean;
+      stripLowestCanvasBackground?: boolean;
+      normalizeCurvedTextSpacing?: boolean;
+    },
+  ) => {
+    const sourceElements = [...(slide?.elements ?? [])];
+    const backgroundIndex = opts?.stripLowestCanvasBackground
+      ? sourceElements.reduce((match, element: any, index) => {
+          if (String(element?.type ?? "").toLowerCase() !== "image") return match;
+          const id = String(element?.id ?? "").trim().toLowerCase();
+          const width = toNum(element?.width, 0);
+          const height = toNum(element?.height, 0);
+          const x = toNum(element?.x, 0);
+          const y = toNum(element?.y, 0);
+          const isExplicitBackground = id === "bg-image" || id.startsWith("bg-");
+          const isLowestFullCanvasLayer =
+            Math.abs(x) <= 1 &&
+            Math.abs(y) <= 1 &&
+            width >= captureWidth - 1 &&
+            height >= captureHeight - 1 &&
+            Number(element?.zIndex ?? 1) <= 0;
+          if (!isExplicitBackground && !isLowestFullCanvasLayer) return match;
+          if (match < 0) return index;
+          const currentZ = Number(sourceElements[match]?.zIndex ?? 0);
+          const candidateZ = Number(element?.zIndex ?? 0);
+          return candidateZ < currentZ ? index : match;
+        }, -1)
+      : -1;
+
     const elements = await Promise.all(
-      (slide?.elements ?? []).map(async (element: any) => {
+      sourceElements
+        .filter((_, index) => index !== backgroundIndex)
+        .map(async (element: any) => {
+        if (
+          opts?.normalizeCurvedTextSpacing &&
+          String(element?.type ?? "").toLowerCase() === "text" &&
+          Math.abs(resolveTextCurve(element)) > 0.5
+        ) {
+          // The editor/category preview intentionally render curved SVG text
+          // without tracking. Legacy rows can still carry a letterSpacing
+          // value, which the canvas renderer interprets as px per glyph and
+          // visibly spreads names after an iOS checkout regeneration.
+          return {
+            ...element,
+            letterSpacing: 0,
+            preserveWordShaping: true,
+          };
+        }
         if (element?.type !== "image" && element?.type !== "sticker") return element;
         const src = String(element?.src ?? "");
         return {
@@ -1530,9 +1628,10 @@ const Subscription = () => {
 
     return {
       ...slide,
+      ...(opts?.transparentBackground ? { bgColor: "transparent" } : {}),
       elements,
     } as RawSlide;
-  }, []);
+  }, [captureHeight, captureWidth]);
 
   const captureSlidesFromCanvasRenderer = useCallback(
     async (format: "jpeg" | "png", maxDim = 1600) => {
@@ -1540,9 +1639,18 @@ const Subscription = () => {
       const maxSide = Math.max(captureWidth, captureHeight, 1);
       const ratio = maxSide ? maxDim / maxSide : 1.5;
       const pixelRatio = Math.min(format === "png" ? 3 : 2.5, Math.max(1, ratio));
+      const renderClothingWithTransparentLayers =
+        format === "png" && isIosDevice && isClothingFromRouteOrStorage;
 
       for (let i = 0; i < rawSlides.length; i++) {
-        const preparedSlide = await prepareRawSlideForCanvas(rawSlides[i]);
+        const preparedSlide = await prepareRawSlideForCanvas(
+          rawSlides[i],
+          {
+            transparentBackground: renderClothingWithTransparentLayers,
+            stripLowestCanvasBackground: renderClothingWithTransparentLayers,
+            normalizeCurvedTextSpacing: renderClothingWithTransparentLayers,
+          },
+        );
         const result = await renderTemplateSlideToCanvasWithStats(preparedSlide as any, {
           width: captureWidth,
           height: captureHeight,
@@ -1565,7 +1673,14 @@ const Subscription = () => {
 
       return out;
     },
-    [captureHeight, captureWidth, prepareRawSlideForCanvas, rawSlides],
+    [
+      captureHeight,
+      captureWidth,
+      isClothingFromRouteOrStorage,
+      isIosDevice,
+      prepareRawSlideForCanvas,
+      rawSlides,
+    ],
   );
 
   const captureCardRawSlidesFromCanvasRenderer = useCallback(
@@ -1960,6 +2075,62 @@ const Subscription = () => {
     () => (product?.id && product?.type ? `${product.type}:${product.id}` : ""),
     [product]
   );
+  const usesDurableCheckoutSource = useMemo(
+    () =>
+      /clothing|clothes|apparel|mug|candle/i.test(
+        String(categoryName ?? ""),
+      ),
+    [categoryName],
+  );
+  const durableCheckoutSourceKey = useMemo(() => {
+    const snapshotProductKey =
+      selectedProductSnapshot?.id && selectedProductSnapshot?.type
+        ? `${selectedProductSnapshot.type}:${selectedProductSnapshot.id}`
+        : "";
+    return `${DURABLE_CHECKOUT_SOURCE_PREFIX}${lc(
+      productKey || snapshotProductKey || "state",
+    )}:${lc(categoryName)}`;
+  }, [
+    categoryName,
+    productKey,
+    selectedProductSnapshot?.id,
+    selectedProductSnapshot?.type,
+  ]);
+  const durableCheckoutCategoryKey = useMemo(
+    () => `${DURABLE_CHECKOUT_SOURCE_PREFIX}category:${lc(categoryName)}`,
+    [categoryName],
+  );
+
+  useEffect(() => {
+    if (!isStripeReturn || !usesDurableCheckoutSource) return;
+    let active = true;
+
+    void (async () => {
+      const exact = getValidSlides(
+        await loadSlidesFromIdbByKey(durableCheckoutSourceKey),
+      );
+      if (Object.keys(exact).length) return exact;
+      return getValidSlides(
+        await loadSlidesFromIdbByKey(durableCheckoutCategoryKey),
+      );
+    })()
+      .then((source) => {
+        if (!active) return;
+        if (!Object.keys(source).length) return;
+        setSlidesObj(source);
+        setSubscriptionPreviewSlides(source);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [
+    durableCheckoutCategoryKey,
+    durableCheckoutSourceKey,
+    isStripeReturn,
+    usesDurableCheckoutSource,
+  ]);
 
   const isInBundleItems = useMemo(() => isProductInBundle(product, bundleKeySet), [product, bundleKeySet]);
 
@@ -1985,13 +2156,14 @@ const Subscription = () => {
       const isBagOrClothingForPdf = isBagCategory || isClothingCategory;
       const isNotebookCategory = isNotebooksCategory(categoryName);
       const clothingBgRemoveOpts = {
-        threshold: 28,
-        alphaThreshold: 6,
-        minBrightness: 160,
-        satThreshold: 32,
-        whiteOnly: false,
-        requireWhiteBg: false,
-        softness: 18,
+        threshold: 12,
+        alphaThreshold: 8,
+        minBrightness: 245,
+        satThreshold: 12,
+        whiteMinChannel: 242,
+        whiteOnly: true,
+        requireWhiteBg: true,
+        softness: 0,
         mode: "edge" as const,
       };
       const bagBgRemoveOpts = {
@@ -2008,7 +2180,9 @@ const Subscription = () => {
         !isCoastersGrid &&
         !isMugWrap &&
         (isBagOrClothingForPdf || isNotebookCategory)
-          ? isClothingCategory
+          ? isClothingCategory && isIosDevice
+            ? null
+            : isClothingCategory
             ? clothingBgRemoveOpts
             : bagBgRemoveOpts
           : !isCandlesGrid && !isCoastersGrid && !isMugWrap && isStickerForPdf
@@ -2041,7 +2215,7 @@ const Subscription = () => {
             : undefined,
       };
     },
-    [categoryName, isMugsCategory, selectedPlan],
+    [categoryName, isIosDevice, isMugsCategory, selectedPlan],
   );
 
   const isBundleAndMatched = planCode === "bundle" && isInBundleItems;
@@ -2062,6 +2236,19 @@ const Subscription = () => {
   }, [planCode, planLoading, bundleKeyLoading, isInBundleItems]);
 
   const getSlidesPayload = async () => {
+    if (isStripeReturn && usesDurableCheckoutSource) {
+      try {
+        let checkoutSource = getValidSlides(
+          await loadSlidesFromIdbByKey(durableCheckoutSourceKey),
+        );
+        if (!Object.keys(checkoutSource).length) {
+          checkoutSource = getValidSlides(
+            await loadSlidesFromIdbByKey(durableCheckoutCategoryKey),
+          );
+        }
+        if (Object.keys(checkoutSource).length) return checkoutSource;
+      } catch {}
+    }
     if (lockStripeStickerPreview) {
       const persisted = getValidSlides(subscriptionPreviewSlides);
       if (Object.keys(persisted).length) return persisted;
@@ -2130,6 +2317,31 @@ const Subscription = () => {
         throw new Error("Could not prepare your design for checkout");
       }
 
+      if (usesDurableCheckoutSource) {
+        const durableSource = validPreparedSlides;
+        // Safari can discard in-memory/session data during the Stripe page
+        // transition. Commit the exact, unmodified pre-payment render to the
+        // scoped IndexedDB store before redirecting; paid mockup hydration and
+        // email generation both resolve this same immutable source. Do not run
+        // background removal here: mutating the live checkout source caused
+        // Safari redirect failures to leave a text-only preview behind.
+        await Promise.all([
+          saveSlidesToIdbByKey(durableCheckoutSourceKey, durableSource),
+          saveSlidesToIdbByKey(durableCheckoutCategoryKey, durableSource),
+        ]);
+        try {
+          await saveSlidesToScopes(checkoutSlidesScopeKeys, durableSource);
+        } catch {
+          // The two dedicated IndexedDB copies above are the authoritative
+          // checkout source. Scoped mirrors are only backward-compatible
+          // fallbacks and must not block payment in Safari.
+        }
+        saveSubscriptionPreviewPayload(
+          durableSource,
+          subscriptionPreviewKey || undefined,
+        );
+      }
+
       setCheckoutProgressStep(42, "Creating Stripe checkout session...");
 
       const successUrl = `${window.location.origin}${location.pathname}?paid=1&session_id={CHECKOUT_SESSION_ID}&category=${encodeURIComponent(
@@ -2160,11 +2372,16 @@ const Subscription = () => {
       });
 
       if (!res.ok) throw new Error("checkout failed");
-      const { id } = await res.json();
+      const checkout = await res.json();
+      const id = String(checkout?.id || "");
+      if (!id) throw new Error("Checkout session was not created");
 
       setCheckoutProgressStep(88, "Redirecting to Stripe...");
       toast.success("Redirecting to payment...");
-      await stripe.redirectToCheckout({ sessionId: id });
+      const { error } = await stripe.redirectToCheckout({ sessionId: id });
+      if (error) {
+        throw new Error(error.message || "Stripe checkout could not be loaded");
+      }
     } catch (e: any) {
       toast.error(e?.message || "Payment failed!");
     } finally {
@@ -2179,7 +2396,16 @@ const Subscription = () => {
         activeTemplatePreviewSession && hasPreparedTemplatePreviewSlides
           ? preparedTemplatePreviewSlides
           : {};
-      const current = Object.keys(preparedPreviewSlides).length
+      // On the paid return, getSlidesPayload resolves the exact pre-Stripe
+      // checkout snapshot from IndexedDB. Never let an older preview payload
+      // bypass that lookup for categories using the durable handoff.
+      const durablePaidSource =
+        isStripeReturn && usesDurableCheckoutSource
+          ? await getSlidesPayload()
+          : {};
+      const current = Object.keys(durablePaidSource).length
+        ? durablePaidSource
+        : Object.keys(preparedPreviewSlides).length
         ? preparedPreviewSlides
         : await getSlidesPayload();
       const currentKeys = Object.keys(current || {}).filter((k) => current[k]);
@@ -2199,6 +2425,12 @@ const Subscription = () => {
       const hasPng = !needPng
         ? true
         : currentKeys.every((k) => String(current[k] || "").startsWith("data:image/png"));
+      const forceSafariClothingLayerCapture =
+        !isStripeReturn &&
+        isIosDevice &&
+        needPng &&
+        isClothingFromRouteOrStorage &&
+        rawSlides.length > 0;
 
       if (shouldRenderCardRawForPdf) {
         const list = await captureCardRawSlidesFromCanvasRenderer(format, needPng ? 2400 : 1600);
@@ -2209,7 +2441,12 @@ const Subscription = () => {
         }
       }
 
-      if (hasEnough && (hasPng || (isIosWebKit && Object.keys(preparedPreviewSlides).length)) && !isPreviewOnly) {
+      if (
+        !forceSafariClothingLayerCapture &&
+        hasEnough &&
+        (hasPng || (isIosWebKit && Object.keys(preparedPreviewSlides).length)) &&
+        (!isPreviewOnly || isMugsCategory)
+      ) {
         const validCurrent = getValidSlides(current as Record<string, string>);
         if (Object.keys(validCurrent).length) {
           storeSlidesPayload(validCurrent);
@@ -2224,7 +2461,7 @@ const Subscription = () => {
         : capturedList.length > 0;
       const capturedHasPng =
         !needPng || capturedList.every((u) => String(u || "").startsWith("data:image/png"));
-      if (capturedEnough && capturedHasPng) {
+      if (!forceSafariClothingLayerCapture && capturedEnough && capturedHasPng) {
         const next = Object.fromEntries(capturedList.map((u, idx) => [`slide${idx + 1}`, u]));
         storeSlidesPayload(next);
         return next;
@@ -2232,12 +2469,20 @@ const Subscription = () => {
 
       if (!rawSlides.length && !isLegacyCardProduct) return current;
 
-      await ensureCaptureSupportReady();
-      const list = rawSlides.length
+      if (isIosDevice && isClothingFromRouteOrStorage) {
+        await withTimeout(ensureCaptureSupportReady(), 8_000, undefined);
+      } else {
+        await ensureCaptureSupportReady();
+      }
+      const captureTask = rawSlides.length
         ? isIosWebKit && activeTemplatePreviewSession
-          ? await captureSlidesFromCanvasRenderer(format, needPng ? 2400 : 1600)
-          : await captureSlidesFromDom(format, needPng ? 2400 : 1600)
-        : await captureLegacyCardSlidesFromDom(1600);
+          ? captureSlidesFromCanvasRenderer(format, needPng ? 2400 : 1600)
+          : captureSlidesFromDom(format, needPng ? 2400 : 1600)
+        : captureLegacyCardSlidesFromDom(1600);
+      const list =
+        isIosDevice && isClothingFromRouteOrStorage
+          ? await withTimeout(captureTask, 15_000, [] as string[])
+          : await captureTask;
       if (!list.length) return current;
 
       const next = Object.fromEntries(list.map((u, idx) => [`slide${idx + 1}`, u]));
@@ -2253,20 +2498,35 @@ const Subscription = () => {
       getSlidesPayload,
       activeTemplatePreviewSession,
       hasPreparedTemplatePreviewSlides,
+      isClothingFromRouteOrStorage,
+      isIosDevice,
       isIosWebKit,
       isLegacyCardProduct,
+      isMugsCategory,
       isPreviewOnly,
+      isStripeReturn,
       preparedTemplatePreviewSlides,
       readCapturedSlidesFromStorage,
       rawSlides.length,
       shouldRenderCardRawForPdf,
       storeSlidesPayload,
+      usesDurableCheckoutSource,
     ]
   );
 
   const getPreparedSlidesCacheKey = useCallback(
-    (cardSize?: string | null) => buildPreparedSlidesKey(productKey || "state", categoryName, cardSize || selectedPlan),
-    [categoryName, productKey, selectedPlan],
+    (cardSize?: string | null) =>
+      buildPreparedSlidesKey(
+        `${productKey || "state"}:${subscriptionPreviewKey || "no-preview"}`,
+        categoryName,
+        cardSize || selectedPlan,
+      ),
+    [
+      categoryName,
+      productKey,
+      selectedPlan,
+      subscriptionPreviewKey,
+    ],
   );
 
   const loadPreparedSlidesPayload = useCallback(
@@ -2318,7 +2578,14 @@ const Subscription = () => {
       onProgress?: (value: number, label: string) => void,
     ) => {
       const prep = getCheckoutPreparation(cardSize);
-      const canUsePreparedSlidesCache = !shouldRenderCardRawForPdf && !isLegacyCardProduct;
+      const isPaidClothingSource =
+        isStripeReturn &&
+        /clothing|clothes|apparel/i.test(String(categoryName ?? ""));
+      const canUsePreparedSlidesCache =
+        !isPaidClothingSource &&
+        !prep.isMugWrap &&
+        !shouldRenderCardRawForPdf &&
+        !isLegacyCardProduct;
       if (canUsePreparedSlidesCache) {
         const cached = await loadPreparedSlidesPayload(prep.cardSize);
         if (cached && Object.keys(cached).length) {
@@ -2331,6 +2598,25 @@ const Subscription = () => {
       }
 
       const rawSlides = await ensureSlidesPayload(prep.captureFormat);
+      if (isPaidClothingSource) {
+        const exactCheckoutSource = getValidSlides(rawSlides);
+        if (!Object.keys(exactCheckoutSource).length) {
+          throw new Error("No valid checkout source found");
+        }
+        // Paid clothing uses the immutable pre-Stripe bitmap and returns before
+        // the shared print-processing branch below. Mirror it here so the final
+        // emailed transfer file follows the same horizontal-flip rule as other
+        // clothing/apparel output, while the on-screen mockup remains normal.
+        const mirroredCheckoutSource = await mirrorSlides(exactCheckoutSource);
+        if (canUsePreparedSlidesCache) {
+          storePreparedSlidesPayload(prep.cardSize, mirroredCheckoutSource);
+        }
+        return {
+          slides: mirroredCheckoutSource,
+          outputFormat: prep.outputFormat,
+          pageOrientation: prep.pageOrientation,
+        };
+      }
       onProgress?.(40, "Applying print layout...");
 
       const slidesAlreadyMirrored = (() => {
@@ -2576,6 +2862,7 @@ const Subscription = () => {
       categoryName,
       ensureSlidesPayload,
       getCheckoutPreparation,
+      isStripeReturn,
       isLegacyCardProduct,
       loadPreparedSlidesPayload,
       shouldRenderCardRawForPdf,
@@ -2595,7 +2882,9 @@ const Subscription = () => {
     const skipLegacyIosPrefetch =
       isIosWebKit && isLegacyCardProduct && Boolean(firstSlideUrl) && !shouldRenderCardRawForPdf;
     const skipTemplateRegeneration =
-      activeTemplatePreviewSession && (hasPreparedTemplatePreviewSlides || isIosWebKit);
+      activeTemplatePreviewSession &&
+      (hasPreparedTemplatePreviewSlides || isIosWebKit) &&
+      !(isIosWebKit && isClothingFromRouteOrStorage);
     const skipStripeStickerRegeneration = lockStripeStickerPreview;
     // Subscription should consume the preview page payload. Re-capturing here can
     // replace a correct mockup with a WebKit partial bitmap.
@@ -2618,7 +2907,8 @@ const Subscription = () => {
             : 0;
         const bypassStoredIosPreviewSlides =
           shouldRenderCardRawForPdf ||
-          (isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0);
+          (isIosWebKit && activeTemplatePreviewSession && rawSlides.length > 0) ||
+          (isIosWebKit && isClothingFromRouteOrStorage && rawSlides.length > 0);
         const hasEnough = expectedCount ? currentKeys.length >= expectedCount : currentKeys.length > 0;
         const hasPng =
           prefetchCaptureFormat !== "png" ||
@@ -2689,6 +2979,7 @@ const Subscription = () => {
     getSlidesPayload,
     activeTemplatePreviewSession,
     hasPreparedTemplatePreviewSlides,
+    isClothingFromRouteOrStorage,
     isIosWebKit,
     isLegacyCardProduct,
     lockStripeStickerPreview,
@@ -2957,18 +3248,24 @@ const Subscription = () => {
 
     setFirstSlideProcessed(firstSlideUrl);
 
-    if (!isStickerCategory && !isCandleCategory && !isBagCategory && !isClothingCategory) {
+    const preservePaidClothingSource =
+      isIosDevice && isClothingCategory;
+    if (
+      preservePaidClothingSource ||
+      (!isStickerCategory && !isCandleCategory && !isBagCategory && !isClothingCategory)
+    ) {
       return;
     }
 
     const clothingBgRemoveOpts = {
-      threshold: 28,
-      alphaThreshold: 6,
-      minBrightness: 160,
-      satThreshold: 32,
-      whiteOnly: false,
-      requireWhiteBg: false,
-      softness: 18,
+      threshold: 12,
+      alphaThreshold: 8,
+      minBrightness: 245,
+      satThreshold: 12,
+      whiteMinChannel: 242,
+      whiteOnly: true,
+      requireWhiteBg: true,
+      softness: 0,
       mode: "edge" as const,
     };
     const bagBgRemoveOpts = {
@@ -3010,7 +3307,15 @@ const Subscription = () => {
         clearTimeout(idleId);
       }
     };
-  }, [firstSlideUrl, isStickerCategory, isCandleCategory, isBagCategory, isClothingCategory]);
+  }, [
+    firstSlideUrl,
+    isIosDevice,
+    isStripeReturn,
+    isStickerCategory,
+    isCandleCategory,
+    isBagCategory,
+    isClothingCategory,
+  ]);
 
   const isIosCardMockupFlow = isIosWebKit && isLegacyCardProduct;
   const cardPreviewToPersist = isIosCardMockupFlow
